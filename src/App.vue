@@ -41,12 +41,27 @@ onMounted(async () => {
 
 <template>
   <div id="container"></div>
-  <div v-if="showBegin">hi~我是抱抱，芳香教室专属助理，请问您是来体验课程、日常巡检还是进行聊天？</div>
+  <div v-if="showBegin" class="begin">
+    hi~我是抱抱，芳香教室专属助理，请问您是来
+    <span>体验课程</span>
+    、
+    <span>日常巡检</span>
+    还是
+    <span>进行聊天</span>？
+  </div>
 </template>
 
 <style scoped>
 #container {
   width: 500px;
   height: 500px;
+}
+
+.begin span {
+  cursor: pointer;
+  color: blue;
+  border: 1px solid blue;
+  border-radius: 5px;
+  padding: 2px;
 }
 </style>
