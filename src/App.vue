@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import NextCas from '@nextcas/sdk'
+import { Record } from '@nextcas/voice'
+
 import { onMounted, ref, computed } from 'vue'
 import { createAccessToken } from './token'
 import { simulateClick } from './utils'
@@ -8,6 +10,7 @@ const showBegin = ref(false)
 const showSurvey = ref(false)
 const currentQuestionIndex = ref(0)
 const userAnswers = ref<number[]>([])
+const selectedIndex = ref<number[]>([])
 const showResult = ref(false)
 
 type Option = { text: string; value: number }
@@ -15,79 +18,10 @@ type Question = { text: string; options: Option[] }
 type Range = { min: number; label: string }
 
 // 问题数据
-const questions = ref<Question[]>([
-  {
-    text: '111',
-    options: [
-      {
-        text: '1',
-        value: 1,
-      },
-      {
-        text: '1',
-        value: 2,
-      },
-      {
-        text: '1',
-        value: 3,
-      },
-    ],
-  },
-  {
-    text: '',
-    options: [
-      {
-        text: '',
-        value: 0,
-      },
-      {
-        text: '',
-        value: 0,
-      },
-      {
-        text: '',
-        value: 0,
-      },
-    ],
-  },
-  {
-    text: '',
-    options: [
-      {
-        text: '',
-        value: 0,
-      },
-      {
-        text: '',
-        value: 0,
-      },
-      {
-        text: '',
-        value: 0,
-      },
-    ],
-  },
-])
+const questions = ref<Question[]>([])
 
 // 评分标准
-const ranges = ref<Range[]>([
-  {
-    min: 1,
-    label: '柔和模式',
-  },
-  {
-    min: 2,
-    label: '香氛模式1',
-  },
-  {
-    min: 3,
-    label: '香氛模式2',
-  },
-  {
-    min: 4,
-    label: '香氛模式3',
-  },
-])
+const ranges = ref<Range[]>([])
 
 // 计算总分
 const totalScore = computed(() => {
@@ -106,10 +40,10 @@ const maxScore = computed(() => {
 const getGrade = (score: number) => {
   for (let i = ranges.value.length - 1; i >= 0; i--) {
     if (score >= ranges.value[i].min) {
-      return ranges.value[i].label
+      return ranges.value[i]
     }
   }
-  return ranges.value[0]?.label || ''
+  return ranges.value[0]
 }
 
 // 当前问题
@@ -206,8 +140,9 @@ const startChat = () => {
   showBegin.value = false
 }
 
-// 选择答案
-const selectAnswer = (value: number, _text: string) => {
+// 选择答案：记录选中索引与分值
+const selectAnswer = (index: number, value: number) => {
+  selectedIndex.value[currentQuestionIndex.value] = index
   userAnswers.value[currentQuestionIndex.value] = value
 }
 
@@ -236,6 +171,7 @@ const chooseSurveyTheme = async (s: { id: number; theme: string }) => {
   showSurveyThemeSelect.value = false
   currentQuestionIndex.value = 0
   userAnswers.value = []
+  selectedIndex.value = []
   showSurvey.value = true
 }
 
@@ -274,6 +210,7 @@ const prevQuestion = () => {
 const restartSurvey = () => {
   currentQuestionIndex.value = 0
   userAnswers.value = []
+  selectedIndex.value = []
   showResult.value = false
 }
 
@@ -329,7 +266,49 @@ onMounted(async () => {
       },
     })
   })
+
+  cas.on('reply', data => {
+    const { content } = data.data
+
+    console.log('reply', content)
+    if (content === '好的 我知道了') {
+      // 请问您是否坐好了->没有
+      handleJsx()
+    }
+
+    if (content === '好的感谢配合现在请跟随系统指导进行体验课程，现在为您打开芳香机，播放轻缓音乐') {
+      // 请问您是否坐好了->好了
+    }
+  })
 })
+
+function handleJsx() {
+  setTimeout(() => {
+    speakCas('请问您是否坐好了')
+    // 在这里弹出语言输入按钮
+  }, 3 * 1000)
+}
+
+let record: Record
+;(async () => {
+  record = new Record(await createAccessToken(), 'actor_118544')
+})()
+
+const onTouchStart = () => {
+  record.start()
+}
+
+// Handle touch end
+const onTouchEnd = () => {
+  record
+    .stopToText('16k_zh')
+    .then(text => {
+      console.log('语音识别结果', text)
+
+      cas.ask(text)
+    })
+    .catch(error => console.error('录音停止时出错:', error))
+}
 </script>
 
 <template>
@@ -398,14 +377,10 @@ onMounted(async () => {
         <div class="course-modal">
           <div class="course-modal-header">
             <h2>请选择问卷主题</h2>
-            <button class="btn btn-secondary" @click="goHome">返回首页</button>
           </div>
-          <div class="course-list">
-            <div class="course-card" v-for="s in surveys" :key="s.id" @click="chooseSurveyTheme(s)">
-              <div class="info">
-                <div class="title">{{ s.theme || '未命名问卷' }}</div>
-                <div class="desc">ID: {{ s.id }}</div>
-              </div>
+          <div class="survey-list">
+            <div class="survey-item" v-for="s in surveys" :key="s.id" @click="chooseSurveyTheme(s)">
+              <div class="survey-title">{{ s.theme || '未命名问卷' }}</div>
             </div>
           </div>
         </div>
@@ -426,8 +401,8 @@ onMounted(async () => {
                 v-for="(option, index) in currentQuestion.options"
                 :key="index"
                 class="option"
-                :class="{ selected: userAnswers[currentQuestionIndex] === option.value }"
-                @click="selectAnswer(option.value, option.text)"
+                :class="{ selected: selectedIndex[currentQuestionIndex] === index }"
+                @click="selectAnswer(index, option.value)"
               >
                 <span class="option-label">{{ String.fromCharCode(65 + index) }}</span>
                 <span class="option-text">{{ option.text }}</span>
@@ -438,7 +413,7 @@ onMounted(async () => {
             <div class="navigation">
               <button class="btn btn-secondary" @click="prevQuestion" :disabled="currentQuestionIndex === 0">上一题</button>
 
-              <button class="btn btn-primary" @click="nextQuestion" :disabled="userAnswers[currentQuestionIndex] === undefined">
+              <button class="btn btn-primary" @click="nextQuestion" :disabled="selectedIndex[currentQuestionIndex] === undefined">
                 {{ isLastQuestion ? '提交' : '下一题' }}
               </button>
             </div>
@@ -448,32 +423,29 @@ onMounted(async () => {
 
       <div v-if="showResult" class="result-container">
         <div class="result-card">
-          <h2>答题结果</h2>
-
-          <div class="score-display">
-            <div class="score-circle">
-              <span class="score-value">{{ totalScore }}</span>
-              <span class="score-max">/ {{ maxScore }}</span>
-            </div>
-            <div class="grade">{{ getGrade(totalScore) }}</div>
+          <div class="result-summary">
+            <span class="result-prefix">根据您的情况</span>
+            <span class="grade-badge">{{ getGrade(totalScore)?.label || '' }}</span>
           </div>
-
-          <div class="answer-summary">
-            <h3>答题详情</h3>
-            <div v-for="(question, index) in questions" :key="index" class="answer-item">
-              <div class="question-text">{{ index + 1 }}. {{ question.text }}</div>
-              <div class="answer-value">得分: {{ userAnswers[index] || 0 }}分</div>
-            </div>
-          </div>
-
           <div class="result-actions">
-            <button class="btn btn-secondary" @click="restartSurvey">重新答题</button>
-            <button class="btn btn-primary" @click="goHome">返回首页</button>
+            <button class="btn btn-primary" @click="restartSurvey">重新评测</button>
+            <button class="btn btn-primary" @click="handleJsx">继续</button>
           </div>
         </div>
       </div>
     </div>
   </div>
+  <button
+    class="voice-button"
+    @mousedown="onTouchStart"
+    @mouseup="onTouchEnd"
+    @mouseleave="onTouchEnd"
+    @touchstart.prevent="onTouchStart"
+    @touchend.prevent="onTouchEnd"
+    aria-label="按住说话"
+  >
+    按住说话
+  </button>
 </template>
 
 <style scoped>
@@ -563,6 +535,27 @@ onMounted(async () => {
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 12px;
   margin-top: 12px;
+}
+.survey-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.survey-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.survey-item:hover {
+  border-color: #3b82f6;
+  background: #f8f9ff;
+}
+.survey-title {
+  font-weight: 600;
 }
 
 .course-card {
@@ -881,7 +874,63 @@ onMounted(async () => {
   padding: 20px;
   z-index: 1000;
 }
+
+.result-summary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+.result-prefix {
+  color: #64748b;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+}
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  min-width: 96px;
+  background: #f3f4f6;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+}
+.voice-button {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1100;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 9999px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+.voice-button:hover {
+  background: #2563eb;
+}
+.voice-button:active {
+  transform: scale(0.98);
+}
+@media (max-width: 480px) {
+  .result-summary {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .result-prefix,
+  .grade-badge {
+    font-size: 16px;
+  }
+}
 </style>
-const chooseCourse = (course: { id: number; title: string; description: string | null; video_url: string | null; cover_url: string | null }) => { if
-(!course.video_url) return selectedCourse.value = course showCourseSelect.value = false playingVideo.value = true } const onVideoEnded = () => {
-playingVideo.value = false showSurvey.value = true }

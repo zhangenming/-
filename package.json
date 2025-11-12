@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@nextcas/sdk": "^1.2.4",
+    "@nextcas/voice": "^1.0.2",
     "jose": "^6.1.0",
     "vue": "^3.5.22"
   },

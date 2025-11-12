@@ -3,7 +3,7 @@ import { ref, nextTick, computed } from 'vue'
 
 type Option = { text: string; value: number | null }
 type Question = { text: string; options: Option[] }
-type Range = { min: number; label: string; commad?: string }
+type Range = { min: number; label: string; command?: string }
 
 // 改为题目列表：默认三个空白题目，每题三个空白选项
 const questions = ref<Question[]>([
@@ -60,7 +60,7 @@ const createSurvey = async () => {
     ranges: ranges.value.map(r => ({
       min: Number.isFinite(r.min) ? r.min : 0,
       label: typeof r.label === 'string' ? r.label : String(r.label ?? ''),
-      commad: typeof r.commad === 'string' ? r.commad : r.commad ?? ('' as any),
+      command: typeof r.command === 'string' ? r.command : r.command ?? ('' as any),
     })),
   }
 
@@ -122,16 +122,16 @@ const addOption = (qi: number) => {
 
 // 如果后续要汇总配置，可继续用 s；这里让 s.questions 指向题目列表
 const ranges = ref<Range[]>([
-  { min: 10, label: '不及格', commad: '' },
-  { min: 60, label: '及格', commad: '' },
-  { min: 80, label: '中等', commad: '' },
-  { min: 90, label: '良好', commad: '' },
-  { min: 100, label: '优秀', commad: '' },
+  { min: 10, label: '不及格', command: '' },
+  { min: 60, label: '及格', command: '' },
+  { min: 80, label: '中等', command: '' },
+  { min: 90, label: '良好', command: '' },
+  { min: 100, label: '优秀', command: '' },
 ])
 
 const addRange = () => {
   const lastMin = ranges.value.at(-1)?.min ?? 0
-  ranges.value.push({ min: lastMin + 10, label: '', commad: '' })
+  ranges.value.push({ min: lastMin + 10, label: '', command: '' })
 }
 const removeRange = (i: number) => {
   if (ranges.value.length <= 1) return
@@ -276,7 +276,7 @@ const maxScore = computed(() =>
               <span class="option-label">{{ i + 1 }}</span>
               <input class="input score" type="number" v-model.number="r.min" min="0" step="1" inputmode="numeric" :class="{ invalid: r.min < 0 }" />
               <input class="input" type="text" v-model="r.label" placeholder="评价标签，如：优秀" />
-              <input class="input" type="text" v-model="r.commad" placeholder="命令" />
+              <input class="input" type="text" v-model="r.command" placeholder="命令" />
               <button class="btn btn-ghost" @click="removeRange(i)" :disabled="ranges.length <= 1">删除</button>
             </div>
           </div>
