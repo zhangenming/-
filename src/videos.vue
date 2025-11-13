@@ -208,9 +208,10 @@ const closePlaying = () => {
 
 <style scoped>
 .page {
-  max-width: 960px;
-  margin: 20px auto;
-  padding: 0 10px;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0 16px;
 }
 .toolbar {
   display: flex;

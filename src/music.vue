@@ -229,7 +229,7 @@ const closePlaying = () => {
 </template>
 
 <style scoped>
-.page { max-width: 960px; margin: 20px auto; padding: 0 10px; }
+.page { max-width: none; width: 100%; margin: 0; padding: 0 16px; }
 .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .form-row { display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: start; margin-bottom: 12px; }
 .form-label { color: #374151; padding-top: 6px; }
@@ -270,4 +270,3 @@ label { font-size: 14px; color: #333; margin-bottom: 6px; }
 <script lang="ts">
 export default {}
 </script>
-

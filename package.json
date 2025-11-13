@@ -14,8 +14,11 @@
     "type-check": "vue-tsc --build"
   },
   "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
     "@nextcas/sdk": "^1.2.4",
     "@nextcas/voice": "^1.0.2",
+    "echarts": "^6.0.0",
+    "element-plus": "^2.11.7",
     "jose": "^6.1.0",
     "vue": "^3.5.22"
   },
