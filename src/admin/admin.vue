@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import Surveys from './surveys.vue'
+import SurveysList from './surveys-list.vue'
 import Videos from './videos.vue'
 import Music from './music.vue'
 import Students from './students.vue'
 import Courses from './courses.vue'
 
-const active = ref<'students' | 'videos' | 'music' | 'surveys' | 'courses'>(
+const active = ref<'students' | 'videos' | 'music' | 'courses' | 'surveysList'>(
   'students'
 )
 </script>
@@ -33,23 +33,20 @@ const active = ref<'students' | 'videos' | 'music' | 'surveys' | 'courses'>(
             </span>
             <span class="label">学员管理</span>
           </button>
+
           <button
             class="menu-item"
-            :class="{ active: active === 'surveys' }"
-            @click="active = 'surveys'"
+            :class="{ active: active === 'surveysList' }"
+            @click="active = 'surveysList'"
           >
             <span class="icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
-                <path
-                  d="M9 4h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2"
-                />
-                <path d="M10 3h4v2h-4z" />
-                <path d="M10 9h7" />
-                <path d="M10 13h7" />
-                <path d="M10 17h7" />
+                <path d="M4 6h16" />
+                <path d="M4 12h16" />
+                <path d="M4 18h16" />
               </svg>
             </span>
-            <span class="label">评测管理</span>
+            <span class="label">问卷管理</span>
           </button>
           <button
             class="menu-item"
@@ -97,7 +94,7 @@ const active = ref<'students' | 'videos' | 'music' | 'surveys' | 'courses'>(
       </aside>
       <main class="content">
         <Students v-if="active === 'students'" />
-        <Surveys v-else-if="active === 'surveys'" />
+        <SurveysList v-else-if="active === 'surveysList'" />
         <Videos v-else-if="active === 'videos'" />
         <Courses v-else-if="active === 'courses'" />
         <Music v-else-if="active === 'music'" />
@@ -108,7 +105,6 @@ const active = ref<'students' | 'videos' | 'music' | 'surveys' | 'courses'>(
 
 <style scoped>
 .admin {
-  min-height: 100vh;
   background: #f8fafc;
   --primary: #8b5cf6;
   --primary-hover: #7c3aed;
@@ -129,7 +125,6 @@ const active = ref<'students' | 'videos' | 'music' | 'surveys' | 'courses'>(
 .layout {
   display: grid;
   grid-template-columns: 240px 1fr;
-  min-height: 100vh;
 }
 .sidebar {
   background: #fff;
@@ -199,6 +194,7 @@ const active = ref<'students' | 'videos' | 'music' | 'surveys' | 'courses'>(
 }
 .content {
   padding: 16px;
+  position: relative;
 }
 @media (max-width: 960px) {
   .layout {
@@ -208,7 +204,6 @@ const active = ref<'students' | 'videos' | 'music' | 'surveys' | 'courses'>(
     position: static;
     height: auto;
     border-right: none;
-    border-bottom: 1px solid #e5e7eb;
     top: 0;
   }
   .menu {

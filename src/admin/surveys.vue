@@ -44,6 +44,7 @@ const shouldValidate = ref(false)
 const createMessage = ref('')
 // 问卷主题
 const theme = ref('')
+const emit = defineEmits(['created'])
 const createSurvey = async () => {
   // 触发一次校验，仅在提交时显示红色提示/未填写提示
   shouldValidate.value = true
@@ -80,6 +81,7 @@ const createSurvey = async () => {
       createMessage.value = data?.message || `创建失败(${res.status})`
     } else {
       createMessage.value = '创建成功'
+      emit('created')
     }
   } catch (e: any) {
     createMessage.value = e?.message || '网络错误'
@@ -167,36 +169,17 @@ const maxScore = computed(() =>
 <template>
   <div class="survey">
     <div class="survey-header">
-      <div class="title">问卷设置</div>
-      <div class="header-actions">
-        <button class="btn btn-secondary" @click="createSurvey">
-          创建问卷
-        </button>
-        <span class="create-msg" v-if="createMessage">{{ createMessage }}</span>
+      <div class="field">
+        <span class="field-label">问卷标题</span>
+        <input
+          class="input theme-input"
+          type="text"
+          v-model="theme"
+          placeholder="请输入问卷标题"
+        />
       </div>
     </div>
-
-    <!-- 顶部输入区移除：题目与选项改为成组展示 -->
-
-    <!-- 底部：左右两栏布局（左侧选项、右侧评分） -->
     <div class="content-grid">
-      <!-- 问卷标题卡片（并列于选项与规则） -->
-      <div class="theme-card options-card">
-        <div class="options-toolbar">
-          <div class="options-title">问卷标题</div>
-        </div>
-        <div class="options-list">
-          <div class="field">
-            <span class="field-label">标题</span>
-            <input
-              class="input"
-              type="text"
-              v-model="theme"
-              placeholder="请输入问卷标题"
-            />
-          </div>
-        </div>
-      </div>
       <!-- 左侧：将所有题目合并在一个卡片中，内部做分隔 -->
       <div class="left-col">
         <div class="options-card questions-card">
@@ -698,6 +681,7 @@ const maxScore = computed(() =>
   border-left-color: #a7f3d0; /* 低饱和绿色强调，友好不刺眼 */
   background: var(--color-card);
   box-shadow: 0 2px 12px rgba(16, 185, 129, 0.06);
+  overflow: visible;
 }
 .scoring-card .options-title {
   color: #065f46;
@@ -920,10 +904,10 @@ const maxScore = computed(() =>
 .rules-header {
   display: grid;
   grid-template-columns:
-    56px clamp(72px, 10vw, 96px) minmax(0, 1fr) clamp(160px, 24vw, 240px)
-    84px;
+    44px clamp(56px, 7vw, 84px) minmax(100px, 1fr) minmax(100px, 1fr)
+    72px;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   padding: 8px 10px;
   border-bottom: 1px dashed #e5e7eb;
   color: var(--color-muted);
@@ -932,10 +916,10 @@ const maxScore = computed(() =>
 .rules-row {
   display: grid;
   grid-template-columns:
-    56px clamp(72px, 10vw, 96px) minmax(0, 1fr) clamp(160px, 24vw, 240px)
-    84px;
+    44px clamp(56px, 7vw, 84px) minmax(100px, 1fr) minmax(100px, 1fr)
+    72px;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   padding: 10px;
   border: 1px solid #eef2f7;
   border-radius: 10px;
@@ -948,5 +932,28 @@ const maxScore = computed(() =>
 /* 规则列表容器也允许收缩，避免撑破右栏 */
 .right-col .options-list {
   min-width: 0;
+}
+/* 桌面端两栏布局 */
+@media (min-width: 960px) {
+  .content-grid {
+    grid-template-columns: minmax(460px, 0.54fr) minmax(380px, 0.46fr);
+    gap: 12px;
+  }
+}
+
+/* 底部固定操作区 */
+.survey-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-3) 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.survey-footer .footer-actions .btn {
+  min-width: 100px;
 }
 </style>
