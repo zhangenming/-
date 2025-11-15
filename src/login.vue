@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { apiJson } from '@/utils/request'
+import { apiFetch } from '@/utils/request'
 
 const username = ref('')
 const password = ref('')
@@ -24,25 +26,19 @@ const submit = async () => {
   loading.value = true
   error.value = null
   try {
-    const res = await fetch('vite/commons/login', {
+    const data = await apiJson('vite/commons/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: username.value, password: password.value, role: 'admin' }),
     })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      const msg = (data as any)?.messgae || (data as any)?.message
-      notify(msg || `登录失败(${res.status})`)
+    const token = (data as any)?.data?.token || (data as any)?.token
+    if (token) {
+      ;(window as any).token = token
+      localStorage.token = token
+      location.reload()
     } else {
-      const token = (data as any)?.data?.token || (data as any)?.token
-      if (token) {
-        ;(window as any).token = token
-        localStorage.token = token
-        location.reload()
-      } else {
-        const msg = (data as any)?.messgae || (data as any)?.message
-        notify(msg || '未返回令牌')
-      }
+      const msg = (data as any)?.messgae || (data as any)?.message
+      notify(msg || '未返回令牌')
     }
   } catch (e: any) {
     notify(e?.message || '网络错误')

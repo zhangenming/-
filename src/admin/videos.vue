@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
+import { apiJson } from '@/utils/request'
 
 const name = ref('')
 const file = ref<File | null>(null)
@@ -28,7 +29,6 @@ const canSubmit = () => {
   return !!name.value && !!file.value && !uploading.value
 }
 
-const API_BASE = 'vite'
 const bytesToSize = (bytes: number) => {
   const sizes = ['B', 'KB', 'MB', 'GB']
   if (bytes === 0) return '0 B'
@@ -45,24 +45,14 @@ const submit = async () => {
   const fd = new FormData()
   fd.append('name', name.value)
   fd.append('video', file.value as File)
-  const headers: Record<string, string> = {}
-  const token = (window as any).token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch(`${API_BASE}/api/v1/videos/upload`, {
+    const data = await apiJson('/api/v1/videos/upload', {
       method: 'POST',
-      headers,
       body: fd,
     })
-    const data = await res.json().catch(() => ({}))
-    console.log('upload response', res.status, data)
-    if (!res.ok) {
-      error.value = data?.message || `上传失败(${res.status})`
-    } else {
-      result.value = data?.data || data
-      showCreate.value = false
-      await loadList()
-    }
+    result.value = data?.data || data
+    showCreate.value = false
+    await loadList()
   } catch (e: any) {
     error.value = e?.message || '网络错误'
   } finally {
@@ -95,20 +85,9 @@ const loadList = async () => {
   listLoading.value = true
   listError.value = null
   items.value = []
-  const headers: Record<string, string> = {}
-  const token = (window as any).token || localStorage.token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch(`${API_BASE}/api/v1/videos/`, {
-      headers,
-    })
-    const data = await res.json().catch(() => ({}))
-    console.log('list response', res.status, data)
-    if (!res.ok) {
-      listError.value = data?.message || `获取列表失败(${res.status})`
-    } else {
-      items.value = data?.data || data
-    }
+    const data = await apiJson('/api/v1/videos/')
+    items.value = data?.data || data
   } catch (e: any) {
     listError.value = e?.message || '网络错误'
   } finally {

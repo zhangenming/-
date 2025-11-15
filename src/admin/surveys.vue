@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, nextTick, computed } from 'vue'
+import { apiJson } from '@/utils/request'
 
 type Option = { text: string; value: number | null }
 type Question = { text: string; options: Option[] }
@@ -68,21 +69,14 @@ const createSurvey = async () => {
   }
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  const token = (window as any).token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch('vite/api/v1/surveys', {
+    await apiJson('api/v1/surveys', {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
     })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      createMessage.value = data?.message || `创建失败(${res.status})`
-    } else {
-      createMessage.value = '创建成功'
-      emit('created')
-    }
+    createMessage.value = '创建成功'
+    emit('created')
   } catch (e: any) {
     createMessage.value = e?.message || '网络错误'
   }

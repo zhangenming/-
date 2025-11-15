@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
+import { apiJson } from '@/utils/request'
 
 const name = ref('')
 const file = ref<File | null>(null)
@@ -30,7 +31,6 @@ const canSubmit = () => {
   return !!name.value && !!file.value && !uploading.value
 }
 
-const API_BASE = 'vite'
 const bytesToSize = (bytes: number) => {
   const sizes = ['B', 'KB', 'MB', 'GB']
   if (bytes === 0) return '0 B'
@@ -47,23 +47,14 @@ const submit = async () => {
   const fd = new FormData()
   fd.append('name', name.value)
   fd.append('music', file.value as File)
-  const headers: Record<string, string> = {}
-  const token = (window as any).token || localStorage.token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch(`${API_BASE}/api/v1/music/upload`, {
+    const data = await apiJson(`api/v1/music/upload`, {
       method: 'POST',
-      headers,
       body: fd,
     })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      error.value = data?.message || `上传失败(${res.status})`
-    } else {
-      result.value = data?.data || data
-      showCreate.value = false
-      await loadList()
-    }
+    result.value = data?.data || data
+    showCreate.value = false
+    await loadList()
   } catch (e: any) {
     error.value = e?.message || '网络错误'
   } finally {
@@ -96,19 +87,9 @@ const loadList = async () => {
   listLoading.value = true
   listError.value = null
   items.value = []
-  const headers: Record<string, string> = {}
-  const token = (window as any).token || localStorage.token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch(`${API_BASE}/api/v1/music/`, {
-      headers,
-    })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      listError.value = data?.message || `获取列表失败(${res.status})`
-    } else {
-      items.value = data?.data || data
-    }
+    const data = await apiJson(`api/v1/music/`)
+    items.value = data?.data || data
   } catch (e: any) {
     listError.value = e?.message || '网络错误'
   } finally {
@@ -123,20 +104,11 @@ const deleteItem = async (it: any) => {
   if (!it?.id) return
   deleteLoading.value = it.id
   deleteError.value = null
-  const headers: Record<string, string> = {}
-  const token = (window as any).token || localStorage.token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch(`${API_BASE}/api/v1/music/${it.id}`, {
+    const data = await apiJson(`api/v1/music/${it.id}`, {
       method: 'DELETE',
-      headers,
     })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      deleteError.value = data?.message || `删除失败(${res.status})`
-    } else {
-      await loadList()
-    }
+    await loadList()
   } catch (e: any) {
     deleteError.value = e?.message || '网络错误'
   } finally {

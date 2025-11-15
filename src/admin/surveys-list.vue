@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import SurveysAdd from './surveys.vue'
+import { apiJson } from '@/utils/request'
 
-const API_BASE = 'vite'
 const loading = ref(false)
 const error = ref<string | null>(null)
 const items = ref<Array<{ id: number; theme: string }>>([])
@@ -11,12 +11,8 @@ const load = async () => {
   loading.value = true
   error.value = null
   items.value = []
-  const headers: Record<string, string> = {}
-  const token = (window as any).token || localStorage.token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch(`${API_BASE}/api/v1/surveys`, { headers })
-    const data = await res.json().catch(() => ({}))
+    const data = await apiJson('/api/v1/surveys')
     const arr = Array.isArray((data as any).data)
       ? (data as any).data
       : Array.isArray(data)

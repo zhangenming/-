@@ -7,15 +7,12 @@ import { createApp } from 'vue'
 import Admin from './admin/admin.vue'
 import Login from './login.vue'
 import App from './App.vue'
+import { apiJson } from '@/utils/request'
 
 const fetchUsers = async () => {
-  const headers: Record<string, string> = {}
-  const token = (window as any).token || localStorage.token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch('vite/api/v1/users/', { headers })
-    const data = await res.json().catch(() => ({}))
-    console.log('users', res.status, data)
+    const data = await apiJson('api/v1/users/questionnaires', { role: 'student32' })
+    console.log('users', data)
   } catch (e: any) {
     console.error('users error', e?.message || e)
   }

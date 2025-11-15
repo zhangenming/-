@@ -6,6 +6,7 @@ import { onMounted, ref, computed } from 'vue'
 import { createAccessToken } from './token'
 import { simulateClick } from './utils'
 import { replys, spks } from './config'
+import { apiJson } from '@/utils/request'
 
 const showBegin = ref(false)
 const showSurvey = ref(false)
@@ -172,12 +173,8 @@ const showSurveyThemeSelect = ref(false)
 const selectedSurveyId = ref<number | null>(null)
 
 const loadSurveys = async () => {
-  const headers: Record<string, string> = {}
-  const token = (window as any).token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch('vite/api/v1/surveys', { headers })
-    const data = await res.json().catch(() => [])
+    const data = await apiJson('api/v1/surveys')
     if (Array.isArray(data)) {
       surveys.value = data
     } else if (Array.isArray((data as any).data)) {
@@ -197,12 +194,8 @@ const chooseSurveyTheme = async (s: { id: number; theme: string }) => {
 }
 
 const fetchSurveyDetail = async (surveyId: number) => {
-  const headers: Record<string, string> = {}
-  const token = (window as any).token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch(`vite/api/v1/surveys/${surveyId}`, { headers })
-    const data = await res.json().catch(() => ({}))
+    const data = await apiJson(`api/v1/surveys/${surveyId}`)
     const detail = (data as any).data || data
     if (detail?.questions && detail?.ranges) {
       questions.value = detail.questions
@@ -332,12 +325,8 @@ const onTouchEnd = () => {
 }
 
 const playFirstMusic = async () => {
-  const headers: Record<string, string> = {}
-  const token = (window as any).token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch('vite/api/v1/music/', { headers })
-    const data = await res.json()
+    const data = await apiJson('api/v1/music/')
     const src = data.data[0].url
     if (src) {
       audioSrc.value = src

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
+import { apiJson } from '@/utils/request'
 
-const API_BASE = 'vite'
 const listLoading = ref(false)
 const listError = ref<string | null>(null)
 const items = ref<any[]>([])
@@ -10,17 +10,9 @@ const loadList = async () => {
   listLoading.value = true
   listError.value = null
   items.value = []
-  const headers: Record<string, string> = {}
-  const token = (window as any).token || localStorage.token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch(`${API_BASE}/api/v1/courses/simple`, { headers })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      listError.value = data?.message || `获取列表失败(${res.status})`
-    } else {
-      items.value = (data as any).data || data
-    }
+    const data = await apiJson(`api/v1/courses/simple`)
+    items.value = (data as any).data || data
   } catch (e: any) {
     listError.value = e?.message || '网络错误'
   } finally {
@@ -41,17 +33,9 @@ const loadVideos = async () => {
   videosLoading.value = true
   videosError.value = null
   allVideos.value = []
-  const headers: Record<string, string> = {}
-  const token = (window as any).token || localStorage.token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   try {
-    const res = await fetch(`${API_BASE}/api/v1/videos/`, { headers })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      videosError.value = data?.message || `获取视频失败(${res.status})`
-    } else {
-      allVideos.value = (data as any).data || data
-    }
+    const data = await apiJson(`api/v1/videos/`)
+    allVideos.value = (data as any).data || data
   } catch (e: any) {
     videosError.value = e?.message || '网络错误'
   } finally {
@@ -101,18 +85,11 @@ const submit = async () => {
   submitting.value = true
   submitError.value = null
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  const token = (window as any).token || localStorage.token
-  if (token) headers['Authorization'] = `Bearer ${token}`
   const body = JSON.stringify({ title: name.value, description: desc.value, video_ids: selectedVideoIds.value })
   try {
-    const res = await fetch(`${API_BASE}/api/v1/courses/simple`, { method: 'POST', headers, body })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      submitError.value = data?.message || `创建失败(${res.status})`
-    } else {
-      showCreate.value = false
-      await loadList()
-    }
+    await apiJson(`api/v1/courses/simple`, { method: 'POST', headers, body })
+    showCreate.value = false
+    await loadList()
   } catch (e: any) {
     submitError.value = e?.message || '网络错误'
   } finally {
