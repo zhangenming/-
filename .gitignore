@@ -1,0 +1,9 @@
+node_modules/
+
+.DS_Store
+
+*.log
+
+data/dispatcher-passwords.json
+data/accountant-operation-logs.json
+data/feedback-images/

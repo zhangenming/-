@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>派单结算录入</title>
+  <link rel="stylesheet" href="./public/css/app.css" />
+</head>
+<body>
+  <section id="loginPage" class="login-shell">
+    <div class="card login-card">
+      <h1>派单结算录入</h1>
+      <div class="field" style="margin-top: 12px;">
+        <label for="loginCodeInput">账号</label>
+        <input
+          id="loginCodeInput"
+          name="loginCode"
+          type="text"
+          autocomplete="new-password"
+          data-no-suggest="true"
+          autocapitalize="off"
+          autocorrect="off"
+          spellcheck="false"
+        />
+      </div>
+      <div class="field">
+        <label for="loginPasswordInput">密码</label>
+        <input
+          id="loginPasswordInput"
+          type="password"
+          name="loginPassword"
+          autocomplete="new-password"
+          data-no-suggest="true"
+          spellcheck="false"
+        />
+      </div>
+      <div class="row">
+        <button id="enterBtn" class="btn-primary" type="button">登录进入</button>
+      </div>
+      <section id="savedLoginSection" class="saved-login-section" hidden>
+        <div class="saved-login-top">
+          <div class="saved-login-heading">
+            <span class="saved-login-title">快捷登录</span>
+          </div>
+        </div>
+        <div id="savedLoginList" class="saved-login-list"></div>
+      </section>
+    </div>
+  </section>
+
+  <main id="appPage" class="container" hidden>
+    <aside id="appSidebar" class="app-side">
+      <h2 class="app-side-title">操作</h2>
+      <div class="app-side-actions">
+        <button id="openCreateModalBtn" class="btn-primary" type="button">新建</button>
+        <button id="openAccountantModalBtn" class="btn-secondary" type="button">管理会计</button>
+        <button id="openAnalysisModalBtn" class="btn-secondary" type="button">分析数据</button>
+        <button id="openRecycleModalBtn" class="btn-secondary" type="button">回收站</button>
+      </div>
+      <div class="request-log-panel">
+        <div class="request-log-panel-top">
+          <span class="request-log-panel-title">提示记录</span>
+        </div>
+        <div id="requestLogList" class="request-log-list"></div>
+        <div id="requestLogEmptyState" class="request-log-empty">暂无提示记录。</div>
+      </div>
+      <div class="app-side-footer">
+        <div class="account-panel">
+          <div class="account-panel-top">
+            <span class="account-panel-label">当前登录</span>
+            <span id="accountRoleBadge" class="account-role-badge"></span>
+          </div>
+          <div id="headerAccountText" class="account-panel-name"></div>
+          <div id="headerAccountSubText" class="account-panel-sub"></div>
+        </div>
+        <div class="account-action-row">
+          <button id="switchAccountBtn" class="btn-secondary switch-account-btn" type="button">
+            <span class="switch-account-icon" aria-hidden="true">↩</span>
+            <span>退出登录</span>
+          </button>
+          <button id="changePasswordBtn" class="btn-secondary switch-account-btn change-password-btn" type="button" hidden>
+            <span>修改密码</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+    <button
+      id="sidebarToggleBtn"
+      class="sidebar-divider"
+      type="button"
+      aria-label="收起左侧栏"
+      aria-expanded="true"
+      title="收起左侧栏"
+    >
+      <span id="sidebarToggleIcon" class="sidebar-toggle-icon" aria-hidden="true">&lt;</span>
+    </button>
+
+    <section class="table-card">
+      <div class="table-card-head">
+        <h2 class="table-card-title">
+          数据表
+          <span id="tableTotalCount" class="table-total-count">共 0 条</span>
+          <button id="clearFilterBtn" class="clear-filter-btn" type="button" hidden>清空筛选</button>
+        </h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <colgroup>
+            <col class="col-date" />
+            <col class="col-dispatcher" />
+            <col class="col-source" />
+            <col class="col-platform" />
+            <col class="col-shop" />
+            <col class="col-order" />
+            <col class="col-accountant" />
+            <col class="col-customer" />
+            <col class="col-summary" />
+            <col class="col-payment" />
+            <col class="col-total" />
+            <col class="col-premium" />
+            <col class="col-settlement" />
+            <col class="col-status" />
+            <col class="col-action" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="date" data-label="日期">日期</button>
+                  <span id="filterMonthIndicator" class="filter-indicator-wrap">
+                    <span id="filterMonthValue" class="filter-value-chip" hidden></span>
+                    <button id="filterMonthBtn" class="filter-icon-btn" type="button" aria-label="筛选月份" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterMonthPopover" class="filter-popover" hidden>
+                    <div id="filterMonthList" class="filter-options"></div>
+                  </div>
+                </div>
+              </th>
+              <th class="data-col-dispatcher">
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="dispatcher" data-label="派单人">派单人</button>
+                  <span id="filterDispatcherIndicator" class="filter-indicator-wrap">
+                    <span id="filterDispatcherValue" class="filter-value-chip" hidden></span>
+                    <button id="filterDispatcherBtn" class="filter-icon-btn" type="button" aria-label="筛选派单人" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterDispatcherPopover" class="filter-popover" hidden>
+                    <div id="filterDispatcherList" class="filter-options"></div>
+                  </div>
+                </div>
+              </th>
+              <th class="data-col-source">
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="source" data-label="来源">来源</button>
+                  <span id="filterSourceIndicator" class="filter-indicator-wrap">
+                    <span id="filterSourceValue" class="filter-value-chip" hidden></span>
+                    <button id="filterSourceBtn" class="filter-icon-btn" type="button" aria-label="筛选来源" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterSourcePopover" class="filter-popover" hidden>
+                    <div id="filterSourceList" class="filter-options"></div>
+                  </div>
+                </div>
+              </th>
+              <th class="data-col-platform">
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="platform" data-label="平台">平台</button>
+                  <span id="filterPlatformIndicator" class="filter-indicator-wrap">
+                    <span id="filterPlatformValue" class="filter-value-chip" hidden></span>
+                    <button id="filterPlatformBtn" class="filter-icon-btn" type="button" aria-label="筛选平台" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterPlatformPopover" class="filter-popover" hidden>
+                    <div id="filterPlatformList" class="filter-options"></div>
+                  </div>
+                </div>
+              </th>
+              <th class="data-col-shop">
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="shopName" data-label="店铺名">店铺名</button>
+                  <span id="filterShopIndicator" class="filter-indicator-wrap">
+                    <span id="filterShopValue" class="filter-value-chip" hidden></span>
+                    <button id="filterShopBtn" class="filter-icon-btn" type="button" aria-label="筛选店铺名" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterShopPopover" class="filter-popover" hidden>
+                    <div id="filterShopList" class="filter-options"></div>
+                  </div>
+                </div>
+              </th>
+              <th class="data-col-order"><button class="sort-btn" type="button" data-key="orderNo" data-label="订单号">订单号</button></th>
+              <th class="data-col-accountant">
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="accountant" data-label="会计">会计</button>
+                  <span id="filterAccountantIndicator" class="filter-indicator-wrap">
+                    <span id="filterAccountantValue" class="filter-value-chip" hidden></span>
+                    <button id="filterAccountantBtn" class="filter-icon-btn" type="button" aria-label="筛选会计" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterAccountantPopover" class="filter-popover" hidden>
+                    <div id="filterAccountantList" class="filter-options"></div>
+                  </div>
+                </div>
+              </th>
+              <th><button class="sort-btn" type="button" data-key="customer" data-label="客户">客户</button></th>
+              <th><button class="sort-btn" type="button" data-key="summary" data-label="简介">简介</button></th>
+              <th class="data-col-payment"><button class="sort-btn" type="button" data-key="paymentPrice" data-label="付款价">付款价</button></th>
+              <th class="data-col-total"><button class="sort-btn" type="button" data-key="totalPrice" data-label="会计价">会计价</button></th>
+              <th class="data-col-premium"><button class="sort-btn" type="button" data-key="premiumPrice" data-label="溢价">溢价</button></th>
+              <th><button class="sort-btn" type="button" data-key="settlementPrice" data-label="结算价">结算价</button></th>
+              <th>
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="checkStatus" data-label="状态">状态</button>
+                  <span id="filterStatusIndicator" class="filter-indicator-wrap">
+                    <span id="filterStatusValue" class="filter-value-chip" hidden></span>
+                    <button id="filterStatusBtn" class="filter-icon-btn" type="button" aria-label="筛选状态" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterStatusPopover" class="filter-popover" hidden>
+                    <div id="filterStatusList" class="filter-options"></div>
+                  </div>
+                </div>
+              </th>
+              <th class="data-col-action">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div id="emptyState" class="empty">暂无数据，先录入一条。</div>
+    </section>
+  </main>
+
+  <div id="operationNoticeStack" class="operation-notice-stack" hidden></div>
+
+  <div id="createModal" class="modal-overlay" hidden>
+    <section class="card modal-card">
+      <div class="row" style="margin-top: 0; margin-bottom: 10px;">
+        <h2 id="recordModalTitle" style="margin: 0; font-size: 20px;">新建数据</h2>
+      </div>
+      <form id="recordForm" class="grid" autocomplete="off">
+        <input id="recordEditingId" type="hidden" />
+        <div class="field field-date">
+          <label for="date">日期</label>
+          <input id="date" name="date" type="date" readonly autocomplete="off" />
+        </div>
+        <div class="field field-dispatcher">
+          <label>派单人</label>
+          <div id="dispatcherTagGroup" class="tag-group">
+            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="1">1</button>
+            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="A">A</button>
+            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="C">C</button>
+            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="E">E</button>
+            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="K">K</button>
+          </div>
+          <input id="dispatcher" name="dispatcher" type="hidden" required />
+        </div>
+        <div class="field field-detail-row">
+          <div class="detail-item">
+            <label for="orderNo">订单号</label>
+            <input
+              id="orderNo"
+              name="orderNo"
+              type="text"
+              autocomplete="new-password"
+              data-no-suggest="true"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+            />
+          </div>
+          <div class="detail-item detail-item-accountant">
+            <label for="accountantPickerTrigger">会计</label>
+            <div id="accountantPicker" class="accountant-picker">
+              <input id="accountant" name="accountant" type="hidden" />
+              <button
+                id="accountantPickerTrigger"
+                class="accountant-picker-trigger"
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-controls="accountantPickerList"
+              >
+                <span id="accountantPickerValue" class="accountant-picker-value placeholder"></span>
+                <span id="accountantPickerMeta" class="accountant-picker-meta">0 项</span>
+              </button>
+              <div id="accountantPickerDropdown" class="accountant-picker-dropdown" hidden>
+                <input
+                  id="accountantPickerSearch"
+                  class="accountant-picker-search"
+                  type="text"
+                  autocomplete="new-password"
+                  data-no-suggest="true"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                />
+                <div id="accountantPickerList" class="accountant-picker-list" role="listbox" aria-label="会计列表"></div>
+                <div id="accountantPickerEmpty" class="accountant-picker-empty" hidden>暂无可用会计，请先新增。</div>
+              </div>
+            </div>
+          </div>
+          <div class="detail-item">
+            <label for="customer">客户</label>
+            <input
+              id="customer"
+              name="customer"
+              type="text"
+              autocomplete="new-password"
+              data-no-suggest="true"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+            />
+          </div>
+        </div>
+        <div class="field field-meta-row">
+          <div class="meta-item">
+            <label for="sourcePickerTrigger">来源</label>
+            <div id="sourcePicker" class="accountant-picker">
+              <input id="source" name="source" type="hidden" />
+              <button
+                id="sourcePickerTrigger"
+                class="accountant-picker-trigger"
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-controls="sourcePickerList"
+              >
+                <span id="sourcePickerValue" class="accountant-picker-value placeholder"></span>
+                <span id="sourcePickerMeta" class="accountant-picker-meta">5 项</span>
+              </button>
+              <div id="sourcePickerDropdown" class="accountant-picker-dropdown" hidden>
+                <div id="sourcePickerList" class="accountant-picker-list" role="listbox" aria-label="来源列表"></div>
+                <div id="sourcePickerEmpty" class="accountant-picker-empty" hidden>暂无来源选项。</div>
+              </div>
+            </div>
+          </div>
+          <div class="meta-item meta-item-wide">
+            <label for="platformShopPickerTrigger">平台店铺</label>
+            <div id="platformShopPicker" class="accountant-picker">
+              <input id="platform" name="platform" type="hidden" />
+              <input id="shopName" name="shopName" type="hidden" />
+              <button
+                id="platformShopPickerTrigger"
+                class="accountant-picker-trigger"
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-controls="platformShopPickerList"
+              >
+                <span id="platformShopPickerValue" class="accountant-picker-value placeholder"></span>
+                <span id="platformShopPickerMeta" class="accountant-picker-meta">9 项</span>
+              </button>
+              <div id="platformShopPickerDropdown" class="accountant-picker-dropdown" hidden>
+                <div id="platformShopPickerList" class="accountant-picker-list" role="listbox" aria-label="平台店铺列表"></div>
+                <div id="platformShopPickerEmpty" class="accountant-picker-empty" hidden>暂无平台店铺选项。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field field-price-row">
+          <div class="price-item">
+            <label for="paymentPrice">付款价</label>
+            <input id="paymentPrice" name="paymentPrice" type="number" min="0" step="0.01" required autocomplete="off" />
+          </div>
+          <div class="price-item price-item-total">
+            <label for="totalPrice">会计价</label>
+            <input id="totalPrice" name="totalPrice" type="number" min="0" step="0.01" required autocomplete="off" />
+            <div id="premiumHint" class="price-hint" hidden></div>
+          </div>
+          <div class="price-item">
+            <label for="settlementPrice">结算价</label>
+            <input id="settlementPrice" name="settlementPrice" type="number" min="0" step="0.01" required autocomplete="off" />
+          </div>
+        </div>
+        <div class="field field-summary">
+          <label for="summary">简介</label>
+          <textarea
+            id="summary"
+            name="summary"
+            autocomplete="off"
+            data-no-suggest="true"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+          ></textarea>
+        </div>
+        <div class="field field-wide row form-actions">
+          <button id="recordReturnBtn" class="btn-danger" type="button" hidden>退单</button>
+          <button id="recordSubmitBtn" class="btn-primary" type="submit">保存数据</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div id="checkModal" class="modal-overlay" hidden>
+    <section class="card modal-card check-modal-card">
+      <div class="row" style="margin-top: 0; margin-bottom: 10px;">
+        <h2 style="margin: 0; font-size: 20px;">核对数据</h2>
+      </div>
+      <form id="checkForm" class="check-form" autocomplete="off">
+        <input id="checkRecordId" type="hidden" />
+        <div class="field">
+          <label for="checkCustomer">客户</label>
+          <input
+            id="checkCustomer"
+            name="customer"
+            type="text"
+            required
+            autocomplete="new-password"
+            data-no-suggest="true"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+        </div>
+        <div class="field field-wide">
+          <label for="checkSummary">简介</label>
+          <textarea
+            id="checkSummary"
+            name="summary"
+            required
+            autocomplete="off"
+            data-no-suggest="true"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+          ></textarea>
+        </div>
+        <div class="field field-wide row form-actions">
+          <button class="btn-primary" type="submit">确认核对</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div id="completeModal" class="modal-overlay" hidden>
+    <section class="card modal-card check-modal-card complete-modal-card">
+      <div class="row complete-modal-header" style="margin-top: 0; margin-bottom: 10px;">
+        <h2 id="completeModalTitle" style="margin: 0; font-size: 20px;">完成数据</h2>
+      </div>
+      <form id="completeForm" class="check-form complete-form" autocomplete="off">
+        <input id="completeRecordId" type="hidden" />
+        <div class="field field-feedback-time">
+          <label for="completeTime">完工时间</label>
+          <input id="completeTime" name="completedAt" type="datetime-local" step="1" required autocomplete="off" />
+        </div>
+        <div class="field field-wide field-feedback-bundle">
+          <div class="field-feedback-text">
+            <label for="customerFeedback">客户反馈</label>
+            <textarea
+              id="customerFeedback"
+              name="customerFeedback"
+              autocomplete="off"
+              data-no-suggest="true"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+            ></textarea>
+          </div>
+          <div class="field-feedback-images">
+            <div class="complete-section-head">
+              <label for="completeFeedbackImageSelectBtn">客服反馈截图</label>
+              <span id="completeFeedbackImageCount" class="feedback-image-count">0 张</span>
+            </div>
+            <div
+              id="completeFeedbackUploader"
+              class="feedback-image-uploader"
+              tabindex="0"
+              role="button"
+              aria-label="添加客服反馈截图"
+            >
+              <div class="feedback-image-uploader-top">
+                <div id="completeFeedbackDropHint" class="feedback-image-drop-hint">上传客服和客户沟通截图，支持拖入多张图片</div>
+                <button id="completeFeedbackImageSelectBtn" class="btn-secondary feedback-image-select-btn" type="button">
+                  添加截图
+                </button>
+              </div>
+              <input id="completeFeedbackImageInput" type="file" accept="image/*" multiple hidden />
+              <div id="completeFeedbackImageList" class="feedback-image-list"></div>
+            </div>
+          </div>
+        </div>
+        <div class="field field-wide row form-actions">
+          <button id="completeModalCloseBtn" class="btn-secondary" type="button" hidden>关闭</button>
+          <button id="completeModalSubmitBtn" class="btn-primary" type="submit">确认完成</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div id="analysisModal" class="modal-overlay" hidden>
+    <section class="card modal-card analysis-modal-card">
+      <div class="row" style="margin-top: 0; margin-bottom: 2px;">
+        <h2 style="margin: 0; font-size: 20px;">数据分析</h2>
+      </div>
+      <div id="analysisContent" class="analysis-content"></div>
+    </section>
+  </div>
+
+  <div id="accountantModal" class="modal-overlay" hidden>
+    <section class="card modal-card accountant-modal-card">
+      <div class="row" style="margin-top: 0; margin-bottom: 2px;">
+        <h2 style="margin: 0; font-size: 20px;">会计管理</h2>
+      </div>
+      <form id="accountantForm" class="accountant-form" autocomplete="off">
+        <label class="accountant-form-field" for="accountantUsernameInput">
+          <span>用户名</span>
+          <input
+            id="accountantUsernameInput"
+            type="text"
+            required
+            autocomplete="new-password"
+            data-no-suggest="true"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+        </label>
+        <label class="accountant-form-field" for="accountantNameInput">
+          <span>中文名</span>
+          <input
+            id="accountantNameInput"
+            type="text"
+            required
+            autocomplete="new-password"
+            data-no-suggest="true"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+        </label>
+        <button class="btn-primary" type="submit">新增会计</button>
+      </form>
+      <div class="accountant-list-wrap">
+        <ul id="accountantList" class="accountant-list"></ul>
+        <div id="accountantEmptyState" class="empty" style="padding: 12px 6px;">暂无会计，请先新增。</div>
+      </div>
+    </section>
+  </div>
+
+  <div id="recycleModal" class="modal-overlay" hidden>
+    <section class="card modal-card recycle-modal-card">
+      <div class="row" style="margin-top: 0; margin-bottom: 2px;">
+        <h2 style="margin: 0; font-size: 20px;">回收站</h2>
+      </div>
+      <div class="table-wrap recycle-table-wrap">
+        <table class="recycle-table">
+          <thead>
+            <tr>
+              <th>删除时间</th>
+              <th>删除人</th>
+              <th>日期</th>
+              <th class="recycle-col-dispatcher">派单人</th>
+              <th class="recycle-col-accountant">会计</th>
+              <th>平台</th>
+              <th>店铺名</th>
+              <th>订单号</th>
+              <th>来源</th>
+              <th>客户</th>
+              <th>简介</th>
+              <th class="recycle-col-payment">付款价</th>
+              <th class="recycle-col-total">会计价</th>
+              <th class="recycle-col-premium">溢价</th>
+              <th>结算价</th>
+            </tr>
+          </thead>
+          <tbody id="recycleTableBody"></tbody>
+        </table>
+      </div>
+      <div id="recycleEmptyState" class="empty">回收站暂无数据。</div>
+      <section class="recycle-log-section">
+        <h3 class="recycle-log-title">会计操作日志</h3>
+        <div id="accountantLogList" class="recycle-log-list"></div>
+        <div id="accountantLogEmptyState" class="empty" style="padding: 12px 6px;">暂无会计操作日志。</div>
+      </section>
+    </section>
+  </div>
+
+  <script src="./public/js/app-core.js"></script>
+  <script src="./public/js/app-data.js"></script>
+  <script src="./public/js/app-table-analysis.js"></script>
+  <script src="./public/js/app-ui.js"></script>
+  <script src="./public/js/app-events.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+[
+  {
+    "recycleId": "del_mob7ncbvfn1sz1",
+    "deletedAt": "2026-04-23T08:19:20.491Z",
+    "deletedBy": "1",
+    "record": {
+      "date": "2026/3/31",
+      "dispatcher": "开心财税1",
+      "accountant": "瑜",
+      "customer": "Cherry",
+      "summary": "对进销存",
+      "totalPrice": 200,
+      "settlementPrice": 130,
+      "id": "rec_moa4d3sme9sjnl"
+    }
+  },
+  {
+    "recycleId": "del_moa4el9c378pcs",
+    "deletedAt": "2026-04-22T14:00:47.136Z",
+    "deletedBy": "开心财税e",
+    "record": {
+      "date": "4月8日",
+      "dispatcher": "开心财税e",
+      "accountant": "朱会计",
+      "customer": "傲基航模张",
+      "summary": "视频号利润表",
+      "totalPrice": 150,
+      "settlementPrice": 97.5,
+      "id": "rec_moa4d3smydrewy"
+    }
+  }
+]

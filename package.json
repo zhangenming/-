@@ -1,0 +1,9 @@
+{
+  "name": "dispatch-settlement-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "本地 Node.js 服务 + JSON 持久化",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
