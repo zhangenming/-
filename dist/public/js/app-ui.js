@@ -662,7 +662,7 @@
       completeModal.classList.add("modal-enter");
       completeModalCard.classList.add("modal-enter");
       syncModalOpenState();
-      completeTimeInput.focus();
+      completeCustomerFeedbackInput.focus();
     }
 
     function closeCompleteModal() {
@@ -2347,7 +2347,7 @@
     function applyAccountToForm() {
       dateInput.value = getTodayISODate();
       setDispatcherTag(getDefaultDispatcherTag());
-      setSourcePickerValue("");
+      setSourcePickerValue("", { autoFilled: false });
       setPlatformShopPickerValue("");
       renderSourcePickerOptions();
       renderPlatformShopPickerOptions();
@@ -2447,9 +2447,10 @@
         });
         return;
       }
-      const normalized = resolveLoginAccountInput(authResult?.account || rawName);
-      const sessionToken = String(authResult?.sessionToken || "").trim();
-      if (!sessionToken) {
+      try {
+        storeAuthenticatedSession(authResult, rawName, rawPassword, { persistSavedLogin: true });
+      } catch (error) {
+        console.error(error);
         setLoginRequestHint("登录状态创建失败", "error");
         showInlineFormError({
           form: loginPage,
@@ -2459,30 +2460,11 @@
         });
         return;
       }
-      currentAccount = normalized;
-      currentAccountRole = normalizeLoginRole(authResult?.role) || inferRoleByAccountName(normalized);
-      currentAccountDisplayName = currentAccountRole === "accountant"
-        ? String(authResult?.profile?.displayName || authResult?.profile?.name || "").trim()
-        : "";
-      currentAccountRealName = currentAccountRole === "accountant"
-        ? String(authResult?.profile?.realName || "").trim()
-        : "";
-      currentAccountPhone = currentAccountRole === "accountant"
-        ? String(authResult?.profile?.phone || "").trim()
-        : "";
-      currentSessionToken = sessionToken;
-      setRecentBossSettlementRecordIds([]);
-      hasFetchedRecords = false;
-      resetAccountantAssignmentNoticeState();
-      loadOperationNoticePreference();
-      loadUpdatedRowDismissState();
-      saveSuccessfulLoginEntry(authResult?.loginAccount || rawName, rawPassword, currentAccountRole);
       closeAccountantRegisterModal();
       loginCodeInput.value = "";
       loginPasswordInput.value = "";
       applyAccountToForm();
       setPageMode(true);
-      saveToStorage();
       await syncDataAfterLogin();
     }
 
@@ -2819,7 +2801,7 @@
       setDispatcherTag(normalizeDispatcherTag(record.dispatcher) || getDefaultDispatcherTag());
       setAccountantPickerValue(String(record.accountant || "").trim());
       renderAccountantPickerList("");
-      setSourcePickerValue(String(record.source || "").trim());
+      setSourcePickerValue(String(record.source || "").trim(), { autoFilled: false });
       renderSourcePickerList();
       setPlatformShopPickerFieldsValue(record.platform, record.shopName);
       renderPlatformShopPickerList();

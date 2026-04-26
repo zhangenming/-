@@ -6,6 +6,7 @@
     const API_ENDPOINT_ACCOUNTANTS = `${API_BASE}/api/accountants`;
     const API_ENDPOINT_RECYCLE_BIN = `${API_BASE}/api/recycle-bin`;
     const API_ENDPOINT_ACCOUNTANT_OPERATION_LOGS = `${API_BASE}/api/accountant-operation-logs`;
+    const API_ENDPOINT_APP_EVENTS = `${API_BASE}/api/events`;
     const API_ENDPOINT_BUILD_INFO = `${API_BASE}/build-info.json`;
     const API_ENDPOINT_AUTH_ACCOUNTANT_REGISTER = `${API_BASE}/api/auth/accountant-register`;
     const API_ENDPOINT_AUTH_LOGIN = `${API_BASE}/api/auth/login`;
@@ -57,6 +58,7 @@
       .toLowerCase()
       .includes(ANALYSIS_BUTTON_QUERY_FLAG);
     const normalizedHostname = String(window.location.hostname || "").trim().toLowerCase();
+    const normalizedPort = String(window.location.port || "").trim();
     const isDevEnvironment = window.location.protocol === "file:"
       || normalizedHostname === "127.0.0.1"
       || normalizedHostname === "localhost"
@@ -64,7 +66,7 @@
     const isTabScopedPersistenceEnabled = normalizedHostname === "127.0.0.1";
     const persistentStateStorage = isTabScopedPersistenceEnabled ? window.sessionStorage : window.localStorage;
     const legacyPersistentStateStorage = isTabScopedPersistenceEnabled ? window.localStorage : window.sessionStorage;
-    const isDevTodoEnabled = isTabScopedPersistenceEnabled;
+    const isDevTodoEnabled = normalizedPort === "2999";
     const isQuickLoginEnabled = isDevEnvironment;
 
     function setPersistentStateItem(key, value) {
@@ -403,11 +405,16 @@
     let hasFetchedRecords = false;
     let refreshTimer = null;
     let refreshInFlightPromise = null;
+    let appEventSource = null;
+    let appEventRecoveryTimer = null;
+    let sessionRecoveryPromise = null;
+    let lastSessionRecoveryAttemptAt = 0;
     let lastRefreshStartedAt = 0;
     let settlementPriceAutoFilled = false;
     let accountantPickerOptions = [];
     let accountantPickerOrderCountMap = new Map();
     let sourcePickerOptions = [...SOURCE_OPTIONS];
+    let sourcePickerAutoFilled = false;
     let platformShopPickerOptions = [...PLATFORM_SHOP_OPTIONS];
     let currentOperationNoticeLogId = "";
     let dispatcherOperationNoticeItem = null;
@@ -1818,7 +1825,9 @@
         completeForm.classList.toggle("readonly", isViewMode);
       }
       if (completeTimeInput) {
-        completeTimeInput.readOnly = isViewMode;
+        completeTimeInput.readOnly = true;
+        completeTimeInput.tabIndex = -1;
+        completeTimeInput.setAttribute("aria-readonly", "true");
       }
       if (completeCustomerFeedbackInput) {
         completeCustomerFeedbackInput.readOnly = isViewMode;

@@ -468,7 +468,7 @@
       const optionButton = event.target.closest(".accountant-picker-option");
       if (!optionButton) return;
       const nextValue = String(optionButton.dataset.value || "").trim();
-      setSourcePickerValue(nextValue);
+      setSourcePickerValue(nextValue, { autoFilled: false });
       clearInlineFieldError(sourcePickerTrigger);
       if (!recordForm.querySelector(".field-validation-group-error")) {
         setRecordFormHint("", "idle");

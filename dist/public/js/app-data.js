@@ -1,14 +1,29 @@
 // Data: API access, CRUD actions, accountant picker data sync, auto refresh, persisted view state.
     async function fetchWithClientLog(url, options = {}, meta = {}) {
       const { skipAuth = false } = meta;
-      const headers = new Headers(options.headers || {});
-      if (!skipAuth && currentSessionToken) {
-        headers.set("X-Dispatch-Session", currentSessionToken);
-      }
-      const response = await fetch(url, {
+      const buildHeaders = () => {
+        const headers = new Headers(options.headers || {});
+        if (!skipAuth && currentSessionToken) {
+          headers.set("X-Dispatch-Session", currentSessionToken);
+        }
+        return headers;
+      };
+
+      let response = await fetch(url, {
         ...options,
-        headers
+        headers: buildHeaders()
       });
+
+      if (!skipAuth && response.status === 401) {
+        const recovered = await recoverSessionFromSavedLogin({ reason: "http_401" });
+        if (recovered) {
+          response = await fetch(url, {
+            ...options,
+            headers: buildHeaders()
+          });
+        }
+      }
+
       if (!skipAuth && response.status === 401) {
         handleUnauthorizedSession();
         throw new Error("登录状态已失效，请重新登录。");
@@ -17,6 +32,10 @@
     }
 
     function handleUnauthorizedSession() {
+      if (appEventRecoveryTimer) {
+        window.clearTimeout(appEventRecoveryTimer);
+        appEventRecoveryTimer = null;
+      }
       currentAccount = "";
       currentAccountRole = "";
       currentAccountDisplayName = "";
@@ -59,6 +78,102 @@
       loginPasswordInput.value = "";
       setLoginRequestHint("登录状态已失效，请重新登录", "error");
       loginCodeInput.focus();
+    }
+
+    function getSessionRecoverySavedLoginEntry() {
+      if (!isQuickLoginEnabled) return null;
+      if (!currentAccount) return null;
+      const roleKey = normalizeLoginRole(currentAccountRole) || inferRoleByAccountName(currentAccount);
+      const candidateAccounts = [];
+      if (roleKey === "accountant") {
+        const phone = String(getCurrentAccountantLoginPhone() || currentAccountPhone || "").trim();
+        if (phone) candidateAccounts.push(phone);
+      }
+      candidateAccounts.push(String(currentAccount || "").trim());
+      const candidateKeys = new Set(
+        candidateAccounts
+          .map((item) => getSavedLoginEntryKey(item))
+          .filter(Boolean)
+      );
+      if (!candidateKeys.size) return null;
+      return (Array.isArray(savedLoginEntries) ? savedLoginEntries : [])
+        .map((entry) => normalizeSavedLoginEntry(entry))
+        .filter(Boolean)
+        .find((entry) => (
+          candidateKeys.has(getSavedLoginEntryKey(entry.account))
+          && getSavedLoginRoleKey(entry.account, entry.role) === roleKey
+        )) || null;
+    }
+
+    function storeAuthenticatedSession(authResult, accountName, password, options = {}) {
+      const { persistSavedLogin = true } = options;
+      const normalizedAccountName = String(accountName || "").trim();
+      const normalized = resolveLoginAccountInput(authResult?.account || normalizedAccountName);
+      const sessionToken = String(authResult?.sessionToken || "").trim();
+      if (!sessionToken) {
+        throw new Error("登录状态创建失败");
+      }
+      currentAccount = normalized;
+      currentAccountRole = normalizeLoginRole(authResult?.role) || inferRoleByAccountName(normalized);
+      currentAccountDisplayName = currentAccountRole === "accountant"
+        ? String(authResult?.profile?.displayName || authResult?.profile?.name || "").trim()
+        : "";
+      currentAccountRealName = currentAccountRole === "accountant"
+        ? String(authResult?.profile?.realName || "").trim()
+        : "";
+      currentAccountPhone = currentAccountRole === "accountant"
+        ? String(authResult?.profile?.phone || "").trim()
+        : "";
+      currentSessionToken = sessionToken;
+      setRecentBossSettlementRecordIds([]);
+      hasFetchedRecords = false;
+      resetAccountantAssignmentNoticeState();
+      loadOperationNoticePreference();
+      loadUpdatedRowDismissState();
+      if (persistSavedLogin) {
+        saveSuccessfulLoginEntry(authResult?.loginAccount || normalizedAccountName, password, currentAccountRole);
+      }
+      saveToStorage();
+    }
+
+    async function recoverSessionFromSavedLogin(options = {}) {
+      const { reason = "unknown" } = options;
+      if (!currentAccount) return false;
+      if (sessionRecoveryPromise) return sessionRecoveryPromise;
+      const savedEntry = getSessionRecoverySavedLoginEntry();
+      if (!savedEntry) return false;
+
+      sessionRecoveryPromise = (async () => {
+        lastSessionRecoveryAttemptAt = Date.now();
+        try {
+          const authResult = await verifyLoginByServer(savedEntry.account, savedEntry.password, { silent: true });
+          storeAuthenticatedSession(authResult, savedEntry.account, savedEntry.password, { persistSavedLogin: true });
+          await syncDataAfterLogin();
+          console.info(`[session-recovery] recovered via ${reason}`);
+          return true;
+        } catch (error) {
+          console.error(error);
+          return false;
+        } finally {
+          sessionRecoveryPromise = null;
+        }
+      })();
+
+      return sessionRecoveryPromise;
+    }
+
+    function scheduleSessionRecovery(reason = "stream_error") {
+      if (!currentAccount || !currentSessionToken) return;
+      if (sessionRecoveryPromise) return;
+      if (appEventRecoveryTimer) return;
+      if (Date.now() - lastSessionRecoveryAttemptAt < 1500) return;
+      appEventRecoveryTimer = window.setTimeout(async () => {
+        appEventRecoveryTimer = null;
+        const recovered = await recoverSessionFromSavedLogin({ reason });
+        if (recovered) {
+          showAppStatus("服务已恢复，已自动重连。", "ok");
+        }
+      }, 700);
     }
 
     function syncModalOpenState() {
@@ -403,8 +518,14 @@
       accountantPickerValue.classList.add("placeholder");
     }
 
-    function setSourcePickerValue(value) {
+    function setSourcePickerValue(value, options = {}) {
       const normalizedValue = String(value || "").trim();
+      const hasExplicitAutoFilled = Object.prototype.hasOwnProperty.call(options, "autoFilled");
+      if (hasExplicitAutoFilled) {
+        sourcePickerAutoFilled = Boolean(options.autoFilled && normalizedValue);
+      } else if (!normalizedValue) {
+        sourcePickerAutoFilled = false;
+      }
       sourceInput.value = normalizedValue;
       if (normalizedValue) {
         sourcePickerValue.textContent = normalizedValue;
@@ -413,6 +534,41 @@
       }
       sourcePickerValue.textContent = "";
       sourcePickerValue.classList.add("placeholder");
+    }
+
+    function getAutoSourceValueForPlatformShopOption(option) {
+      const explicitSource = String(option?.source || "").trim();
+      if (explicitSource && SOURCE_OPTIONS.includes(explicitSource)) {
+        return explicitSource;
+      }
+      const platformValue = String(option?.platform || "").trim();
+      if (platformValue && SOURCE_OPTIONS.includes(platformValue)) {
+        return platformValue;
+      }
+      return "";
+    }
+
+    function syncSourcePickerFromPlatformShopOption(option) {
+      const currentSourceValue = String(sourceInput.value || "").trim();
+      const nextSourceValue = getAutoSourceValueForPlatformShopOption(option);
+      if (currentSourceValue && !sourcePickerAutoFilled) return;
+      if (!nextSourceValue) {
+        if (sourcePickerAutoFilled) {
+          setSourcePickerValue("", { autoFilled: false });
+          if (!sourcePickerDropdown.hidden) {
+            renderSourcePickerList();
+          }
+        }
+        return;
+      }
+      setSourcePickerValue(nextSourceValue, { autoFilled: true });
+      clearInlineFieldError(sourcePickerTrigger);
+      if (recordForm && !recordForm.querySelector(".field-validation-group-error")) {
+        setRecordFormHint("", "idle");
+      }
+      if (!sourcePickerDropdown.hidden) {
+        renderSourcePickerList();
+      }
     }
 
     function getPlatformShopOptionByLabel(value) {
@@ -442,6 +598,7 @@
         shopNameInput.value = matchedOption.shopName;
         platformShopPickerValue.textContent = matchedOption.label;
         platformShopPickerValue.classList.remove("placeholder");
+        syncSourcePickerFromPlatformShopOption(matchedOption);
         return;
       }
       platformInput.value = "";
@@ -795,7 +952,7 @@
       sourcePickerOptions = [...SOURCE_OPTIONS];
       const nextValue = sourcePickerOptions.includes(currentValue) ? currentValue : "";
 
-      setSourcePickerValue(nextValue);
+      setSourcePickerValue(nextValue, { autoFilled: nextValue ? sourcePickerAutoFilled : false });
       renderSourcePickerList();
 
       const disabled = !sourcePickerOptions.length;
@@ -889,8 +1046,11 @@
       validateCurrentAccount();
     }
 
-    async function verifyLoginByServer(account, password) {
-      setLoginRequestHint("登录验证中...", "pending");
+    async function verifyLoginByServer(account, password, options = {}) {
+      const { silent = false } = options;
+      if (!silent) {
+        setLoginRequestHint("登录验证中...", "pending");
+      }
       const response = await fetchWithClientLog(API_ENDPOINT_AUTH_LOGIN, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -908,11 +1068,15 @@
         } catch (error) {
           console.error(error);
         }
-        setLoginRequestHint(message, "error");
+        if (!silent) {
+          setLoginRequestHint(message, "error");
+        }
         throw new Error(message);
       }
       const payload = await response.json();
-      setLoginRequestHint("登录成功", "ok");
+      if (!silent) {
+        setLoginRequestHint("登录成功", "ok");
+      }
       return payload;
     }
 
@@ -1392,12 +1556,6 @@
       }
     }
 
-    function stopAutoRefresh() {
-      if (!refreshTimer) return;
-      clearInterval(refreshTimer);
-      refreshTimer = null;
-    }
-
     async function runAutoRefreshCycle() {
       if (!currentAccount || !currentSessionToken) return;
       if (document.hidden) return;
@@ -1429,11 +1587,50 @@
       void runAutoRefreshCycle();
     }
 
+    function closeAppEventStream() {
+      if (!appEventSource) return;
+      appEventSource.close();
+      appEventSource = null;
+    }
+
+    function openAppEventStream() {
+      if (!currentAccount || !currentSessionToken) return;
+      if (typeof window.EventSource !== "function") return;
+
+      closeAppEventStream();
+      const streamUrl = `${API_ENDPOINT_APP_EVENTS}?sessionToken=${encodeURIComponent(currentSessionToken)}`;
+      const source = new window.EventSource(streamUrl);
+      source.addEventListener("app-data", () => {
+        if (document.hidden) return;
+        void runAutoRefreshCycle();
+      });
+      source.onerror = () => {
+        if (!currentAccount || !currentSessionToken) {
+          closeAppEventStream();
+          return;
+        }
+        scheduleSessionRecovery("sse_error");
+      };
+      appEventSource = source;
+    }
+
+    function stopAutoRefresh() {
+      if (appEventRecoveryTimer) {
+        window.clearTimeout(appEventRecoveryTimer);
+        appEventRecoveryTimer = null;
+      }
+      closeAppEventStream();
+      if (!refreshTimer) return;
+      clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+
     function startAutoRefresh() {
       stopAutoRefresh();
+      openAppEventStream();
       refreshTimer = setInterval(() => {
         void runAutoRefreshCycle();
-      }, 1000);
+      }, 45000);
     }
 
     function saveToStorage() {

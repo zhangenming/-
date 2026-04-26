@@ -10,6 +10,7 @@ const APP_ENV = String(process.env.APP_ENV || "production").trim().toLowerCase()
   ? "development"
   : "production";
 const IS_DEVELOPMENT = APP_ENV === "development";
+const IS_DEV_LIVE_RELOAD_ENABLED = IS_DEVELOPMENT && String(process.env.ENABLE_DEV_LIVE_RELOAD || "").trim() === "1";
 const DATA_NAMESPACE = IS_DEVELOPMENT ? "development" : "production";
 
 const ROOT_DIR = __dirname;
@@ -32,6 +33,7 @@ const INVOICE_IMAGE_DIR = path.join(DATA_DIR, "invoice-images");
 const INVOICE_IMAGE_URL_PREFIX = "/invoice-images/";
 const SERVER_LOG_FILE = path.join(ROOT_DIR, "server.log");
 const DEV_LIVE_RELOAD_PATHNAME = "/__dev/events";
+const APP_EVENT_PATHNAME = "/api/events";
 const DISPATCHER_ACCOUNT_LIST = ["1", "a", "c", "e", "k", "开心财税"];
 const DISPATCHER_ACCOUNTS = new Set(DISPATCHER_ACCOUNT_LIST);
 const DISPATCHER_LOGIN_PASSWORD = "11";
@@ -78,6 +80,10 @@ const devLiveReloadClients = new Set();
 let devLiveReloadHeartbeat = null;
 let devLiveReloadDebounceTimer = null;
 let devWatchersStarted = false;
+const appEventClients = new Set();
+let appEventHeartbeat = null;
+let appEventSequence = 0;
+let pendingAppDataChangeSet = null;
 
 const STATIC_MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -133,8 +139,16 @@ function sendText(res, statusCode, text) {
   res.end(text);
 }
 
+function appendHtmlBeforeBody(html, content) {
+  if (html.includes("</body>")) {
+    return html.replace("</body>", `${content}\n</body>`);
+  }
+
+  return `${html}\n${content}\n`;
+}
+
 function withDevLiveReload(html) {
-  if (!IS_DEVELOPMENT) {
+  if (!IS_DEV_LIVE_RELOAD_ENABLED) {
     return html;
   }
 
@@ -153,12 +167,7 @@ function withDevLiveReload(html) {
       };
     })();
   </script>`;
-
-  if (html.includes("</body>")) {
-    return html.replace("</body>", `${script}\n</body>`);
-  }
-
-  return `${html}\n${script}\n`;
+  return appendHtmlBeforeBody(html, script);
 }
 
 function removeDevLiveReloadClient(res) {
@@ -207,7 +216,7 @@ function broadcastDevLiveReload(payload) {
 }
 
 function scheduleDevLiveReload(changedPath) {
-  if (!IS_DEVELOPMENT) {
+  if (!IS_DEV_LIVE_RELOAD_ENABLED) {
     return;
   }
 
@@ -223,6 +232,94 @@ function scheduleDevLiveReload(changedPath) {
       time: new Date().toISOString()
     });
   }, 120);
+}
+
+function writeSseEvent(res, eventName, payload) {
+  const lines = [];
+  if (eventName) {
+    lines.push(`event: ${eventName}`);
+  }
+  if (typeof payload !== "undefined") {
+    lines.push(`data: ${JSON.stringify(payload)}`);
+  }
+  res.write(`${lines.join("\n")}\n\n`);
+}
+
+function removeAppEventClient(client) {
+  appEventClients.delete(client);
+  if (!appEventClients.size && appEventHeartbeat) {
+    clearInterval(appEventHeartbeat);
+    appEventHeartbeat = null;
+  }
+}
+
+function startAppEventHeartbeat() {
+  if (appEventHeartbeat || !appEventClients.size) {
+    return;
+  }
+
+  appEventHeartbeat = setInterval(() => {
+    if (!appEventClients.size) {
+      clearInterval(appEventHeartbeat);
+      appEventHeartbeat = null;
+      return;
+    }
+
+    for (const client of [...appEventClients]) {
+      try {
+        client.res.write(": ping\n\n");
+      } catch {
+        removeAppEventClient(client);
+      }
+    }
+  }, 15000);
+}
+
+function normalizeAppDataChanges(changes) {
+  const allowed = new Set(["records", "recycleBin", "accountantOperationLogs"]);
+  return Array.from(
+    new Set(
+      (Array.isArray(changes) ? changes : [changes])
+        .map((item) => normalizeText(item, 64))
+        .filter((item) => allowed.has(item))
+    )
+  );
+}
+
+function publishAppDataChanges(changes) {
+  const normalizedChanges = normalizeAppDataChanges(changes);
+  if (!normalizedChanges.length || !appEventClients.size) {
+    return;
+  }
+
+  appEventSequence += 1;
+  const payload = {
+    seq: appEventSequence,
+    changes: normalizedChanges,
+    at: new Date().toISOString()
+  };
+
+  for (const client of [...appEventClients]) {
+    try {
+      writeSseEvent(client.res, "app-data", payload);
+    } catch {
+      removeAppEventClient(client);
+    }
+  }
+}
+
+function queueAppDataChanges(changes) {
+  const normalizedChanges = normalizeAppDataChanges(changes);
+  if (!normalizedChanges.length) {
+    return;
+  }
+
+  if (pendingAppDataChangeSet) {
+    normalizedChanges.forEach((item) => pendingAppDataChangeSet.add(item));
+    return;
+  }
+
+  publishAppDataChanges(normalizedChanges);
 }
 
 function isDevLiveReloadSource(relativePath) {
@@ -243,7 +340,7 @@ function createDevWatcher(targetPath, options, onChange) {
 }
 
 function startDevWatchers() {
-  if (!IS_DEVELOPMENT || devWatchersStarted) {
+  if (!IS_DEV_LIVE_RELOAD_ENABLED || devWatchersStarted) {
     return;
   }
 
@@ -277,7 +374,7 @@ function startDevWatchers() {
 }
 
 function serveDevLiveReloadStream(req, res) {
-  if (!IS_DEVELOPMENT) {
+  if (!IS_DEV_LIVE_RELOAD_ENABLED) {
     sendText(res, 404, "Not Found");
     return;
   }
@@ -367,6 +464,7 @@ async function writeRecords(records) {
   const payload = `${JSON.stringify(records, null, 2)}\n`;
   await fs.writeFile(tempFile, payload, "utf8");
   await fs.rename(tempFile, DATA_FILE);
+  queueAppDataChanges("records");
 }
 
 async function writeRecycleBin(recycleBinRecords) {
@@ -375,6 +473,7 @@ async function writeRecycleBin(recycleBinRecords) {
   const payload = `${JSON.stringify(recycleBinRecords, null, 2)}\n`;
   await fs.writeFile(tempFile, payload, "utf8");
   await fs.rename(tempFile, RECYCLE_BIN_FILE);
+  queueAppDataChanges("recycleBin");
 }
 
 async function writeAccountants(accountants) {
@@ -399,10 +498,45 @@ async function writeAccountantOperationLogs(logs) {
   const payload = `${JSON.stringify(logs, null, 2)}\n`;
   await fs.writeFile(tempFile, payload, "utf8");
   await fs.rename(tempFile, ACCOUNTANT_OPERATION_LOG_FILE);
+  queueAppDataChanges("accountantOperationLogs");
 }
 
 function withWriteLock(task) {
-  const next = writeQueue.then(task, task);
+  const next = writeQueue.then(async () => {
+    const parentChangeSet = pendingAppDataChangeSet;
+    if (!parentChangeSet) {
+      pendingAppDataChangeSet = new Set();
+    }
+
+    try {
+      return await task();
+    } finally {
+      if (!parentChangeSet) {
+        const changes = Array.from(pendingAppDataChangeSet || []);
+        pendingAppDataChangeSet = null;
+        publishAppDataChanges(changes);
+      } else {
+        pendingAppDataChangeSet = parentChangeSet;
+      }
+    }
+  }, async () => {
+    const parentChangeSet = pendingAppDataChangeSet;
+    if (!parentChangeSet) {
+      pendingAppDataChangeSet = new Set();
+    }
+
+    try {
+      return await task();
+    } finally {
+      if (!parentChangeSet) {
+        const changes = Array.from(pendingAppDataChangeSet || []);
+        pendingAppDataChangeSet = null;
+        publishAppDataChanges(changes);
+      } else {
+        pendingAppDataChangeSet = parentChangeSet;
+      }
+    }
+  });
   writeQueue = next.catch(() => {});
   return next;
 }
@@ -944,8 +1078,8 @@ function syncAccountantAuthSessions(previousProfile, nextProfile) {
   });
 }
 
-function getAuthSessionFromRequest(req) {
-  const token = normalizeText(req.headers[AUTH_SESSION_HEADER], 240);
+function getAuthSessionFromToken(rawToken) {
+  const token = normalizeText(rawToken, 240);
   if (!token) return null;
   const rawSession = authSessions.get(token);
   if (!rawSession || typeof rawSession !== "object") return null;
@@ -954,6 +1088,10 @@ function getAuthSessionFromRequest(req) {
   const displayName = normalizeAccountantDisplayName(rawSession.displayName);
   if (!account || !role) return null;
   return { token, account, role, displayName };
+}
+
+function getAuthSessionFromRequest(req) {
+  return getAuthSessionFromToken(req.headers[AUTH_SESSION_HEADER]);
 }
 
 function getSessionAccountantDisplayName(session) {
@@ -1851,13 +1989,18 @@ function isAccountantEditableRecordPayload(payload) {
   return editableKeys.some((key) => Object.prototype.hasOwnProperty.call(source, key));
 }
 
-async function serveHtml(res) {
+async function serveHtml(res, options = {}) {
+  const { headOnly = false } = options;
   try {
     const html = await fs.readFile(HTML_FILE, "utf8");
     res.writeHead(200, {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store"
     });
+    if (headOnly) {
+      res.end();
+      return;
+    }
     res.end(withDevLiveReload(html));
   } catch (error) {
     if (!IS_DEVELOPMENT && error && error.code === "ENOENT") {
@@ -1880,21 +2023,80 @@ function getDefaultBuildInfo() {
   };
 }
 
-async function serveBuildInfo(res) {
+async function serveBuildInfo(res, options = {}) {
+  const { headOnly = false } = options;
   try {
     const content = await fs.readFile(BUILD_INFO_FILE, "utf8");
     res.writeHead(200, {
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": "no-store"
     });
+    if (headOnly) {
+      res.end();
+      return;
+    }
     res.end(content);
   } catch (error) {
     if (error && error.code === "ENOENT") {
+      if (headOnly) {
+        setApiCorsHeaders(res);
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "no-store"
+        });
+        res.end();
+        return;
+      }
       sendJson(res, 200, getDefaultBuildInfo());
       return;
     }
     throw error;
   }
+}
+
+function serveAppEvents(req, res, url) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    sendJson(res, 405, { error: "方法不支持" });
+    return;
+  }
+
+  const session = getAuthSessionFromToken(
+    url.searchParams.get("sessionToken") || req.headers[AUTH_SESSION_HEADER]
+  );
+  if (!session) {
+    sendJson(res, 401, { error: "登录已失效，请重新登录。" });
+    return;
+  }
+
+  setApiCorsHeaders(res);
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-store",
+    Connection: "keep-alive",
+    "X-Accel-Buffering": "no"
+  });
+
+  const client = { res, token: session.token };
+  appEventClients.add(client);
+  startAppEventHeartbeat();
+  res.write("retry: 2000\n\n");
+  writeSseEvent(res, "ready", {
+    seq: appEventSequence,
+    at: new Date().toISOString()
+  });
+
+  const cleanup = () => {
+    removeAppEventClient(client);
+  };
+  req.on("close", cleanup);
+  req.on("error", cleanup);
 }
 
 function toStaticMimeType(filePath) {
@@ -1908,7 +2110,8 @@ function isPathInDirectory(targetPath, rootPath) {
   return normalizedTarget.startsWith(normalizedRoot);
 }
 
-async function servePublicAsset(res, pathname) {
+async function servePublicAsset(res, pathname, options = {}) {
+  const { headOnly = false } = options;
   const normalizedPathname = String(pathname || "").trim();
   if (!normalizedPathname.startsWith("/public/")) {
     sendText(res, 404, "Not Found");
@@ -1938,6 +2141,10 @@ async function servePublicAsset(res, pathname) {
       "Content-Type": toStaticMimeType(filePath),
       "Cache-Control": "no-store"
     });
+    if (headOnly) {
+      res.end();
+      return;
+    }
     res.end(content);
   } catch {
     sendText(res, 404, "Not Found");
@@ -3311,6 +3518,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (pathname === APP_EVENT_PATHNAME) {
+      serveAppEvents(req, res, url);
+      return;
+    }
+
     if (pathname === "/api/records") {
       await serveRecords(req, res);
       return;
@@ -3395,18 +3607,18 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (req.method === "GET" && pathname.startsWith("/public/")) {
-      await servePublicAsset(res, pathname);
+    if ((req.method === "GET" || req.method === "HEAD") && pathname.startsWith("/public/")) {
+      await servePublicAsset(res, pathname, { headOnly: req.method === "HEAD" });
       return;
     }
 
-    if (req.method === "GET" && pathname === "/build-info.json") {
-      await serveBuildInfo(res);
+    if ((req.method === "GET" || req.method === "HEAD") && pathname === "/build-info.json") {
+      await serveBuildInfo(res, { headOnly: req.method === "HEAD" });
       return;
     }
 
-    if (req.method === "GET" && (pathname === "/" || pathname === "/派单结算录入.html")) {
-      await serveHtml(res);
+    if ((req.method === "GET" || req.method === "HEAD") && (pathname === "/" || pathname === "/派单结算录入.html")) {
+      await serveHtml(res, { headOnly: req.method === "HEAD" });
       return;
     }
 
@@ -3417,7 +3629,7 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-if (IS_DEVELOPMENT) {
+if (IS_DEV_LIVE_RELOAD_ENABLED) {
   startDevWatchers();
 }
 
@@ -3425,6 +3637,7 @@ server.listen(PORT, HOST, () => {
   const bootLines = [
     `Server running at http://${HOST}:${PORT}`,
     `App environment: ${APP_ENV}`,
+    `Dev live reload: ${IS_DEV_LIVE_RELOAD_ENABLED ? "enabled" : "disabled"}`,
     `Data namespace: ${DATA_NAMESPACE}`,
     `Static root: ${IS_DEVELOPMENT ? ROOT_DIR : DIST_DIR}`,
     `Data root: ${DATA_DIR}`,

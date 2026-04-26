@@ -5,3 +5,5 @@ node_modules/
 *.log
 
 data-dev/
+
+dist/

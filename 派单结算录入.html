@@ -489,27 +489,6 @@
           </div>
         </div>
         <div class="field field-meta-row">
-          <div class="meta-item">
-            <label for="sourcePickerTrigger">来源</label>
-            <div id="sourcePicker" class="accountant-picker">
-              <input id="source" name="source" type="hidden" />
-              <button
-                id="sourcePickerTrigger"
-                class="accountant-picker-trigger"
-                type="button"
-                aria-haspopup="listbox"
-                aria-expanded="false"
-                aria-controls="sourcePickerList"
-              >
-                <span id="sourcePickerValue" class="accountant-picker-value placeholder"></span>
-                <span id="sourcePickerMeta" class="accountant-picker-meta">5 项</span>
-              </button>
-              <div id="sourcePickerDropdown" class="accountant-picker-dropdown" hidden>
-                <div id="sourcePickerList" class="accountant-picker-list" role="listbox" aria-label="来源列表"></div>
-                <div id="sourcePickerEmpty" class="accountant-picker-empty" hidden>暂无来源选项。</div>
-              </div>
-            </div>
-          </div>
           <div class="meta-item meta-item-wide">
             <label for="platformShopPickerTrigger">平台店铺</label>
             <div id="platformShopPicker" class="accountant-picker">
@@ -529,6 +508,27 @@
               <div id="platformShopPickerDropdown" class="accountant-picker-dropdown" hidden>
                 <div id="platformShopPickerList" class="accountant-picker-list" role="listbox" aria-label="平台店铺列表"></div>
                 <div id="platformShopPickerEmpty" class="accountant-picker-empty" hidden>暂无平台店铺选项。</div>
+              </div>
+            </div>
+          </div>
+          <div class="meta-item">
+            <label for="sourcePickerTrigger">来源</label>
+            <div id="sourcePicker" class="accountant-picker">
+              <input id="source" name="source" type="hidden" />
+              <button
+                id="sourcePickerTrigger"
+                class="accountant-picker-trigger"
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-controls="sourcePickerList"
+              >
+                <span id="sourcePickerValue" class="accountant-picker-value placeholder"></span>
+                <span id="sourcePickerMeta" class="accountant-picker-meta">5 项</span>
+              </button>
+              <div id="sourcePickerDropdown" class="accountant-picker-dropdown" hidden>
+                <div id="sourcePickerList" class="accountant-picker-list" role="listbox" aria-label="来源列表"></div>
+                <div id="sourcePickerEmpty" class="accountant-picker-empty" hidden>暂无来源选项。</div>
               </div>
             </div>
           </div>
@@ -620,25 +620,19 @@
         <input id="completeRecordId" type="hidden" />
         <div class="field field-feedback-time">
           <label for="completeTime">完工时间</label>
-          <input id="completeTime" name="completedAt" type="datetime-local" step="1" required autocomplete="off" />
+          <input id="completeTime" name="completedAt" type="datetime-local" step="1" required autocomplete="off" readonly aria-readonly="true" tabindex="-1" />
         </div>
-        <div class="field field-wide field-feedback-bundle">
-          <div class="field-feedback-panel">
-            <div class="field-feedback-text">
-              <div class="complete-section-head">
-                <label for="customerFeedback">服务记录</label>
-              </div>
-              <textarea
-                id="customerFeedback"
-                name="customerFeedback"
-                autocomplete="off"
-                data-no-suggest="true"
-                autocapitalize="off"
-                autocorrect="off"
-                spellcheck="false"
-              ></textarea>
-            </div>
-          </div>
+        <div class="field field-wide field-feedback-text">
+          <label for="customerFeedback">服务记录</label>
+          <textarea
+            id="customerFeedback"
+            name="customerFeedback"
+            autocomplete="off"
+            data-no-suggest="true"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+          ></textarea>
         </div>
         <div class="field field-wide row form-actions">
           <button id="completeModalSubmitBtn" class="btn-primary" type="submit">确认完成</button>
