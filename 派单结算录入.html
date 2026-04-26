@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>接待结算录入</title>
+  <title>派单结算录入</title>
   <link rel="stylesheet" href="./public/css/app.css" />
 </head>
 <body>
@@ -11,7 +11,7 @@
 
   <section id="loginPage" class="login-shell">
     <div class="card login-card">
-      <h1>接待结算录入</h1>
+      <h1>派单结算录入</h1>
       <div class="field" style="margin-top: 12px;">
         <label for="loginCodeInput">手机号 / 登录码</label>
         <input
@@ -36,8 +36,7 @@
           spellcheck="false"
         />
       </div>
-      <div class="row login-action-row">
-        <button id="openAccountantRegisterBtn" class="btn-secondary" type="button">注册</button>
+      <div class="row login-action-row single-action">
         <button id="enterBtn" class="btn-primary" type="button">登录进入</button>
       </div>
       <div id="loginRequestHint" class="login-request-hint idle" aria-live="polite" hidden></div>
@@ -56,7 +55,7 @@
     <section class="card modal-card accountant-register-modal-card">
       <div class="accountant-register-modal-top">
         <div class="accountant-register-heading">
-          <h2 class="accountant-register-title">会计注册</h2>
+          <h2 class="accountant-register-title">新增会计</h2>
         </div>
       </div>
       <p id="accountantRegisterHint" class="login-request-hint idle accountant-register-hint" aria-live="polite" hidden></p>
@@ -111,7 +110,7 @@
           />
         </div>
         <div class="accountant-register-actions">
-          <button id="accountantRegisterSubmitBtn" class="btn-primary" type="submit">提交注册</button>
+          <button id="accountantRegisterSubmitBtn" class="btn-primary" type="submit">确认新增</button>
         </div>
       </form>
     </section>
@@ -144,7 +143,7 @@
         </div>
         <div class="account-action-row">
           <button id="switchAccountBtn" class="btn-secondary switch-account-btn" type="button">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
+            <svg class="switch-account-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
             <span>退出登录</span>
           </button>
           <button id="changePasswordBtn" class="btn-secondary switch-account-btn change-password-btn" type="button" hidden>
@@ -153,6 +152,10 @@
           <button id="editProfileBtn" class="btn-secondary switch-account-btn edit-profile-btn" type="button" hidden>
             <span>修改个人信息</span>
           </button>
+        </div>
+        <div id="buildInfoPanel" class="build-info-panel" aria-live="polite">
+          <div id="buildVersionText" class="build-info-line">版本 v--</div>
+          <div id="buildTimeText" class="build-info-line">Build --</div>
         </div>
       </div>
     </aside>
@@ -623,7 +626,7 @@
           <div class="field-feedback-panel">
             <div class="field-feedback-text">
               <div class="complete-section-head">
-                <label for="customerFeedback">客户反馈</label>
+                <label for="customerFeedback">服务记录</label>
               </div>
               <textarea
                 id="customerFeedback"
@@ -634,28 +637,6 @@
                 autocorrect="off"
                 spellcheck="false"
               ></textarea>
-            </div>
-            <div class="field-feedback-divider" aria-hidden="true"></div>
-            <div class="field-feedback-images">
-              <div class="complete-section-head">
-                <label for="completeFeedbackImageSelectBtn">客户反馈截图</label>
-                <span id="completeFeedbackImageCount" class="feedback-image-count">0 张</span>
-              </div>
-              <div
-                id="completeFeedbackUploader"
-                class="feedback-image-uploader"
-                tabindex="0"
-                role="button"
-                aria-label="添加客户反馈截图"
-              >
-                <div class="feedback-image-uploader-top">
-                  <button id="completeFeedbackImageSelectBtn" class="btn-secondary feedback-image-select-btn" type="button">
-                    添加截图
-                  </button>
-                </div>
-                <input id="completeFeedbackImageInput" type="file" accept="image/*" multiple hidden />
-                <div id="completeFeedbackImageList" class="feedback-image-list"></div>
-              </div>
             </div>
           </div>
         </div>
@@ -769,8 +750,9 @@
 
   <div id="accountantModal" class="modal-overlay" hidden>
     <section class="card modal-card accountant-modal-card">
-      <div class="row" style="margin-top: 0; margin-bottom: 2px;">
+      <div class="accountant-modal-top">
         <h2 style="margin: 0; font-size: 20px;">会计管理</h2>
+        <button id="openAccountantRegisterBtn" class="btn-primary accountant-modal-create-btn" type="button">新增会计</button>
       </div>
       <p id="accountantModalHint" class="login-request-hint form-request-hint idle" aria-live="polite" hidden></p>
       <div id="accountantListWrap" class="accountant-list-wrap" tabindex="-1">

@@ -126,6 +126,7 @@
 
     if (openAccountantRegisterBtn) {
       openAccountantRegisterBtn.addEventListener("click", () => {
+        accountantRegisterReturnTarget = "accountant-modal";
         openAccountantRegisterModal();
       });
     }
@@ -207,68 +208,75 @@
       settlementPriceAutoFilled = false;
     });
 
-    completeFeedbackImageSelectBtn.addEventListener("click", (event) => {
-      if (isCompleteModalViewMode()) return;
-      event.preventDefault();
-      event.stopPropagation();
-      completeFeedbackImageInput.click();
-    });
+    if (
+      completeFeedbackImageSelectBtn
+      && completeFeedbackImageInput
+      && completeFeedbackUploader
+      && completeFeedbackImageList
+    ) {
+      completeFeedbackImageSelectBtn.addEventListener("click", (event) => {
+        if (isCompleteModalViewMode()) return;
+        event.preventDefault();
+        event.stopPropagation();
+        completeFeedbackImageInput.click();
+      });
 
-    completeFeedbackUploader.addEventListener("click", (event) => {
-      if (isCompleteModalViewMode()) return;
-      if (event.target.closest(".feedback-image-remove-btn")) return;
-      completeFeedbackImageInput.click();
-    });
+      completeFeedbackUploader.addEventListener("click", (event) => {
+        if (isCompleteModalViewMode()) return;
+        if (event.target.closest(".feedback-image-remove-btn")) return;
+        completeFeedbackImageInput.click();
+      });
 
-    completeFeedbackUploader.addEventListener("keydown", (event) => {
-      if (isCompleteModalViewMode()) return;
-      if (event.key !== "Enter" && event.key !== " ") return;
-      event.preventDefault();
-      completeFeedbackImageInput.click();
-    });
+      completeFeedbackUploader.addEventListener("keydown", (event) => {
+        if (isCompleteModalViewMode()) return;
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        completeFeedbackImageInput.click();
+      });
 
-    completeFeedbackImageInput.addEventListener("change", async () => {
-      if (isCompleteModalViewMode()) return;
-      await appendCompleteFeedbackFiles(completeFeedbackImageInput.files);
-      completeFeedbackImageInput.value = "";
-    });
+      completeFeedbackImageInput.addEventListener("change", async () => {
+        if (isCompleteModalViewMode()) return;
+        await appendCompleteFeedbackFiles(completeFeedbackImageInput.files);
+        completeFeedbackImageInput.value = "";
+      });
 
-    completeFeedbackUploader.addEventListener("dragenter", (event) => {
-      if (isCompleteModalViewMode()) return;
-      event.preventDefault();
-      setCompleteFeedbackUploaderDragging(true);
-    });
+      completeFeedbackUploader.addEventListener("dragenter", (event) => {
+        if (isCompleteModalViewMode()) return;
+        event.preventDefault();
+        setCompleteFeedbackUploaderDragging(true);
+      });
 
-    completeFeedbackUploader.addEventListener("dragover", (event) => {
-      if (isCompleteModalViewMode()) return;
-      event.preventDefault();
-      setCompleteFeedbackUploaderDragging(true);
-    });
+      completeFeedbackUploader.addEventListener("dragover", (event) => {
+        if (isCompleteModalViewMode()) return;
+        event.preventDefault();
+        setCompleteFeedbackUploaderDragging(true);
+      });
 
-    completeFeedbackUploader.addEventListener("dragleave", (event) => {
-      if (isCompleteModalViewMode()) return;
-      event.preventDefault();
-      const relatedTarget = event.relatedTarget;
-      if (relatedTarget instanceof Node && completeFeedbackUploader.contains(relatedTarget)) return;
-      setCompleteFeedbackUploaderDragging(false);
-    });
+      completeFeedbackUploader.addEventListener("dragleave", (event) => {
+        if (isCompleteModalViewMode()) return;
+        event.preventDefault();
+        const relatedTarget = event.relatedTarget;
+        if (relatedTarget instanceof Node && completeFeedbackUploader.contains(relatedTarget)) return;
+        setCompleteFeedbackUploaderDragging(false);
+      });
 
-    completeFeedbackUploader.addEventListener("drop", async (event) => {
-      if (isCompleteModalViewMode()) return;
-      event.preventDefault();
-      setCompleteFeedbackUploaderDragging(false);
-      const files = event.dataTransfer ? event.dataTransfer.files : null;
-      await appendCompleteFeedbackFiles(files);
-    });
+      completeFeedbackUploader.addEventListener("drop", async (event) => {
+        if (isCompleteModalViewMode()) return;
+        event.preventDefault();
+        setCompleteFeedbackUploaderDragging(false);
+        const files = event.dataTransfer ? event.dataTransfer.files : null;
+        await appendCompleteFeedbackFiles(files);
+      });
 
-    completeFeedbackImageList.addEventListener("click", (event) => {
-      if (isCompleteModalViewMode()) return;
-      const removeBtn = event.target.closest(".feedback-image-remove-btn");
-      if (!removeBtn) return;
-      event.preventDefault();
-      event.stopPropagation();
-      removeCompleteFeedbackImageItem(removeBtn.dataset.feedbackImageId);
-    });
+      completeFeedbackImageList.addEventListener("click", (event) => {
+        if (isCompleteModalViewMode()) return;
+        const removeBtn = event.target.closest(".feedback-image-remove-btn");
+        if (!removeBtn) return;
+        event.preventDefault();
+        event.stopPropagation();
+        removeCompleteFeedbackImageItem(removeBtn.dataset.feedbackImageId);
+      });
+    }
 
     if (bossSettlementSummarySubmitBtn) {
       bossSettlementSummarySubmitBtn.addEventListener("click", async () => {
@@ -755,10 +763,10 @@
           return;
         }
 
-        setAccountantRegisterHint("注册提交中...", "pending");
+        setAccountantRegisterHint("新增会计中...", "pending");
         if (accountantRegisterSubmitBtn) {
           accountantRegisterSubmitBtn.disabled = true;
-          accountantRegisterSubmitBtn.textContent = "提交中...";
+          accountantRegisterSubmitBtn.textContent = "新增中...";
         }
 
         try {
@@ -770,7 +778,7 @@
           });
         } catch (error) {
           console.error(error);
-          const message = error.message || "注册失败";
+          const message = error.message || "新增会计失败";
           showInlineFormError({
             form: accountantRegisterForm,
             hintSetter: setAccountantRegisterHint,
@@ -779,18 +787,16 @@
           });
           if (accountantRegisterSubmitBtn) {
             accountantRegisterSubmitBtn.disabled = false;
-            accountantRegisterSubmitBtn.textContent = "提交注册";
+            accountantRegisterSubmitBtn.textContent = "确认新增";
           }
           return;
         }
 
-        closeAccountantRegisterModal();
         resetAccountantRegisterForm();
-        loginCodeInput.value = phone;
-        loginPasswordInput.value = password;
-        setLoginRequestHint("注册成功，请登录", "ok");
-        loginCodeInput.focus();
-        loginCodeInput.select();
+        await restoreAccountantModalAfterRegister({
+          hintText: "新增会计成功",
+          hintState: "ok"
+        });
       });
     }
 
@@ -1246,7 +1252,7 @@
     if (accountantRegisterModal) {
       accountantRegisterModal.addEventListener("click", (event) => {
         if (event.target === accountantRegisterModal) {
-          closeAccountantRegisterModal();
+          void restoreAccountantModalAfterRegister();
         }
       });
     }
@@ -1380,7 +1386,7 @@
         return;
       }
       if (accountantRegisterModal && event.key === "Escape" && !accountantRegisterModal.hidden) {
-        closeAccountantRegisterModal();
+        void restoreAccountantModalAfterRegister();
         return;
       }
       if (changePasswordModal && event.key === "Escape" && !changePasswordModal.hidden) {
@@ -1662,6 +1668,8 @@
       syncDevTodoEntryPoint();
       loadDevTodoItems();
       renderDevTodoList();
+      renderBuildInfo();
+      void fetchBuildInfo();
       loadSavedLoginEntries();
       loadFromStorage();
       loadOperationNoticePreference();

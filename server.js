@@ -2,6 +2,7 @@ const http = require("http");
 const nativeFs = require("fs");
 const fs = require("fs/promises");
 const path = require("path");
+const APP_PACKAGE = require("./package.json");
 
 const HOST = process.env.HOST || "0.0.0.0";
 const PORT = Number(process.env.PORT || 3000);
@@ -14,9 +15,11 @@ const DATA_NAMESPACE = IS_DEVELOPMENT ? "development" : "production";
 const ROOT_DIR = __dirname;
 const SOURCE_HTML_FILE = path.join(ROOT_DIR, "派单结算录入.html");
 const SOURCE_PUBLIC_DIR = path.join(ROOT_DIR, "public");
+const SOURCE_BUILD_INFO_FILE = path.join(ROOT_DIR, "build-info.json");
 const DIST_DIR = path.join(ROOT_DIR, "dist");
 const HTML_FILE = IS_DEVELOPMENT ? SOURCE_HTML_FILE : path.join(DIST_DIR, "派单结算录入.html");
 const PUBLIC_DIR = IS_DEVELOPMENT ? SOURCE_PUBLIC_DIR : path.join(DIST_DIR, "public");
+const BUILD_INFO_FILE = IS_DEVELOPMENT ? SOURCE_BUILD_INFO_FILE : path.join(DIST_DIR, "build-info.json");
 const DATA_DIR = path.join(ROOT_DIR, IS_DEVELOPMENT ? "data-dev" : "data");
 const DATA_FILE = path.join(DATA_DIR, "records.json");
 const RECYCLE_BIN_FILE = path.join(DATA_DIR, "recycle-bin.json");
@@ -1414,7 +1417,7 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
   { field: "customer", label: "客户", kind: "text" },
   { field: "summary", label: "任务简介", kind: "text" },
   { field: "completedAt", label: "完工时间", kind: "datetime" },
-  { field: "customerFeedback", label: "客户反馈", kind: "text" }
+  { field: "customerFeedback", label: "服务记录", kind: "text" }
 ];
 
 function getRecordHistoryFieldDefinition(field) {
@@ -1859,6 +1862,35 @@ async function serveHtml(res) {
   } catch (error) {
     if (!IS_DEVELOPMENT && error && error.code === "ENOENT") {
       sendText(res, 503, "生产静态资源还未生成，请先执行 npm run build。");
+      return;
+    }
+    throw error;
+  }
+}
+
+function getDefaultBuildInfo() {
+  const baseVersion = String(APP_PACKAGE?.version || "1.0.0").trim() || "1.0.0";
+  return {
+    version: `${baseVersion}.0`,
+    baseVersion,
+    buildNumber: 0,
+    builtAt: "",
+    html: path.basename(SOURCE_HTML_FILE),
+    publicDir: path.basename(SOURCE_PUBLIC_DIR)
+  };
+}
+
+async function serveBuildInfo(res) {
+  try {
+    const content = await fs.readFile(BUILD_INFO_FILE, "utf8");
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store"
+    });
+    res.end(content);
+  } catch (error) {
+    if (error && error.code === "ENOENT") {
+      sendJson(res, 200, getDefaultBuildInfo());
       return;
     }
     throw error;
@@ -3365,6 +3397,11 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "GET" && pathname.startsWith("/public/")) {
       await servePublicAsset(res, pathname);
+      return;
+    }
+
+    if (req.method === "GET" && pathname === "/build-info.json") {
+      await serveBuildInfo(res);
       return;
     }
 

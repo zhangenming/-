@@ -236,7 +236,7 @@
       }
       if (accountantRegisterSubmitBtn) {
         accountantRegisterSubmitBtn.disabled = false;
-        accountantRegisterSubmitBtn.textContent = "提交注册";
+        accountantRegisterSubmitBtn.textContent = "确认新增";
       }
       resetInlineFormState(accountantRegisterForm, setAccountantRegisterHint);
     }
@@ -411,11 +411,26 @@
       }
     }
 
+    async function restoreAccountantModalAfterRegister(options = {}) {
+      const shouldRestore = accountantRegisterReturnTarget === "accountant-modal"
+        && Boolean(currentAccount)
+        && !isAccountantLogin();
+      const hintText = String(options.hintText || "").trim();
+      const hintState = options.hintState || "idle";
+      closeAccountantRegisterModal();
+      if (!shouldRestore) return;
+      await openAccountantModal();
+      if (hintText) {
+        setAccountantModalHint(hintText, hintState);
+      }
+    }
+
     function closeAccountantRegisterModal() {
       if (!accountantRegisterModal || !accountantRegisterModalCard) return;
       accountantRegisterModal.classList.remove("modal-enter");
       accountantRegisterModalCard.classList.remove("modal-enter");
       accountantRegisterModal.hidden = true;
+      accountantRegisterReturnTarget = "";
       syncModalOpenState();
     }
 
@@ -830,7 +845,7 @@
       customer: "客户",
       summary: "任务简介",
       completedAt: "完工时间",
-      customerFeedback: "客户反馈"
+      customerFeedback: "服务记录"
     };
 
     function getRecordHistoryFieldSortWeight(field) {

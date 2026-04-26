@@ -198,6 +198,23 @@
       return sourceRecords.map((item) => getRecordComparisonSignature(item)).join("\u0002");
     }
 
+    async function fetchBuildInfo() {
+      try {
+        const response = await fetch(API_ENDPOINT_BUILD_INFO, { cache: "no-store" });
+        if (!response.ok) {
+          renderBuildInfo();
+          return null;
+        }
+        const payload = await response.json();
+        renderBuildInfo(payload);
+        return payload;
+      } catch (error) {
+        console.error(error);
+        renderBuildInfo();
+        return null;
+      }
+    }
+
     async function fetchRecords() {
       if (!currentAccount || !currentSessionToken) return;
       const response = await fetchWithClientLog(
@@ -909,7 +926,7 @@
       });
 
       if (!response.ok) {
-        let message = `注册失败（${response.status}）`;
+        let message = `新增会计失败（${response.status}）`;
         try {
           const payload = await response.json();
           if (payload.error) message = payload.error;
@@ -922,6 +939,7 @@
       const payload = await response.json();
       const createdProfile = payload?.accountant ? normalizeAccountantProfile(payload.accountant) : null;
       if (createdProfile) {
+        highlightedAccountantUsername = String(createdProfile.username || createdProfile.name || "").trim();
         accountants = mergeAccountantProfiles([...accountants, createdProfile]);
         syncAccountantsFromRecords();
         renderAccountantList();

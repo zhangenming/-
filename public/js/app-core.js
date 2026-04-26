@@ -6,6 +6,7 @@
     const API_ENDPOINT_ACCOUNTANTS = `${API_BASE}/api/accountants`;
     const API_ENDPOINT_RECYCLE_BIN = `${API_BASE}/api/recycle-bin`;
     const API_ENDPOINT_ACCOUNTANT_OPERATION_LOGS = `${API_BASE}/api/accountant-operation-logs`;
+    const API_ENDPOINT_BUILD_INFO = `${API_BASE}/build-info.json`;
     const API_ENDPOINT_AUTH_ACCOUNTANT_REGISTER = `${API_BASE}/api/auth/accountant-register`;
     const API_ENDPOINT_AUTH_LOGIN = `${API_BASE}/api/auth/login`;
     const API_ENDPOINT_AUTH_PASSWORD = `${API_BASE}/api/auth/password`;
@@ -151,6 +152,9 @@
     const switchAccountBtn = document.getElementById("switchAccountBtn");
     const changePasswordBtn = document.getElementById("changePasswordBtn");
     const editProfileBtn = document.getElementById("editProfileBtn");
+    const buildInfoPanel = document.getElementById("buildInfoPanel");
+    const buildVersionText = document.getElementById("buildVersionText");
+    const buildTimeText = document.getElementById("buildTimeText");
     const headerAccountText = document.getElementById("headerAccountText");
     const headerAccountSubText = document.getElementById("headerAccountSubText");
     const accountRoleBadge = document.getElementById("accountRoleBadge");
@@ -418,6 +422,7 @@
     let isSidebarCollapsed = false;
     let savedLoginEntries = [];
     let highlightedAccountantUsername = "";
+    let accountantRegisterReturnTarget = "";
     let pendingConfirmResolve = null;
     let editingAccountantUsername = "";
     let accountantEditMode = "admin";
@@ -1807,7 +1812,7 @@
       completeModalMode = normalizeCompleteModalMode(modeRaw);
       const isViewMode = isCompleteModalViewMode();
       if (completeModalTitle) {
-        completeModalTitle.textContent = isViewMode ? "查看反馈" : "完成数据";
+        completeModalTitle.textContent = isViewMode ? "查看服务记录" : "完成数据";
       }
       if (completeForm) {
         completeForm.classList.toggle("readonly", isViewMode);
@@ -1823,7 +1828,7 @@
         completeFeedbackUploader.tabIndex = isViewMode ? -1 : 0;
         completeFeedbackUploader.setAttribute("role", isViewMode ? "group" : "button");
         completeFeedbackUploader.setAttribute("aria-disabled", isViewMode ? "true" : "false");
-        completeFeedbackUploader.setAttribute("aria-label", isViewMode ? "客户反馈截图" : "添加客户反馈截图");
+        completeFeedbackUploader.setAttribute("aria-label", isViewMode ? "服务记录截图" : "添加服务记录截图");
       }
       if (completeFeedbackImageInput) {
         completeFeedbackImageInput.disabled = isViewMode;
@@ -1854,7 +1859,7 @@
         const image = document.createElement("img");
         image.className = "feedback-image-preview";
         image.src = item.previewUrl;
-        image.alt = `客户反馈截图 ${index + 1}`;
+        image.alt = `服务记录截图 ${index + 1}`;
 
         const footer = document.createElement("div");
         footer.className = "feedback-image-card-footer";
@@ -2221,6 +2226,21 @@
       return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
     }
 
+    function normalizeBuildVersion(rawVersion) {
+      const version = String(rawVersion || "").trim().replace(/^v/i, "");
+      return version ? `v${version}` : "v--";
+    }
+
+    function renderBuildInfo(buildInfo) {
+      if (!buildInfoPanel || !buildVersionText || !buildTimeText) return;
+      const source = buildInfo && typeof buildInfo === "object" ? buildInfo : {};
+      const builtAt = String(source.builtAt || "").trim();
+      buildVersionText.textContent = `版本 ${normalizeBuildVersion(source.version)}`;
+      buildTimeText.textContent = builtAt
+        ? `Build ${formatDateTimeDisplay(builtAt)}`
+        : "Build --";
+    }
+
     function formatTimeDisplay(rawDateTime) {
       const source = String(rawDateTime || "").trim();
       const timestamp = Date.parse(source);
@@ -2461,7 +2481,7 @@
       if (messageIncludesAnyKeyword(message, ["时间"])) {
         return completeTimeInput;
       }
-      if (messageIncludesAnyKeyword(message, ["客户反馈"])) {
+      if (messageIncludesAnyKeyword(message, ["服务记录", "客户反馈"])) {
         return completeCustomerFeedbackInput;
       }
       if (messageIncludesAnyKeyword(message, ["截图", "图片"])) {
