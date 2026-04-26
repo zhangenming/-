@@ -42,6 +42,127 @@
       return toMonthLabel(timestamp);
     }
 
+    function getDateDayKey(rawDate) {
+      const timestamp = parseDateValue(rawDate);
+      if (Number.isNaN(timestamp)) return "";
+      return toDayLabel(timestamp);
+    }
+
+    function getTodayFilterValue() {
+      return "__today__";
+    }
+
+    function getCurrentMonthFilterValue() {
+      return toMonthLabel(Date.now());
+    }
+
+    function isTodayFilterValue(rawValue) {
+      return String(rawValue || "").trim() === getTodayFilterValue();
+    }
+
+    function formatDateFilterOptionLabel(rawValue) {
+      const source = String(rawValue || "").trim();
+      if (!source) return "";
+      if (isTodayFilterValue(source)) return "当天";
+      if (source === getCurrentMonthFilterValue()) return "当月";
+      let match = source.match(/^(\d{4})-(\d{1,2})$/);
+      if (match) {
+        return `${Number(match[2])}月`;
+      }
+      match = source.match(/^(\d{1,2})月$/);
+      if (match) {
+        return `${Number(match[1])}月`;
+      }
+      return source;
+    }
+
+    function normalizeDateFilterInputValue(rawValue) {
+      const source = String(rawValue || "").trim();
+      if (!source) return "";
+      const timestamp = parseDateValue(source);
+      if (Number.isNaN(timestamp)) return "";
+      return toDayLabel(timestamp);
+    }
+
+    function getNormalizedDateRangeFilter(startRaw, endRaw) {
+      let start = normalizeDateFilterInputValue(startRaw);
+      let end = normalizeDateFilterInputValue(endRaw);
+      if (start && end && start > end) {
+        [start, end] = [end, start];
+      }
+      return { start, end };
+    }
+
+    function hasDateFilterSelected(dateState = filterState) {
+      const month = String(dateState?.month || "").trim();
+      if (month) return true;
+      const normalizedRange = getNormalizedDateRangeFilter(dateState?.dateStart, dateState?.dateEnd);
+      return Boolean(normalizedRange.start || normalizedRange.end);
+    }
+
+    function formatCompactDayFilterLabel(rawValue) {
+      const timestamp = parseDateValue(rawValue);
+      if (Number.isNaN(timestamp)) return String(rawValue || "").trim();
+      const date = new Date(timestamp);
+      return `${date.getMonth() + 1}/${date.getDate()}`;
+    }
+
+    function getDateFilterChipMeta(monthRaw = filterState.month, startRaw = filterState.dateStart, endRaw = filterState.dateEnd) {
+      const month = String(monthRaw || "").trim();
+      if (month) {
+        const label = formatDateFilterOptionLabel(month);
+        return { label, title: label };
+      }
+
+      const normalizedRange = getNormalizedDateRangeFilter(startRaw, endRaw);
+      const { start, end } = normalizedRange;
+      if (!start && !end) {
+        return { label: "", title: "" };
+      }
+      if (start && end) {
+        if (start === end) {
+          return {
+            label: formatCompactDayFilterLabel(start),
+            title: start
+          };
+        }
+        return {
+          label: `${formatCompactDayFilterLabel(start)}-${formatCompactDayFilterLabel(end)}`,
+          title: `${start} 至 ${end}`
+        };
+      }
+      if (start) {
+        return {
+          label: `${formatCompactDayFilterLabel(start)}起`,
+          title: `${start} 起`
+        };
+      }
+      return {
+        label: `至${formatCompactDayFilterLabel(end)}`,
+        title: `至 ${end}`
+      };
+    }
+
+    function isDateFilterMatched(rawDate, filterValueRaw, startRaw = "", endRaw = "") {
+      const filterValue = String(filterValueRaw || "").trim();
+      if (filterValue) {
+        if (isTodayFilterValue(filterValue)) {
+          return getDateDayKey(rawDate) === toDayLabel(Date.now());
+        }
+        return getDateMonthKey(rawDate) === filterValue;
+      }
+
+      const normalizedRange = getNormalizedDateRangeFilter(startRaw, endRaw);
+      if (!normalizedRange.start && !normalizedRange.end) {
+        return true;
+      }
+      const dayKey = getDateDayKey(rawDate);
+      if (!dayKey) return false;
+      if (normalizedRange.start && dayKey < normalizedRange.start) return false;
+      if (normalizedRange.end && dayKey > normalizedRange.end) return false;
+      return true;
+    }
+
     function normalizeDispatcherTag(rawValue) {
       const source = String(rawValue || "").trim();
       const lower = source.toLowerCase();
@@ -58,18 +179,15 @@
 
     function normalizeRecordCheckStatus(rawValue) {
       const status = String(rawValue || "").trim().toLowerCase();
-      if (status === "completed") return "completed";
-      if (status === "checked") return "checked";
-      if (status === "returned") return "returned";
+      if (status === "completed" || status === "已完成" || status.includes("待结算")) return "completed";
+      if (status === "checked" || status === "已确认" || status.includes("待完成")) return "checked";
+      if (status === "returned" || status === "已退单") return "returned";
       return "pending";
     }
 
     function getRecordCheckStatusLabel(record) {
       const status = normalizeRecordCheckStatus(record?.checkStatus);
-      if (status === "completed") return "已完成";
-      if (status === "checked") return "待完成";
-      if (status === "returned") return "已退单";
-      return "待核对";
+      return getRecordWorkflowStatusLabelByKey(status);
     }
 
     function parseDateOrDateTimeValue(rawValue) {
@@ -110,11 +228,12 @@
       return 0;
     }
 
-    function getRecordStatusChipText(record) {
+    function getRecordStatusChipText(record, options = {}) {
       const status = normalizeRecordCheckStatus(record?.checkStatus);
-      if (status === "checked") {
+      const shouldShowElapsedDays = options.showElapsedDays !== false;
+      if (status === "checked" && shouldShowElapsedDays) {
         const elapsedDays = getCheckedStatusElapsedDays(record);
-        return `待完成 ${elapsedDays}天`;
+        return `${getRecordCheckStatusLabel(record)} ${elapsedDays}天`;
       }
       return getRecordCheckStatusLabel(record);
     }
@@ -140,6 +259,9 @@
       if (key === "premiumPrice") {
         return getPremiumValue(item);
       }
+      if (key === "profitPrice") {
+        return getProfitValue(item);
+      }
       if (key === "paymentPrice" || key === "totalPrice" || key === "settlementPrice") {
         return Number(item[key]);
       }
@@ -150,11 +272,21 @@
         return normalizeDispatcherTag(item.dispatcher);
       }
       if (key === "checkStatus") {
-        const status = normalizeRecordCheckStatus(item.checkStatus);
+        const status = getRecordWorkflowStatusKey(item);
         if (status === "checked") return 1;
         if (status === "completed") return 2;
-        if (status === "returned") return 3;
+        if (status === "settled") return 3;
+        if (status === "uploaded") return 4;
+        if (status === "returned") return 5;
         return 0;
+      }
+      if (key === "settled") {
+        if (getRecordWorkflowStatusKey(item) === "settled") return 2;
+        if (getRecordWorkflowStatusKey(item) === "uploaded") return 3;
+        if (!isRecordCompleted(item)) return 0;
+        if (isRecordInvoiceUploaded(item)) return 3;
+        if (isRecordSettled(item)) return 2;
+        return 1;
       }
       return String(item[key] || "").trim();
     }
@@ -194,8 +326,14 @@
     }
 
     function getColumnTotal(sourceRecords, key) {
+      if (key === "profitPrice") {
+        return getProfitTotal(sourceRecords);
+      }
       return sourceRecords.reduce((sum, item) => {
-        const value = key === "premiumPrice" ? getPremiumValue(item) : Number(item[key]);
+        let value = Number(item[key]);
+        if (key === "premiumPrice") {
+          value = getPremiumValue(item);
+        }
         return Number.isFinite(value) ? sum + value : sum;
       }, 0);
     }
@@ -251,12 +389,20 @@
         const labelNode = document.createElement("span");
         labelNode.className = "sort-btn-label";
         labelNode.textContent = `${label}${arrow}`;
-        if (key === "paymentPrice" || key === "totalPrice" || key === "premiumPrice" || key === "settlementPrice") {
+        if (
+          key === "paymentPrice"
+          || key === "totalPrice"
+          || key === "premiumPrice"
+          || key === "settlementPrice"
+          || key === "profitPrice"
+        ) {
           const total = toMoney(getColumnTotal(sourceRecords, key));
           const metaNode = document.createElement("span");
           metaNode.className = "sort-btn-meta";
           metaNode.textContent = `合计 ${total}`;
-          metaNode.title = `合计：${total}`;
+          metaNode.title = key === "profitPrice"
+            ? formatProfitTotalTooltip(sourceRecords)
+            : `合计：${total}`;
           button.replaceChildren(labelNode, metaNode);
           return;
         }
@@ -266,6 +412,7 @@
 
     function toggleSort(key) {
       if (!key) return;
+      if (key === "profitPrice" && !shouldShowProfitColumn()) return;
       if (sortState.key === key) {
         sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
       } else {
@@ -318,7 +465,7 @@
         const count = countMap.get(value) || 0;
         const label = document.createElement("span");
         label.className = "filter-option-label";
-        label.textContent = value;
+        label.textContent = type === "month" ? formatDateFilterOptionLabel(value) : value;
         const countBadge = document.createElement("span");
         countBadge.className = "filter-option-count";
         countBadge.textContent = String(count);
@@ -331,9 +478,10 @@
 
     function updateFilterOptions() {
       const scopedRecords = getVisibleRecords();
-      const monthValues = Array.from(
+      const rawMonthValues = Array.from(
         new Set(scopedRecords.map((item) => getDateMonthKey(item.date)).filter(Boolean))
       ).sort((left, right) => right.localeCompare(left, "zh-CN", { numeric: true, sensitivity: "base" }));
+      const monthValues = [getTodayFilterValue(), ...rawMonthValues];
 
       const dispatcherValues = Array.from(
         new Set(scopedRecords.map((item) => normalizeDispatcherTag(item.dispatcher)))
@@ -352,9 +500,15 @@
         new Set(scopedRecords.map((item) => getSourceFilterValue(item)).filter(Boolean))
       );
       const rawStatusValues = Array.from(
-        new Set(scopedRecords.map((item) => getRecordCheckStatusLabel(item)))
+        new Set(scopedRecords.map((item) => getRecordWorkflowStatusFilterLabel(item)))
       );
-      const statusValues = ["待核对", "待完成", "已完成", "已退单"].filter((value) => rawStatusValues.includes(value));
+      const statusValues = ["已接待/待确认", "已确认/待完成", "已完成/待结算", "已结算/待上传", "已上传/待打款", "已退单"]
+        .filter((value) => rawStatusValues.includes(value));
+      const rawSettledValues = Array.from(
+        new Set(scopedRecords.map((item) => getRecordSettlementFilterLabel(item)).filter(Boolean))
+      );
+      const settledValues = ["已完成/待结算", "已结算/待上传", "已上传/待打款"]
+        .filter((value) => rawSettledValues.includes(value));
 
       if (filterState.month && !monthValues.includes(filterState.month)) {
         filterState.month = "";
@@ -374,9 +528,12 @@
       if (filterState.status && !statusValues.includes(filterState.status)) {
         filterState.status = "";
       }
+      if (filterState.settled && !settledValues.includes(filterState.settled)) {
+        filterState.settled = "";
+      }
 
       const filterMatchers = {
-        month: (item) => !filterState.month || getDateMonthKey(item.date) === filterState.month,
+        month: (item) => isDateFilterMatched(item.date, filterState.month, filterState.dateStart, filterState.dateEnd),
         dispatcher: (item) => !filterState.dispatcher
           || normalizeDispatcherTag(item.dispatcher) === filterState.dispatcher,
         accountant: (item) => !filterState.accountant
@@ -384,7 +541,8 @@
         platform: (item) => !filterState.platform || getPlatformFilterValue(item) === filterState.platform,
         shopName: (item) => !filterState.shopName || getShopNameFilterValue(item) === filterState.shopName,
         source: (item) => !filterState.source || getSourceFilterValue(item) === filterState.source,
-        status: (item) => !filterState.status || getRecordCheckStatusLabel(item) === filterState.status
+        status: (item) => !filterState.status || getRecordWorkflowStatusFilterLabel(item) === filterState.status,
+        settled: (item) => !filterState.settled || getRecordSettlementFilterLabel(item) === filterState.settled
       };
       const getScopedRecordsByFilter = (excludedKey) => scopedRecords.filter((item) => (
         Object.entries(filterMatchers).every(([key, matcher]) => key === excludedKey || matcher(item))
@@ -396,9 +554,14 @@
       const shopScopedRecords = getScopedRecordsByFilter("shopName");
       const sourceScopedRecords = getScopedRecordsByFilter("source");
       const statusScopedRecords = getScopedRecordsByFilter("status");
+      const settledScopedRecords = getScopedRecordsByFilter("settled");
       const monthCountMap = buildValueCountMap(
         monthScopedRecords,
         (item) => getDateMonthKey(item.date)
+      );
+      monthCountMap.set(
+        getTodayFilterValue(),
+        monthScopedRecords.filter((item) => getDateDayKey(item.date) === toDayLabel(Date.now())).length
       );
       const dispatcherCountMap = buildValueCountMap(
         dispatcherScopedRecords,
@@ -422,7 +585,11 @@
       );
       const statusCountMap = buildValueCountMap(
         statusScopedRecords,
-        (item) => getRecordCheckStatusLabel(item)
+        (item) => getRecordWorkflowStatusFilterLabel(item)
+      );
+      const settledCountMap = buildValueCountMap(
+        settledScopedRecords,
+        (item) => getRecordSettlementFilterLabel(item)
       );
       const accountantValues = sortFilterValuesByCount(rawAccountantValues, accountantCountMap);
       const platformValues = sortFilterValuesByCount(rawPlatformValues, platformCountMap);
@@ -482,13 +649,20 @@
         filterState.status,
         statusCountMap
       );
+      buildFilterOptionList(
+        filterSettledList,
+        settledValues,
+        "settled",
+        filterState.settled,
+        settledCountMap
+      );
       updateFilterButtonUI();
     }
 
     function getFilteredRecords() {
       const scopedRecords = getVisibleRecords();
       return scopedRecords.filter((item) => {
-        const monthMatched = !filterState.month || getDateMonthKey(item.date) === filterState.month;
+        const monthMatched = isDateFilterMatched(item.date, filterState.month, filterState.dateStart, filterState.dateEnd);
         const dispatcherMatched = !filterState.dispatcher
           || normalizeDispatcherTag(item.dispatcher) === filterState.dispatcher;
         const accountantMatched = !filterState.accountant
@@ -496,14 +670,16 @@
         const platformMatched = !filterState.platform || getPlatformFilterValue(item) === filterState.platform;
         const shopMatched = !filterState.shopName || getShopNameFilterValue(item) === filterState.shopName;
         const sourceMatched = !filterState.source || getSourceFilterValue(item) === filterState.source;
-        const statusMatched = !filterState.status || getRecordCheckStatusLabel(item) === filterState.status;
+        const statusMatched = !filterState.status || getRecordWorkflowStatusFilterLabel(item) === filterState.status;
+        const settledMatched = !filterState.settled || getRecordSettlementFilterLabel(item) === filterState.settled;
         return monthMatched
           && dispatcherMatched
           && accountantMatched
           && platformMatched
           && shopMatched
           && sourceMatched
-          && statusMatched;
+          && statusMatched
+          && settledMatched;
       });
     }
 
@@ -603,6 +779,11 @@
     function toMonthLabel(timestamp) {
       const date = new Date(timestamp);
       return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    function toDayLabel(timestamp) {
+      const date = new Date(timestamp);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     }
 
     function summarizeBy(recordsSource, keyResolver) {
@@ -732,7 +913,7 @@
 
       const tags = [];
       if (showDispatcherSections && byDispatcher.length) {
-        tags.push(`派单人主力：${byDispatcher[0].key}（${formatCurrency(byDispatcher[0].settlement)}）`);
+        tags.push(`接待人主力：${byDispatcher[0].key}（${formatCurrency(byDispatcher[0].settlement)}）`);
       }
       if (byAccountant.length) {
         tags.push(`会计主力：${byAccountant[0].key}（${formatCurrency(byAccountant[0].settlement)}）`);
@@ -867,7 +1048,7 @@
         .join("");
 
       const dispatcherTable = buildHtmlTable(
-        ["派单人", "单量", "会计价", "结算价", "结算率", "均单会计价"],
+        ["接待人", "单量", "会计价", "结算价", "结算率", "均单会计价"],
         byDispatcher.slice(0, 10).map((row) => [
           row.key,
           formatCount(row.count),
@@ -943,7 +1124,7 @@
 
       const anomalyTable = showDispatcherSections
         ? buildHtmlTable(
-          ["日期", "派单人", "会计", "客户", "会计价", "结算价", "结算率", "原因"],
+          ["日期", "接待人", "会计", "客户", "会计价", "结算价", "结算率", "原因"],
           anomalies.map((row) => [
             row.date,
             row.dispatcher,
@@ -969,7 +1150,7 @@
         );
 
       const coopTable = buildHtmlTable(
-        ["派单人", "会计", "单量", "会计价", "结算价", "结算率"],
+        ["接待人", "会计", "单量", "会计价", "结算价", "结算率"],
         coopRows.slice(0, 15).map((row) => [
           row.dispatcher,
           row.accountant,
@@ -1044,15 +1225,15 @@
         </div>
         <div class="analysis-tags">${tagsHtml || '<span class="analysis-empty">暂无关键结论</span>'}</div>
         <div class="analysis-grid">
-          ${showDispatcherSections ? `<section class="analysis-panel"><h3>派单人维度</h3>${dispatcherTable}</section>` : ""}
+          ${showDispatcherSections ? `<section class="analysis-panel"><h3>接待人维度</h3>${dispatcherTable}</section>` : ""}
           <section class="analysis-panel"><h3>会计维度</h3>${accountantTable}</section>
-          ${showDispatcherSections ? `<section class="analysis-panel"><h3>派单-会计协同矩阵</h3>${coopTable}</section>` : ""}
+          ${showDispatcherSections ? `<section class="analysis-panel"><h3>接待-会计协同矩阵</h3>${coopTable}</section>` : ""}
           <section class="analysis-panel"><h3>客户复购分析</h3>${repeatTable}</section>
           <section class="analysis-panel"><h3>客户维度</h3>${customerTable}</section>
           <section class="analysis-panel"><h3>月度维度</h3>${monthTable}</section>
           <section class="analysis-panel"><h3>月度环比变化</h3>${monthMoMTable}</section>
           <section class="analysis-panel"><h3>星期维度</h3>${weekdayTable}</section>
-          <section class="analysis-panel"><h3>简介关键词热度</h3>${keywordTable}</section>
+          <section class="analysis-panel"><h3>任务简介关键词热度</h3>${keywordTable}</section>
           <section class="analysis-panel"><h3>会计价区间分布</h3>${totalBandTable}</section>
           <section class="analysis-panel"><h3>结算率区间分布</h3>${ratioBandTable}</section>
           <section class="analysis-panel"><h3>异常与风险样本</h3>${anomalyTable}</section>

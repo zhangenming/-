@@ -16,15 +16,34 @@ const DISPATCHER_PASSWORDS_FILE = path.join(DATA_DIR, "dispatcher-passwords.json
 const ACCOUNTANT_OPERATION_LOG_FILE = path.join(DATA_DIR, "accountant-operation-logs.json");
 const FEEDBACK_IMAGE_DIR = path.join(DATA_DIR, "feedback-images");
 const FEEDBACK_IMAGE_URL_PREFIX = "/feedback-images/";
+const INVOICE_IMAGE_DIR = path.join(DATA_DIR, "invoice-images");
+const INVOICE_IMAGE_URL_PREFIX = "/invoice-images/";
 const SERVER_LOG_FILE = path.join(ROOT_DIR, "server.log");
-const DISPATCHER_ACCOUNT_LIST = ["1", "a", "c", "e", "k"];
+const DISPATCHER_ACCOUNT_LIST = ["1", "a", "c", "e", "k", "开心财税"];
 const DISPATCHER_ACCOUNTS = new Set(DISPATCHER_ACCOUNT_LIST);
 const DISPATCHER_LOGIN_PASSWORD = "11";
-const BOSS_LOGIN_ACCOUNT = "boss";
-const BOSS_LOGIN_PASSWORD = "boss123";
+const BOSS_LOGIN_ACCOUNT = "开心";
+const BOSS_LOGIN_LEGACY_ACCOUNT = "boss";
+const BOSS_LOGIN_ACCOUNTS = [
+  { account: BOSS_LOGIN_ACCOUNT, password: "boss123", aliases: [BOSS_LOGIN_ACCOUNT, BOSS_LOGIN_LEGACY_ACCOUNT] },
+  { account: "管理员", password: "11", aliases: ["管理员"] }
+];
+const BOSS_LOGIN_ACCOUNT_SET = new Set(BOSS_LOGIN_ACCOUNTS.map((item) => item.account.toLowerCase()));
+const BOSS_LOGIN_CODE_TO_ACCOUNT = BOSS_LOGIN_ACCOUNTS.reduce((result, item) => {
+  const aliases = Array.isArray(item.aliases) ? item.aliases : [];
+  aliases.concat(item.account).forEach((alias) => {
+    const normalizedAlias = String(alias || "").trim().toLowerCase();
+    if (normalizedAlias) {
+      result[normalizedAlias] = item.account;
+    }
+  });
+  return result;
+}, Object.create(null));
 const DEFAULT_ACCOUNTANT_LOGIN_PASSWORD = "123456";
 const FEEDBACK_IMAGE_MAX_COUNT = 8;
 const FEEDBACK_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
+const SETTLEMENT_INVOICE_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
+const API_JSON_BODY_MAX_SIZE_BYTES = 8 * 1024 * 1024;
 const AUTH_SESSION_HEADER = "x-dispatch-session";
 const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
   "1": "1",
@@ -32,6 +51,7 @@ const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
   c: "c",
   e: "e",
   k: "k",
+  "开心财税": "开心财税",
   "开心财税1": "1",
   "开心财税a": "a",
   "开心财税c": "c",
@@ -99,6 +119,7 @@ function sendText(res, statusCode, text) {
 async function ensureStorage() {
   await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.mkdir(FEEDBACK_IMAGE_DIR, { recursive: true });
+  await fs.mkdir(INVOICE_IMAGE_DIR, { recursive: true });
   try {
     await fs.access(DATA_FILE);
   } catch {
@@ -158,7 +179,7 @@ async function readAccountantOperationLogs() {
   await ensureStorage();
   const raw = await fs.readFile(ACCOUNTANT_OPERATION_LOG_FILE, "utf8");
   const parsed = JSON.parse(raw || "[]");
-  return Array.isArray(parsed) ? parsed : [];
+  return Array.isArray(parsed) ? parsed.map((entry) => normalizeAccountantOperationLogEntry(entry)).filter(Boolean) : [];
 }
 
 async function writeRecords(records) {
@@ -212,7 +233,7 @@ function parseBody(req) {
     let data = "";
     req.on("data", (chunk) => {
       data += chunk;
-      if (data.length > 1024 * 1024) {
+      if (data.length > API_JSON_BODY_MAX_SIZE_BYTES) {
         reject(new Error("请求体过大"));
         req.destroy();
       }
@@ -274,6 +295,12 @@ function getFeedbackImageUrl(fileName) {
   return `${FEEDBACK_IMAGE_URL_PREFIX}${encodeURIComponent(normalizedFileName)}`;
 }
 
+function getInvoiceImageUrl(fileName) {
+  const normalizedFileName = normalizeText(fileName, 180);
+  if (!normalizedFileName) return "";
+  return `${INVOICE_IMAGE_URL_PREFIX}${encodeURIComponent(normalizedFileName)}`;
+}
+
 function normalizeStoredFeedbackImage(rawImage) {
   if (!rawImage || typeof rawImage !== "object") return null;
   const fileName = normalizeText(rawImage.fileName, 180);
@@ -298,6 +325,104 @@ function normalizeStoredFeedbackImages(rawImages) {
       return true;
     })
     .slice(0, FEEDBACK_IMAGE_MAX_COUNT);
+}
+
+function normalizeMoneyValue(value) {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : Number.NaN;
+}
+
+function normalizeRecordSettlementState(value) {
+  if (value === true) return true;
+  if (value === false) return false;
+  if (typeof value === "number") return value === 1;
+  const normalized = normalizeText(value, 32).toLowerCase();
+  return normalized === "true"
+    || normalized === "1"
+    || normalized === "yes"
+    || normalized === "已结算"
+    || normalized === "已结算/待上传"
+    || normalized === "已上传"
+    || normalized === "已上传/待打款";
+}
+
+function normalizeMonthlySettlementState(value) {
+  if (value === true) return true;
+  if (value === false) return false;
+  if (typeof value === "number") return value === 1;
+  const normalized = normalizeText(value, 32).toLowerCase();
+  return normalized === "true"
+    || normalized === "1"
+    || normalized === "yes"
+    || normalized === "on"
+    || normalized === "是"
+    || normalized === "月结";
+}
+
+function getNormalizedRecordSettlementFields(record) {
+  const source = record && typeof record === "object" ? record : {};
+  const isSettled = normalizeRecordSettlementState(source.isSettled);
+  return {
+    isSettled,
+    settledAt: isSettled ? normalizeDateTimeValue(source.settledAt) : "",
+    settledBy: isSettled ? normalizeText(source.settledBy, 48) : ""
+  };
+}
+
+function buildReturnedPriceSnapshot(currentRecord, rawSnapshot) {
+  const current = currentRecord && typeof currentRecord === "object" ? currentRecord : {};
+  const source = rawSnapshot && typeof rawSnapshot === "object" ? rawSnapshot : {};
+  const currentSnapshot = current.returnedPriceSnapshot && typeof current.returnedPriceSnapshot === "object"
+    ? current.returnedPriceSnapshot
+    : {};
+  const isCurrentReturned = normalizeText(current.checkStatus, 24).toLowerCase() === "returned";
+  const paymentPrice = normalizeMoneyValue(
+    isCurrentReturned && Object.prototype.hasOwnProperty.call(currentSnapshot, "paymentPrice")
+      ? currentSnapshot.paymentPrice
+      : (Object.prototype.hasOwnProperty.call(source, "paymentPrice")
+      ? source.paymentPrice
+      : (Object.prototype.hasOwnProperty.call(currentSnapshot, "paymentPrice")
+          ? currentSnapshot.paymentPrice
+          : current.paymentPrice))
+  );
+  const totalPrice = normalizeMoneyValue(
+    isCurrentReturned && Object.prototype.hasOwnProperty.call(currentSnapshot, "totalPrice")
+      ? currentSnapshot.totalPrice
+      : (Object.prototype.hasOwnProperty.call(source, "totalPrice")
+      ? source.totalPrice
+      : (Object.prototype.hasOwnProperty.call(currentSnapshot, "totalPrice")
+          ? currentSnapshot.totalPrice
+          : current.totalPrice))
+  );
+  const settlementPrice = normalizeMoneyValue(
+    isCurrentReturned && Object.prototype.hasOwnProperty.call(currentSnapshot, "settlementPrice")
+      ? currentSnapshot.settlementPrice
+      : (Object.prototype.hasOwnProperty.call(source, "settlementPrice")
+      ? source.settlementPrice
+      : (Object.prototype.hasOwnProperty.call(currentSnapshot, "settlementPrice")
+          ? currentSnapshot.settlementPrice
+          : current.settlementPrice))
+  );
+  const premiumInput = isCurrentReturned && Object.prototype.hasOwnProperty.call(currentSnapshot, "premiumPrice")
+    ? currentSnapshot.premiumPrice
+    : (Object.prototype.hasOwnProperty.call(source, "premiumPrice")
+        ? source.premiumPrice
+        : currentSnapshot.premiumPrice);
+  const premiumCandidate = normalizeMoneyValue(premiumInput);
+  const premiumPrice = Number.isFinite(premiumCandidate)
+    ? premiumCandidate
+    : (Number.isFinite(paymentPrice) && Number.isFinite(totalPrice) ? paymentPrice - totalPrice : Number.NaN);
+
+  if (!Number.isFinite(paymentPrice) || !Number.isFinite(totalPrice) || !Number.isFinite(settlementPrice) || !Number.isFinite(premiumPrice)) {
+    return null;
+  }
+
+  return {
+    paymentPrice,
+    totalPrice,
+    premiumPrice,
+    settlementPrice
+  };
 }
 
 function parseFeedbackImageDataUrl(dataUrl) {
@@ -396,14 +521,169 @@ function normalizeAccountantUsername(value) {
   return normalizeText(value, 64);
 }
 
+function normalizeStoredInvoiceImage(rawImage) {
+  if (!rawImage || typeof rawImage !== "object") return null;
+  const fileName = normalizeText(rawImage.fileName, 180);
+  if (!fileName) return null;
+  return {
+    id: normalizeText(rawImage.id, 80) || generateId("inv"),
+    name: normalizeText(rawImage.name, 120) || fileName,
+    fileName,
+    url: getInvoiceImageUrl(fileName)
+  };
+}
+
+function getNormalizedRecordInvoiceFields(record) {
+  const source = record && typeof record === "object" ? record : {};
+  const image = normalizeStoredInvoiceImage(source.settlementInvoiceImage || source.invoiceImage);
+  return {
+    settlementInvoiceImage: image,
+    invoiceUploadedAt: image ? normalizeDateTimeValue(source.invoiceUploadedAt || source.settlementInvoiceUploadedAt) : "",
+    invoiceUploadedBy: image ? normalizeText(source.invoiceUploadedBy || source.settlementInvoiceUploadedBy, 48) : "",
+    invoiceUploadedByUsername: image
+      ? normalizeAccountantUsername(source.invoiceUploadedByUsername || source.settlementInvoiceUploadedByUsername)
+      : ""
+  };
+}
+
+async function saveSettlementInvoiceImage(rawImage, accountantUsername) {
+  const source = rawImage && typeof rawImage === "object" ? rawImage : {};
+  const dataUrl = typeof rawImage === "string"
+    ? rawImage.trim()
+    : String(source.dataUrl || "").trim();
+  if (!dataUrl) {
+    throw new Error("请选择发票图片。");
+  }
+
+  const { mimeType, buffer } = parseFeedbackImageDataUrl(dataUrl);
+  if (!buffer.length) {
+    throw new Error("发票图片内容为空，请重新上传。");
+  }
+  if (buffer.length > SETTLEMENT_INVOICE_IMAGE_MAX_SIZE_BYTES) {
+    throw new Error("发票图片不能超过 5MB。");
+  }
+
+  await ensureStorage();
+  const extension = getFeedbackImageExtension(mimeType, source.name);
+  const safeAccountant = normalizeAccountantUsername(accountantUsername)
+    .replace(/[^a-z0-9_-]+/gi, "_")
+    .slice(0, 48) || "accountant";
+  const fileName = `invoice_${safeAccountant}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}.${extension}`;
+  const filePath = path.resolve(INVOICE_IMAGE_DIR, fileName);
+  await fs.writeFile(filePath, buffer);
+  return {
+    id: generateId("inv"),
+    name: normalizeText(source.name, 120) || `发票.${extension}`,
+    fileName,
+    url: getInvoiceImageUrl(fileName)
+  };
+}
+
+function normalizeAccountantAlias(value) {
+  return normalizeAccountantDisplayName(value);
+}
+
+function normalizeAccountantRealName(value) {
+  return normalizeText(value, 48);
+}
+
+function normalizeAccountantPhone(value) {
+  return normalizeText(value, 32);
+}
+
+function resolveAccountantProfileDisplayName(raw) {
+  if (!raw || typeof raw !== "object") return "";
+  return normalizeAccountantDisplayName(
+    raw.displayName
+      || raw.alias
+      || raw.nickname
+      || raw.chineseName
+      || raw.cnName
+      || raw.name
+      || raw.phone
+      || raw.mobile
+      || raw.mobilePhone
+      || raw.username
+  );
+}
+
+function isReservedAccountantUsername(username) {
+  return isBossAccount(username) || isDispatcherAccount(username);
+}
+
+function ensureAccountantUsernameAvailable(username, savedAccountants) {
+  if (isReservedAccountantUsername(username)) {
+    throw new Error("账号已被系统占用");
+  }
+  if (savedAccountants.some((item) => normalizeAccountantUsername(item.username) === username)) {
+    throw new Error("账号已存在");
+  }
+}
+
+function ensureAccountantDisplayNameAvailable(displayName, savedAccountants, errorMessage = "显示名称已存在") {
+  if (!displayName) {
+    throw new Error(errorMessage);
+  }
+  if (savedAccountants.some((item) => normalizeAccountantDisplayName(item.displayName) === displayName)) {
+    throw new Error(errorMessage);
+  }
+}
+
+function ensureAccountantPhoneAvailable(phone, savedAccountants, exceptUsername = "") {
+  const normalizedPhone = normalizeAccountantPhone(phone);
+  const normalizedExceptUsername = normalizeAccountantUsername(exceptUsername);
+  if (!normalizedPhone) {
+    throw new Error("手机号不能为空");
+  }
+  const normalizedPhoneAsUsername = normalizeAccountantUsername(normalizedPhone);
+  if (savedAccountants.some((item) => {
+    const itemUsername = normalizeAccountantUsername(item.username);
+    if (normalizedExceptUsername && itemUsername === normalizedExceptUsername) {
+      return false;
+    }
+    return (
+      normalizeAccountantPhone(item.phone) === normalizedPhone
+      || itemUsername === normalizedPhoneAsUsername
+    );
+  })) {
+    throw new Error("手机号已存在");
+  }
+}
+
+function findAccountantByLoginAccount(accountants, loginAccount) {
+  const normalizedLoginAccount = normalizeText(loginAccount, 64);
+  if (!normalizedLoginAccount) return null;
+  const phoneMatch = accountants.find(
+    (item) => normalizeAccountantPhone(item.phone) === normalizedLoginAccount
+  );
+  if (phoneMatch) {
+    return phoneMatch;
+  }
+  const username = normalizeAccountantUsername(normalizedLoginAccount);
+  return accountants.find(
+    (item) => normalizeAccountantUsername(item.username || item.name) === username
+  ) || null;
+}
+
 function resolveLoginAccountInput(rawValue) {
   const source = normalizeText(rawValue, 64);
   if (!source) return "";
   const lower = source.toLowerCase();
+  if (BOSS_LOGIN_CODE_TO_ACCOUNT[lower]) {
+    return BOSS_LOGIN_CODE_TO_ACCOUNT[lower];
+  }
   if (DISPATCHER_LOGIN_CODE_TO_ACCOUNT[lower]) {
     return DISPATCHER_LOGIN_CODE_TO_ACCOUNT[lower];
   }
   return source;
+}
+
+function getBossLoginConfig(accountNameRaw) {
+  const resolvedAccount = normalizeText(resolveLoginAccountInput(accountNameRaw) || accountNameRaw, 64);
+  if (!resolvedAccount) return null;
+  const normalizedAccount = resolvedAccount.toLowerCase();
+  if (!BOSS_LOGIN_ACCOUNT_SET.has(normalizedAccount)) return null;
+  return BOSS_LOGIN_ACCOUNTS.find((item) => item.account.toLowerCase() === normalizedAccount) || null;
 }
 
 function isDispatcherAccount(accountName) {
@@ -412,7 +692,7 @@ function isDispatcherAccount(accountName) {
 }
 
 function isBossAccount(accountName) {
-  return normalizeText(accountName, 16).toLowerCase() === BOSS_LOGIN_ACCOUNT;
+  return Boolean(getBossLoginConfig(accountName));
 }
 
 function normalizeLoginRole(rawRole) {
@@ -438,6 +718,7 @@ function normalizeDispatcherTag(rawValue) {
 function getDispatcherTagForAccount(accountNameRaw) {
   const account = resolveLoginAccountInput(accountNameRaw);
   const lower = normalizeText(account, 16).toLowerCase();
+  if (lower === "开心财税") return "1";
   if (lower === "1") return "1";
   if (lower === "a") return "A";
   if (lower === "c") return "C";
@@ -462,6 +743,26 @@ function createAuthSession(account, role, extra = {}) {
     createdAt: new Date().toISOString()
   });
   return token;
+}
+
+function syncAccountantAuthSessions(previousProfile, nextProfile) {
+  const previousUsername = normalizeAccountantUsername(previousProfile?.username || previousProfile?.account);
+  const previousDisplayName = normalizeAccountantDisplayName(previousProfile?.displayName || previousProfile?.name);
+  const nextUsername = normalizeAccountantUsername(nextProfile?.username || nextProfile?.account);
+  const nextDisplayName = normalizeAccountantDisplayName(nextProfile?.displayName || nextProfile?.name);
+  authSessions.forEach((session, token) => {
+    if (!session || normalizeLoginRole(session.role) !== "accountant") return;
+    const sessionUsername = normalizeAccountantUsername(session.account);
+    const sessionDisplayName = normalizeAccountantDisplayName(session.displayName || session.account);
+    if (sessionUsername !== previousUsername && sessionDisplayName !== previousDisplayName) {
+      return;
+    }
+    authSessions.set(token, {
+      ...session,
+      account: nextUsername || session.account,
+      displayName: nextDisplayName || session.displayName
+    });
+  });
 }
 
 function getAuthSessionFromRequest(req) {
@@ -507,15 +808,107 @@ function canAccessRecord(session, record) {
   return false;
 }
 
+const ACCOUNTANT_RECORD_HISTORY_VISIBLE_FIELDS = new Set([
+  "date",
+  "dispatcher",
+  "customer",
+  "summary",
+  "settlementPrice",
+  "checkStatus",
+  "isSettled"
+]);
+
+function sanitizeRecordHistoryEntryForAccountant(rawEntry) {
+  const entry = normalizeOperationHistoryEntry(rawEntry);
+  if (!entry) return null;
+  const sourceChanges = Array.isArray(entry.changes) ? entry.changes : [];
+  const changes = sourceChanges.filter((change) => (
+    ACCOUNTANT_RECORD_HISTORY_VISIBLE_FIELDS.has(normalizeText(change?.field, 64))
+  ));
+  const hasInvoiceUploadChange = sourceChanges.some((change) => {
+    const field = normalizeText(change?.field, 64);
+    return field === "settlementInvoiceImage" && normalizeText(change?.after, 1000);
+  });
+
+  if (entry.actionKey === "invoice_uploaded" && hasInvoiceUploadChange && !changes.some((change) => change.field === "isSettled")) {
+    changes.push({
+      field: "isSettled",
+      label: "结算",
+      before: getRecordWorkflowStatusLabelByKey("settled"),
+      after: getRecordWorkflowStatusLabelByKey("uploaded")
+    });
+  }
+
+  if (!changes.length) return null;
+  return {
+    ...entry,
+    changes
+  };
+}
+
+function sanitizeOperationHistoryForAccountant(rawHistory) {
+  return (Array.isArray(rawHistory) ? rawHistory : [])
+    .map((entry) => sanitizeRecordHistoryEntryForAccountant(entry))
+    .filter(Boolean);
+}
+
+function sanitizeRecordForAccountant(record) {
+  const source = record && typeof record === "object" ? record : {};
+  const settlementFields = getNormalizedRecordSettlementFields(source);
+  const invoiceFields = getNormalizedRecordInvoiceFields(source);
+  const settlementPrice = normalizeMoneyValue(source.settlementPrice);
+  return {
+    id: normalizeText(source.id, 120),
+    createdAt: normalizeDateTimeValue(source.createdAt),
+    date: normalizeText(source.date, 32),
+    dispatcher: normalizeDispatcherTag(source.dispatcher) || normalizeText(source.dispatcher, 48),
+    accountant: normalizeAccountantDisplayName(source.accountant),
+    customer: normalizeText(source.customer, 120),
+    summary: normalizeText(source.summary, 500),
+    settlementPrice: Number.isFinite(settlementPrice) ? settlementPrice : "",
+    checkStatus: normalizeText(source.checkStatus, 24).toLowerCase() || "pending",
+    completedAt: normalizeDateTimeValue(source.completedAt),
+    customerFeedback: normalizeText(source.customerFeedback, 1000),
+    serviceFeedbackImages: normalizeStoredFeedbackImages(source.serviceFeedbackImages),
+    returnedAt: normalizeDateTimeValue(source.returnedAt),
+    isSettled: settlementFields.isSettled,
+    settlementInvoiceImage: invoiceFields.settlementInvoiceImage,
+    invoiceUploadedAt: invoiceFields.invoiceUploadedAt,
+    invoiceUploadedBy: invoiceFields.invoiceUploadedBy,
+    invoiceUploadedByUsername: invoiceFields.invoiceUploadedByUsername,
+    operationHistory: sanitizeOperationHistoryForAccountant(source.operationHistory)
+  };
+}
+
+function scopeRecordBySession(session, record) {
+  if (session?.role === "accountant") {
+    return sanitizeRecordForAccountant(record);
+  }
+  return record;
+}
+
 function scopeRecordsBySession(session, sourceRecords) {
-  return sourceRecords.filter((item) => canAccessRecord(session, item));
+  return sourceRecords
+    .filter((item) => canAccessRecord(session, item))
+    .map((item) => scopeRecordBySession(session, item));
 }
 
 function scopeRecycleBinBySession(session, sourceEntries) {
-  return sourceEntries.filter((entry) => {
-    const record = entry && typeof entry === "object" ? (entry.record || {}) : {};
-    return canAccessRecord(session, record);
-  });
+  return sourceEntries
+    .filter((entry) => {
+      const record = entry && typeof entry === "object" ? (entry.record || {}) : {};
+      return canAccessRecord(session, record);
+    })
+    .map((entry) => {
+      if (session?.role !== "accountant") return entry;
+      const source = entry && typeof entry === "object" ? entry : {};
+      return {
+        recycleId: normalizeText(source.recycleId, 120),
+        deletedAt: normalizeDateTimeValue(source.deletedAt),
+        deletedBy: normalizeText(source.deletedBy, 48),
+        record: sanitizeRecordForAccountant(source.record)
+      };
+    });
 }
 
 function canAccessAccountantOperationLog(session, entry) {
@@ -536,13 +929,61 @@ function scopeAccountantOperationLogsBySession(session, sourceLogs) {
   return sourceLogs.filter((entry) => canAccessAccountantOperationLog(session, entry));
 }
 
-function scopeAccountantsBySession(session, sourceAccountants) {
-  if (!session || session.role === "boss" || session.role === "dispatcher") {
-    return sourceAccountants;
-  }
-  return sourceAccountants.filter(
-    (item) => normalizeAccountantUsername(item?.username || item?.name) === normalizeAccountantUsername(session.account)
+function getDispatcherVisibleAccountantIdentifier(rawProfile) {
+  return normalizeAccountantDisplayName(
+    rawProfile?.displayName || rawProfile?.name || rawProfile?.alias || rawProfile?.username
   );
+}
+
+function sanitizeAccountantProfileForDispatcher(rawProfile) {
+  const profile = normalizeAccountantProfile(rawProfile);
+  if (!profile) return null;
+  return {
+    ...profile,
+    username: getDispatcherVisibleAccountantIdentifier(profile) || profile.username,
+    phone: "",
+    loginPassword: ""
+  };
+}
+
+function scopeAccountantBySession(session, rawProfile) {
+  const profile = normalizeAccountantProfile(rawProfile);
+  if (!profile) return null;
+  if (session?.role === "dispatcher") {
+    return sanitizeAccountantProfileForDispatcher(profile);
+  }
+  return profile;
+}
+
+function scopeAccountantsBySession(session, sourceAccountants) {
+  const accountants = Array.isArray(sourceAccountants) ? sourceAccountants : [];
+  if (!session) {
+    return accountants.map((item) => scopeAccountantBySession(session, item)).filter(Boolean);
+  }
+  if (session.role === "accountant") {
+    return accountants
+      .filter(
+        (item) => normalizeAccountantUsername(item?.username || item?.name) === normalizeAccountantUsername(session.account)
+      )
+      .map((item) => scopeAccountantBySession(session, item))
+      .filter(Boolean);
+  }
+  return accountants.map((item) => scopeAccountantBySession(session, item)).filter(Boolean);
+}
+
+function resolveAccountantByIdentifier(sourceAccountants, accountantIdentifierRaw) {
+  const accountants = Array.isArray(sourceAccountants) ? sourceAccountants : [];
+  const normalizedUsername = normalizeAccountantUsername(accountantIdentifierRaw);
+  const normalizedDisplayName = normalizeAccountantDisplayName(accountantIdentifierRaw);
+  if (!normalizedUsername && !normalizedDisplayName) return null;
+  return accountants.find((item) => {
+    const itemUsername = normalizeAccountantUsername(item?.username || item?.name);
+    const itemDisplayName = normalizeAccountantDisplayName(item?.displayName || item?.name || item?.alias);
+    return Boolean(
+      (normalizedUsername && itemUsername === normalizedUsername)
+      || (normalizedDisplayName && itemDisplayName === normalizedDisplayName)
+    );
+  }) || null;
 }
 
 function normalizeAccountantLoginPassword(value) {
@@ -557,18 +998,27 @@ function normalizeAccountantProfile(raw) {
           username: displayName,
           displayName,
           name: displayName,
+          alias: "",
+          realName: "",
+          phone: "",
           loginPassword: ""
         }
       : null;
   }
   if (!raw || typeof raw !== "object") return null;
   const username = normalizeAccountantUsername(
-    raw.username || raw.loginName || raw.account || raw.name
+    raw.username || raw.loginName || raw.account || raw.phone || raw.mobile || raw.mobilePhone || raw.name
   );
-  const displayName = normalizeAccountantDisplayName(
-    raw.displayName || raw.chineseName || raw.cnName || raw.name || raw.username
-  );
+  const displayName = resolveAccountantProfileDisplayName(raw) || username;
   if (!username || !displayName) return null;
+  const aliasInput = normalizeAccountantAlias(raw.alias || raw.nickname);
+  const alias = aliasInput || (displayName !== username ? displayName : "");
+  const realName = normalizeAccountantRealName(
+    raw.realName || raw.fullName || raw.legalName
+  );
+  const phone = normalizeAccountantPhone(
+    raw.phone || raw.mobile || raw.mobilePhone
+  );
   const loginPassword = normalizeAccountantLoginPassword(
     raw.loginPassword || raw.password
   );
@@ -576,6 +1026,9 @@ function normalizeAccountantProfile(raw) {
     username,
     displayName,
     name: displayName,
+    alias,
+    realName,
+    phone,
     loginPassword
   };
 }
@@ -619,6 +1072,9 @@ function buildAccountantProfiles(savedAccountants, namesFromRecords = []) {
       ...current,
       displayName: current.displayName || profile.displayName || current.username,
       name: current.displayName || profile.displayName || current.username,
+      alias: current.alias || profile.alias || "",
+      realName: current.realName || profile.realName || "",
+      phone: current.phone || profile.phone || "",
       loginPassword: current.loginPassword || profile.loginPassword || ""
     };
     byUsername.set(profile.username, merged);
@@ -635,6 +1091,9 @@ function buildAccountantProfiles(savedAccountants, namesFromRecords = []) {
         username: displayName,
         displayName,
         name: displayName,
+        alias: "",
+        realName: "",
+        phone: "",
         loginPassword: ""
       });
     }
@@ -644,6 +1103,9 @@ function buildAccountantProfiles(savedAccountants, namesFromRecords = []) {
 
   profiles.forEach((profile) => {
     profile.name = profile.displayName;
+    profile.alias = normalizeAccountantAlias(profile.alias) || (profile.displayName !== profile.username ? profile.displayName : "");
+    profile.realName = normalizeAccountantRealName(profile.realName);
+    profile.phone = normalizeAccountantPhone(profile.phone);
     if (!profile.loginPassword) {
       profile.loginPassword = DEFAULT_ACCOUNTANT_LOGIN_PASSWORD;
     }
@@ -657,16 +1119,327 @@ function generateId(prefix = "rec") {
   return `${prefix}_${ts}${random}`;
 }
 
+function getRecordPremiumPrice(record) {
+  const source = record && typeof record === "object" ? record : {};
+  const paymentPrice = normalizeMoneyValue(source.paymentPrice);
+  const totalPrice = normalizeMoneyValue(source.totalPrice);
+  if (!Number.isFinite(paymentPrice) || !Number.isFinite(totalPrice)) return Number.NaN;
+  return paymentPrice - totalPrice;
+}
+
+const RECORD_HISTORY_ACTION_LABELS = {
+  created: "新建",
+  updated: "修改",
+  checked: "确认",
+  completed: "完成",
+  returned: "退单",
+  settled: "结算",
+  invoice_uploaded: "上传发票"
+};
+
+function getRecordWorkflowStatusLabelByKey(statusKey) {
+  if (statusKey === "uploaded") return "已上传/待打款";
+  if (statusKey === "settled") return "已结算/待上传";
+  if (statusKey === "completed") return "已完成/待结算";
+  if (statusKey === "checked") return "已确认/待完成";
+  if (statusKey === "returned") return "已退单";
+  return "已派单/待确认";
+}
+
+function getRecordSettlementWorkflowStatusLabel(record) {
+  const invoiceFields = getNormalizedRecordInvoiceFields(record);
+  if (invoiceFields.settlementInvoiceImage) return getRecordWorkflowStatusLabelByKey("uploaded");
+  return getNormalizedRecordSettlementFields(record).isSettled
+    ? getRecordWorkflowStatusLabelByKey("settled")
+    : "未结算";
+}
+
+function resolveActionLabel(actionKey, rawActionLabel) {
+  const normalizedActionKey = normalizeText(actionKey, 32).toLowerCase();
+  if (normalizedActionKey === "checked") return RECORD_HISTORY_ACTION_LABELS.checked;
+  return normalizeText(rawActionLabel, 32) || RECORD_HISTORY_ACTION_LABELS[normalizedActionKey] || "修改";
+}
+
+function normalizeAccountantOperationLogEntry(rawEntry) {
+  if (!rawEntry || typeof rawEntry !== "object") return null;
+  const actionKey = normalizeText(rawEntry.actionKey, 32).toLowerCase() || "updated";
+  return {
+    ...rawEntry,
+    logId: normalizeText(rawEntry.logId, 80) || generateId("alog"),
+    operatedAt: normalizeDateTimeValue(rawEntry.operatedAt),
+    operatedBy: normalizeText(rawEntry.operatedBy, 48),
+    operatedByUsername: normalizeAccountantUsername(rawEntry.operatedByUsername || rawEntry.operatedBy),
+    actionKey,
+    actionLabel: resolveActionLabel(actionKey, rawEntry.actionLabel),
+    recordId: normalizeText(rawEntry.recordId, 80),
+    date: normalizeText(rawEntry.date, 32),
+    dispatcher: normalizeText(rawEntry.dispatcher, 48),
+    accountant: normalizeText(rawEntry.accountant, 48),
+    customer: normalizeText(rawEntry.customer, 120),
+    summary: normalizeText(rawEntry.summary, 500),
+    customerFeedback: normalizeText(rawEntry.customerFeedback, 1000),
+    completedAt: normalizeDateTimeValue(rawEntry.completedAt)
+  };
+}
+
+const RECORD_HISTORY_FIELD_DEFINITIONS = [
+  { field: "checkStatus", label: "状态", kind: "status" },
+  { field: "paymentPrice", label: "付款价", kind: "money" },
+  { field: "totalPrice", label: "会计价", kind: "money" },
+  {
+    field: "premiumPrice",
+    label: "溢价",
+    kind: "money",
+    getValue: (record) => getRecordPremiumPrice(record)
+  },
+  { field: "settlementPrice", label: "结算价", kind: "money" },
+  {
+    field: "isSettled",
+    label: "结算",
+    kind: "text",
+    getValue: (record) => getRecordSettlementWorkflowStatusLabel(record)
+  },
+  { field: "settledAt", label: "结算时间", kind: "datetime" },
+  { field: "settledBy", label: "结算人", kind: "text" },
+  {
+    field: "settlementInvoiceImage",
+    label: "发票",
+    kind: "text",
+    getValue: (record) => {
+      const image = normalizeStoredInvoiceImage(record?.settlementInvoiceImage || record?.invoiceImage);
+      return image ? (image.name || image.url || image.fileName) : "";
+    }
+  },
+  { field: "invoiceUploadedAt", label: "发票上传时间", kind: "datetime" },
+  { field: "invoiceUploadedBy", label: "发票上传人", kind: "text" },
+  { field: "date", label: "日期", kind: "text" },
+  {
+    field: "isMonthlySettlement",
+    label: "月结勾选",
+    kind: "text",
+    getValue: (record) => normalizeMonthlySettlementState(record?.isMonthlySettlement) ? "是" : "否"
+  },
+  {
+    field: "dispatcher",
+    label: "派单人",
+    kind: "text",
+    getValue: (record) => normalizeDispatcherTag(record?.dispatcher) || normalizeText(record?.dispatcher, 48)
+  },
+  {
+    field: "accountant",
+    label: "会计",
+    kind: "text",
+    getValue: (record) => normalizeAccountantDisplayName(record?.accountant)
+  },
+  { field: "platform", label: "平台", kind: "text" },
+  { field: "shopName", label: "店铺", kind: "text" },
+  { field: "source", label: "来源", kind: "text" },
+  { field: "orderNo", label: "订单号", kind: "text" },
+  { field: "customer", label: "客户", kind: "text" },
+  { field: "summary", label: "任务简介", kind: "text" },
+  { field: "completedAt", label: "完工时间", kind: "datetime" },
+  { field: "customerFeedback", label: "客户反馈", kind: "text" }
+];
+
+function getRecordHistoryFieldDefinition(field) {
+  const normalizedField = normalizeText(field, 64);
+  if (!normalizedField) return null;
+  return RECORD_HISTORY_FIELD_DEFINITIONS.find((item) => item.field === normalizedField) || null;
+}
+
+function normalizeRecordHistoryValue(value, kind = "text") {
+  if (kind === "money") {
+    const amount = normalizeMoneyValue(value);
+    return Number.isFinite(amount) ? amount : "";
+  }
+  if (kind === "datetime") {
+    return normalizeDateTimeValue(value);
+  }
+  if (kind === "status") {
+    return normalizeText(value, 24).toLowerCase();
+  }
+  return normalizeText(value, 1000);
+}
+
+function isRecordHistoryValueEmpty(value) {
+  return !(typeof value === "number" && Number.isFinite(value)) && !normalizeText(value, 1000);
+}
+
+function isSameRecordHistoryValue(left, right) {
+  const leftIsNumber = typeof left === "number" && Number.isFinite(left);
+  const rightIsNumber = typeof right === "number" && Number.isFinite(right);
+  if (leftIsNumber || rightIsNumber) {
+    return leftIsNumber && rightIsNumber && left === right;
+  }
+  return normalizeText(left, 1000) === normalizeText(right, 1000);
+}
+
+function getRecordHistoryFieldValue(record, definition) {
+  const source = record && typeof record === "object" ? record : {};
+  const rawValue = typeof definition?.getValue === "function"
+    ? definition.getValue(source)
+    : source?.[definition?.field];
+  return normalizeRecordHistoryValue(rawValue, definition?.kind);
+}
+
+function normalizeRecordHistoryChange(rawChange) {
+  if (!rawChange || typeof rawChange !== "object") return null;
+  const field = normalizeText(rawChange.field, 64);
+  const definition = getRecordHistoryFieldDefinition(field);
+  const label = normalizeText(rawChange.label, 64) || definition?.label;
+  if (!field || !label) return null;
+  return {
+    field,
+    label,
+    before: normalizeRecordHistoryValue(rawChange.before, definition?.kind),
+    after: normalizeRecordHistoryValue(rawChange.after, definition?.kind)
+  };
+}
+
+function normalizeOperationHistoryEntry(rawEntry) {
+  if (!rawEntry || typeof rawEntry !== "object") return null;
+  const actionKey = normalizeText(rawEntry.actionKey, 32).toLowerCase() || "updated";
+  if (actionKey === "created") return null;
+  const actionLabel = resolveActionLabel(actionKey, rawEntry.actionLabel);
+  const operatedAt = normalizeDateTimeValue(rawEntry.operatedAt);
+  const operatedBy = normalizeText(rawEntry.operatedBy, 48);
+  const operatedRole = normalizeLoginRole(rawEntry.operatedRole) || normalizeText(rawEntry.operatedRole, 24);
+  const changes = (Array.isArray(rawEntry.changes) ? rawEntry.changes : [])
+    .map((item) => normalizeRecordHistoryChange(item))
+    .filter(Boolean);
+  const stableHistoryId = normalizeText(
+    `${actionKey}_${operatedAt}_${operatedBy}`.replace(/[^a-z0-9_-]+/gi, "_"),
+    80
+  );
+  const historyId = normalizeText(rawEntry.historyId, 80) || stableHistoryId || generateId("rhis");
+
+  if (!operatedAt && !operatedBy && !changes.length) {
+    return null;
+  }
+
+  return {
+    historyId,
+    operatedAt,
+    operatedBy,
+    operatedRole,
+    actionKey,
+    actionLabel,
+    changes
+  };
+}
+
+function normalizeOperationHistory(rawHistory) {
+  return (Array.isArray(rawHistory) ? rawHistory : [])
+    .map((item) => normalizeOperationHistoryEntry(item))
+    .filter(Boolean);
+}
+
+function buildFieldChangeList(beforeRecord, afterRecord) {
+  return RECORD_HISTORY_FIELD_DEFINITIONS
+    .map((definition) => {
+      const before = getRecordHistoryFieldValue(beforeRecord, definition);
+      const after = getRecordHistoryFieldValue(afterRecord, definition);
+      if (isSameRecordHistoryValue(before, after)) return null;
+      if (isRecordHistoryValueEmpty(before) && isRecordHistoryValueEmpty(after)) return null;
+      return {
+        field: definition.field,
+        label: definition.label,
+        before,
+        after
+      };
+    })
+    .filter(Boolean);
+}
+
+function getRecordHistoryOperator(session) {
+  const currentSession = session && typeof session === "object" ? session : {};
+  const operatedRole = normalizeLoginRole(currentSession.role);
+  if (!operatedRole) {
+    return { operatedBy: "", operatedRole: "" };
+  }
+  if (operatedRole === "accountant") {
+    return {
+      operatedBy: getSessionAccountantDisplayName(currentSession) || normalizeAccountantUsername(currentSession.account),
+      operatedRole
+    };
+  }
+  if (operatedRole === "dispatcher") {
+    const dispatcherTag = getDispatcherTagForAccount(currentSession.account) || normalizeDispatcherTag(currentSession.account);
+    return {
+      operatedBy: dispatcherTag ? `开心财税${dispatcherTag}` : normalizeText(currentSession.account, 48),
+      operatedRole
+    };
+  }
+  return {
+    operatedBy: normalizeText(currentSession.account, 48),
+    operatedRole
+  };
+}
+
+function buildRecordHistoryEntry(options = {}) {
+  const beforeRecord = options.beforeRecord && typeof options.beforeRecord === "object" ? options.beforeRecord : {};
+  const afterRecord = options.afterRecord && typeof options.afterRecord === "object" ? options.afterRecord : {};
+  const operator = getRecordHistoryOperator(options.session);
+  return normalizeOperationHistoryEntry({
+    historyId: generateId("rhis"),
+    operatedAt: normalizeDateTimeValue(options.operatedAt) || new Date().toISOString(),
+    operatedBy: normalizeText(options.operatedBy, 48) || operator.operatedBy || "系统",
+    operatedRole: normalizeLoginRole(options.operatedRole) || operator.operatedRole,
+    actionKey: normalizeText(options.actionKey, 32).toLowerCase() || "updated",
+    actionLabel: normalizeText(options.actionLabel, 32),
+    changes: buildFieldChangeList(beforeRecord, afterRecord)
+  });
+}
+
+function appendRecordHistory(record, entry) {
+  const source = record && typeof record === "object" ? record : {};
+  const currentHistory = normalizeOperationHistory(source.operationHistory);
+  const nextEntry = normalizeOperationHistoryEntry(entry);
+  return {
+    ...source,
+    operationHistory: nextEntry ? [nextEntry, ...currentHistory] : currentHistory
+  };
+}
+
 function ensureRecordIds(sourceRecords) {
   let changed = false;
   const records = sourceRecords.map((item) => {
-    if (item && typeof item === "object" && normalizeText(item.id, 80)) {
+    const current = item && typeof item === "object" ? item : {};
+    const currentId = normalizeText(current.id, 80);
+    const normalizedHistory = normalizeOperationHistory(current.operationHistory);
+    const normalizedSettlementFields = getNormalizedRecordSettlementFields(current);
+    const normalizedInvoiceFields = getNormalizedRecordInvoiceFields(current);
+    const normalizedMonthlySettlement = normalizeMonthlySettlementState(current.isMonthlySettlement);
+    const hasNormalizedHistory = Array.isArray(current.operationHistory)
+      && JSON.stringify(current.operationHistory) === JSON.stringify(normalizedHistory);
+    const hasNormalizedSettlement = current.isSettled === normalizedSettlementFields.isSettled
+      && normalizeDateTimeValue(current.settledAt) === normalizedSettlementFields.settledAt
+      && normalizeText(current.settledBy, 48) === normalizedSettlementFields.settledBy;
+    const hasNormalizedInvoice = JSON.stringify(normalizeStoredInvoiceImage(current.settlementInvoiceImage || current.invoiceImage))
+      === JSON.stringify(normalizedInvoiceFields.settlementInvoiceImage)
+      && normalizeDateTimeValue(current.invoiceUploadedAt || current.settlementInvoiceUploadedAt) === normalizedInvoiceFields.invoiceUploadedAt
+      && normalizeText(current.invoiceUploadedBy || current.settlementInvoiceUploadedBy, 48) === normalizedInvoiceFields.invoiceUploadedBy
+      && normalizeAccountantUsername(current.invoiceUploadedByUsername || current.settlementInvoiceUploadedByUsername) === normalizedInvoiceFields.invoiceUploadedByUsername;
+    const hasNormalizedMonthlySettlement = current.isMonthlySettlement === normalizedMonthlySettlement;
+    if (
+      item
+      && typeof item === "object"
+      && currentId
+      && hasNormalizedHistory
+      && hasNormalizedSettlement
+      && hasNormalizedInvoice
+      && hasNormalizedMonthlySettlement
+    ) {
       return item;
     }
     changed = true;
     return {
-      ...(item && typeof item === "object" ? item : {}),
-      id: generateId("rec")
+      ...current,
+      id: currentId || generateId("rec"),
+      isMonthlySettlement: normalizedMonthlySettlement,
+      operationHistory: normalizedHistory,
+      ...normalizedSettlementFields,
+      ...normalizedInvoiceFields
     };
   });
   return { records, changed };
@@ -689,11 +1462,12 @@ async function loadAccountantsWithMigration() {
   return { accountants: profiles, records: migration.records };
 }
 
-function normalizeRecord(input) {
+function normalizeRecord(input, options = {}) {
   const item = {
     id: generateId("rec"),
     createdAt: new Date().toISOString(),
     date: normalizeText(input.date, 32),
+    isMonthlySettlement: normalizeMonthlySettlementState(input.isMonthlySettlement),
     dispatcher: normalizeDispatcherTag(input.dispatcher) || normalizeText(input.dispatcher, 48),
     accountant: normalizeText(input.accountant, 48),
     platform: normalizeText(input.platform, 80),
@@ -705,20 +1479,41 @@ function normalizeRecord(input) {
     paymentPrice: Number(input.paymentPrice),
     totalPrice: Number(input.totalPrice),
     settlementPrice: Number(input.settlementPrice),
+    isSettled: false,
+    settledAt: "",
+    settledBy: "",
+    settlementInvoiceImage: null,
+    invoiceUploadedAt: "",
+    invoiceUploadedBy: "",
+    invoiceUploadedByUsername: "",
     checkStatus: "pending",
     checkedAt: "",
     serviceFeedbackImages: normalizeStoredFeedbackImages(input.serviceFeedbackImages)
   };
 
   if (!item.date) {
-    item.date = new Date().toISOString().slice(0, 10);
+    throw new Error("日期不能为空");
   }
-
   if (!item.dispatcher) {
     throw new Error("派单人不能为空");
   }
   if (!item.accountant) {
     throw new Error("会计不能为空");
+  }
+  if (!item.source) {
+    throw new Error("来源不能为空");
+  }
+  if (!item.platform) {
+    throw new Error("平台不能为空");
+  }
+  if (!item.shopName) {
+    throw new Error("店铺名不能为空");
+  }
+  if (!item.orderNo) {
+    throw new Error("订单号不能为空");
+  }
+  if (!item.customer) {
+    throw new Error("客户不能为空");
   }
   if (!Number.isFinite(item.paymentPrice) || item.paymentPrice < 0) {
     throw new Error("付款价格式错误");
@@ -730,18 +1525,29 @@ function normalizeRecord(input) {
     throw new Error("结算价格式错误");
   }
 
-  return item;
+  return {
+    ...item,
+    operationHistory: []
+  };
 }
 
 function buildEditableRecordUpdate(currentRecord, payload, session) {
   const current = currentRecord && typeof currentRecord === "object" ? currentRecord : {};
   const source = payload && typeof payload === "object" ? payload : {};
+  const currentSettlementFields = getNormalizedRecordSettlementFields(current);
+  const currentInvoiceFields = getNormalizedRecordInvoiceFields(current);
   const targetStatus = normalizeText(source.status, 24).toLowerCase();
   const shouldReturn = targetStatus === "returned";
+  const returnedPriceSnapshot = shouldReturn ? buildReturnedPriceSnapshot(current, source.returnedPriceSnapshot) : null;
   const nextDate = normalizeText(
     Object.prototype.hasOwnProperty.call(source, "date") ? source.date : current.date,
     32
   ) || new Date().toISOString().slice(0, 10);
+  const nextIsMonthlySettlement = normalizeMonthlySettlementState(
+    Object.prototype.hasOwnProperty.call(source, "isMonthlySettlement")
+      ? source.isMonthlySettlement
+      : current.isMonthlySettlement
+  );
   const nextDispatcherInput = session?.role === "dispatcher"
     ? getDispatcherTagForAccount(session.account)
     : (Object.prototype.hasOwnProperty.call(source, "dispatcher") ? source.dispatcher : current.dispatcher);
@@ -801,7 +1607,10 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
 
   const nextRecord = {
     ...current,
+    ...currentSettlementFields,
+    ...currentInvoiceFields,
     date: nextDate,
+    isMonthlySettlement: nextIsMonthlySettlement,
     dispatcher: nextDispatcher,
     accountant: nextAccountant,
     platform: nextPlatform,
@@ -829,12 +1638,38 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
       completedBy: "",
       customerFeedback: "",
       serviceFeedbackImages: [],
+      ...(returnedPriceSnapshot ? { returnedPriceSnapshot } : {}),
       returnedAt: new Date().toISOString(),
-      returnedBy: normalizeText(session?.account, 48)
+      returnedBy: normalizeText(session?.account, 48),
+      isSettled: false,
+      settledAt: "",
+      settledBy: "",
+      settlementInvoiceImage: null,
+      invoiceUploadedAt: "",
+      invoiceUploadedBy: "",
+      invoiceUploadedByUsername: ""
     };
   }
 
   return nextRecord;
+}
+
+function isAccountantEditableRecordPayload(payload) {
+  const source = payload && typeof payload === "object" ? payload : {};
+  const editableKeys = [
+    "date",
+    "isMonthlySettlement",
+    "dispatcher",
+    "accountant",
+    "platform",
+    "shopName",
+    "orderNo",
+    "source",
+    "paymentPrice",
+    "totalPrice",
+    "settlementPrice"
+  ];
+  return editableKeys.some((key) => Object.prototype.hasOwnProperty.call(source, key));
 }
 
 async function serveHtml(res) {
@@ -929,6 +1764,42 @@ async function serveFeedbackImageAsset(res, pathname) {
   }
 }
 
+async function serveInvoiceImageAsset(res, pathname) {
+  const normalizedPathname = String(pathname || "").trim();
+  if (!normalizedPathname.startsWith(INVOICE_IMAGE_URL_PREFIX)) {
+    sendText(res, 404, "Not Found");
+    return;
+  }
+
+  const relativePath = normalizedPathname.slice(INVOICE_IMAGE_URL_PREFIX.length);
+  if (!relativePath) {
+    sendText(res, 404, "Not Found");
+    return;
+  }
+
+  const filePath = path.resolve(INVOICE_IMAGE_DIR, relativePath);
+  if (!isPathInDirectory(filePath, INVOICE_IMAGE_DIR)) {
+    sendText(res, 403, "Forbidden");
+    return;
+  }
+
+  try {
+    const stat = await fs.stat(filePath);
+    if (!stat.isFile()) {
+      sendText(res, 404, "Not Found");
+      return;
+    }
+    const content = await fs.readFile(filePath);
+    res.writeHead(200, {
+      "Content-Type": toStaticMimeType(filePath),
+      "Cache-Control": "no-store"
+    });
+    res.end(content);
+  } catch {
+    sendText(res, 404, "Not Found");
+  }
+}
+
 async function serveRecords(req, res) {
   if (req.method === "OPTIONS") {
     setApiCorsHeaders(res);
@@ -966,7 +1837,7 @@ async function serveRecords(req, res) {
       if (session.role === "dispatcher") {
         payload.dispatcher = getDispatcherTagForAccount(session.account);
       }
-      const item = normalizeRecord(payload);
+      const item = normalizeRecord(payload, { session });
       const records = await withWriteLock(async () => {
         const all = await readRecords();
         const migration = ensureRecordIds(all);
@@ -982,6 +1853,226 @@ async function serveRecords(req, res) {
   }
 
   sendJson(res, 405, { error: "方法不支持" });
+}
+
+async function serveRecordSettlement(req, res) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const session = requireAuthSession(req, res, ["boss"]);
+  if (!session) return;
+
+  if (req.method !== "PATCH") {
+    sendJson(res, 405, { error: "方法不支持" });
+    return;
+  }
+
+  try {
+    const body = await parseBody(req);
+    const recordIds = Array.from(
+      new Set(
+        (Array.isArray(body?.recordIds) ? body.recordIds : [])
+          .map((item) => normalizeText(item, 120))
+          .filter(Boolean)
+      )
+    );
+    if (!recordIds.length) {
+      sendJson(res, 400, { error: "请选择要结算的数据。" });
+      return;
+    }
+
+    const recordIdSet = new Set(recordIds);
+    const settledAt = new Date().toISOString();
+    const settledBy = normalizeText(session.account, 48) || BOSS_LOGIN_ACCOUNT;
+
+    const result = await withWriteLock(async () => {
+      const all = await readRecords();
+      const migration = ensureRecordIds(all);
+      const foundRecordIds = new Set();
+      const settledRecordIds = [];
+      const skippedRecordIds = [];
+
+      const nextRecords = migration.records.map((item) => {
+        const current = item && typeof item === "object" ? item : {};
+        const recordId = normalizeText(current.id, 120);
+        if (!recordId || !recordIdSet.has(recordId)) {
+          return current;
+        }
+
+        foundRecordIds.add(recordId);
+        const currentSettlementFields = getNormalizedRecordSettlementFields(current);
+        const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
+        if (currentSettlementFields.isSettled || checkStatus !== "completed") {
+          skippedRecordIds.push(recordId);
+          return {
+            ...current,
+            ...currentSettlementFields
+          };
+        }
+
+        const nextRecord = {
+          ...current,
+          ...currentSettlementFields,
+          isSettled: true,
+          settledAt,
+          settledBy
+        };
+        settledRecordIds.push(recordId);
+        return appendRecordHistory(nextRecord, buildRecordHistoryEntry({
+          beforeRecord: {
+            ...current,
+            ...currentSettlementFields
+          },
+          afterRecord: nextRecord,
+          session,
+          actionKey: "settled",
+          actionLabel: RECORD_HISTORY_ACTION_LABELS.settled,
+          operatedAt: settledAt,
+          operatedBy: settledBy
+        }));
+      });
+
+      recordIds.forEach((recordId) => {
+        if (!foundRecordIds.has(recordId)) {
+          skippedRecordIds.push(recordId);
+        }
+      });
+
+      if (migration.changed || settledRecordIds.length > 0) {
+        await writeRecords(nextRecords);
+      }
+
+      return {
+        records: scopeRecordsBySession(session, nextRecords),
+        settledRecordIds,
+        skippedRecordIds
+      };
+    });
+
+    sendJson(res, 200, {
+      ok: true,
+      records: result.records,
+      settledRecordIds: result.settledRecordIds,
+      skippedRecordIds: result.skippedRecordIds
+    });
+  } catch (error) {
+    sendJson(res, 400, { error: error.message || "结算失败" });
+  }
+}
+
+async function serveRecordInvoiceUpload(req, res) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const session = requireAuthSession(req, res, ["accountant"]);
+  if (!session) return;
+
+  if (req.method !== "PATCH") {
+    sendJson(res, 405, { error: "方法不支持" });
+    return;
+  }
+
+  try {
+    const body = await parseBody(req);
+    const rawImage = body?.image || body?.invoiceImage || body?.settlementInvoiceImage;
+    const uploadedAt = new Date().toISOString();
+    const uploadedByUsername = normalizeAccountantUsername(session.account);
+    const uploadedBy = getSessionAccountantDisplayName(session) || uploadedByUsername;
+
+    const result = await withWriteLock(async () => {
+      const all = await readRecords();
+      const migration = ensureRecordIds(all);
+      const targetIndexes = [];
+
+      migration.records.forEach((item, index) => {
+        const current = item && typeof item === "object" ? item : {};
+        if (!canAccessRecord(session, current)) return;
+        const settlementFields = getNormalizedRecordSettlementFields(current);
+        const invoiceFields = getNormalizedRecordInvoiceFields(current);
+        const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
+        if (!settlementFields.isSettled || invoiceFields.settlementInvoiceImage || checkStatus !== "completed") return;
+        targetIndexes.push(index);
+      });
+
+      if (!targetIndexes.length) {
+        if (migration.changed) {
+          await writeRecords(migration.records);
+        }
+        return { empty: true };
+      }
+
+      const invoiceImage = await saveSettlementInvoiceImage(rawImage, uploadedByUsername || uploadedBy);
+      const uploadedRecordIds = [];
+      const targetIndexSet = new Set(targetIndexes);
+      const nextRecords = migration.records.map((item, index) => {
+        const current = item && typeof item === "object" ? item : {};
+        const settlementFields = getNormalizedRecordSettlementFields(current);
+        const invoiceFields = getNormalizedRecordInvoiceFields(current);
+        if (!targetIndexSet.has(index)) {
+          return {
+            ...current,
+            ...settlementFields,
+            ...invoiceFields
+          };
+        }
+
+        const beforeRecord = {
+          ...current,
+          ...settlementFields,
+          ...invoiceFields
+        };
+        const nextRecord = {
+          ...beforeRecord,
+          settlementInvoiceImage: invoiceImage,
+          invoiceUploadedAt: uploadedAt,
+          invoiceUploadedBy: uploadedBy,
+          invoiceUploadedByUsername: uploadedByUsername
+        };
+        const recordId = normalizeText(nextRecord.id, 120);
+        if (recordId) {
+          uploadedRecordIds.push(recordId);
+        }
+        return appendRecordHistory(nextRecord, buildRecordHistoryEntry({
+          beforeRecord,
+          afterRecord: nextRecord,
+          session,
+          actionKey: "invoice_uploaded",
+          actionLabel: RECORD_HISTORY_ACTION_LABELS.invoice_uploaded,
+          operatedAt: uploadedAt,
+          operatedBy: uploadedBy
+        }));
+      });
+
+      await writeRecords(nextRecords);
+      return {
+        records: scopeRecordsBySession(session, nextRecords),
+        uploadedRecordIds,
+        invoiceImage
+      };
+    });
+
+    if (result.empty) {
+      sendJson(res, 400, { error: `当前没有${getRecordWorkflowStatusLabelByKey("settled")}数据可上传发票。` });
+      return;
+    }
+
+    sendJson(res, 200, {
+      ok: true,
+      records: result.records,
+      uploadedRecordIds: result.uploadedRecordIds,
+      invoiceImage: result.invoiceImage
+    });
+  } catch (error) {
+    sendJson(res, 400, { error: error.message || "发票上传失败" });
+  }
 }
 
 async function serveRecordById(req, res, recordIdRaw) {
@@ -1083,6 +2174,7 @@ async function serveRecordById(req, res, recordIdRaw) {
         const current = migration.records[index] && typeof migration.records[index] === "object"
           ? migration.records[index]
           : {};
+        const currentSettlementFields = getNormalizedRecordSettlementFields(current);
         if (!canAccessRecord(session, current)) {
           if (migration.changed) {
             await writeRecords(migration.records);
@@ -1095,6 +2187,7 @@ async function serveRecordById(req, res, recordIdRaw) {
           const targetStatus = normalizeText(body.status, 24).toLowerCase();
           const shouldComplete = targetStatus === "completed";
           const shouldReturn = targetStatus === "returned";
+          const shouldEditRecord = isAccountantEditableRecordPayload(body);
           const operatedByUsername = normalizeAccountantUsername(session.account);
           const operatedBy = getSessionAccountantDisplayName(session) || operatedByUsername;
           const operatedAt = new Date().toISOString();
@@ -1110,6 +2203,7 @@ async function serveRecordById(req, res, recordIdRaw) {
               : currentServiceFeedbackImages;
             updatedRecord = {
               ...current,
+              ...currentSettlementFields,
               checkStatus: "completed",
               completedAt: completedAtInput || operatedAt,
               completedBy: operatedBy || normalizeText(current.completedBy, 48),
@@ -1124,6 +2218,7 @@ async function serveRecordById(req, res, recordIdRaw) {
             const summary = Object.prototype.hasOwnProperty.call(body, "summary")
               ? normalizeText(body.summary, 500)
               : normalizeText(current.summary, 500);
+            const returnedPriceSnapshot = buildReturnedPriceSnapshot(current, body.returnedPriceSnapshot);
             updatedRecord = {
               ...current,
               customer,
@@ -1138,9 +2233,22 @@ async function serveRecordById(req, res, recordIdRaw) {
               completedBy: "",
               customerFeedback: "",
               serviceFeedbackImages: [],
+              ...(returnedPriceSnapshot ? { returnedPriceSnapshot } : {}),
               returnedAt: operatedAt,
-              returnedBy: operatedBy || normalizeText(current.returnedBy, 48)
+              returnedBy: operatedBy || normalizeText(current.returnedBy, 48),
+              isSettled: false,
+              settledAt: "",
+              settledBy: "",
+              settlementInvoiceImage: null,
+              invoiceUploadedAt: "",
+              invoiceUploadedBy: "",
+              invoiceUploadedByUsername: ""
             };
+          } else if (shouldEditRecord) {
+            updatedRecord = buildEditableRecordUpdate(current, {
+              ...body,
+              accountant: getSessionAccountantDisplayName(session) || normalizeText(current.accountant, 120)
+            }, session);
           } else {
             const customer = Object.prototype.hasOwnProperty.call(body, "customer")
               ? normalizeText(body.customer, 120)
@@ -1152,10 +2260,11 @@ async function serveRecordById(req, res, recordIdRaw) {
               throw new Error("客户不能为空");
             }
             if (!summary) {
-              throw new Error("简介不能为空");
+              throw new Error("任务简介不能为空");
             }
             updatedRecord = {
               ...current,
+              ...currentSettlementFields,
               customer,
               summary,
               checkStatus: "checked",
@@ -1164,7 +2273,19 @@ async function serveRecordById(req, res, recordIdRaw) {
               serviceFeedbackImages: currentServiceFeedbackImages
             };
           }
-
+          updatedRecord = appendRecordHistory(updatedRecord, buildRecordHistoryEntry({
+            beforeRecord: current,
+            afterRecord: updatedRecord,
+            session,
+            actionKey: shouldComplete ? "completed" : (shouldReturn ? "returned" : (shouldEditRecord ? "updated" : "checked")),
+            actionLabel: shouldComplete
+              ? RECORD_HISTORY_ACTION_LABELS.completed
+              : (shouldReturn
+                ? RECORD_HISTORY_ACTION_LABELS.returned
+                : (shouldEditRecord ? RECORD_HISTORY_ACTION_LABELS.updated : RECORD_HISTORY_ACTION_LABELS.checked)),
+            operatedAt,
+            operatedBy
+          }));
           migration.records[index] = updatedRecord;
           await writeRecords(migration.records);
 
@@ -1175,8 +2296,8 @@ async function serveRecordById(req, res, recordIdRaw) {
               operatedAt,
               operatedBy,
               operatedByUsername,
-              actionKey: shouldComplete ? "completed" : (shouldReturn ? "returned" : "checked"),
-              actionLabel: shouldComplete ? "完成" : (shouldReturn ? "退单" : "核对"),
+              actionKey: shouldComplete ? "completed" : (shouldReturn ? "returned" : (shouldEditRecord ? "updated" : "checked")),
+              actionLabel: shouldComplete ? "完成" : (shouldReturn ? "退单" : (shouldEditRecord ? "修改" : RECORD_HISTORY_ACTION_LABELS.checked)),
               recordId,
               date: normalizeText(updatedRecord.date, 32),
               dispatcher: normalizeText(updatedRecord.dispatcher, 48),
@@ -1190,6 +2311,15 @@ async function serveRecordById(req, res, recordIdRaw) {
           }
         } else {
           updatedRecord = buildEditableRecordUpdate(current, body, session);
+          updatedRecord = appendRecordHistory(updatedRecord, buildRecordHistoryEntry({
+            beforeRecord: current,
+            afterRecord: updatedRecord,
+            session,
+            actionKey: normalizeText(body.status, 24).toLowerCase() === "returned" ? "returned" : "updated",
+            actionLabel: normalizeText(body.status, 24).toLowerCase() === "returned"
+              ? RECORD_HISTORY_ACTION_LABELS.returned
+              : RECORD_HISTORY_ACTION_LABELS.updated
+          }));
           migration.records[index] = updatedRecord;
           await writeRecords(migration.records);
         }
@@ -1197,7 +2327,7 @@ async function serveRecordById(req, res, recordIdRaw) {
         return {
           found: true,
           records: scopeRecordsBySession(session, migration.records),
-          record: updatedRecord
+          record: scopeRecordBySession(session, updatedRecord)
         };
       });
 
@@ -1243,6 +2373,99 @@ async function serveRecycleBin(req, res) {
   }
 
   sendJson(res, 405, { error: "方法不支持" });
+}
+
+async function serveRecycleBinRestore(req, res, recycleIdRaw) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const session = requireAuthSession(req, res, ["dispatcher", "boss"]);
+  if (!session) return;
+
+  if (req.method !== "POST") {
+    sendJson(res, 405, { error: "方法不支持" });
+    return;
+  }
+
+  try {
+    const recycleId = normalizeText(recycleIdRaw, 120);
+    if (!recycleId) {
+      sendJson(res, 400, { error: "回收站记录ID无效" });
+      return;
+    }
+
+    const result = await withWriteLock(async () => {
+      const allRecords = await readRecords();
+      const migration = ensureRecordIds(allRecords);
+      const recycleBinRecords = await readRecycleBin();
+      const recycleIndex = recycleBinRecords.findIndex((item) => String(item?.recycleId || "") === recycleId);
+
+      if (recycleIndex < 0) {
+        if (migration.changed) {
+          await writeRecords(migration.records);
+        }
+        return { found: false };
+      }
+
+      const recycleEntry = recycleBinRecords[recycleIndex];
+      const rawRecord = recycleEntry && typeof recycleEntry === "object" ? recycleEntry.record : null;
+      if (!rawRecord || typeof rawRecord !== "object") {
+        throw new Error("回收站记录已损坏，无法还原。");
+      }
+
+      const restoredRecord = ensureRecordIds([rawRecord]).records[0];
+      if (!canAccessRecord(session, restoredRecord)) {
+        if (migration.changed) {
+          await writeRecords(migration.records);
+        }
+        return { forbidden: true };
+      }
+
+      const restoredRecordId = normalizeText(restoredRecord.id, 80);
+      if (!restoredRecordId) {
+        throw new Error("回收站记录缺少有效ID，无法还原。");
+      }
+      if (migration.records.some((item) => String(item?.id || "") === restoredRecordId)) {
+        throw new Error("当前数据中已存在同ID记录，无法还原。");
+      }
+
+      recycleBinRecords.splice(recycleIndex, 1);
+      migration.records.unshift(restoredRecord);
+
+      await writeRecords(migration.records);
+      await writeRecycleBin(recycleBinRecords);
+
+      return {
+        found: true,
+        restoredRecord,
+        records: scopeRecordsBySession(session, migration.records),
+        recycleBinRecords: scopeRecycleBinBySession(session, recycleBinRecords)
+      };
+    });
+
+    if (result.forbidden) {
+      sendJson(res, 403, { error: "当前账号无权还原这条数据。" });
+      return;
+    }
+
+    if (!result.found) {
+      sendJson(res, 404, { error: "回收站记录不存在" });
+      return;
+    }
+
+    sendJson(res, 200, {
+      ok: true,
+      restoredRecord: result.restoredRecord,
+      records: result.records,
+      recycleBinRecords: result.recycleBinRecords
+    });
+  } catch (error) {
+    sendJson(res, 400, { error: error.message || "还原失败" });
+  }
 }
 
 async function serveAccountantOperationLogs(req, res) {
@@ -1294,7 +2517,8 @@ async function serveAccountants(req, res) {
     }
     try {
       const body = await parseBody(req);
-      const username = normalizeAccountantUsername(body.username || body.account);
+      const phone = normalizeAccountantPhone(body.phone || body.mobile || body.mobilePhone);
+      const username = normalizeAccountantUsername(body.username || body.account || phone);
       const displayName = normalizeAccountantDisplayName(body.displayName || body.name);
       if (!username) {
         sendJson(res, 400, { error: "用户名不能为空" });
@@ -1307,22 +2531,29 @@ async function serveAccountants(req, res) {
 
       const result = await withWriteLock(async () => {
         const { accountants: savedAccountants, records } = await loadAccountantsWithMigration();
-        if (savedAccountants.some((item) => normalizeAccountantUsername(item.username) === username)) {
-          throw new Error("用户名已存在");
+        ensureAccountantUsernameAvailable(username, savedAccountants);
+        if (phone) {
+          ensureAccountantPhoneAvailable(phone, savedAccountants);
         }
-        if (savedAccountants.some((item) => normalizeAccountantDisplayName(item.displayName) === displayName)) {
-          throw new Error("中文名已存在");
-        }
+        ensureAccountantDisplayNameAvailable(displayName, savedAccountants, "中文名已存在");
         const accountantsFromRecords = records.map((item) => normalizeAccountantDisplayName(item.accountant));
+        const nextProfile = normalizeAccountantProfile({
+          username,
+          displayName,
+          alias: displayName,
+          realName: body.realName,
+          phone,
+          loginPassword: body.password || DEFAULT_ACCOUNTANT_LOGIN_PASSWORD
+        });
         const merged = buildAccountantProfiles(
-          [...savedAccountants, { username, displayName, loginPassword: DEFAULT_ACCOUNTANT_LOGIN_PASSWORD }],
+          [...savedAccountants, nextProfile],
           accountantsFromRecords
         );
         await writeAccountants(merged);
         const profile = merged.find((item) => item.username === username) || null;
         return {
           accountants: scopeAccountantsBySession(session, merged),
-          accountant: profile
+          accountant: scopeAccountantBySession(session, profile)
         };
       });
 
@@ -1349,18 +2580,14 @@ async function serveAccountantPassword(req, res, accountantUsernameRaw) {
     return;
   }
 
-  const accountantUsername = normalizeAccountantUsername(accountantUsernameRaw);
-  if (!accountantUsername) {
-    sendJson(res, 400, { error: "会计用户名无效" });
+  const accountantIdentifier = normalizeText(accountantUsernameRaw, 120);
+  if (!accountantIdentifier) {
+    sendJson(res, 400, { error: "会计标识无效" });
     return;
   }
 
   const session = requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
   if (!session) return;
-  if (session.role === "accountant" && accountantUsername !== normalizeAccountantUsername(session.account)) {
-    sendJson(res, 403, { error: "当前账号无权修改这个会计的密码。" });
-    return;
-  }
 
   try {
     const body = await parseBody(req);
@@ -1372,7 +2599,16 @@ async function serveAccountantPassword(req, res, accountantUsernameRaw) {
 
     const result = await withWriteLock(async () => {
       const { accountants } = await loadAccountantsWithMigration();
-      const index = accountants.findIndex((item) => item.username === accountantUsername);
+      const target = resolveAccountantByIdentifier(accountants, accountantIdentifier);
+      if (!target) {
+        return { notFound: true };
+      }
+      const accountantUsername = normalizeAccountantUsername(target.username);
+      if (session.role === "accountant" && accountantUsername !== normalizeAccountantUsername(session.account)) {
+        return { forbidden: true };
+      }
+
+      const index = accountants.findIndex((item) => item.username === target.username);
       if (index < 0) {
         return { notFound: true };
       }
@@ -1387,7 +2623,7 @@ async function serveAccountantPassword(req, res, accountantUsernameRaw) {
       await writeAccountants(nextAccountants);
       return {
         accountants: scopeAccountantsBySession(session, nextAccountants),
-        accountant: nextAccountants.find((item) => item.username === accountantUsername) || {
+        accountant: scopeAccountantBySession(session, nextAccountants.find((item) => item.username === target.username)) || {
           username: accountantUsername,
           displayName: accountantUsername,
           name: accountantUsername,
@@ -1395,6 +2631,11 @@ async function serveAccountantPassword(req, res, accountantUsernameRaw) {
         }
       };
     });
+
+    if (result.forbidden) {
+      sendJson(res, 403, { error: "当前账号无权修改这个会计的密码。" });
+      return;
+    }
 
     if (result.notFound) {
       sendJson(res, 404, { error: "会计不存在" });
@@ -1419,28 +2660,173 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
     return;
   }
 
-  if (req.method !== "DELETE") {
-    sendJson(res, 405, { error: "方法不支持" });
+  const accountantIdentifier = normalizeText(accountantUsernameRaw, 120);
+  if (!accountantIdentifier) {
+    sendJson(res, 400, { error: "会计标识无效" });
     return;
   }
 
-  const accountantUsername = normalizeAccountantUsername(accountantUsernameRaw);
-  if (!accountantUsername) {
-    sendJson(res, 400, { error: "会计用户名无效" });
+  if (req.method === "PATCH") {
+    const session = requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
+    if (!session) return;
+    try {
+      const body = await parseBody(req);
+      const result = await withWriteLock(async () => {
+        const { accountants, records } = await loadAccountantsWithMigration();
+        const target = resolveAccountantByIdentifier(accountants, accountantIdentifier);
+        if (!target) {
+          return { notFound: true };
+        }
+
+        const accountantUsername = normalizeAccountantUsername(target.username);
+        const otherAccountants = accountants.filter((item) => item.username !== accountantUsername);
+        const isAccountantSelfEdit = session.role === "accountant";
+        if (isAccountantSelfEdit && accountantUsername !== normalizeAccountantUsername(session.account)) {
+          return { forbidden: true };
+        }
+        const nextPhone = normalizeAccountantPhone(
+          body.phone || body.mobile || body.mobilePhone || target.phone
+        );
+        const targetPhoneUsername = normalizeAccountantUsername(target.phone);
+        const shouldFollowPhoneAsUsername = Boolean(
+          targetPhoneUsername && normalizeAccountantUsername(target.username) === targetPhoneUsername
+        );
+        const nextUsername = isAccountantSelfEdit
+          ? (shouldFollowPhoneAsUsername ? normalizeAccountantUsername(nextPhone || accountantUsername) : accountantUsername)
+          : normalizeAccountantUsername(
+            body.username
+              || body.account
+              || (shouldFollowPhoneAsUsername ? nextPhone : target.username)
+          );
+        const alias = normalizeAccountantAlias(body.alias || body.displayName || body.nickname);
+        const preservedDisplayName = normalizeAccountantDisplayName(target.displayName) || nextUsername;
+        const nextDisplayName = normalizeAccountantDisplayName(
+          alias || (session.role === "dispatcher" ? preservedDisplayName : nextUsername)
+        );
+        const hasPassword = (
+          Object.prototype.hasOwnProperty.call(body, "password")
+          || Object.prototype.hasOwnProperty.call(body, "loginPassword")
+        );
+        const nextPassword = normalizeAccountantLoginPassword(
+          hasPassword ? (body.password || body.loginPassword) : (target.loginPassword || DEFAULT_ACCOUNTANT_LOGIN_PASSWORD)
+        );
+
+        if (!nextUsername) {
+          throw new Error("账号不能为空");
+        }
+        if (!nextPhone) {
+          throw new Error("手机号不能为空");
+        }
+        if (!nextPassword) {
+          throw new Error("密码不能为空");
+        }
+        if (!isAccountantSelfEdit && nextUsername !== accountantUsername) {
+          ensureAccountantUsernameAvailable(nextUsername, otherAccountants);
+        }
+        if (nextPhone !== normalizeAccountantPhone(target.phone)) {
+          ensureAccountantPhoneAvailable(nextPhone, otherAccountants);
+        }
+        if (nextDisplayName !== normalizeAccountantDisplayName(target.displayName)) {
+          ensureAccountantDisplayNameAvailable(nextDisplayName, otherAccountants, "显示名已存在");
+        }
+
+        const nextProfile = normalizeAccountantProfile({
+          ...target,
+          username: nextUsername,
+          displayName: nextDisplayName,
+          alias,
+          realName: body.realName,
+          phone: nextPhone,
+          loginPassword: nextPassword
+        });
+        if (!nextProfile) {
+          throw new Error("会计资料无效");
+        }
+
+        const previousDisplayName = normalizeAccountantDisplayName(target.displayName);
+        let nextRecords = records;
+        if (previousDisplayName && previousDisplayName !== nextDisplayName) {
+          const operatedAt = new Date().toISOString();
+          const operatedBy = normalizeText(session.account, 48) || "系统";
+          nextRecords = records.map((item) => {
+            if (normalizeAccountantDisplayName(item.accountant) !== previousDisplayName) {
+              return item;
+            }
+            const nextRecord = {
+              ...item,
+              accountant: nextDisplayName
+            };
+            return appendRecordHistory(nextRecord, buildRecordHistoryEntry({
+              beforeRecord: item,
+              afterRecord: nextRecord,
+              session,
+              actionKey: "updated",
+              actionLabel: RECORD_HISTORY_ACTION_LABELS.updated,
+              operatedAt,
+              operatedBy
+            }));
+          });
+          await writeRecords(nextRecords);
+        }
+
+        const accountantsFromRecords = nextRecords.map((item) => normalizeAccountantDisplayName(item.accountant));
+        const merged = buildAccountantProfiles([...otherAccountants, nextProfile], accountantsFromRecords);
+        await writeAccountants(merged);
+        syncAccountantAuthSessions(target, nextProfile);
+        const scopedSession = isAccountantSelfEdit
+          ? { ...session, account: nextProfile.username, displayName: nextProfile.displayName }
+          : session;
+
+        return {
+          accountant: scopeAccountantBySession(scopedSession, merged.find((item) => item.username === nextProfile.username) || nextProfile),
+          accountants: scopeAccountantsBySession(scopedSession, merged),
+          records: scopeRecordsBySession(scopedSession, nextRecords),
+          previousDisplayName,
+          nextDisplayName
+        };
+      });
+
+      if (result.forbidden) {
+        sendJson(res, 403, { error: "当前账号无权修改这位会计的资料。" });
+        return;
+      }
+
+      if (result.notFound) {
+        sendJson(res, 404, { error: "会计不存在" });
+        return;
+      }
+
+      sendJson(res, 200, {
+        ok: true,
+        accountant: result.accountant,
+        accountants: result.accountants,
+        records: result.records,
+        previousDisplayName: result.previousDisplayName,
+        nextDisplayName: result.nextDisplayName
+      });
+    } catch (error) {
+      sendJson(res, 400, { error: error.message || "修改会计失败" });
+    }
     return;
   }
 
   const session = requireAuthSession(req, res, ["dispatcher", "boss"]);
   if (!session) return;
 
+  if (req.method !== "DELETE") {
+    sendJson(res, 405, { error: "方法不支持" });
+    return;
+  }
+
   try {
     const result = await withWriteLock(async () => {
       const { accountants, records } = await loadAccountantsWithMigration();
-      const target = accountants.find((item) => item.username === accountantUsername);
+      const target = resolveAccountantByIdentifier(accountants, accountantIdentifier);
       if (!target) {
         return { notFound: true };
       }
 
+      const accountantUsername = normalizeAccountantUsername(target.username);
       const relatedRecordCount = records.filter(
         (item) => normalizeAccountantDisplayName(item.accountant) === normalizeAccountantDisplayName(target.displayName)
       ).length;
@@ -1452,7 +2838,7 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
       await writeAccountants(nextAccountants);
       return {
         accountants: scopeAccountantsBySession(session, nextAccountants),
-        deletedUsername: accountantUsername,
+        deletedUsername: scopeAccountantBySession(session, target)?.username || accountantUsername,
         deletedDisplayName: target.displayName
       };
     });
@@ -1520,6 +2906,96 @@ async function serveAuthPassword(req, res) {
   }
 }
 
+async function serveAuthAccountantRegister(req, res) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    sendJson(res, 405, { error: "方法不支持" });
+    return;
+  }
+
+  try {
+    const body = await parseBody(req);
+    const phone = normalizeAccountantPhone(body.phone || body.mobile || body.mobilePhone);
+    const username = normalizeAccountantUsername(phone || body.username || body.account);
+    const loginPassword = normalizeAccountantLoginPassword(body.loginPassword || body.password);
+    const alias = normalizeAccountantAlias(body.alias || body.displayName || body.nickname);
+    const realName = normalizeAccountantRealName(body.realName || body.fullName || body.legalName || body.name);
+    const displayName = normalizeAccountantDisplayName(alias || username);
+
+    if (!username) {
+      sendJson(res, 400, { error: "账号不能为空" });
+      return;
+    }
+    if (!loginPassword) {
+      sendJson(res, 400, { error: "密码不能为空" });
+      return;
+    }
+    if (!alias) {
+      sendJson(res, 400, { error: "别名不能为空" });
+      return;
+    }
+    if (!realName) {
+      sendJson(res, 400, { error: "姓名不能为空" });
+      return;
+    }
+    if (!phone) {
+      sendJson(res, 400, { error: "手机号不能为空" });
+      return;
+    }
+
+    const result = await withWriteLock(async () => {
+      const { accountants: savedAccountants, records } = await loadAccountantsWithMigration();
+      ensureAccountantPhoneAvailable(phone, savedAccountants);
+      ensureAccountantUsernameAvailable(username, savedAccountants);
+      ensureAccountantDisplayNameAvailable(
+        displayName,
+        savedAccountants,
+        alias ? "别名已存在" : "账号已存在或与现有别名冲突"
+      );
+
+      const nextProfile = normalizeAccountantProfile({
+        username,
+        displayName,
+        alias,
+        realName,
+        phone,
+        loginPassword
+      });
+      const accountantsFromRecords = records.map((item) => normalizeAccountantDisplayName(item.accountant));
+      const merged = buildAccountantProfiles(
+        [...savedAccountants, nextProfile],
+        accountantsFromRecords
+      );
+      await writeAccountants(merged);
+      return merged.find((item) => item.username === username) || null;
+    });
+
+    if (!result) {
+      throw new Error("注册失败");
+    }
+
+    sendJson(res, 201, {
+      ok: true,
+      accountant: {
+        username: result.username,
+        displayName: result.displayName,
+        name: result.displayName,
+        alias: result.alias || "",
+        realName: result.realName || "",
+        phone: result.phone || ""
+      }
+    });
+  } catch (error) {
+    sendJson(res, 400, { error: error.message || "注册失败" });
+  }
+}
+
 async function serveAuthLogin(req, res) {
   if (req.method === "OPTIONS") {
     setApiCorsHeaders(res);
@@ -1539,17 +3015,18 @@ async function serveAuthLogin(req, res) {
     const passwordInput = normalizeText(body.password, 64);
     const account = resolveLoginAccountInput(accountInput);
     if (!account || !passwordInput) {
-      sendJson(res, 401, { error: "账号或密码错误。" });
+      sendJson(res, 401, { error: "登录标识或密码错误。" });
       return;
     }
 
-    if (isBossAccount(account)) {
-      if (passwordInput === BOSS_LOGIN_PASSWORD) {
-        const sessionToken = createAuthSession(BOSS_LOGIN_ACCOUNT, "boss");
-        sendJson(res, 200, { ok: true, account: BOSS_LOGIN_ACCOUNT, role: "boss", sessionToken });
+    const bossConfig = getBossLoginConfig(account);
+    if (bossConfig) {
+      if (passwordInput === normalizeText(bossConfig.password, 64)) {
+        const sessionToken = createAuthSession(bossConfig.account, "boss");
+        sendJson(res, 200, { ok: true, account: bossConfig.account, loginAccount: bossConfig.account, role: "boss", sessionToken });
         return;
       }
-      sendJson(res, 401, { error: "账号或密码错误。" });
+      sendJson(res, 401, { error: "登录标识或密码错误。" });
       return;
     }
 
@@ -1558,10 +3035,10 @@ async function serveAuthLogin(req, res) {
       const dispatcherPassword = normalizeDispatcherPassword(dispatcherPasswords[account]);
       if (passwordInput === dispatcherPassword) {
         const sessionToken = createAuthSession(account, "dispatcher");
-        sendJson(res, 200, { ok: true, account, role: "dispatcher", sessionToken });
+        sendJson(res, 200, { ok: true, account, loginAccount: account, role: "dispatcher", sessionToken });
         return;
       }
-      sendJson(res, 401, { error: "账号或密码错误。" });
+      sendJson(res, 401, { error: "登录标识或密码错误。" });
       return;
     }
 
@@ -1569,25 +3046,28 @@ async function serveAuthLogin(req, res) {
       const result = await loadAccountantsWithMigration();
       return result.accountants;
     });
-    const profile = accountants.find((item) => normalizeAccountantUsername(item.username || item.name) === account);
+    const profile = findAccountantByLoginAccount(accountants, account);
     if (!profile) {
-      sendJson(res, 401, { error: "账号或密码错误。" });
+      sendJson(res, 401, { error: "登录标识或密码错误。" });
       return;
     }
     const storedPassword = normalizeAccountantLoginPassword(profile.loginPassword);
     if (!storedPassword || storedPassword !== passwordInput) {
-      sendJson(res, 401, { error: "账号或密码错误。" });
+      sendJson(res, 401, { error: "登录标识或密码错误。" });
       return;
     }
 
     sendJson(res, 200, {
       ok: true,
       account: profile.username,
+      loginAccount: profile.phone || accountInput || profile.username,
       role: "accountant",
       profile: {
         username: profile.username,
         displayName: profile.displayName,
-        name: profile.displayName
+        name: profile.displayName,
+        realName: profile.realName || "",
+        phone: profile.phone || ""
       },
       sessionToken: createAuthSession(profile.username, "accountant", { displayName: profile.displayName })
     });
@@ -1613,6 +3093,16 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (pathname === "/api/records/settle") {
+      await serveRecordSettlement(req, res);
+      return;
+    }
+
+    if (pathname === "/api/records/invoice") {
+      await serveRecordInvoiceUpload(req, res);
+      return;
+    }
+
     const recordByIdMatch = pathname.match(/^\/api\/records\/([^/]+)$/);
     if (recordByIdMatch) {
       await serveRecordById(req, res, recordByIdMatch[1]);
@@ -1621,6 +3111,12 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === "/api/recycle-bin") {
       await serveRecycleBin(req, res);
+      return;
+    }
+
+    const recycleBinRestoreMatch = pathname.match(/^\/api\/recycle-bin\/([^/]+)\/restore$/);
+    if (recycleBinRestoreMatch) {
+      await serveRecycleBinRestore(req, res, recycleBinRestoreMatch[1]);
       return;
     }
 
@@ -1651,6 +3147,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (pathname === "/api/auth/accountant-register") {
+      await serveAuthAccountantRegister(req, res);
+      return;
+    }
+
     if (pathname === "/api/auth/login") {
       await serveAuthLogin(req, res);
       return;
@@ -1658,6 +3159,11 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "GET" && pathname.startsWith(FEEDBACK_IMAGE_URL_PREFIX)) {
       await serveFeedbackImageAsset(res, pathname);
+      return;
+    }
+
+    if (req.method === "GET" && pathname.startsWith(INVOICE_IMAGE_URL_PREFIX)) {
+      await serveInvoiceImageAsset(res, pathname);
       return;
     }
 
@@ -1685,7 +3191,8 @@ server.listen(PORT, HOST, () => {
     `Recycle bin file: ${RECYCLE_BIN_FILE}`,
     `Accountants file: ${ACCOUNTANTS_FILE}`,
     `Accountant operation log file: ${ACCOUNTANT_OPERATION_LOG_FILE}`,
-    `Feedback image dir: ${FEEDBACK_IMAGE_DIR}`
+    `Feedback image dir: ${FEEDBACK_IMAGE_DIR}`,
+    `Invoice image dir: ${INVOICE_IMAGE_DIR}`
   ];
   bootLines.forEach((line) => {
     console.log(line);

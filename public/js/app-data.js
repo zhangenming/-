@@ -19,11 +19,16 @@
     function handleUnauthorizedSession() {
       currentAccount = "";
       currentAccountRole = "";
+      currentAccountDisplayName = "";
+      currentAccountRealName = "";
+      currentAccountPhone = "";
       currentSessionToken = "";
       records = [];
       recycleBinRecords = [];
       accountantOperationLogs = [];
       hasFetchedRecords = false;
+      clearBossRecordSelection();
+      setRecentBossSettlementRecordIds([]);
       currentOperationNoticeLogId = "";
       operationNoticeDismissed = false;
       dismissedOperationNoticeLogId = "";
@@ -36,14 +41,23 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
+      closeReturnPriceModal();
+      closeRecordHistoryModal();
+      closeInvoicePreviewModal();
+      closeBossSettlementSummaryModal();
       closeAnalysisModal();
       closeAccountantModal();
+      closeAccountantEditModal();
+      closeAccountantRegisterModal();
+      closeChangePasswordModal();
       closeRecycleModal();
+      closeDevTodoModal();
+      closeConfirmDialog(false);
       setPageMode(false);
       renderRequestLogList();
       loginCodeInput.value = "";
       loginPasswordInput.value = "";
-      setLoginRequestHint("请求状态：登录状态已失效，请重新登录", "error");
+      setLoginRequestHint("登录状态已失效，请重新登录", "error");
       loginCodeInput.focus();
     }
 
@@ -51,10 +65,93 @@
       const hasOpenModal = !createModal.hidden
         || !checkModal.hidden
         || !completeModal.hidden
+        || !returnPriceModal.hidden
+        || !recordHistoryModal.hidden
+        || (invoicePreviewModal && !invoicePreviewModal.hidden)
+        || !bossSettlementSummaryModal.hidden
+        || (bossSettlementDetailModal && !bossSettlementDetailModal.hidden)
         || !analysisModal.hidden
         || !accountantModal.hidden
-        || !recycleModal.hidden;
+        || (accountantEditModal && !accountantEditModal.hidden)
+        || (accountantRegisterModal && !accountantRegisterModal.hidden)
+        || (changePasswordModal && !changePasswordModal.hidden)
+        || (confirmModal && !confirmModal.hidden)
+        || !recycleModal.hidden
+        || (devTodoModal && !devTodoModal.hidden);
       document.body.classList.toggle("modal-open", hasOpenModal);
+    }
+
+    function setGlobalDevTodoStorageItem(value) {
+      window.localStorage.setItem(STORAGE_KEY_DEV_TODO_ITEMS, value);
+      window.sessionStorage.removeItem(STORAGE_KEY_DEV_TODO_ITEMS);
+    }
+
+    function getGlobalDevTodoStorageItem() {
+      const raw = window.localStorage.getItem(STORAGE_KEY_DEV_TODO_ITEMS);
+      if (raw !== null) return raw;
+      const legacyRaw = window.sessionStorage.getItem(STORAGE_KEY_DEV_TODO_ITEMS);
+      if (legacyRaw === null) return null;
+      window.localStorage.setItem(STORAGE_KEY_DEV_TODO_ITEMS, legacyRaw);
+      window.sessionStorage.removeItem(STORAGE_KEY_DEV_TODO_ITEMS);
+      return legacyRaw;
+    }
+
+    function removeGlobalDevTodoStorageItem() {
+      window.localStorage.removeItem(STORAGE_KEY_DEV_TODO_ITEMS);
+      window.sessionStorage.removeItem(STORAGE_KEY_DEV_TODO_ITEMS);
+    }
+
+    function saveDevTodoItems() {
+      if (!isDevTodoEnabled) return;
+      const sanitizedItems = sanitizeDevTodoItems(devTodoItems);
+      devTodoItems = sanitizedItems;
+      if (sanitizedItems.length) {
+        setGlobalDevTodoStorageItem(JSON.stringify(sanitizedItems));
+      } else {
+        removeGlobalDevTodoStorageItem();
+      }
+    }
+
+    function loadDevTodoItems() {
+      if (!isDevTodoEnabled) {
+        devTodoItems = [];
+        return;
+      }
+      const raw = String(getGlobalDevTodoStorageItem() || "").trim();
+      if (!raw) {
+        devTodoItems = [];
+        return;
+      }
+      try {
+        devTodoItems = sanitizeDevTodoItems(JSON.parse(raw));
+      } catch {
+        devTodoItems = [];
+        removeGlobalDevTodoStorageItem();
+      }
+    }
+
+    function addDevTodoItem(rawText) {
+      if (!isDevTodoEnabled) return false;
+      const text = normalizeDevTodoText(rawText);
+      if (!text) return false;
+      devTodoItems = [
+        {
+          id: createDevTodoId(),
+          text,
+          createdAt: new Date().toISOString()
+        },
+        ...devTodoItems
+      ];
+      saveDevTodoItems();
+      return true;
+    }
+
+    function removeDevTodoItemById(itemId) {
+      if (!isDevTodoEnabled) return;
+      const normalizedId = String(itemId || "").trim();
+      if (!normalizedId) return;
+      devTodoItems = devTodoItems.filter((item) => String(item?.id || "").trim() !== normalizedId);
+      saveDevTodoItems();
     }
 
     function syncSettlementPriceFromTotal() {
@@ -126,6 +223,15 @@
       syncAccountantsFromRecords();
       renderAccountantSelectOptions();
       renderTable();
+      if (recordHistoryModal && !recordHistoryModal.hidden) {
+        const openRecordId = String(recordHistoryModal.dataset.recordId || "").trim();
+        const activeRecord = nextRecords.find((item) => String(item?.id || "").trim() === openRecordId) || null;
+        if (activeRecord) {
+          renderRecordHistoryModalContent(activeRecord);
+        } else {
+          closeRecordHistoryModal();
+        }
+      }
       if (!analysisModal.hidden) {
         renderAnalysisPanel();
       }
@@ -186,60 +292,80 @@
       );
 
       sortedProfiles.forEach((profile) => {
-        const li = document.createElement("li");
-        li.className = "accountant-list-item";
+        const setNodeText = (node, text, fallback = "—") => {
+          const normalized = String(text || "").trim();
+          node.textContent = normalized || fallback;
+          node.title = normalized;
+        };
+        const row = document.createElement("tr");
+        row.className = "accountant-list-item";
         if (String(profile.username || profile.name || "").trim() === highlightedAccountantUsername) {
-          li.classList.add("recently-created");
+          row.classList.add("recently-created");
         }
-        const identity = document.createElement("div");
-        identity.className = "accountant-item-identity";
-
         const usernameText = String(profile.username || profile.name || "").trim();
         const displayName = String(profile.displayName || profile.name || "").trim();
-        const titleRow = document.createElement("div");
-        titleRow.className = "accountant-item-head";
+        const realName = String(profile.realName || "").trim();
+        const phone = String(profile.phone || "").trim();
+        const orderCount = orderCountByAccountant.get(displayName) || 0;
 
-        const usernameSpan = document.createElement("span");
-        usernameSpan.className = "accountant-item-name";
-        usernameSpan.textContent = usernameText;
-
+        const displayNameCell = document.createElement("td");
+        displayNameCell.className = "accountant-col-display";
         const displayNameSpan = document.createElement("span");
         displayNameSpan.className = "accountant-item-sub";
-        displayNameSpan.textContent = displayName;
+        setNodeText(displayNameSpan, displayName);
+        displayNameCell.appendChild(displayNameSpan);
 
-        titleRow.appendChild(usernameSpan);
-        titleRow.appendChild(displayNameSpan);
-        identity.appendChild(titleRow);
+        const realNameCell = document.createElement("td");
+        realNameCell.className = "accountant-col-realname";
+        setNodeText(realNameCell, realName);
 
-        const orderCount = orderCountByAccountant.get(displayName) || 0;
+        const phoneCell = document.createElement("td");
+        phoneCell.className = "accountant-col-phone";
+        setNodeText(phoneCell, phone);
 
         const passwordSpan = document.createElement("span");
         passwordSpan.className = "accountant-item-password";
-        passwordSpan.textContent = `密码：${profile.loginPassword || "123456"}`;
+        setNodeText(passwordSpan, profile.loginPassword);
+        const passwordCell = document.createElement("td");
+        passwordCell.className = "accountant-col-password";
+        passwordCell.appendChild(passwordSpan);
 
         const countSpan = document.createElement("span");
         countSpan.className = "accountant-item-count";
         countSpan.textContent = `${orderCount} 单`;
+        const countCell = document.createElement("td");
+        countCell.className = "accountant-col-count";
+        countCell.appendChild(countSpan);
+
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "accountant-edit-btn";
+        editBtn.dataset.accountantUsername = usernameText;
+        editBtn.dataset.accountantPhone = phone;
+        editBtn.textContent = "修改";
 
         const deleteBtn = document.createElement("button");
         deleteBtn.type = "button";
         deleteBtn.className = "accountant-delete-btn";
         deleteBtn.dataset.accountantUsername = String(profile.username || profile.name || "").trim();
+        deleteBtn.dataset.accountantPhone = phone;
         deleteBtn.dataset.accountantDisplayName = displayName;
         deleteBtn.dataset.relatedCount = String(orderCount);
         deleteBtn.disabled = orderCount > 0;
         deleteBtn.title = orderCount > 0 ? `当前有 ${orderCount} 条数据，暂不可删除` : "删除会计";
         deleteBtn.textContent = "删除";
+        const actionCell = document.createElement("td");
+        actionCell.className = "accountant-col-action";
+        actionCell.appendChild(editBtn);
+        actionCell.appendChild(deleteBtn);
 
-        const meta = document.createElement("div");
-        meta.className = "accountant-item-meta";
-        meta.appendChild(passwordSpan);
-        meta.appendChild(countSpan);
-        meta.appendChild(deleteBtn);
-
-        li.appendChild(identity);
-        li.appendChild(meta);
-        accountantList.appendChild(li);
+        row.appendChild(displayNameCell);
+        row.appendChild(realNameCell);
+        row.appendChild(phoneCell);
+        row.appendChild(passwordCell);
+        row.appendChild(countCell);
+        row.appendChild(actionCell);
+        accountantList.appendChild(row);
       });
     }
 
@@ -283,7 +409,7 @@
     function getPlatformShopPickerCurrentLabel() {
       const normalizedPlatform = String(platformInput.value || "").trim();
       const normalizedShopName = String(shopNameInput.value || "").trim();
-      if (!normalizedPlatform || !normalizedShopName) return "";
+      if (!normalizedPlatform && !normalizedShopName) return "";
       const matchedOption = platformShopPickerOptions.find((item) =>
         item.platform === normalizedPlatform && item.shopName === normalizedShopName
       ) || PLATFORM_SHOP_OPTIONS.find((item) =>
@@ -325,7 +451,7 @@
       shopNameInput.value = normalizedShopName;
       const displayLabel = normalizedPlatform && normalizedShopName
         ? `${normalizedPlatform}-${normalizedShopName}`
-        : "";
+        : normalizedPlatform || normalizedShopName;
       platformShopPickerValue.textContent = displayLabel;
       platformShopPickerValue.classList.toggle("placeholder", !displayLabel);
     }
@@ -708,7 +834,32 @@
       const payload = await response.json();
       const fetchedAccountants = Array.isArray(payload.accountants) ? payload.accountants : [];
       accountants = mergeAccountantProfiles(fetchedAccountants);
+      if (normalizeLoginRole(currentAccountRole) === "accountant") {
+        const displayName = getAccountantDisplayNameByLoginName(currentAccount);
+        const normalizedDisplayName = String(displayName || "").trim();
+        const realName = getCurrentAccountantRealName();
+        const normalizedRealName = String(realName || "").trim();
+        const phone = getCurrentAccountantLoginPhone();
+        const normalizedPhone = String(phone || "").trim();
+        let shouldPersistAccountSnapshot = false;
+        if (normalizedDisplayName && normalizedDisplayName !== currentAccountDisplayName) {
+          currentAccountDisplayName = normalizedDisplayName;
+          shouldPersistAccountSnapshot = true;
+        }
+        if (normalizedRealName && normalizedRealName !== currentAccountRealName) {
+          currentAccountRealName = normalizedRealName;
+          shouldPersistAccountSnapshot = true;
+        }
+        if (normalizedPhone && normalizedPhone !== currentAccountPhone) {
+          currentAccountPhone = normalizedPhone;
+          shouldPersistAccountSnapshot = true;
+        }
+        if (shouldPersistAccountSnapshot) {
+          saveToStorage();
+        }
+      }
       syncAccountantsFromRecords();
+      persistSavedLoginEntries();
       renderAccountantList();
       renderAccountantSelectOptions();
       renderSourcePickerOptions();
@@ -722,7 +873,7 @@
     }
 
     async function verifyLoginByServer(account, password) {
-      setLoginRequestHint("请求状态：登录验证中...", "pending");
+      setLoginRequestHint("登录验证中...", "pending");
       const response = await fetchWithClientLog(API_ENDPOINT_AUTH_LOGIN, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -731,7 +882,7 @@
         skipAuth: true
       });
       if (!response.ok) {
-        let message = "账号或密码错误。";
+        let message = "登录标识或密码错误。";
         try {
           const payload = await response.json();
           if (payload.error) {
@@ -740,11 +891,42 @@
         } catch (error) {
           console.error(error);
         }
-        setLoginRequestHint(`请求状态：${message}`, "error");
+        setLoginRequestHint(message, "error");
         throw new Error(message);
       }
       const payload = await response.json();
-      setLoginRequestHint("请求状态：登录成功", "ok");
+      setLoginRequestHint("登录成功", "ok");
+      return payload;
+    }
+
+    async function registerAccountantProfile(profile) {
+      const response = await fetchWithClientLog(API_ENDPOINT_AUTH_ACCOUNTANT_REGISTER, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile)
+      }, {
+        skipAuth: true
+      });
+
+      if (!response.ok) {
+        let message = `注册失败（${response.status}）`;
+        try {
+          const payload = await response.json();
+          if (payload.error) message = payload.error;
+        } catch (error) {
+          console.error(error);
+        }
+        throw new Error(message);
+      }
+
+      const payload = await response.json();
+      const createdProfile = payload?.accountant ? normalizeAccountantProfile(payload.accountant) : null;
+      if (createdProfile) {
+        accountants = mergeAccountantProfiles([...accountants, createdProfile]);
+        syncAccountantsFromRecords();
+        renderAccountantList();
+        renderAccountantSelectOptions();
+      }
       return payload;
     }
 
@@ -773,6 +955,63 @@
       syncAccountantsFromRecords();
       renderAccountantList();
       renderAccountantSelectOptions();
+    }
+
+    async function updateAccountantProfile(originalUsername, profile) {
+      const previousLoginAccount = getAccountantLoginIdentifier(originalUsername);
+      const response = await fetchWithClientLog(`${API_ENDPOINT_ACCOUNTANTS}/${encodeURIComponent(originalUsername)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile)
+      }, {
+        successMessage: "修改会计资料",
+        errorMessage: "修改会计资料"
+      });
+
+      if (!response.ok) {
+        let message = `修改会计资料失败（${response.status}）`;
+        try {
+          const payload = await response.json();
+          if (payload.error) message = payload.error;
+        } catch (error) {
+          console.error(error);
+        }
+        throw new Error(message);
+      }
+
+      const payload = await response.json();
+      const nextAccountants = Array.isArray(payload.accountants) ? payload.accountants : accountants;
+      const nextRecords = Array.isArray(payload.records) ? payload.records : records;
+      accountants = mergeAccountantProfiles(nextAccountants);
+      highlightedAccountantUsername = String(payload?.accountant?.username || profile?.username || originalUsername || "").trim();
+      if (profile && typeof profile === "object" && Object.prototype.hasOwnProperty.call(profile, "password")) {
+        const nextLoginAccount = String(
+          payload?.accountant?.phone
+          || getAccountantLoginIdentifier(String(payload?.accountant?.username || originalUsername || "").trim())
+          || originalUsername
+        ).trim();
+        updateSavedLoginPassword(
+          nextLoginAccount,
+          String(profile.password || "").trim(),
+          "accountant"
+        );
+        if (previousLoginAccount && previousLoginAccount !== nextLoginAccount) {
+          removeSavedLoginEntry(previousLoginAccount);
+        }
+      }
+      syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: true });
+      records = nextRecords;
+      if (filterState.accountant === String(payload.previousDisplayName || "").trim()) {
+        filterState.accountant = String(payload.nextDisplayName || "").trim();
+      }
+      syncAccountantsFromRecords();
+      renderAccountantList();
+      renderAccountantSelectOptions();
+      setPageMode(Boolean(currentAccount && currentSessionToken));
+      renderTable();
+      if (!analysisModal.hidden) {
+        renderAnalysisPanel();
+      }
     }
 
     async function deleteAccountant(username) {
@@ -830,7 +1069,11 @@
       syncAccountantsFromRecords();
       renderAccountantList();
       renderAccountantSelectOptions();
-      updateSavedLoginPassword(accountantUsername, newPassword, "accountant");
+      updateSavedLoginPassword(
+        String(payload?.accountant?.phone || getAccountantLoginIdentifier(accountantUsername) || accountantUsername).trim(),
+        newPassword,
+        "accountant"
+      );
     }
 
     async function changeDispatcherPassword(newPassword) {
@@ -879,7 +1122,7 @@
 
       const payload = await response.json();
       const nextRecords = Array.isArray(payload.records) ? payload.records : [item, ...records];
-      syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: true });
+      syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: false });
       records = nextRecords;
       renderTable();
       if (!analysisModal.hidden) {
@@ -924,6 +1167,95 @@
       }
     }
 
+    async function settleRecordsByIds(recordIds) {
+      const normalizedRecordIds = Array.from(
+        new Set(
+          (Array.isArray(recordIds) ? recordIds : [])
+            .map((item) => String(item || "").trim())
+            .filter(Boolean)
+        )
+      );
+      if (!normalizedRecordIds.length) {
+        throw new Error("请选择要结算的数据。");
+      }
+
+      const response = await fetchWithClientLog(API_ENDPOINT_RECORDS_SETTLE, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recordIds: normalizedRecordIds })
+      }, {
+        successMessage: "批量结算",
+        errorMessage: "批量结算"
+      });
+
+      if (!response.ok) {
+        let message = `结算失败（${response.status}）`;
+        try {
+          const body = await response.json();
+          if (body.error) message = body.error;
+        } catch (error) {
+          console.error(error);
+        }
+        throw new Error(message);
+      }
+
+      const body = await response.json();
+      const nextRecords = Array.isArray(body.records) ? body.records : records;
+      syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: true });
+      records = nextRecords;
+      clearBossRecordSelection();
+      renderTable();
+      if (!analysisModal.hidden) {
+        renderAnalysisPanel();
+      }
+      if (!accountantModal.hidden) {
+        renderAccountantList();
+      }
+
+      return {
+        settledRecordIds: Array.isArray(body.settledRecordIds) ? body.settledRecordIds : [],
+        skippedRecordIds: Array.isArray(body.skippedRecordIds) ? body.skippedRecordIds : []
+      };
+    }
+
+    async function uploadSettlementInvoice(image) {
+      const response = await fetchWithClientLog(API_ENDPOINT_RECORDS_INVOICE, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image })
+      }, {
+        successMessage: "上传发票",
+        errorMessage: "上传发票"
+      });
+
+      if (!response.ok) {
+        let message = `发票上传失败（${response.status}）`;
+        try {
+          const body = await response.json();
+          if (body.error) message = body.error;
+        } catch (error) {
+          console.error(error);
+        }
+        throw new Error(message);
+      }
+
+      const body = await response.json();
+      const nextRecords = Array.isArray(body.records) ? body.records : records;
+      syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: true });
+      records = nextRecords;
+      renderTable();
+      if (!analysisModal.hidden) {
+        renderAnalysisPanel();
+      }
+      if (!accountantModal.hidden) {
+        renderAccountantList();
+      }
+      return {
+        uploadedRecordIds: Array.isArray(body.uploadedRecordIds) ? body.uploadedRecordIds : [],
+        invoiceImage: body.invoiceImage || null
+      };
+    }
+
     async function checkRecordById(recordId, payload) {
       const requestPayload = {
         ...(payload && typeof payload === "object" ? payload : {}),
@@ -936,7 +1268,7 @@
       const targetStatus = String(requestPayload.status || "").trim().toLowerCase();
       const checkActionText = targetStatus === "completed"
         ? "会计完成"
-        : (targetStatus === "returned" ? "会计退单" : "会计核对");
+        : (targetStatus === "returned" ? "会计退单" : "会计确认");
       const response = await fetchWithClientLog(`${API_ENDPOINT_RECORDS}/${encodeURIComponent(recordId)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -1005,17 +1337,56 @@
       }
     }
 
+    async function restoreRecycleBinRecordById(recycleId) {
+      const response = await fetchWithClientLog(
+        `${API_ENDPOINT_RECYCLE_BIN}/${encodeURIComponent(recycleId)}/restore`,
+        { method: "POST" }
+      );
+
+      if (!response.ok) {
+        let message = `还原失败（${response.status}）`;
+        try {
+          const payload = await response.json();
+          if (payload.error) message = payload.error;
+        } catch (error) {
+          console.error(error);
+        }
+        throw new Error(message);
+      }
+
+      const payload = await response.json();
+      const nextRecords = Array.isArray(payload.records) ? payload.records : records;
+      const nextRecycleBinRecords = Array.isArray(payload.recycleBinRecords)
+        ? payload.recycleBinRecords
+        : recycleBinRecords;
+      syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: false });
+      records = nextRecords;
+      recycleBinRecords = nextRecycleBinRecords;
+      syncAccountantsFromRecords();
+      renderAccountantSelectOptions();
+      renderTable();
+      renderRecycleBinTable();
+      if (!analysisModal.hidden) {
+        renderAnalysisPanel();
+      }
+      if (!accountantModal.hidden) {
+        renderAccountantList();
+      }
+    }
+
     function stopAutoRefresh() {
       if (!refreshTimer) return;
       clearInterval(refreshTimer);
       refreshTimer = null;
     }
 
-    function startAutoRefresh() {
-      stopAutoRefresh();
-      refreshTimer = setInterval(async () => {
-        if (!currentAccount || !currentSessionToken) return;
-        if (document.hidden) return;
+    async function runAutoRefreshCycle() {
+      if (!currentAccount || !currentSessionToken) return;
+      if (document.hidden) return;
+      if (refreshInFlightPromise) return refreshInFlightPromise;
+
+      lastRefreshStartedAt = Date.now();
+      refreshInFlightPromise = (async () => {
         try {
           await fetchRecords();
           if (!recycleModal.hidden) {
@@ -1025,21 +1396,59 @@
           }
         } catch (error) {
           console.error(error);
+        } finally {
+          refreshInFlightPromise = null;
         }
+      })();
+
+      return refreshInFlightPromise;
+    }
+
+    function triggerImmediateAutoRefresh() {
+      if (!currentAccount || !currentSessionToken) return;
+      if (document.hidden) return;
+      if (Date.now() - lastRefreshStartedAt < 800) return;
+      void runAutoRefreshCycle();
+    }
+
+    function startAutoRefresh() {
+      stopAutoRefresh();
+      refreshTimer = setInterval(() => {
+        void runAutoRefreshCycle();
       }, 1000);
     }
 
     function saveToStorage() {
-      sessionStorage.setItem(STORAGE_KEY_ACCOUNT, currentAccount);
-      sessionStorage.setItem(STORAGE_KEY_ACCOUNT_ROLE, normalizeLoginRole(currentAccountRole));
-      if (currentSessionToken) {
-        sessionStorage.setItem(STORAGE_KEY_SESSION_TOKEN, currentSessionToken);
+      setPersistentStateItem(STORAGE_KEY_ACCOUNT, currentAccount);
+      setPersistentStateItem(STORAGE_KEY_ACCOUNT_ROLE, normalizeLoginRole(currentAccountRole));
+      if (normalizeLoginRole(currentAccountRole) === "accountant" && currentAccountDisplayName) {
+        setPersistentStateItem(STORAGE_KEY_ACCOUNT_DISPLAY_NAME, currentAccountDisplayName);
       } else {
-        sessionStorage.removeItem(STORAGE_KEY_SESSION_TOKEN);
+        removePersistentStateItem(STORAGE_KEY_ACCOUNT_DISPLAY_NAME);
+      }
+      if (normalizeLoginRole(currentAccountRole) === "accountant" && currentAccountRealName) {
+        setPersistentStateItem(STORAGE_KEY_ACCOUNT_REAL_NAME, currentAccountRealName);
+      } else {
+        removePersistentStateItem(STORAGE_KEY_ACCOUNT_REAL_NAME);
+      }
+      if (normalizeLoginRole(currentAccountRole) === "accountant" && currentAccountPhone) {
+        setPersistentStateItem(STORAGE_KEY_ACCOUNT_PHONE, currentAccountPhone);
+      } else {
+        removePersistentStateItem(STORAGE_KEY_ACCOUNT_PHONE);
+      }
+      if (currentSessionToken) {
+        setPersistentStateItem(STORAGE_KEY_SESSION_TOKEN, currentSessionToken);
+      } else {
+        removePersistentStateItem(STORAGE_KEY_SESSION_TOKEN);
       }
     }
 
     function persistSavedLoginEntries() {
+      if (!isQuickLoginEnabled) {
+        savedLoginEntries = [];
+        renderSavedLoginList();
+        return;
+      }
       const sanitizedEntries = Array.from(
         new Map(
           (Array.isArray(savedLoginEntries) ? savedLoginEntries : [])
@@ -1053,15 +1462,20 @@
 
       savedLoginEntries = sanitizedEntries;
       if (sanitizedEntries.length) {
-        localStorage.setItem(STORAGE_KEY_SAVED_LOGINS, JSON.stringify(sanitizedEntries));
+        setPersistentStateItem(STORAGE_KEY_SAVED_LOGINS, JSON.stringify(sanitizedEntries));
       } else {
-        localStorage.removeItem(STORAGE_KEY_SAVED_LOGINS);
+        removePersistentStateItem(STORAGE_KEY_SAVED_LOGINS);
       }
       renderSavedLoginList();
     }
 
     function loadSavedLoginEntries() {
-      const raw = String(localStorage.getItem(STORAGE_KEY_SAVED_LOGINS) || "").trim();
+      if (!isQuickLoginEnabled) {
+        savedLoginEntries = [];
+        renderSavedLoginList();
+        return;
+      }
+      const raw = String(getPersistentStateItem(STORAGE_KEY_SAVED_LOGINS) || "").trim();
       if (!raw) {
         savedLoginEntries = [];
         renderSavedLoginList();
@@ -1080,6 +1494,7 @@
     }
 
     function saveSuccessfulLoginEntry(accountName, password, role = "") {
+      if (!isQuickLoginEnabled) return;
       const normalized = normalizeSavedLoginEntry({
         account: accountName,
         password,
@@ -1092,6 +1507,7 @@
     }
 
     function updateSavedLoginPassword(accountName, password, role = "") {
+      if (!isQuickLoginEnabled) return;
       const normalized = normalizeSavedLoginEntry({
         account: accountName,
         password,
@@ -1106,27 +1522,45 @@
       persistSavedLoginEntries();
     }
 
+    function removeSavedLoginEntry(accountName) {
+      if (!isQuickLoginEnabled) return;
+      const entryKey = getSavedLoginEntryKey(accountName);
+      if (!entryKey) return;
+      savedLoginEntries = (Array.isArray(savedLoginEntries) ? savedLoginEntries : [])
+        .filter((entry) => getSavedLoginEntryKey(entry.account) !== entryKey);
+      persistSavedLoginEntries();
+    }
+
     function loadFromStorage() {
-      const storedAccount = String(sessionStorage.getItem(STORAGE_KEY_ACCOUNT) || "").trim();
-      const storedSessionToken = String(sessionStorage.getItem(STORAGE_KEY_SESSION_TOKEN) || "").trim();
-      let storedRole = normalizeLoginRole(sessionStorage.getItem(STORAGE_KEY_ACCOUNT_ROLE));
+      const storedAccount = String(getPersistentStateItem(STORAGE_KEY_ACCOUNT) || "").trim();
+      const storedSessionToken = String(getPersistentStateItem(STORAGE_KEY_SESSION_TOKEN) || "").trim();
+      const storedDisplayName = String(getPersistentStateItem(STORAGE_KEY_ACCOUNT_DISPLAY_NAME) || "").trim();
+      const storedRealName = String(getPersistentStateItem(STORAGE_KEY_ACCOUNT_REAL_NAME) || "").trim();
+      const storedPhone = String(getPersistentStateItem(STORAGE_KEY_ACCOUNT_PHONE) || "").trim();
+      let storedRole = normalizeLoginRole(getPersistentStateItem(STORAGE_KEY_ACCOUNT_ROLE));
       if (!storedRole && storedAccount) {
         storedRole = inferRoleByAccountName(storedAccount);
       }
       if (storedAccount && !storedSessionToken) {
         currentAccount = "";
         currentAccountRole = "";
+        currentAccountDisplayName = "";
+        currentAccountRealName = "";
+        currentAccountPhone = "";
         currentSessionToken = "";
         saveToStorage();
         return;
       }
-      const normalizedAccount = storedRole === "dispatcher"
+      const normalizedAccount = storedRole === "dispatcher" || storedRole === "boss"
         ? resolveLoginAccountInput(storedAccount)
         : storedAccount;
       currentAccount = String(normalizedAccount || "").trim();
       currentAccountRole = storedRole;
+      currentAccountDisplayName = storedRole === "accountant" ? storedDisplayName : "";
+      currentAccountRealName = storedRole === "accountant" ? storedRealName : "";
+      currentAccountPhone = storedRole === "accountant" ? storedPhone : "";
       currentSessionToken = storedSessionToken;
-      if (storedRole === "dispatcher" && storedAccount && currentAccount && storedAccount !== currentAccount) {
+      if ((storedRole === "dispatcher" || storedRole === "boss") && storedAccount && currentAccount && storedAccount !== currentAccount) {
         saveToStorage();
       }
       loadUpdatedRowDismissState();
@@ -1146,9 +1580,9 @@
       const key = getOperationNoticeDismissStorageKey();
       if (!key) return;
       if (dismissedOperationNoticeLogId) {
-        localStorage.setItem(key, dismissedOperationNoticeLogId);
+        setPersistentStateItem(key, dismissedOperationNoticeLogId);
       } else {
-        localStorage.removeItem(key);
+        removePersistentStateItem(key);
       }
     }
 
@@ -1159,9 +1593,9 @@
         dismissedOperationNoticeLogId = "";
         return;
       }
-      const raw = String(localStorage.getItem(key) || "").trim();
+      const raw = String(getPersistentStateItem(key) || "").trim();
       if (raw === "1") {
-        localStorage.removeItem(key);
+        removePersistentStateItem(key);
         dismissedOperationNoticeLogId = "";
       } else {
         dismissedOperationNoticeLogId = raw;
@@ -1186,22 +1620,25 @@
         },
         filter: {
           month: filterState.month,
+          dateStart: filterState.dateStart,
+          dateEnd: filterState.dateEnd,
           dispatcher: filterState.dispatcher,
           accountant: filterState.accountant,
           platform: filterState.platform,
           shopName: filterState.shopName,
           source: filterState.source,
-          status: filterState.status
+          status: filterState.status,
+          settled: ""
         },
         layout: {
           sidebarCollapsed: isSidebarCollapsed
         }
       };
-      localStorage.setItem(STORAGE_KEY_VIEW_STATE, JSON.stringify(payload));
+      setPersistentStateItem(STORAGE_KEY_VIEW_STATE, JSON.stringify(payload));
     }
 
     function loadViewState() {
-      const raw = localStorage.getItem(STORAGE_KEY_VIEW_STATE);
+      const raw = getPersistentStateItem(STORAGE_KEY_VIEW_STATE);
       if (!raw) {
         hasDispatcherFilterPreference = false;
         setSidebarCollapsed(false);
@@ -1218,12 +1655,15 @@
         const persistedSortKey = String(parsed?.sort?.key || "").trim();
         const persistedSortDirection = String(parsed?.sort?.direction || "").trim();
         const persistedMonth = String(parsedFilter.month || "").trim();
+        const persistedDateStart = String(parsedFilter.dateStart || "").trim();
+        const persistedDateEnd = String(parsedFilter.dateEnd || "").trim();
         const persistedDispatcher = String(parsedFilter.dispatcher || "").trim();
         const persistedAccountant = String(parsedFilter.accountant || "").trim();
         const persistedPlatform = String(parsedFilter.platform || "").trim();
         const persistedShopName = String(parsedFilter.shopName || "").trim();
         const persistedSource = String(parsedFilter.source || "").trim();
         const persistedStatus = String(parsedFilter.status || "").trim();
+        const persistedSettled = "";
         const persistedSidebarCollapsed = Boolean(parsed?.layout?.sidebarCollapsed);
 
         if (allowedSortKeys.has(persistedSortKey)) {
@@ -1233,13 +1673,19 @@
           sortState.direction = persistedSortDirection;
         }
 
+        const normalizedDateRange = typeof getNormalizedDateRangeFilter === "function"
+          ? getNormalizedDateRangeFilter(persistedDateStart, persistedDateEnd)
+          : { start: persistedDateStart, end: persistedDateEnd };
         filterState.month = persistedMonth;
+        filterState.dateStart = normalizedDateRange.start;
+        filterState.dateEnd = normalizedDateRange.end;
         filterState.dispatcher = persistedDispatcher;
         filterState.accountant = persistedAccountant;
         filterState.platform = persistedPlatform;
         filterState.shopName = persistedShopName;
         filterState.source = persistedSource;
         filterState.status = persistedStatus;
+        filterState.settled = persistedSettled;
         setSidebarCollapsed(persistedSidebarCollapsed);
       } catch (error) {
         console.error(error);
