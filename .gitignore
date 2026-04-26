@@ -4,6 +4,4 @@ node_modules/
 
 *.log
 
-data/dispatcher-passwords.json
-data/accountant-operation-logs.json
-data/feedback-images/
+data-dev/

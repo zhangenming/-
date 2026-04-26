@@ -1,14 +1,23 @@
 const http = require("http");
+const nativeFs = require("fs");
 const fs = require("fs/promises");
 const path = require("path");
 
 const HOST = process.env.HOST || "0.0.0.0";
 const PORT = Number(process.env.PORT || 3000);
+const APP_ENV = String(process.env.APP_ENV || "production").trim().toLowerCase() === "development"
+  ? "development"
+  : "production";
+const IS_DEVELOPMENT = APP_ENV === "development";
+const DATA_NAMESPACE = IS_DEVELOPMENT ? "development" : "production";
 
 const ROOT_DIR = __dirname;
-const HTML_FILE = path.join(ROOT_DIR, "派单结算录入.html");
-const PUBLIC_DIR = path.join(ROOT_DIR, "public");
-const DATA_DIR = path.join(ROOT_DIR, "data");
+const SOURCE_HTML_FILE = path.join(ROOT_DIR, "派单结算录入.html");
+const SOURCE_PUBLIC_DIR = path.join(ROOT_DIR, "public");
+const DIST_DIR = path.join(ROOT_DIR, "dist");
+const HTML_FILE = IS_DEVELOPMENT ? SOURCE_HTML_FILE : path.join(DIST_DIR, "派单结算录入.html");
+const PUBLIC_DIR = IS_DEVELOPMENT ? SOURCE_PUBLIC_DIR : path.join(DIST_DIR, "public");
+const DATA_DIR = path.join(ROOT_DIR, IS_DEVELOPMENT ? "data-dev" : "data");
 const DATA_FILE = path.join(DATA_DIR, "records.json");
 const RECYCLE_BIN_FILE = path.join(DATA_DIR, "recycle-bin.json");
 const ACCOUNTANTS_FILE = path.join(DATA_DIR, "accountants.json");
@@ -19,6 +28,7 @@ const FEEDBACK_IMAGE_URL_PREFIX = "/feedback-images/";
 const INVOICE_IMAGE_DIR = path.join(DATA_DIR, "invoice-images");
 const INVOICE_IMAGE_URL_PREFIX = "/invoice-images/";
 const SERVER_LOG_FILE = path.join(ROOT_DIR, "server.log");
+const DEV_LIVE_RELOAD_PATHNAME = "/__dev/events";
 const DISPATCHER_ACCOUNT_LIST = ["1", "a", "c", "e", "k", "开心财税"];
 const DISPATCHER_ACCOUNTS = new Set(DISPATCHER_ACCOUNT_LIST);
 const DISPATCHER_LOGIN_PASSWORD = "11";
@@ -61,6 +71,10 @@ const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
 
 let writeQueue = Promise.resolve();
 const authSessions = new Map();
+const devLiveReloadClients = new Set();
+let devLiveReloadHeartbeat = null;
+let devLiveReloadDebounceTimer = null;
+let devWatchersStarted = false;
 
 const STATIC_MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -114,6 +128,168 @@ function sendText(res, statusCode, text) {
     "Cache-Control": "no-store"
   });
   res.end(text);
+}
+
+function withDevLiveReload(html) {
+  if (!IS_DEVELOPMENT) {
+    return html;
+  }
+
+  const script = `
+  <script>
+    (() => {
+      const source = new EventSource("${DEV_LIVE_RELOAD_PATHNAME}");
+      let reloadTimer = null;
+      source.onmessage = () => {
+        if (reloadTimer) {
+          window.clearTimeout(reloadTimer);
+        }
+        reloadTimer = window.setTimeout(() => {
+          window.location.reload();
+        }, 80);
+      };
+    })();
+  </script>`;
+
+  if (html.includes("</body>")) {
+    return html.replace("</body>", `${script}\n</body>`);
+  }
+
+  return `${html}\n${script}\n`;
+}
+
+function removeDevLiveReloadClient(res) {
+  devLiveReloadClients.delete(res);
+  if (!devLiveReloadClients.size && devLiveReloadHeartbeat) {
+    clearInterval(devLiveReloadHeartbeat);
+    devLiveReloadHeartbeat = null;
+  }
+}
+
+function startDevLiveReloadHeartbeat() {
+  if (devLiveReloadHeartbeat || !devLiveReloadClients.size) {
+    return;
+  }
+
+  devLiveReloadHeartbeat = setInterval(() => {
+    if (!devLiveReloadClients.size) {
+      clearInterval(devLiveReloadHeartbeat);
+      devLiveReloadHeartbeat = null;
+      return;
+    }
+
+    for (const client of [...devLiveReloadClients]) {
+      try {
+        client.write(": ping\n\n");
+      } catch {
+        removeDevLiveReloadClient(client);
+      }
+    }
+  }, 15000);
+}
+
+function broadcastDevLiveReload(payload) {
+  if (!devLiveReloadClients.size) {
+    return;
+  }
+
+  const body = `data: ${JSON.stringify(payload)}\n\n`;
+  for (const client of [...devLiveReloadClients]) {
+    try {
+      client.write(body);
+    } catch {
+      removeDevLiveReloadClient(client);
+    }
+  }
+}
+
+function scheduleDevLiveReload(changedPath) {
+  if (!IS_DEVELOPMENT) {
+    return;
+  }
+
+  if (devLiveReloadDebounceTimer) {
+    clearTimeout(devLiveReloadDebounceTimer);
+  }
+
+  devLiveReloadDebounceTimer = setTimeout(() => {
+    devLiveReloadDebounceTimer = null;
+    const relativePath = changedPath ? path.relative(ROOT_DIR, changedPath) : "";
+    broadcastDevLiveReload({
+      path: relativePath,
+      time: new Date().toISOString()
+    });
+  }, 120);
+}
+
+function isDevLiveReloadSource(relativePath) {
+  const normalizedPath = String(relativePath || "").split(path.sep).join("/");
+  return normalizedPath === "派单结算录入.html" || normalizedPath.startsWith("public/");
+}
+
+function createDevWatcher(targetPath, options, onChange) {
+  const watcher = nativeFs.watch(targetPath, options, (_eventType, fileName) => {
+    onChange(fileName);
+  });
+  watcher.on("error", (error) => {
+    const line = `[dev-live-reload] watch error ${targetPath}: ${error.message}`;
+    console.error(line);
+    appendServerLogLine(line);
+  });
+  return watcher;
+}
+
+function startDevWatchers() {
+  if (!IS_DEVELOPMENT || devWatchersStarted) {
+    return;
+  }
+
+  try {
+    createDevWatcher(ROOT_DIR, { recursive: true }, (fileName) => {
+      if (!isDevLiveReloadSource(fileName)) {
+        return;
+      }
+      const changedPath = typeof fileName === "string" && fileName ? path.join(ROOT_DIR, fileName) : ROOT_DIR;
+      scheduleDevLiveReload(changedPath);
+    });
+  } catch (error) {
+    createDevWatcher(SOURCE_HTML_FILE, {}, () => {
+      scheduleDevLiveReload(SOURCE_HTML_FILE);
+    });
+    createDevWatcher(SOURCE_PUBLIC_DIR, { recursive: true }, (fileName) => {
+      const changedPath = typeof fileName === "string" && fileName
+        ? path.join(SOURCE_PUBLIC_DIR, fileName)
+        : SOURCE_PUBLIC_DIR;
+      scheduleDevLiveReload(changedPath);
+    });
+    const fallbackLine = `[dev-live-reload] fallback watcher enabled: ${error.message}`;
+    console.warn(fallbackLine);
+    appendServerLogLine(fallbackLine);
+  }
+
+  devWatchersStarted = true;
+  const line = `[dev-live-reload] watching ${SOURCE_HTML_FILE} and ${SOURCE_PUBLIC_DIR}`;
+  console.log(line);
+  appendServerLogLine(line);
+}
+
+function serveDevLiveReloadStream(req, res) {
+  if (!IS_DEVELOPMENT) {
+    sendText(res, 404, "Not Found");
+    return;
+  }
+
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-store",
+    Connection: "keep-alive"
+  });
+  res.write("retry: 500\n\n");
+  devLiveReloadClients.add(res);
+  startDevLiveReloadHeartbeat();
+  req.on("close", () => {
+    removeDevLiveReloadClient(res);
+  });
 }
 
 async function ensureStorage() {
@@ -1673,12 +1849,20 @@ function isAccountantEditableRecordPayload(payload) {
 }
 
 async function serveHtml(res) {
-  const html = await fs.readFile(HTML_FILE, "utf8");
-  res.writeHead(200, {
-    "Content-Type": "text/html; charset=utf-8",
-    "Cache-Control": "no-store"
-  });
-  res.end(html);
+  try {
+    const html = await fs.readFile(HTML_FILE, "utf8");
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store"
+    });
+    res.end(withDevLiveReload(html));
+  } catch (error) {
+    if (!IS_DEVELOPMENT && error && error.code === "ENOENT") {
+      sendText(res, 503, "生产静态资源还未生成，请先执行 npm run build。");
+      return;
+    }
+    throw error;
+  }
 }
 
 function toStaticMimeType(filePath) {
@@ -1863,7 +2047,7 @@ async function serveRecordSettlement(req, res) {
     return;
   }
 
-  const session = requireAuthSession(req, res, ["boss"]);
+  const session = requireAuthSession(req, res, ["dispatcher", "boss"]);
   if (!session) return;
 
   if (req.method !== "PATCH") {
@@ -1905,6 +2089,13 @@ async function serveRecordSettlement(req, res) {
 
         foundRecordIds.add(recordId);
         const currentSettlementFields = getNormalizedRecordSettlementFields(current);
+        if (!canAccessRecord(session, current)) {
+          skippedRecordIds.push(recordId);
+          return {
+            ...current,
+            ...currentSettlementFields
+          };
+        }
         const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
         if (currentSettlementFields.isSettled || checkStatus !== "completed") {
           skippedRecordIds.push(recordId);
@@ -3167,6 +3358,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "GET" && pathname === DEV_LIVE_RELOAD_PATHNAME) {
+      serveDevLiveReloadStream(req, res);
+      return;
+    }
+
     if (req.method === "GET" && pathname.startsWith("/public/")) {
       await servePublicAsset(res, pathname);
       return;
@@ -3184,9 +3380,17 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+if (IS_DEVELOPMENT) {
+  startDevWatchers();
+}
+
 server.listen(PORT, HOST, () => {
   const bootLines = [
     `Server running at http://${HOST}:${PORT}`,
+    `App environment: ${APP_ENV}`,
+    `Data namespace: ${DATA_NAMESPACE}`,
+    `Static root: ${IS_DEVELOPMENT ? ROOT_DIR : DIST_DIR}`,
+    `Data root: ${DATA_DIR}`,
     `Data file: ${DATA_FILE}`,
     `Recycle bin file: ${RECYCLE_BIN_FILE}`,
     `Accountants file: ${ACCOUNTANTS_FILE}`,

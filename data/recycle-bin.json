@@ -1,5 +1,182 @@
 [
   {
+    "recycleId": "del_mof96n6iezq206",
+    "deletedAt": "2026-04-26T04:13:25.338Z",
+    "deletedBy": "开心",
+    "record": {
+      "id": "rec_mof856qaeqo3t4",
+      "createdAt": "2026-04-26T03:44:17.746Z",
+      "date": "2026-04-26",
+      "isMonthlySettlement": false,
+      "dispatcher": "1",
+      "accountant": "朱会计",
+      "platform": "闲鱼",
+      "shopName": "开心财税",
+      "orderNo": "1",
+      "source": "小红书",
+      "customer": "1",
+      "summary": "1",
+      "paymentPrice": 1,
+      "totalPrice": 1,
+      "settlementPrice": 0.6,
+      "isSettled": false,
+      "settledAt": "",
+      "settledBy": "",
+      "settlementInvoiceImage": null,
+      "invoiceUploadedAt": "",
+      "invoiceUploadedBy": "",
+      "invoiceUploadedByUsername": "",
+      "checkStatus": "completed",
+      "checkedAt": "2026-04-26T03:45:42.599Z",
+      "serviceFeedbackImages": [],
+      "operationHistory": [
+        {
+          "historyId": "rhis_mof87p6gkcxp0m",
+          "operatedAt": "2026-04-26T03:46:14.968Z",
+          "operatedBy": "朱会计",
+          "operatedRole": "accountant",
+          "actionKey": "completed",
+          "actionLabel": "完成",
+          "changes": [
+            {
+              "field": "checkStatus",
+              "label": "状态",
+              "before": "checked",
+              "after": "completed"
+            },
+            {
+              "field": "completedAt",
+              "label": "完工时间",
+              "before": "",
+              "after": "2026-04-26T03:45:51.000Z"
+            },
+            {
+              "field": "customerFeedback",
+              "label": "客户反馈",
+              "before": "",
+              "after": "1"
+            }
+          ]
+        },
+        {
+          "historyId": "rhis_mof8707de6g7he",
+          "operatedAt": "2026-04-26T03:45:42.599Z",
+          "operatedBy": "朱会计",
+          "operatedRole": "accountant",
+          "actionKey": "checked",
+          "actionLabel": "确认",
+          "changes": [
+            {
+              "field": "checkStatus",
+              "label": "状态",
+              "before": "pending",
+              "after": "checked"
+            },
+            {
+              "field": "summary",
+              "label": "任务简介",
+              "before": "",
+              "after": "1"
+            }
+          ]
+        }
+      ],
+      "checkedBy": "朱会计",
+      "completedAt": "2026-04-26T03:45:51.000Z",
+      "completedBy": "朱会计",
+      "customerFeedback": "1"
+    }
+  },
+  {
+    "recycleId": "del_mof969e81bephl",
+    "deletedAt": "2026-04-26T04:13:07.472Z",
+    "deletedBy": "开心",
+    "record": {
+      "id": "rec_mof8et1aqptng6",
+      "createdAt": "2026-04-26T03:51:46.558Z",
+      "date": "2026-04-26",
+      "isMonthlySettlement": false,
+      "dispatcher": "1",
+      "accountant": "朱会计",
+      "platform": "闲鱼",
+      "shopName": "年年有鱼",
+      "orderNo": "234234",
+      "source": "闲鱼",
+      "customer": "234234",
+      "summary": "3",
+      "paymentPrice": 23423,
+      "totalPrice": 4234,
+      "settlementPrice": 2540.4,
+      "isSettled": false,
+      "settledAt": "",
+      "settledBy": "",
+      "settlementInvoiceImage": null,
+      "invoiceUploadedAt": "",
+      "invoiceUploadedBy": "",
+      "invoiceUploadedByUsername": "",
+      "checkStatus": "completed",
+      "checkedAt": "2026-04-26T03:52:02.276Z",
+      "serviceFeedbackImages": [
+        {
+          "id": "img_mof8fcm2nkjggf",
+          "name": "截屏2025-12-25 14.38.43.png",
+          "fileName": "rec_mof8et1aqptng6_mof8fcm1_ywodx6_1.png",
+          "url": "/feedback-images/rec_mof8et1aqptng6_mof8fcm1_ywodx6_1.png"
+        }
+      ],
+      "operationHistory": [
+        {
+          "historyId": "rhis_mof8fcm2xzcoce",
+          "operatedAt": "2026-04-26T03:52:11.927Z",
+          "operatedBy": "朱会计",
+          "operatedRole": "accountant",
+          "actionKey": "completed",
+          "actionLabel": "完成",
+          "changes": [
+            {
+              "field": "checkStatus",
+              "label": "状态",
+              "before": "checked",
+              "after": "completed"
+            },
+            {
+              "field": "completedAt",
+              "label": "完工时间",
+              "before": "",
+              "after": "2026-04-26T03:52:03.000Z"
+            }
+          ]
+        },
+        {
+          "historyId": "rhis_mof8f55w8l8own",
+          "operatedAt": "2026-04-26T03:52:02.276Z",
+          "operatedBy": "朱会计",
+          "operatedRole": "accountant",
+          "actionKey": "checked",
+          "actionLabel": "确认",
+          "changes": [
+            {
+              "field": "checkStatus",
+              "label": "状态",
+              "before": "pending",
+              "after": "checked"
+            },
+            {
+              "field": "summary",
+              "label": "任务简介",
+              "before": "",
+              "after": "3"
+            }
+          ]
+        }
+      ],
+      "checkedBy": "朱会计",
+      "completedAt": "2026-04-26T03:52:03.000Z",
+      "completedBy": "朱会计",
+      "customerFeedback": ""
+    }
+  },
+  {
     "recycleId": "del_moeo51ezwux1vd",
     "deletedAt": "2026-04-25T18:24:18.539Z",
     "deletedBy": "开心财税",
