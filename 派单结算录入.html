@@ -12,42 +12,44 @@
   <section id="loginPage" class="login-shell">
     <div class="card login-card">
       <h1>派单结算录入</h1>
-      <div class="field" style="margin-top: 12px;">
-        <label for="loginCodeInput">手机号 / 登录码</label>
-        <input
-          id="loginCodeInput"
-          name="loginCode"
-          type="text"
-          autocomplete="new-password"
-          data-no-suggest="true"
-          autocapitalize="off"
-          autocorrect="off"
-          spellcheck="false"
-        />
-      </div>
-      <div class="field">
-        <label for="loginPasswordInput">密码</label>
-        <input
-          id="loginPasswordInput"
-          type="password"
-          name="loginPassword"
-          autocomplete="new-password"
-          data-no-suggest="true"
-          spellcheck="false"
-        />
-      </div>
-      <div class="row login-action-row single-action">
-        <button id="enterBtn" class="btn-primary" type="button">登录进入</button>
-      </div>
-      <div id="loginRequestHint" class="login-request-hint idle" aria-live="polite" hidden></div>
-      <section id="savedLoginSection" class="saved-login-section" hidden>
-        <div class="saved-login-top">
-          <div class="saved-login-heading">
-            <span class="saved-login-title">快捷登录</span>
-          </div>
+      <form id="loginForm" autocomplete="off" novalidate>
+        <div class="field" style="margin-top: 12px;">
+          <label for="loginCodeInput">手机号 / 登录码</label>
+          <input
+            id="loginCodeInput"
+            name="loginCode"
+            type="text"
+            autocomplete="username"
+            data-no-suggest="true"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
         </div>
-        <div id="savedLoginList" class="saved-login-list"></div>
-      </section>
+        <div class="field">
+          <label for="loginPasswordInput">密码</label>
+          <input
+            id="loginPasswordInput"
+            type="password"
+            name="loginPassword"
+            autocomplete="current-password"
+            data-no-suggest="true"
+            spellcheck="false"
+          />
+        </div>
+        <div class="row login-action-row single-action">
+          <button id="enterBtn" class="btn-primary" type="submit">登录进入</button>
+        </div>
+        <div id="loginRequestHint" class="login-request-hint idle" aria-live="polite" hidden></div>
+        <section id="savedLoginSection" class="saved-login-section" hidden>
+          <div class="saved-login-top">
+            <div class="saved-login-heading">
+              <span class="saved-login-title">快捷登录</span>
+            </div>
+          </div>
+          <div id="savedLoginList" class="saved-login-list"></div>
+        </section>
+      </form>
     </div>
   </section>
 

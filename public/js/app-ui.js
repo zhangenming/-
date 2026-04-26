@@ -2354,13 +2354,16 @@
     }
 
     function setRecordCreateRequiredState(isCreateMode) {
-      const shouldRequire = Boolean(isCreateMode);
+      const shouldRequire = Boolean(isCreateMode) && !isDevelopmentPort;
       dateInput.required = shouldRequire;
       orderNoInput.required = shouldRequire;
       customerInput.required = shouldRequire;
       sourceInput.required = shouldRequire;
       platformInput.required = shouldRequire;
       shopNameInput.required = shouldRequire;
+      paymentPriceInput.required = shouldRequire;
+      totalPriceInput.required = shouldRequire;
+      settlementPriceInput.required = shouldRequire;
     }
 
     function resetRecordFormMode() {
@@ -2424,7 +2427,7 @@
       if (!rawName || !rawPassword) {
         setLoginRequestHint("请输入登录标识和密码", "error");
         showInlineFormError({
-          form: loginPage,
+          form: loginForm || loginPage,
           hintSetter: setLoginRequestHint,
           target: !rawName ? loginCodeInput : loginPasswordInput,
           message: !rawName ? "请输入登录标识。" : "请输入密码。"
@@ -2440,7 +2443,7 @@
         console.error(error);
         setLoginRequestHint(error.message || "登录失败", "error");
         showInlineFormError({
-          form: loginPage,
+          form: loginForm || loginPage,
           hintSetter: setLoginRequestHint,
           target: loginPasswordInput,
           message: error.message || "登录失败，请稍后重试。"
@@ -2453,7 +2456,7 @@
         console.error(error);
         setLoginRequestHint("登录状态创建失败", "error");
         showInlineFormError({
-          form: loginPage,
+          form: loginForm || loginPage,
           hintSetter: setLoginRequestHint,
           target: loginPasswordInput,
           message: "登录失败，请重新登录。"

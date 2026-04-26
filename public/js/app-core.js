@@ -117,6 +117,7 @@
     };
 
     const loginPage = document.getElementById("loginPage");
+    const loginForm = document.getElementById("loginForm");
     const appPage = document.getElementById("appPage");
     const appSidebar = document.getElementById("appSidebar");
     const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
@@ -2011,6 +2012,8 @@
     }
 
     function toMoney(value) {
+      if (value === null || value === undefined) return "";
+      if (typeof value === "string" && value.trim() === "") return "";
       const num = Number(value);
       if (Number.isNaN(num)) return "";
       return num.toFixed(2);
@@ -2026,6 +2029,8 @@
     }
 
     function getPremiumValue(source) {
+      if (typeof source?.paymentPrice === "string" && source.paymentPrice.trim() === "") return Number.NaN;
+      if (typeof source?.totalPrice === "string" && source.totalPrice.trim() === "") return Number.NaN;
       const payment = Number(source?.paymentPrice);
       const total = Number(source?.totalPrice);
       if (!Number.isFinite(payment) || !Number.isFinite(total)) return Number.NaN;

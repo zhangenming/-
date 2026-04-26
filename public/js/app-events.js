@@ -1,7 +1,14 @@
 // Events & Bootstrap: event bindings and app initialization lifecycle.
-    enterBtn.addEventListener("click", () => {
-      loginAccount(loginCodeInput.value, loginPasswordInput.value);
-    });
+    if (loginForm) {
+      loginForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        loginAccount(loginCodeInput.value, loginPasswordInput.value);
+      });
+    } else {
+      enterBtn.addEventListener("click", () => {
+        loginAccount(loginCodeInput.value, loginPasswordInput.value);
+      });
+    }
 
     switchAccountBtn.addEventListener("click", () => {
       logoutAccount();
@@ -111,18 +118,6 @@
         openAccountantProfileEditFlow();
       });
     }
-
-    loginCodeInput.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter") return;
-      event.preventDefault();
-      loginAccount(loginCodeInput.value, loginPasswordInput.value);
-    });
-
-    loginPasswordInput.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter") return;
-      event.preventDefault();
-      loginAccount(loginCodeInput.value, loginPasswordInput.value);
-    });
 
     if (openAccountantRegisterBtn) {
       openAccountantRegisterBtn.addEventListener("click", () => {
@@ -1452,6 +1447,8 @@
 
       const formData = new FormData(recordForm);
       const editingRecordId = String(recordEditingIdInput.value || "").trim();
+      const isCreateMode = !editingRecordId;
+      const allowEmptyCreateFields = isCreateMode && isDevelopmentPort;
       const currentAccountantName = isAccountantLogin() ? getCurrentAccountantDisplayName() : "";
       const paymentPriceRaw = String(formData.get("paymentPrice") || "").trim();
       const totalPriceRaw = String(formData.get("totalPrice") || "").trim();
@@ -1467,13 +1464,12 @@
         source: String(formData.get("source") || "").trim(),
         customer: String(formData.get("customer") || "").trim(),
         summary: String(formData.get("summary") || "").trim(),
-        paymentPrice: paymentPriceRaw === "" ? Number.NaN : Number(paymentPriceRaw),
-        totalPrice: totalPriceRaw === "" ? Number.NaN : Number(totalPriceRaw),
-        settlementPrice: settlementPriceRaw === "" ? Number.NaN : Number(settlementPriceRaw)
+        paymentPrice: paymentPriceRaw === "" ? (allowEmptyCreateFields ? "" : Number.NaN) : Number(paymentPriceRaw),
+        totalPrice: totalPriceRaw === "" ? (allowEmptyCreateFields ? "" : Number.NaN) : Number(totalPriceRaw),
+        settlementPrice: settlementPriceRaw === "" ? (allowEmptyCreateFields ? "" : Number.NaN) : Number(settlementPriceRaw)
       };
-      const isCreateMode = !editingRecordId;
 
-      if (isCreateMode) {
+      if (isCreateMode && !allowEmptyCreateFields) {
         const requiredFields = [
           { key: "date", label: "日期", value: item.date },
           { key: "source", label: "来源", value: item.source },
@@ -1528,7 +1524,9 @@
         }
       ];
       const invalidPriceField = priceFields.find((field) => (
-        field.raw === "" || !Number.isFinite(field.value) || field.value < 0
+        allowEmptyCreateFields
+          ? (field.raw !== "" && (!Number.isFinite(field.value) || field.value < 0))
+          : (field.raw === "" || !Number.isFinite(field.value) || field.value < 0)
       ));
       if (invalidPriceField) {
         showInlineFormError({
@@ -1542,7 +1540,7 @@
         return;
       }
 
-      if (!item.accountant) {
+      if (!item.accountant && !allowEmptyCreateFields) {
         showInlineFormError({
           form: recordForm,
           hintSetter: setRecordFormHint,
@@ -1644,7 +1642,7 @@
     });
 
     async function init() {
-      bindInlineValidation(loginPage, setLoginRequestHint);
+      bindInlineValidation(loginForm || loginPage, setLoginRequestHint);
       bindInlineValidation(recordForm, setRecordFormHint);
       bindInlineValidation(checkForm, setCheckFormHint);
       bindInlineValidation(completeForm, setCompleteFormHint);

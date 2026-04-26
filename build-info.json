@@ -1,8 +1,8 @@
 {
-  "version": "1.0.0.10",
+  "version": "1.0.0.12",
   "baseVersion": "1.0.0",
-  "buildNumber": 10,
-  "builtAt": "2026-04-26T10:20:17.249Z",
+  "buildNumber": 12,
+  "builtAt": "2026-04-26T10:42:21.059Z",
   "html": "派单结算录入.html",
   "publicDir": "public"
 }

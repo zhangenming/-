@@ -641,8 +641,15 @@ function normalizeStoredFeedbackImages(rawImages) {
 }
 
 function normalizeMoneyValue(value) {
+  if (value === null || value === undefined) return Number.NaN;
+  if (typeof value === "string" && value.trim() === "") return Number.NaN;
   const amount = Number(value);
   return Number.isFinite(amount) ? amount : Number.NaN;
+}
+
+function normalizeOptionalMoneyField(value) {
+  const amount = normalizeMoneyValue(value);
+  return Number.isFinite(amount) ? amount : "";
 }
 
 function normalizeRecordSettlementState(value) {
@@ -1779,11 +1786,12 @@ async function loadAccountantsWithMigration() {
   return { accountants: profiles, records: migration.records };
 }
 
-function normalizeRecord(input, options = {}) {
+function normalizeRecord(input) {
+  const normalizedDate = normalizeText(input.date, 32);
   const item = {
     id: generateId("rec"),
     createdAt: new Date().toISOString(),
-    date: normalizeText(input.date, 32),
+    date: normalizedDate || new Date().toISOString().slice(0, 10),
     isMonthlySettlement: normalizeMonthlySettlementState(input.isMonthlySettlement),
     dispatcher: normalizeDispatcherTag(input.dispatcher) || normalizeText(input.dispatcher, 48),
     accountant: normalizeText(input.accountant, 48),
@@ -1793,9 +1801,9 @@ function normalizeRecord(input, options = {}) {
     source: normalizeText(input.source, 120),
     customer: normalizeText(input.customer, 120),
     summary: normalizeText(input.summary, 500),
-    paymentPrice: Number(input.paymentPrice),
-    totalPrice: Number(input.totalPrice),
-    settlementPrice: Number(input.settlementPrice),
+    paymentPrice: normalizeOptionalMoneyField(input.paymentPrice),
+    totalPrice: normalizeOptionalMoneyField(input.totalPrice),
+    settlementPrice: normalizeOptionalMoneyField(input.settlementPrice),
     isSettled: false,
     settledAt: "",
     settledBy: "",
@@ -1807,40 +1815,6 @@ function normalizeRecord(input, options = {}) {
     checkedAt: "",
     serviceFeedbackImages: normalizeStoredFeedbackImages(input.serviceFeedbackImages)
   };
-
-  if (!item.date) {
-    throw new Error("日期不能为空");
-  }
-  if (!item.dispatcher) {
-    throw new Error("派单人不能为空");
-  }
-  if (!item.accountant) {
-    throw new Error("会计不能为空");
-  }
-  if (!item.source) {
-    throw new Error("来源不能为空");
-  }
-  if (!item.platform) {
-    throw new Error("平台不能为空");
-  }
-  if (!item.shopName) {
-    throw new Error("店铺名不能为空");
-  }
-  if (!item.orderNo) {
-    throw new Error("订单号不能为空");
-  }
-  if (!item.customer) {
-    throw new Error("客户不能为空");
-  }
-  if (!Number.isFinite(item.paymentPrice) || item.paymentPrice < 0) {
-    throw new Error("付款价格式错误");
-  }
-  if (!Number.isFinite(item.totalPrice) || item.totalPrice < 0) {
-    throw new Error("会计价格式错误");
-  }
-  if (!Number.isFinite(item.settlementPrice) || item.settlementPrice < 0) {
-    throw new Error("结算价格式错误");
-  }
 
   return {
     ...item,
@@ -1896,31 +1870,15 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
     Object.prototype.hasOwnProperty.call(source, "summary") ? source.summary : current.summary,
     500
   );
-  const nextPaymentPrice = Number(
+  const nextPaymentPrice = normalizeOptionalMoneyField(
     Object.prototype.hasOwnProperty.call(source, "paymentPrice") ? source.paymentPrice : current.paymentPrice
   );
-  const nextTotalPrice = Number(
+  const nextTotalPrice = normalizeOptionalMoneyField(
     Object.prototype.hasOwnProperty.call(source, "totalPrice") ? source.totalPrice : current.totalPrice
   );
-  const nextSettlementPrice = Number(
+  const nextSettlementPrice = normalizeOptionalMoneyField(
     Object.prototype.hasOwnProperty.call(source, "settlementPrice") ? source.settlementPrice : current.settlementPrice
   );
-
-  if (!nextDispatcher) {
-    throw new Error("派单人不能为空");
-  }
-  if (!nextAccountant) {
-    throw new Error("会计不能为空");
-  }
-  if (!Number.isFinite(nextPaymentPrice) || nextPaymentPrice < 0) {
-    throw new Error("付款价格式错误");
-  }
-  if (!Number.isFinite(nextTotalPrice) || nextTotalPrice < 0) {
-    throw new Error("会计价格式错误");
-  }
-  if (!Number.isFinite(nextSettlementPrice) || nextSettlementPrice < 0) {
-    throw new Error("结算价格式错误");
-  }
 
   const nextRecord = {
     ...current,
@@ -2260,7 +2218,7 @@ async function serveRecords(req, res) {
       if (session.role === "dispatcher") {
         payload.dispatcher = getDispatcherTagForAccount(session.account);
       }
-      const item = normalizeRecord(payload, { session });
+      const item = normalizeRecord(payload);
       const records = await withWriteLock(async () => {
         const all = await readRecords();
         const migration = ensureRecordIds(all);
