@@ -512,6 +512,12 @@
       });
     });
 
+    accountantSortableHeaders.forEach((button) => {
+      button.addEventListener("click", () => {
+        toggleAccountantSort(button.dataset.key || "");
+      });
+    });
+
     filterMonthBtn.addEventListener("click", (event) => {
       event.stopPropagation();
       toggleFilterPopover("month");

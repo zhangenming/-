@@ -432,6 +432,7 @@
     }
 
     function renderAccountantList() {
+      renderAccountantSortHeaderUI();
       accountantList.innerHTML = "";
       if (!accountants.length) {
         accountantEmptyState.style.display = "block";
@@ -440,9 +441,7 @@
       accountantEmptyState.style.display = "none";
 
       const orderCountByAccountant = getAccountantOrderCountMap();
-      const sortedProfiles = [...accountants].sort((left, right) =>
-        compareAccountantNameByOrderCount(left.displayName || left.name, right.displayName || right.name, orderCountByAccountant)
-      );
+      const sortedProfiles = getSortedAccountantProfiles(accountants, orderCountByAccountant);
 
       sortedProfiles.forEach((profile) => {
         const setNodeText = (node, text, fallback = "—") => {
@@ -512,14 +511,96 @@
         actionCell.appendChild(editBtn);
         actionCell.appendChild(deleteBtn);
 
-        row.appendChild(displayNameCell);
-        row.appendChild(realNameCell);
         row.appendChild(phoneCell);
         row.appendChild(passwordCell);
+        row.appendChild(displayNameCell);
+        row.appendChild(realNameCell);
         row.appendChild(countCell);
         row.appendChild(actionCell);
         accountantList.appendChild(row);
       });
+    }
+
+    function getAccountantSortFieldValue(profile, key, orderCountByAccountant) {
+      const displayName = String(profile?.displayName || profile?.name || "").trim();
+      const realName = String(profile?.realName || "").trim();
+      const phone = String(profile?.phone || "").trim();
+      const password = String(profile?.loginPassword || "").trim();
+      const orderCount = orderCountByAccountant.get(displayName) || 0;
+
+      if (key === "displayName") return displayName;
+      if (key === "realName") return realName;
+      if (key === "phone") return phone;
+      if (key === "password") return password;
+      if (key === "orderCount") return orderCount;
+      if (key === "action") return orderCount > 0 ? 1 : 0;
+      return displayName;
+    }
+
+    function compareAccountantSortValues(leftValue, rightValue) {
+      const leftIsNumber = typeof leftValue === "number" && Number.isFinite(leftValue);
+      const rightIsNumber = typeof rightValue === "number" && Number.isFinite(rightValue);
+      if (leftIsNumber || rightIsNumber) {
+        const safeLeft = leftIsNumber ? leftValue : Number.POSITIVE_INFINITY;
+        const safeRight = rightIsNumber ? rightValue : Number.POSITIVE_INFINITY;
+        if (safeLeft === safeRight) return 0;
+        return safeLeft < safeRight ? -1 : 1;
+      }
+
+      const leftText = String(leftValue || "").trim();
+      const rightText = String(rightValue || "").trim();
+      if (!leftText && !rightText) return 0;
+      if (!leftText) return 1;
+      if (!rightText) return -1;
+      return leftText.localeCompare(rightText, "zh-CN", { numeric: true, sensitivity: "base" });
+    }
+
+    function getSortedAccountantProfiles(sourceProfiles, orderCountByAccountant) {
+      const directionFactor = accountantSortState.direction === "asc" ? 1 : -1;
+      return [...sourceProfiles]
+        .map((profile, index) => ({ profile, index }))
+        .sort((left, right) => {
+          const leftValue = getAccountantSortFieldValue(left.profile, accountantSortState.key, orderCountByAccountant);
+          const rightValue = getAccountantSortFieldValue(right.profile, accountantSortState.key, orderCountByAccountant);
+          const primaryCompare = compareAccountantSortValues(leftValue, rightValue);
+          if (primaryCompare !== 0) return primaryCompare * directionFactor;
+
+          const leftName = String(left.profile?.displayName || left.profile?.name || "").trim();
+          const rightName = String(right.profile?.displayName || right.profile?.name || "").trim();
+          const nameCompare = compareAccountantSortValues(leftName, rightName);
+          if (nameCompare !== 0) return nameCompare;
+
+          return left.index - right.index;
+        })
+        .map((entry) => entry.profile);
+    }
+
+    function renderAccountantSortHeaderUI() {
+      accountantSortableHeaders.forEach((button) => {
+        const key = String(button?.dataset?.key || "").trim();
+        const label = String(button?.dataset?.label || "").trim();
+        const active = key === accountantSortState.key;
+        const arrow = active
+          ? (accountantSortState.direction === "asc" ? " ↑" : " ↓")
+          : "";
+        button.classList.toggle("active", active);
+        const labelNode = document.createElement("span");
+        labelNode.className = "sort-btn-label";
+        labelNode.textContent = `${label}${arrow}`;
+        button.replaceChildren(labelNode);
+      });
+    }
+
+    function toggleAccountantSort(key) {
+      const normalizedKey = String(key || "").trim();
+      if (!normalizedKey) return;
+      if (accountantSortState.key === normalizedKey) {
+        accountantSortState.direction = accountantSortState.direction === "asc" ? "desc" : "asc";
+      } else {
+        accountantSortState.key = normalizedKey;
+        accountantSortState.direction = normalizedKey === "orderCount" ? "desc" : "asc";
+      }
+      renderAccountantList();
     }
 
     function renderDispatcherList() {

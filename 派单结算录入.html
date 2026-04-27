@@ -63,7 +63,7 @@
       <p id="accountantRegisterHint" class="login-request-hint idle accountant-register-hint" aria-live="polite" hidden></p>
       <form id="accountantRegisterForm" class="accountant-register-form" autocomplete="off" novalidate>
         <div class="field">
-          <label for="accountantRegisterPhoneInput">手机号（登录）</label>
+          <label for="accountantRegisterPhoneInput">手机号（账号）</label>
           <input
             id="accountantRegisterPhoneInput"
             type="tel"
@@ -793,12 +793,12 @@
         <table class="accountant-table">
           <thead>
             <tr>
-              <th class="accountant-col-display">别名</th>
-              <th class="accountant-col-realname">姓名</th>
-              <th class="accountant-col-phone">手机号</th>
-              <th class="accountant-col-password">密码</th>
-              <th class="accountant-col-count">单量</th>
-              <th class="accountant-col-action">操作</th>
+              <th class="accountant-col-phone"><button class="sort-btn accountant-sort-btn" type="button" data-key="phone" data-label="手机号(账号)">手机号(账号)</button></th>
+              <th class="accountant-col-password"><button class="sort-btn accountant-sort-btn" type="button" data-key="password" data-label="密码">密码</button></th>
+              <th class="accountant-col-display"><button class="sort-btn accountant-sort-btn" type="button" data-key="displayName" data-label="别名">别名</button></th>
+              <th class="accountant-col-realname"><button class="sort-btn accountant-sort-btn" type="button" data-key="realName" data-label="姓名">姓名</button></th>
+              <th class="accountant-col-count"><button class="sort-btn accountant-sort-btn" type="button" data-key="orderCount" data-label="单量">单量</button></th>
+              <th class="accountant-col-action"><button class="sort-btn accountant-sort-btn" type="button" data-key="action" data-label="操作">操作</button></th>
             </tr>
           </thead>
           <tbody id="accountantList"></tbody>
@@ -819,7 +819,7 @@
       <form id="accountantEditForm" class="accountant-register-form" autocomplete="off" novalidate>
         <input id="accountantEditOriginalUsernameInput" type="hidden" />
         <div id="accountantEditPhoneField" class="field">
-          <label for="accountantEditPhoneInput">手机号（登录）</label>
+          <label for="accountantEditPhoneInput">手机号（账号）</label>
           <input
             id="accountantEditPhoneInput"
             type="tel"

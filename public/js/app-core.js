@@ -208,6 +208,7 @@
     const openAnalysisModalBtn = document.getElementById("openAnalysisModalBtn");
     const openRecycleModalBtn = document.getElementById("openRecycleModalBtn");
     const openAccountantModalBtn = document.getElementById("openAccountantModalBtn");
+    const accountantSortableHeaders = Array.from(document.querySelectorAll(".accountant-sort-btn"));
     const createModal = document.getElementById("createModal");
     const createModalCard = createModal.querySelector(".modal-card");
     const recordModalTitle = document.getElementById("recordModalTitle");
@@ -491,6 +492,10 @@
     let isInvoiceUploadSubmitting = false;
     const sortState = {
       key: "date",
+      direction: "desc"
+    };
+    const accountantSortState = {
+      key: "orderCount",
       direction: "desc"
     };
     const filterState = {
