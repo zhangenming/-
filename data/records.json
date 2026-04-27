@@ -129,10 +129,28 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-27 17:01:59",
     "serviceFeedbackImages": [],
-    "operationHistory": []
+    "operationHistory": [
+      {
+        "historyId": "rhis_mogyxlm77c8taf",
+        "operatedAt": "2026-04-27 17:01:59",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "美文嘻嘻"
   },
   {
     "id": "rec_mofs6brqs43463",
@@ -146,7 +164,7 @@
     "orderNo": "3298119926091001456",
     "source": "淘宝",
     "customer": "J",
-    "summary": "",
+    "summary": "做表格",
     "paymentPrice": 126,
     "totalPrice": 100,
     "settlementPrice": 60,
@@ -157,10 +175,59 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-27 17:02:19",
     "serviceFeedbackImages": [],
-    "operationHistory": []
+    "operationHistory": [
+      {
+        "historyId": "rhis_mogz00m75zou7l",
+        "operatedAt": "2026-04-27 17:03:52",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-27 17:03:49"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mogyy0or92gm24",
+        "operatedAt": "2026-04-27 17:02:19",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "做表格"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "美文嘻嘻",
+    "completedAt": "2026-04-27 17:03:49",
+    "completedBy": "美文嘻嘻",
+    "customerFeedback": ""
   },
   {
     "id": "rec_mofs5n6xggo3fh",
@@ -1365,8 +1432,8 @@
     "orderNo": "2701848829014024292",
     "source": "闲鱼",
     "customer": ".",
-    "summary": "x***6",
-    "remark": "月结到期：2026-04-03；8-12月每月500",
+    "summary": "代账",
+    "remark": "月结到期：2026-04-30；8-12月每月500",
     "paymentPrice": 100,
     "totalPrice": 100,
     "premiumPrice": 0,
@@ -1383,6 +1450,38 @@
     "serviceFeedbackImages": [],
     "customerFeedback": "",
     "operationHistory": [
+      {
+        "historyId": "rhis_mogwh9anj66obh",
+        "operatedAt": "2026-04-27 15:53:17",
+        "operatedBy": "开心财税C",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "remark",
+            "label": "备注",
+            "before": "月结到期：2026-04-03；8-12月每月500",
+            "after": "月结到期：2026-04-30；8-12月每月500"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mogwgz5vj6715w",
+        "operatedAt": "2026-04-27 15:53:04",
+        "operatedBy": "开心财税C",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "x***6",
+            "after": "代账"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mogweupjtgoowh",
         "operatedAt": "2026-04-27 15:51:25",
@@ -1640,7 +1739,7 @@
   {
     "id": "rec_61db8e653fb442",
     "createdAt": "2026-04-27 14:11:25",
-    "date": "2026-04-02",
+    "date": "2026-04-20",
     "isMonthlySettlement": false,
     "dispatcher": "C",
     "accountant": "杨先森",
@@ -1662,11 +1761,54 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-27 16:07:57",
     "serviceFeedbackImages": [],
     "customerFeedback": "",
-    "operationHistory": []
+    "operationHistory": [
+      {
+        "historyId": "rhis_mogx041zea5ytd",
+        "operatedAt": "2026-04-27 16:07:57",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mogwvriy4nipal",
+        "operatedAt": "2026-04-27 16:04:34",
+        "operatedBy": "开心财税C",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "date",
+            "label": "日期",
+            "before": "2026-04-02",
+            "after": "2026-04-20"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mogwqto38l148g",
+        "operatedAt": "2026-04-27 16:00:44",
+        "operatedBy": "开心财税C",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": []
+      }
+    ],
+    "checkedBy": "杨先森"
   },
   {
     "id": "rec_1abf6035664346",
@@ -2507,11 +2649,39 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "checked",
+    "checkStatus": "completed",
     "checkedAt": "2026-04-27 15:51:21",
     "serviceFeedbackImages": [],
-    "customerFeedback": "",
+    "customerFeedback": "好评",
     "operationHistory": [
+      {
+        "historyId": "rhis_mogwgyrjmvwk1t",
+        "operatedAt": "2026-04-27 15:53:04",
+        "operatedBy": "小顺会计",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-27 15:52:43"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "好评"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mogwfmowz5xeak",
         "operatedAt": "2026-04-27 15:52:01",
@@ -2561,9 +2731,10 @@
         ]
       }
     ],
-    "completedAt": "",
+    "completedAt": "2026-04-27 15:52:43",
     "returnedAt": "",
-    "checkedBy": "小顺会计"
+    "checkedBy": "小顺会计",
+    "completedBy": "小顺会计"
   },
   {
     "id": "rec_b994e7173d0c46",
@@ -2780,8 +2951,8 @@
     "shopName": "开心财税",
     "orderNo": "5111317587897006946",
     "source": "淘宝",
-    "customer": "杨先森",
-    "summary": "tb5341387150",
+    "customer": "毛肚肚",
+    "summary": "进销存整理",
     "remark": "",
     "paymentPrice": 1200,
     "totalPrice": 1000,
@@ -2794,11 +2965,51 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-27 16:07:42",
     "serviceFeedbackImages": [],
     "customerFeedback": "",
-    "operationHistory": []
+    "operationHistory": [
+      {
+        "historyId": "rhis_mogwzs8069jxs4",
+        "operatedAt": "2026-04-27 16:07:42",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mogwqa2s5ddnhx",
+        "operatedAt": "2026-04-27 16:00:18",
+        "operatedBy": "开心财税C",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "customer",
+            "label": "客户",
+            "before": "杨先森",
+            "after": "毛肚肚"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "tb5341387150",
+            "after": "进销存整理"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "杨先森"
   },
   {
     "id": "rec_6f151f2d044543",
@@ -2856,11 +3067,53 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-27 16:03:30",
     "serviceFeedbackImages": [],
     "customerFeedback": "",
-    "operationHistory": []
+    "operationHistory": [
+      {
+        "historyId": "rhis_mogwujnqe5k99c",
+        "operatedAt": "2026-04-27 16:03:37",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-27 16:03:33"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mogwue7z09943f",
+        "operatedAt": "2026-04-27 16:03:30",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "杨先森",
+    "completedAt": "2026-04-27 16:03:33",
+    "completedBy": "杨先森"
   },
   {
     "id": "rec_6b8a54fafc834f",
@@ -2949,11 +3202,49 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-27 17:03:46",
     "serviceFeedbackImages": [],
     "customerFeedback": "",
     "operationHistory": [
+      {
+        "historyId": "rhis_mogz06l6cj8l51",
+        "operatedAt": "2026-04-27 17:04:00",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-27 17:03:58"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mogyzwefiw5889",
+        "operatedAt": "2026-04-27 17:03:46",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mogu8pk44rb728",
         "operatedAt": "2026-04-27 14:50:39",
@@ -2971,8 +3262,10 @@
         ]
       }
     ],
-    "completedAt": "",
-    "returnedAt": ""
+    "completedAt": "2026-04-27 17:03:58",
+    "returnedAt": "",
+    "checkedBy": "美文嘻嘻",
+    "completedBy": "美文嘻嘻"
   },
   {
     "id": "rec_e96e623c9ef445",

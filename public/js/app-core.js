@@ -11,14 +11,13 @@
     const API_ENDPOINT_BUILD_INFO = `${API_BASE}/build-info.json`;
     const API_ENDPOINT_AUTH_ACCOUNTANT_REGISTER = `${API_BASE}/api/auth/accountant-register`;
     const API_ENDPOINT_AUTH_LOGIN = `${API_BASE}/api/auth/login`;
-    const API_ENDPOINT_AUTH_LOGOUT = `${API_BASE}/api/auth/logout`;
     const API_ENDPOINT_AUTH_PASSWORD = `${API_BASE}/api/auth/password`;
     const STORAGE_KEY_ACCOUNT = "dispatch_current_account_v1";
     const STORAGE_KEY_ACCOUNT_ROLE = "dispatch_current_account_role_v1";
     const STORAGE_KEY_ACCOUNT_DISPLAY_NAME = "dispatch_current_account_display_name_v1";
     const STORAGE_KEY_ACCOUNT_REAL_NAME = "dispatch_current_account_real_name_v1";
     const STORAGE_KEY_ACCOUNT_PHONE = "dispatch_current_account_phone_v1";
-    const STORAGE_KEY_SESSION_TOKEN = "dispatch_session_token_v1";
+    const STORAGE_KEY_LOGIN_ACCOUNT = "dispatch_current_login_account_v1";
     const STORAGE_KEY_SAVED_LOGINS = "dispatch_saved_logins_v1";
     const STORAGE_KEY_DEV_TODO_ITEMS = "dispatch_dev_todo_items_v1";
     const STORAGE_KEY_VIEW_STATE = "dispatch_view_state_v1";
@@ -68,8 +67,7 @@
     const isDevelopmentPort = normalizedPort === "2999";
     let runtimeAppEnvironment = normalizeAppEnvironment(isDevelopmentPort ? "development" : "production");
     const isTabScopedPersistenceEnabled = isDevelopmentPort;
-    const authStateStorage = isTabScopedPersistenceEnabled ? window.sessionStorage : window.localStorage;
-    const legacyAuthStateStorage = isTabScopedPersistenceEnabled ? null : window.sessionStorage;
+    const authStateStorage = window.sessionStorage;
     const persistentStateStorage = isTabScopedPersistenceEnabled ? window.sessionStorage : window.localStorage;
     const legacyPersistentStateStorage = isTabScopedPersistenceEnabled ? window.localStorage : window.sessionStorage;
     const isDevTodoEnabled = isDevelopmentPort;
@@ -77,33 +75,18 @@
 
     function setAuthStateItem(key, value) {
       authStateStorage.setItem(key, value);
-      if (legacyAuthStateStorage) {
-        legacyAuthStateStorage.removeItem(key);
-      }
-      if (isTabScopedPersistenceEnabled) {
-        window.localStorage.removeItem(key);
-      }
+      window.localStorage.removeItem(key);
     }
 
     function getAuthStateItem(key) {
       const raw = authStateStorage.getItem(key);
       if (raw !== null) return raw;
-      if (!legacyAuthStateStorage) return null;
-      const legacyRaw = legacyAuthStateStorage.getItem(key);
-      if (legacyRaw === null) return null;
-      authStateStorage.setItem(key, legacyRaw);
-      legacyAuthStateStorage.removeItem(key);
-      return legacyRaw;
+      return null;
     }
 
     function removeAuthStateItem(key) {
       authStateStorage.removeItem(key);
-      if (legacyAuthStateStorage) {
-        legacyAuthStateStorage.removeItem(key);
-      }
-      if (isTabScopedPersistenceEnabled) {
-        window.localStorage.removeItem(key);
-      }
+      window.localStorage.removeItem(key);
     }
 
     function setPersistentStateItem(key, value) {
@@ -446,7 +429,7 @@
     let currentAccountDisplayName = "";
     let currentAccountRealName = "";
     let currentAccountPhone = "";
-    let currentSessionToken = "";
+    let currentLoginAccount = "";
     let records = [];
     let accountants = [];
     let dispatchers = [];
@@ -456,9 +439,7 @@
     let refreshTimer = null;
     let refreshInFlightPromise = null;
     let appEventSource = null;
-    let appEventRecoveryTimer = null;
-    let sessionRecoveryPromise = null;
-    let lastSessionRecoveryAttemptAt = 0;
+    let appEventReconnectTimer = null;
     let lastRefreshStartedAt = 0;
     let settlementPriceAutoFilled = false;
     let accountantPickerOptions = [];
@@ -1766,6 +1747,19 @@
       return Boolean(password) && password === String(profile.loginPassword || "").trim();
     }
 
+    function clearCurrentAccountIdentity() {
+      currentAccount = "";
+      currentAccountRole = "";
+      currentAccountDisplayName = "";
+      currentAccountRealName = "";
+      currentAccountPhone = "";
+      currentLoginAccount = "";
+    }
+
+    function hasAuthenticatedAccount() {
+      return Boolean(String(currentAccount || "").trim() && String(currentLoginAccount || "").trim());
+    }
+
     function validateCurrentAccount() {
       if (!currentAccount) return;
       if (inferRoleByAccountName(currentAccount) === "dispatcher") {
@@ -1781,8 +1775,7 @@
       if (!normalizeLoginRole(currentAccountRole) && inferRoleByAccountName(currentAccount) === "dispatcher") return;
       if (!accountants.length) return;
       if (getAccountantProfileByLoginName(currentAccount)) return;
-      currentAccount = "";
-      currentAccountRole = "";
+      clearCurrentAccountIdentity();
       saveToStorage();
     }
 

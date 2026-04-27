@@ -133,7 +133,7 @@
   </main>
 
   <script>
-    const STORAGE_KEY_SESSION_TOKEN = "dispatch_session_token_v1";
+    const STORAGE_KEY_LOGIN_ACCOUNT = "dispatch_current_login_account_v1";
     const LOGIN_ENDPOINT = "/api/auth/login";
     const LOGIN_ACCOUNT = "boss";
     const LOGIN_PASSWORD = "boss123";
@@ -145,7 +145,7 @@
     const maxTimeValueNode = document.getElementById("maxTimeValue");
     const minTimeValueNode = document.getElementById("minTimeValue");
     const requestCountValueNode = document.getElementById("requestCountValue");
-    let activeSessionToken = "";
+    let activeLoginAccount = "";
     let loginPromise = null;
     const requestStats = {
       count: 0,
@@ -154,22 +154,18 @@
       minElapsed: Infinity
     };
 
-    function readSessionToken() {
-      if (activeSessionToken) return activeSessionToken;
-      const sessionToken = String(window.sessionStorage.getItem(STORAGE_KEY_SESSION_TOKEN) || "").trim();
-      if (sessionToken) return sessionToken;
-      return String(window.localStorage.getItem(STORAGE_KEY_SESSION_TOKEN) || "").trim();
+    function readLoginAccount() {
+      if (activeLoginAccount) return activeLoginAccount;
+      return String(window.sessionStorage.getItem(STORAGE_KEY_LOGIN_ACCOUNT) || "").trim();
     }
 
-    function writeSessionToken(sessionToken) {
-      activeSessionToken = String(sessionToken || "").trim();
-      if (activeSessionToken) {
-        window.sessionStorage.setItem(STORAGE_KEY_SESSION_TOKEN, activeSessionToken);
-        window.localStorage.setItem(STORAGE_KEY_SESSION_TOKEN, activeSessionToken);
+    function writeLoginAccount(loginAccount) {
+      activeLoginAccount = String(loginAccount || "").trim();
+      if (activeLoginAccount) {
+        window.sessionStorage.setItem(STORAGE_KEY_LOGIN_ACCOUNT, activeLoginAccount);
         return;
       }
-      window.sessionStorage.removeItem(STORAGE_KEY_SESSION_TOKEN);
-      window.localStorage.removeItem(STORAGE_KEY_SESSION_TOKEN);
+      window.sessionStorage.removeItem(STORAGE_KEY_LOGIN_ACCOUNT);
     }
 
     function formatRequestTime(date) {
@@ -223,10 +219,10 @@
 
     async function loginBoss(force = false) {
       if (!force) {
-        const cachedToken = readSessionToken();
-        if (cachedToken) {
-          activeSessionToken = cachedToken;
-          return cachedToken;
+        const cachedLoginAccount = readLoginAccount();
+        if (cachedLoginAccount) {
+          activeLoginAccount = cachedLoginAccount;
+          return cachedLoginAccount;
         }
       }
       if (loginPromise) return loginPromise;
@@ -256,7 +252,7 @@
 
         if (!response.ok) {
           const message = String(payload.error || `login failed: ${response.status}`).trim();
-          writeSessionToken("");
+          writeLoginAccount("");
           appendLog({
             requestTime,
             state: "error",
@@ -265,25 +261,25 @@
           throw new Error(message);
         }
 
-        const sessionToken = String(payload.sessionToken || "").trim();
-        if (!sessionToken) {
-          writeSessionToken("");
+        const loginAccount = String(payload.loginAccount || LOGIN_ACCOUNT).trim();
+        if (!loginAccount) {
+          writeLoginAccount("");
           appendLog({
             requestTime,
             state: "error",
-            message: `login status=${response.status} elapsed=${elapsed}ms message=missing session token`
+            message: `login status=${response.status} elapsed=${elapsed}ms message=missing login account`
           });
-          throw new Error("missing session token");
+          throw new Error("missing login account");
         }
 
-        writeSessionToken(sessionToken);
+        writeLoginAccount(loginAccount);
         appendLog({
           requestTime,
           state: "ok",
           message: `login status=${response.status} elapsed=${elapsed}ms role=${String(payload.role || "").trim() || "unknown"}`
         });
         statusNode.textContent = `已登录 ${LOGIN_ACCOUNT}，开始轮询`;
-        return sessionToken;
+        return loginAccount;
       })();
 
       try {
@@ -293,9 +289,9 @@
       }
     }
 
-    async function fetchAccountantsOnce(sessionToken, startedAt, requestTime) {
-      const headers = sessionToken
-        ? { "x-dispatch-session": sessionToken }
+    async function fetchAccountantsOnce(loginAccount, startedAt, requestTime) {
+      const headers = loginAccount
+        ? { "x-dispatch-account": loginAccount }
         : {};
 
       statusNode.textContent = `最近请求时间：${requestTime}`;
@@ -310,7 +306,7 @@
       appendLog({
         requestTime,
         state: response.ok ? "ok" : "error",
-        message: `status=${response.status} elapsed=${elapsed}ms token=${sessionToken ? "yes" : "no"}`
+        message: `status=${response.status} elapsed=${elapsed}ms account=${loginAccount ? "yes" : "no"}`
       });
       return response;
     }
@@ -320,11 +316,11 @@
       const requestTime = formatRequestTime(startedAt);
 
       try {
-        let sessionToken = await loginBoss();
-        let response = await fetchAccountantsOnce(sessionToken, startedAt, requestTime);
+        let loginAccount = await loginBoss();
+        let response = await fetchAccountantsOnce(loginAccount, startedAt, requestTime);
         if (response.status === 401) {
-          sessionToken = await loginBoss(true);
-          response = await fetchAccountantsOnce(sessionToken, startedAt, requestTime);
+          loginAccount = await loginBoss(true);
+          response = await fetchAccountantsOnce(loginAccount, startedAt, requestTime);
         }
         if (response.ok) {
           statusNode.textContent = `最近请求时间：${requestTime}`;

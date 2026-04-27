@@ -1697,7 +1697,7 @@
       renderSourcePickerOptions();
       renderPlatformShopPickerOptions();
 
-      if (currentAccount) {
+      if (hasAuthenticatedAccount()) {
         loginCodeInput.value = "";
         loginPasswordInput.value = "";
         setPageMode(true);

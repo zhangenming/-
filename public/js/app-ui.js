@@ -2555,7 +2555,7 @@
     }
 
     function requireAccount() {
-      if (currentAccount && currentSessionToken) return true;
+      if (hasAuthenticatedAccount()) return true;
       stopAutoRefresh();
       setPageMode(false);
       loginCodeInput.focus();
@@ -2581,7 +2581,7 @@
         console.error(error);
         showAppStatus(error.message || "读取会计操作日志失败，请稍后重试。");
       }
-      if (currentAccount && currentSessionToken) {
+      if (hasAuthenticatedAccount()) {
         startAutoRefresh();
       }
     }
@@ -2637,25 +2637,8 @@
     }
 
     async function logoutAccount() {
-      const tokenToLogout = String(currentSessionToken || "").trim();
       stopAutoRefresh();
-      await logoutSessionByServer(tokenToLogout);
-      currentAccount = "";
-      currentAccountRole = "";
-      currentAccountDisplayName = "";
-      currentAccountRealName = "";
-      currentAccountPhone = "";
-      currentSessionToken = "";
-      hasFetchedRecords = false;
-      clearBossRecordSelection();
-      setRecentBossSettlementRecordIds([]);
-      accountantOperationLogs = [];
-      currentOperationNoticeLogId = "";
-      operationNoticeDismissed = false;
-      dismissedOperationNoticeLogId = "";
-      resetAccountantAssignmentNoticeState();
-      resetUpdatedRowHighlightState();
-      hideOperationNotice();
+      clearAuthenticatedRuntimeState();
       saveToStorage();
       applyAccountToForm();
       closeCreateModal();

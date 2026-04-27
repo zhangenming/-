@@ -28,7 +28,6 @@ const RECYCLE_BIN_FILE = path.join(DATA_DIR, "recycle-bin.json");
 const ACCOUNTANTS_FILE = path.join(DATA_DIR, "accountants.json");
 const DISPATCHER_PASSWORDS_FILE = path.join(DATA_DIR, "dispatcher-passwords.json");
 const ACCOUNTANT_OPERATION_LOG_FILE = path.join(DATA_DIR, "accountant-operation-logs.json");
-const AUTH_SESSIONS_FILE = path.join(DATA_DIR, "auth-sessions.json");
 const FEEDBACK_IMAGE_DIR = path.join(DATA_DIR, "feedback-images");
 const FEEDBACK_IMAGE_URL_PREFIX = "/feedback-images/";
 const INVOICE_IMAGE_DIR = path.join(DATA_DIR, "invoice-images");
@@ -61,7 +60,7 @@ const FEEDBACK_IMAGE_MAX_COUNT = 8;
 const FEEDBACK_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const SETTLEMENT_INVOICE_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const API_JSON_BODY_MAX_SIZE_BYTES = 8 * 1024 * 1024;
-const AUTH_SESSION_HEADER = "x-dispatch-session";
+const AUTH_ACCOUNT_HEADER = "x-dispatch-account";
 const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
   "1": "1",
   a: "a",
@@ -77,8 +76,6 @@ const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
 };
 
 let writeQueue = Promise.resolve();
-let authSessionWriteQueue = Promise.resolve();
-const authSessions = new Map();
 const devLiveReloadClients = new Set();
 let devLiveReloadHeartbeat = null;
 let devLiveReloadDebounceTimer = null;
@@ -135,7 +132,7 @@ function attachRequestLogger(req, res) {
 function setApiCorsHeaders(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Dispatch-Session");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Dispatch-Account");
 }
 
 function sendJson(res, statusCode, payload) {
@@ -437,11 +434,6 @@ async function ensureStorage() {
   } catch {
     await fs.writeFile(ACCOUNTANT_OPERATION_LOG_FILE, "[]\n", "utf8");
   }
-  try {
-    await fs.access(AUTH_SESSIONS_FILE);
-  } catch {
-    await fs.writeFile(AUTH_SESSIONS_FILE, "[]\n", "utf8");
-  }
 }
 
 async function readRecords() {
@@ -477,13 +469,6 @@ async function readAccountantOperationLogs() {
   const raw = await fs.readFile(ACCOUNTANT_OPERATION_LOG_FILE, "utf8");
   const parsed = JSON.parse(raw || "[]");
   return Array.isArray(parsed) ? parsed.map((entry) => normalizeAccountantOperationLogEntry(entry)).filter(Boolean) : [];
-}
-
-async function readAuthSessions() {
-  await ensureStorage();
-  const raw = await fs.readFile(AUTH_SESSIONS_FILE, "utf8");
-  const parsed = JSON.parse(raw || "[]");
-  return Array.isArray(parsed) ? parsed : [];
 }
 
 async function writeRecords(records) {
@@ -527,14 +512,6 @@ async function writeAccountantOperationLogs(logs) {
   await fs.writeFile(tempFile, payload, "utf8");
   await fs.rename(tempFile, ACCOUNTANT_OPERATION_LOG_FILE);
   queueAppDataChanges("accountantOperationLogs");
-}
-
-async function writeAuthSessions(sessions) {
-  await ensureStorage();
-  const tempFile = `${AUTH_SESSIONS_FILE}.tmp`;
-  const payload = `${JSON.stringify(sessions, null, 2)}\n`;
-  await fs.writeFile(tempFile, payload, "utf8");
-  await fs.rename(tempFile, AUTH_SESSIONS_FILE);
 }
 
 function withWriteLock(task) {
@@ -1192,126 +1169,65 @@ function buildDispatcherManagementRows(records, dispatcherPasswords) {
   });
 }
 
-function generateSessionToken() {
-  return `sess_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 16)}`;
-}
-
-function normalizeAuthSessionEntry(rawEntry) {
-  if (!rawEntry || typeof rawEntry !== "object") return null;
-  const token = normalizeText(rawEntry.token, 240);
-  const account = normalizeText(rawEntry.account, 64);
-  const role = normalizeLoginRole(rawEntry.role);
-  const displayName = normalizeAccountantDisplayName(rawEntry.displayName);
-  const createdAt = normalizeDateTimeValue(rawEntry.createdAt) || getCurrentBeijingDateTime();
-  if (!token || !account || !role) return null;
+function buildScopedAccountantProfile(profile) {
+  if (!profile || typeof profile !== "object") return null;
   return {
-    token,
-    account,
-    role,
-    displayName,
-    createdAt
+    username: profile.username,
+    displayName: profile.displayName,
+    name: profile.displayName,
+    realName: profile.realName || "",
+    phone: profile.phone || ""
   };
 }
 
-function serializeAuthSessions() {
-  return Array.from(authSessions.entries())
-    .map(([token, session]) => normalizeAuthSessionEntry({ token, ...session }))
-    .filter(Boolean);
-}
-
-async function persistAuthSessions() {
-  const next = authSessionWriteQueue.then(() => writeAuthSessions(serializeAuthSessions()), () => writeAuthSessions(serializeAuthSessions()));
-  authSessionWriteQueue = next.catch(() => {});
-  await next;
-}
-
-async function loadPersistedAuthSessions() {
-  const sessions = await readAuthSessions();
-  authSessions.clear();
-  sessions
-    .map((entry) => normalizeAuthSessionEntry(entry))
-    .filter(Boolean)
-    .forEach((entry) => {
-      authSessions.set(entry.token, {
-        account: entry.account,
-        role: entry.role,
-        displayName: entry.displayName,
-        createdAt: entry.createdAt
-      });
-    });
-}
-
-async function createAuthSession(account, role, extra = {}) {
-  const normalizedAccount = normalizeText(account, 64);
-  const normalizedRole = normalizeLoginRole(role);
-  const normalizedDisplayName = normalizeAccountantDisplayName(extra.displayName);
-  const token = generateSessionToken();
-  authSessions.set(token, {
-    account: normalizedAccount,
-    role: normalizedRole,
-    displayName: normalizedDisplayName,
-    createdAt: getCurrentBeijingDateTime()
-  });
-  await persistAuthSessions();
-  return token;
-}
-
-async function deleteAuthSession(rawToken) {
-  const token = normalizeText(rawToken, 240);
-  if (!token) return false;
-  const removed = authSessions.delete(token);
-  if (!removed) return false;
-  await persistAuthSessions();
-  return true;
-}
-
-async function syncAccountantAuthSessions(previousProfile, nextProfile) {
-  const previousUsername = normalizeAccountantUsername(previousProfile?.username || previousProfile?.account);
-  const previousDisplayName = normalizeAccountantDisplayName(previousProfile?.displayName || previousProfile?.name);
-  const nextUsername = normalizeAccountantUsername(nextProfile?.username || nextProfile?.account);
-  const nextDisplayName = normalizeAccountantDisplayName(nextProfile?.displayName || nextProfile?.name);
-  let changed = false;
-  authSessions.forEach((session, token) => {
-    if (!session || normalizeLoginRole(session.role) !== "accountant") return;
-    const sessionUsername = normalizeAccountantUsername(session.account);
-    const sessionDisplayName = normalizeAccountantDisplayName(session.displayName || session.account);
-    if (sessionUsername !== previousUsername && sessionDisplayName !== previousDisplayName) {
-      return;
-    }
-    authSessions.set(token, {
-      ...session,
-      account: nextUsername || session.account,
-      displayName: nextDisplayName || session.displayName
-    });
-    changed = true;
-  });
-  if (changed) {
-    await persistAuthSessions();
+async function resolveAuthSessionByLoginAccount(rawLoginAccount) {
+  const loginAccount = normalizeText(rawLoginAccount, 64);
+  if (!loginAccount) return null;
+  const resolvedAccount = resolveLoginAccountInput(loginAccount);
+  const bossConfig = getBossLoginConfig(resolvedAccount);
+  if (bossConfig) {
+    return {
+      loginAccount,
+      account: bossConfig.account,
+      role: "boss",
+      displayName: "",
+      profile: null
+    };
   }
+  if (isDispatcherAccount(resolvedAccount)) {
+    return {
+      loginAccount,
+      account: resolvedAccount,
+      role: "dispatcher",
+      displayName: "",
+      profile: null
+    };
+  }
+  const accountants = await withWriteLock(async () => {
+    const result = await loadAccountantsWithMigration();
+    return result.accountants;
+  });
+  const profile = findAccountantByLoginAccount(accountants, loginAccount);
+  if (!profile) return null;
+  return {
+    loginAccount,
+    account: profile.username,
+    role: "accountant",
+    displayName: profile.displayName,
+    profile: buildScopedAccountantProfile(profile)
+  };
 }
 
-function getAuthSessionFromToken(rawToken) {
-  const token = normalizeText(rawToken, 240);
-  if (!token) return null;
-  const rawSession = authSessions.get(token);
-  if (!rawSession || typeof rawSession !== "object") return null;
-  const account = normalizeText(rawSession.account, 64);
-  const role = normalizeLoginRole(rawSession.role);
-  const displayName = normalizeAccountantDisplayName(rawSession.displayName);
-  if (!account || !role) return null;
-  return { token, account, role, displayName };
-}
-
-function getAuthSessionFromRequest(req) {
-  return getAuthSessionFromToken(req.headers[AUTH_SESSION_HEADER]);
+async function getAuthSessionFromRequest(req) {
+  return resolveAuthSessionByLoginAccount(req.headers[AUTH_ACCOUNT_HEADER]);
 }
 
 function getSessionAccountantDisplayName(session) {
   return normalizeAccountantDisplayName(session?.displayName || session?.account);
 }
 
-function requireAuthSession(req, res, allowedRoles = []) {
-  const session = getAuthSessionFromRequest(req);
+async function requireAuthSession(req, res, allowedRoles = []) {
+  const session = await getAuthSessionFromRequest(req);
   if (!session) {
     sendJson(res, 401, { error: "登录已失效，请重新登录。" });
     return null;
@@ -2294,7 +2210,7 @@ async function serveBuildInfo(res, options = {}) {
   }
 }
 
-function serveAppEvents(req, res, url) {
+async function serveAppEvents(req, res) {
   if (req.method === "OPTIONS") {
     setApiCorsHeaders(res);
     res.writeHead(204);
@@ -2307,9 +2223,7 @@ function serveAppEvents(req, res, url) {
     return;
   }
 
-  const session = getAuthSessionFromToken(
-    url.searchParams.get("sessionToken") || req.headers[AUTH_SESSION_HEADER]
-  );
+  const session = await getAuthSessionFromRequest(req);
   if (!session) {
     sendJson(res, 401, { error: "登录已失效，请重新登录。" });
     return;
@@ -2323,7 +2237,7 @@ function serveAppEvents(req, res, url) {
     "X-Accel-Buffering": "no"
   });
 
-  const client = { res, token: session.token };
+  const client = { res };
   appEventClients.add(client);
   startAppEventHeartbeat();
   res.write("retry: 2000\n\n");
@@ -2471,7 +2385,7 @@ async function serveRecords(req, res) {
     return;
   }
 
-  const session = requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
+  const session = await requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
   if (!session) return;
 
   if (req.method === "GET") {
@@ -2526,7 +2440,7 @@ async function serveRecordSettlement(req, res) {
     return;
   }
 
-  const session = requireAuthSession(req, res, ["dispatcher", "boss"]);
+  const session = await requireAuthSession(req, res, ["dispatcher", "boss"]);
   if (!session) return;
 
   if (req.method !== "PATCH") {
@@ -2642,7 +2556,7 @@ async function serveRecordInvoiceUpload(req, res) {
     return;
   }
 
-  const session = requireAuthSession(req, res, ["accountant"]);
+  const session = await requireAuthSession(req, res, ["accountant"]);
   if (!session) return;
 
   if (req.method !== "PATCH") {
@@ -2754,7 +2668,7 @@ async function serveRecordById(req, res, recordIdRaw) {
   }
 
   if (req.method === "DELETE") {
-    const session = requireAuthSession(req, res, ["dispatcher", "boss"]);
+    const session = await requireAuthSession(req, res, ["dispatcher", "boss"]);
     if (!session) return;
     try {
       const deletedBy = normalizeText(session.account, 48) || "未知账号";
@@ -2820,7 +2734,7 @@ async function serveRecordById(req, res, recordIdRaw) {
   }
 
   if (req.method === "PATCH") {
-    const session = requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
+    const session = await requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
     if (!session) return;
     try {
       const body = await parseBody(req);
@@ -3034,7 +2948,7 @@ async function serveRecycleBin(req, res) {
     return;
   }
 
-  const session = requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
+  const session = await requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
   if (!session) return;
 
   if (req.method === "GET") {
@@ -3058,7 +2972,7 @@ async function serveRecycleBinRestore(req, res, recycleIdRaw) {
     return;
   }
 
-  const session = requireAuthSession(req, res, ["dispatcher", "boss"]);
+  const session = await requireAuthSession(req, res, ["dispatcher", "boss"]);
   if (!session) return;
 
   if (req.method !== "POST") {
@@ -3151,7 +3065,7 @@ async function serveAccountantOperationLogs(req, res) {
     return;
   }
 
-  const session = requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
+  const session = await requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
   if (!session) return;
 
   if (req.method === "GET") {
@@ -3173,7 +3087,7 @@ async function serveDispatchers(req, res) {
     return;
   }
 
-  const session = requireAuthSession(req, res, ["boss"]);
+  const session = await requireAuthSession(req, res, ["boss"]);
   if (!session) return;
 
   if (req.method === "GET") {
@@ -3198,7 +3112,7 @@ async function serveAccountants(req, res) {
     return;
   }
 
-  const session = requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
+  const session = await requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
   if (!session) return;
 
   if (req.method === "GET") {
@@ -3286,7 +3200,7 @@ async function serveAccountantPassword(req, res, accountantUsernameRaw) {
     return;
   }
 
-  const session = requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
+  const session = await requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
   if (!session) return;
 
   try {
@@ -3367,7 +3281,7 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
   }
 
   if (req.method === "PATCH") {
-    const session = requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
+    const session = await requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
     if (!session) return;
     try {
       const body = await parseBody(req);
@@ -3472,7 +3386,6 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
         const accountantsFromRecords = nextRecords.map((item) => normalizeAccountantDisplayName(item.accountant));
         const merged = buildAccountantProfiles([...otherAccountants, nextProfile], accountantsFromRecords);
         await writeAccountants(merged);
-        await syncAccountantAuthSessions(target, nextProfile);
         const scopedSession = isAccountantSelfEdit
           ? { ...session, account: nextProfile.username, displayName: nextProfile.displayName }
           : session;
@@ -3510,7 +3423,7 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
     return;
   }
 
-  const session = requireAuthSession(req, res, ["dispatcher", "boss"]);
+  const session = await requireAuthSession(req, res, ["dispatcher", "boss"]);
   if (!session) return;
 
   if (req.method !== "DELETE") {
@@ -3577,7 +3490,7 @@ async function serveAuthPassword(req, res) {
     return;
   }
 
-  const session = requireAuthSession(req, res, ["dispatcher"]);
+  const session = await requireAuthSession(req, res, ["dispatcher"]);
   if (!session) return;
 
   const account = normalizeText(session.account, 16).toLowerCase();
@@ -3620,10 +3533,6 @@ async function serveAuthLogout(req, res) {
   }
 
   try {
-    const token = req.headers[AUTH_SESSION_HEADER];
-    if (token) {
-      await deleteAuthSession(token);
-    }
     sendJson(res, 200, { ok: true });
   } catch (error) {
     sendJson(res, 400, { error: error.message || "退出登录失败" });
@@ -3746,8 +3655,12 @@ async function serveAuthLogin(req, res) {
     const bossConfig = getBossLoginConfig(account);
     if (bossConfig) {
       if (passwordInput === normalizeText(bossConfig.password, 64)) {
-        const sessionToken = await createAuthSession(bossConfig.account, "boss");
-        sendJson(res, 200, { ok: true, account: bossConfig.account, loginAccount: bossConfig.account, role: "boss", sessionToken });
+        sendJson(res, 200, {
+          ok: true,
+          account: bossConfig.account,
+          loginAccount: accountInput || bossConfig.account,
+          role: "boss"
+        });
         return;
       }
       sendJson(res, 401, { error: "登录标识或密码错误。" });
@@ -3758,8 +3671,12 @@ async function serveAuthLogin(req, res) {
       const dispatcherPasswords = await readDispatcherPasswords();
       const dispatcherPassword = normalizeDispatcherPassword(dispatcherPasswords[account]);
       if (passwordInput === dispatcherPassword) {
-        const sessionToken = await createAuthSession(account, "dispatcher");
-        sendJson(res, 200, { ok: true, account, loginAccount: account, role: "dispatcher", sessionToken });
+        sendJson(res, 200, {
+          ok: true,
+          account,
+          loginAccount: accountInput || account,
+          role: "dispatcher"
+        });
         return;
       }
       sendJson(res, 401, { error: "登录标识或密码错误。" });
@@ -3784,16 +3701,9 @@ async function serveAuthLogin(req, res) {
     sendJson(res, 200, {
       ok: true,
       account: profile.username,
-      loginAccount: profile.phone || accountInput || profile.username,
+      loginAccount: accountInput || profile.phone || profile.username,
       role: "accountant",
-      profile: {
-        username: profile.username,
-        displayName: profile.displayName,
-        name: profile.displayName,
-        realName: profile.realName || "",
-        phone: profile.phone || ""
-      },
-      sessionToken: await createAuthSession(profile.username, "accountant", { displayName: profile.displayName })
+      profile: buildScopedAccountantProfile(profile)
     });
   } catch (error) {
     sendJson(res, 400, { error: error.message || "登录失败" });
@@ -3813,7 +3723,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === APP_EVENT_PATHNAME) {
-      serveAppEvents(req, res, url);
+      await serveAppEvents(req, res);
       return;
     }
 
@@ -3940,7 +3850,6 @@ const server = http.createServer(async (req, res) => {
 
 async function bootstrapServer() {
   await ensureStorage();
-  await loadPersistedAuthSessions();
 
   if (IS_DEV_LIVE_RELOAD_ENABLED) {
     startDevWatchers();
@@ -3958,7 +3867,6 @@ async function bootstrapServer() {
       `Recycle bin file: ${RECYCLE_BIN_FILE}`,
       `Accountants file: ${ACCOUNTANTS_FILE}`,
       `Accountant operation log file: ${ACCOUNTANT_OPERATION_LOG_FILE}`,
-      `Auth sessions file: ${AUTH_SESSIONS_FILE}`,
       `Feedback image dir: ${FEEDBACK_IMAGE_DIR}`,
       `Invoice image dir: ${INVOICE_IMAGE_DIR}`
     ];

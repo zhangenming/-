@@ -3,8 +3,8 @@
       const { skipAuth = false } = meta;
       const buildHeaders = () => {
         const headers = new Headers(options.headers || {});
-        if (!skipAuth && currentSessionToken) {
-          headers.set("X-Dispatch-Session", currentSessionToken);
+        if (!skipAuth && currentLoginAccount) {
+          headers.set("X-Dispatch-Account", currentLoginAccount);
         }
         return headers;
       };
@@ -15,16 +15,6 @@
       });
 
       if (!skipAuth && response.status === 401) {
-        const recovered = await recoverSessionFromSavedLogin({ reason: "http_401" });
-        if (recovered) {
-          response = await fetch(url, {
-            ...options,
-            headers: buildHeaders()
-          });
-        }
-      }
-
-      if (!skipAuth && response.status === 401) {
         handleUnauthorizedSession();
         throw new Error("登录状态已失效，请重新登录。");
       }
@@ -32,29 +22,7 @@
     }
 
     function handleUnauthorizedSession() {
-      if (appEventRecoveryTimer) {
-        window.clearTimeout(appEventRecoveryTimer);
-        appEventRecoveryTimer = null;
-      }
-      currentAccount = "";
-      currentAccountRole = "";
-      currentAccountDisplayName = "";
-      currentAccountRealName = "";
-      currentAccountPhone = "";
-      currentSessionToken = "";
-      records = [];
-      recycleBinRecords = [];
-      accountantOperationLogs = [];
-      dispatchers = [];
-      hasFetchedRecords = false;
-      clearBossRecordSelection();
-      setRecentBossSettlementRecordIds([]);
-      currentOperationNoticeLogId = "";
-      operationNoticeDismissed = false;
-      dismissedOperationNoticeLogId = "";
-      resetAccountantAssignmentNoticeState();
-      resetUpdatedRowHighlightState();
-      hideOperationNotice();
+      clearAuthenticatedRuntimeState();
       stopAutoRefresh();
       saveToStorage();
       applyAccountToForm();
@@ -82,40 +50,32 @@
       loginCodeInput.focus();
     }
 
-    function getSessionRecoverySavedLoginEntry() {
-      if (!isQuickLoginEnabled) return null;
-      if (!currentAccount) return null;
-      const roleKey = normalizeLoginRole(currentAccountRole) || inferRoleByAccountName(currentAccount);
-      const candidateAccounts = [];
-      if (roleKey === "accountant") {
-        const phone = String(getCurrentAccountantLoginPhone() || currentAccountPhone || "").trim();
-        if (phone) candidateAccounts.push(phone);
-      }
-      candidateAccounts.push(String(currentAccount || "").trim());
-      const candidateKeys = new Set(
-        candidateAccounts
-          .map((item) => getSavedLoginEntryKey(item))
-          .filter(Boolean)
-      );
-      if (!candidateKeys.size) return null;
-      return (Array.isArray(savedLoginEntries) ? savedLoginEntries : [])
-        .map((entry) => normalizeSavedLoginEntry(entry))
-        .filter(Boolean)
-        .find((entry) => (
-          candidateKeys.has(getSavedLoginEntryKey(entry.account))
-          && getSavedLoginRoleKey(entry.account, entry.role) === roleKey
-        )) || null;
+    function clearAuthenticatedRuntimeState() {
+      clearCurrentAccountIdentity();
+      records = [];
+      recycleBinRecords = [];
+      accountantOperationLogs = [];
+      dispatchers = [];
+      hasFetchedRecords = false;
+      clearBossRecordSelection();
+      setRecentBossSettlementRecordIds([]);
+      currentOperationNoticeLogId = "";
+      operationNoticeDismissed = false;
+      dismissedOperationNoticeLogId = "";
+      resetAccountantAssignmentNoticeState();
+      resetUpdatedRowHighlightState();
+      hideOperationNotice();
     }
 
     function storeAuthenticatedSession(authResult, accountName, password, options = {}) {
       const { persistSavedLogin = true } = options;
-      const normalizedAccountName = String(accountName || "").trim();
-      const normalized = resolveLoginAccountInput(authResult?.account || normalizedAccountName);
-      const sessionToken = String(authResult?.sessionToken || "").trim();
-      if (!sessionToken) {
-        throw new Error("登录状态创建失败");
+      const loginAccount = String(accountName || authResult?.loginAccount || "").trim();
+      const normalized = resolveLoginAccountInput(authResult?.account || loginAccount);
+      if (!loginAccount || !normalized) {
+        throw new Error("登录标识无效");
       }
       currentAccount = normalized;
+      currentLoginAccount = loginAccount;
       currentAccountRole = normalizeLoginRole(authResult?.role) || inferRoleByAccountName(normalized);
       currentAccountDisplayName = currentAccountRole === "accountant"
         ? String(authResult?.profile?.displayName || authResult?.profile?.name || "").trim()
@@ -126,56 +86,15 @@
       currentAccountPhone = currentAccountRole === "accountant"
         ? String(authResult?.profile?.phone || "").trim()
         : "";
-      currentSessionToken = sessionToken;
       setRecentBossSettlementRecordIds([]);
       hasFetchedRecords = false;
       resetAccountantAssignmentNoticeState();
       loadOperationNoticePreference();
       loadUpdatedRowDismissState();
       if (persistSavedLogin) {
-        saveSuccessfulLoginEntry(authResult?.loginAccount || normalizedAccountName, password, currentAccountRole);
+        saveSuccessfulLoginEntry(loginAccount, password, currentAccountRole);
       }
       saveToStorage();
-    }
-
-    async function recoverSessionFromSavedLogin(options = {}) {
-      const { reason = "unknown" } = options;
-      if (!currentAccount) return false;
-      if (sessionRecoveryPromise) return sessionRecoveryPromise;
-      const savedEntry = getSessionRecoverySavedLoginEntry();
-      if (!savedEntry) return false;
-
-      sessionRecoveryPromise = (async () => {
-        lastSessionRecoveryAttemptAt = Date.now();
-        try {
-          const authResult = await verifyLoginByServer(savedEntry.account, savedEntry.password, { silent: true });
-          storeAuthenticatedSession(authResult, savedEntry.account, savedEntry.password, { persistSavedLogin: true });
-          await syncDataAfterLogin();
-          console.info(`[session-recovery] recovered via ${reason}`);
-          return true;
-        } catch (error) {
-          console.error(error);
-          return false;
-        } finally {
-          sessionRecoveryPromise = null;
-        }
-      })();
-
-      return sessionRecoveryPromise;
-    }
-
-    function scheduleSessionRecovery(reason = "stream_error") {
-      if (!currentAccount || !currentSessionToken) return;
-      if (sessionRecoveryPromise) return;
-      if (appEventRecoveryTimer) return;
-      if (Date.now() - lastSessionRecoveryAttemptAt < 1500) return;
-      appEventRecoveryTimer = window.setTimeout(async () => {
-        appEventRecoveryTimer = null;
-        const recovered = await recoverSessionFromSavedLogin({ reason });
-        if (recovered) {
-          showAppStatus("服务已恢复，已自动重连。", "ok");
-        }
-      }, 700);
     }
 
     function syncModalOpenState() {
@@ -333,23 +252,8 @@
       }
     }
 
-    async function logoutSessionByServer(sessionToken = currentSessionToken) {
-      const token = String(sessionToken || "").trim();
-      if (!token) return;
-      try {
-        await fetch(API_ENDPOINT_AUTH_LOGOUT, {
-          method: "POST",
-          headers: {
-            "X-Dispatch-Session": token
-          }
-        });
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
     async function fetchRecords() {
-      if (!currentAccount || !currentSessionToken) return;
+      if (!hasAuthenticatedAccount()) return;
       const response = await fetchWithClientLog(
         API_ENDPOINT_RECORDS,
         { cache: "no-store" },
@@ -394,7 +298,7 @@
     }
 
     async function fetchRecycleBinRecords() {
-      if (!currentAccount || !currentSessionToken) return;
+      if (!hasAuthenticatedAccount()) return;
       const response = await fetchWithClientLog(
         API_ENDPOINT_RECYCLE_BIN,
         { cache: "no-store" },
@@ -414,7 +318,7 @@
     }
 
     async function fetchAccountantOperationLogs() {
-      if (!currentAccount || !currentSessionToken) return;
+      if (!hasAuthenticatedAccount()) return;
       const response = await fetchWithClientLog(
         API_ENDPOINT_ACCOUNTANT_OPERATION_LOGS,
         { cache: "no-store" },
@@ -1174,6 +1078,7 @@
       const fetchedAccountants = Array.isArray(payload.accountants) ? payload.accountants : [];
       accountants = mergeAccountantProfiles(fetchedAccountants);
       if (normalizeLoginRole(currentAccountRole) === "accountant") {
+        const previousPhone = String(currentAccountPhone || "").trim();
         const displayName = getAccountantDisplayNameByLoginName(currentAccount);
         const normalizedDisplayName = String(displayName || "").trim();
         const realName = getCurrentAccountantRealName();
@@ -1193,6 +1098,10 @@
           currentAccountPhone = normalizedPhone;
           shouldPersistAccountSnapshot = true;
         }
+        if (currentLoginAccount && previousPhone && currentLoginAccount === previousPhone && normalizedPhone && normalizedPhone !== currentLoginAccount) {
+          currentLoginAccount = normalizedPhone;
+          shouldPersistAccountSnapshot = true;
+        }
         if (shouldPersistAccountSnapshot) {
           saveToStorage();
         }
@@ -1206,7 +1115,7 @@
     }
 
     async function fetchDispatchers() {
-      if (!currentAccount || !currentSessionToken) return;
+      if (!hasAuthenticatedAccount()) return;
       const response = await fetchWithClientLog(
         API_ENDPOINT_DISPATCHERS,
         { cache: "no-store" },
@@ -1223,7 +1132,7 @@
     }
 
     async function fetchAccountants() {
-      if (!currentAccount || !currentSessionToken) return;
+      if (!hasAuthenticatedAccount()) return;
       await fetchAccountantsForLogin();
       validateCurrentAccount();
     }
@@ -1363,6 +1272,25 @@
           removeSavedLoginEntry(previousLoginAccount);
         }
       }
+      if (normalizeLoginRole(currentAccountRole) === "accountant" && String(currentAccount || "").trim() === String(originalUsername || "").trim()) {
+        const nextCurrentProfile = normalizeAccountantProfile(payload?.accountant);
+        if (nextCurrentProfile) {
+          const previousCanonicalAccount = String(currentAccount || "").trim();
+          const previousPhone = String(currentAccountPhone || "").trim();
+          const usedPhoneLogin = Boolean(currentLoginAccount && previousPhone && currentLoginAccount === previousPhone);
+          const usedUsernameLogin = String(currentLoginAccount || "").trim() === previousCanonicalAccount;
+          currentAccount = String(nextCurrentProfile.username || previousCanonicalAccount).trim();
+          currentAccountDisplayName = String(nextCurrentProfile.displayName || nextCurrentProfile.name || currentAccountDisplayName || currentAccount).trim();
+          currentAccountRealName = String(nextCurrentProfile.realName || currentAccountRealName || "").trim();
+          currentAccountPhone = String(nextCurrentProfile.phone || currentAccountPhone || "").trim();
+          if (usedPhoneLogin && currentAccountPhone) {
+            currentLoginAccount = currentAccountPhone;
+          } else if (usedUsernameLogin && currentAccount) {
+            currentLoginAccount = currentAccount;
+          }
+          saveToStorage();
+        }
+      }
       syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: true });
       records = nextRecords;
       if (filterState.accountant === String(payload.previousDisplayName || "").trim()) {
@@ -1371,7 +1299,7 @@
       syncAccountantsFromRecords();
       renderAccountantList();
       renderAccountantSelectOptions();
-      setPageMode(Boolean(currentAccount && currentSessionToken));
+      setPageMode(hasAuthenticatedAccount());
       renderTable();
       if (!analysisModal.hidden) {
         renderAnalysisPanel();
@@ -1739,7 +1667,7 @@
     }
 
     async function runAutoRefreshCycle() {
-      if (!currentAccount || !currentSessionToken) return;
+      if (!hasAuthenticatedAccount()) return;
       if (document.hidden) return;
       if (refreshInFlightPromise) return refreshInFlightPromise;
 
@@ -1762,6 +1690,79 @@
       return refreshInFlightPromise;
     }
 
+    function dispatchParsedAppEvent(eventName, payloadText) {
+      if (eventName !== "app-data") return;
+      if (payloadText) {
+        try {
+          JSON.parse(payloadText);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      if (document.hidden) return;
+      void runAutoRefreshCycle();
+    }
+
+    function flushAppEventStreamState(parserState) {
+      const eventName = String(parserState.eventName || "message").trim() || "message";
+      const payloadText = parserState.dataLines.join("\n");
+      parserState.eventName = "";
+      parserState.dataLines = [];
+      if (!payloadText) return;
+      dispatchParsedAppEvent(eventName, payloadText);
+    }
+
+    function processAppEventStreamChunk(parserState, chunkText, flush = false) {
+      if (chunkText) {
+        parserState.buffer += chunkText;
+      }
+      if (flush && parserState.buffer) {
+        parserState.buffer += "\n";
+      }
+      let lineBreakIndex = parserState.buffer.indexOf("\n");
+      while (lineBreakIndex >= 0) {
+        let line = parserState.buffer.slice(0, lineBreakIndex);
+        parserState.buffer = parserState.buffer.slice(lineBreakIndex + 1);
+        if (line.endsWith("\r")) {
+          line = line.slice(0, -1);
+        }
+        if (!line) {
+          flushAppEventStreamState(parserState);
+          lineBreakIndex = parserState.buffer.indexOf("\n");
+          continue;
+        }
+        if (line.startsWith(":")) {
+          lineBreakIndex = parserState.buffer.indexOf("\n");
+          continue;
+        }
+        const separatorIndex = line.indexOf(":");
+        const field = separatorIndex >= 0 ? line.slice(0, separatorIndex) : line;
+        let value = separatorIndex >= 0 ? line.slice(separatorIndex + 1) : "";
+        if (value.startsWith(" ")) {
+          value = value.slice(1);
+        }
+        if (field === "event") {
+          parserState.eventName = value;
+        } else if (field === "data") {
+          parserState.dataLines.push(value);
+        }
+        lineBreakIndex = parserState.buffer.indexOf("\n");
+      }
+      if (flush && (parserState.eventName || parserState.dataLines.length)) {
+        flushAppEventStreamState(parserState);
+      }
+    }
+
+    function scheduleAppEventReconnect() {
+      if (!hasAuthenticatedAccount()) return;
+      if (appEventReconnectTimer) return;
+      appEventReconnectTimer = window.setTimeout(() => {
+        appEventReconnectTimer = null;
+        if (!hasAuthenticatedAccount()) return;
+        openAppEventStream();
+      }, 1500);
+    }
+
     function closeAppEventStream() {
       if (!appEventSource) return;
       appEventSource.close();
@@ -1769,30 +1770,72 @@
     }
 
     function openAppEventStream() {
-      if (!currentAccount || !currentSessionToken) return;
-      if (typeof window.EventSource !== "function") return;
-
+      if (!hasAuthenticatedAccount()) return;
+      if (typeof window.fetch !== "function") return;
+      if (appEventReconnectTimer) {
+        window.clearTimeout(appEventReconnectTimer);
+        appEventReconnectTimer = null;
+      }
       closeAppEventStream();
-      const streamUrl = `${API_ENDPOINT_APP_EVENTS}?sessionToken=${encodeURIComponent(currentSessionToken)}`;
-      const source = new window.EventSource(streamUrl);
-      source.addEventListener("app-data", () => {
-        if (document.hidden) return;
-        void runAutoRefreshCycle();
-      });
-      source.onerror = () => {
-        if (!currentAccount || !currentSessionToken) {
-          closeAppEventStream();
-          return;
+      const abortController = new AbortController();
+      let isClosed = false;
+      const source = {
+        close() {
+          if (isClosed) return;
+          isClosed = true;
+          abortController.abort();
         }
-        scheduleSessionRecovery("sse_error");
       };
       appEventSource = source;
+      void (async () => {
+        try {
+          const response = await fetch(API_ENDPOINT_APP_EVENTS, {
+            method: "GET",
+            cache: "no-store",
+            headers: {
+              "X-Dispatch-Account": currentLoginAccount
+            },
+            signal: abortController.signal
+          });
+          if (isClosed) return;
+          if (response.status === 401) {
+            handleUnauthorizedSession();
+            return;
+          }
+          if (!response.ok || !response.body) {
+            throw new Error(`实时消息连接失败（${response.status}）`);
+          }
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder("utf-8");
+          const parserState = { buffer: "", eventName: "", dataLines: [] };
+          while (true) {
+            const { value, done } = await reader.read();
+            if (isClosed) return;
+            if (done) break;
+            processAppEventStreamChunk(parserState, decoder.decode(value, { stream: true }));
+          }
+          processAppEventStreamChunk(parserState, decoder.decode(), true);
+          if (appEventSource === source) {
+            appEventSource = null;
+          }
+          scheduleAppEventReconnect();
+        } catch (error) {
+          if (isClosed || (error && error.name === "AbortError")) {
+            return;
+          }
+          console.error(error);
+          if (appEventSource === source) {
+            appEventSource = null;
+          }
+          scheduleAppEventReconnect();
+        }
+      })();
     }
 
     function stopAutoRefresh() {
-      if (appEventRecoveryTimer) {
-        window.clearTimeout(appEventRecoveryTimer);
-        appEventRecoveryTimer = null;
+      if (appEventReconnectTimer) {
+        window.clearTimeout(appEventReconnectTimer);
+        appEventReconnectTimer = null;
       }
       closeAppEventStream();
       if (!refreshTimer) return;
@@ -1826,10 +1869,10 @@
       } else {
         removeAuthStateItem(STORAGE_KEY_ACCOUNT_PHONE);
       }
-      if (currentSessionToken) {
-        setAuthStateItem(STORAGE_KEY_SESSION_TOKEN, currentSessionToken);
+      if (currentLoginAccount) {
+        setAuthStateItem(STORAGE_KEY_LOGIN_ACCOUNT, currentLoginAccount);
       } else {
-        removeAuthStateItem(STORAGE_KEY_SESSION_TOKEN);
+        removeAuthStateItem(STORAGE_KEY_LOGIN_ACCOUNT);
       }
     }
 
@@ -1923,7 +1966,7 @@
 
     function loadFromStorage() {
       const storedAccount = String(getAuthStateItem(STORAGE_KEY_ACCOUNT) || "").trim();
-      const storedSessionToken = String(getAuthStateItem(STORAGE_KEY_SESSION_TOKEN) || "").trim();
+      const storedLoginAccount = String(getAuthStateItem(STORAGE_KEY_LOGIN_ACCOUNT) || "").trim();
       const storedDisplayName = String(getAuthStateItem(STORAGE_KEY_ACCOUNT_DISPLAY_NAME) || "").trim();
       const storedRealName = String(getAuthStateItem(STORAGE_KEY_ACCOUNT_REAL_NAME) || "").trim();
       const storedPhone = String(getAuthStateItem(STORAGE_KEY_ACCOUNT_PHONE) || "").trim();
@@ -1931,13 +1974,8 @@
       if (!storedRole && storedAccount) {
         storedRole = inferRoleByAccountName(storedAccount);
       }
-      if (storedAccount && !storedSessionToken) {
-        currentAccount = "";
-        currentAccountRole = "";
-        currentAccountDisplayName = "";
-        currentAccountRealName = "";
-        currentAccountPhone = "";
-        currentSessionToken = "";
+      if ((storedAccount && !storedLoginAccount) || (!storedAccount && storedLoginAccount)) {
+        clearCurrentAccountIdentity();
         saveToStorage();
         return;
       }
@@ -1949,7 +1987,7 @@
       currentAccountDisplayName = storedRole === "accountant" ? storedDisplayName : "";
       currentAccountRealName = storedRole === "accountant" ? storedRealName : "";
       currentAccountPhone = storedRole === "accountant" ? storedPhone : "";
-      currentSessionToken = storedSessionToken;
+      currentLoginAccount = storedLoginAccount;
       if ((storedRole === "dispatcher" || storedRole === "boss") && storedAccount && currentAccount && storedAccount !== currentAccount) {
         saveToStorage();
       }

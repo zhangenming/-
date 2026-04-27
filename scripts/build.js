@@ -24,11 +24,34 @@ const SERVER_APP_ENV = "production";
 const SERVER_LOG_FILE = "/private/tmp/dispatch_server.log";
 const SERVER_ERROR_LOG_FILE = "/private/tmp/dispatch_server.err.log";
 const execFileAsync = promisify(execFile);
+const BEIJING_TIME_ZONE = "Asia/Shanghai";
+const BEIJING_DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  timeZone: BEIJING_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+  hourCycle: "h23"
+});
 
 function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+function formatBeijingDateTime(dateInput = new Date()) {
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  const parts = {};
+  BEIJING_DATE_TIME_FORMATTER.formatToParts(date).forEach(({ type, value }) => {
+    if (type !== "literal") {
+      parts[type] = value;
+    }
+  });
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
 }
 
 async function listListeningPids(port) {
@@ -205,7 +228,7 @@ async function createBuildInfo() {
     version: formatBuildVersion(baseVersion, buildNumber),
     baseVersion,
     buildNumber,
-    builtAt: new Date().toISOString(),
+    builtAt: formatBeijingDateTime(new Date()),
     appEnv: APP_ENV,
     html: path.basename(SOURCE_HTML_FILE),
     publicDir: path.basename(SOURCE_PUBLIC_DIR)
