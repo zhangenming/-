@@ -27,7 +27,9 @@
         return `${Number(match[1])}月${Number(match[2])}日`;
       }
 
-      const timestamp = Date.parse(source);
+      const timestamp = typeof parseDateTimeValue === "function"
+        ? parseDateTimeValue(source)
+        : Date.parse(source);
       if (!Number.isNaN(timestamp)) {
         const date = new Date(timestamp);
         return `${date.getMonth() + 1}月${date.getDate()}日`;
@@ -194,7 +196,9 @@
     function parseDateOrDateTimeValue(rawValue) {
       const source = String(rawValue || "").trim();
       if (!source) return Number.NaN;
-      const timestamp = Date.parse(source);
+      const timestamp = typeof parseDateTimeValue === "function"
+        ? parseDateTimeValue(source)
+        : Date.parse(source);
       if (!Number.isNaN(timestamp)) return timestamp;
       return parseDateValue(source);
     }

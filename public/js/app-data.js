@@ -256,7 +256,7 @@
         {
           id: createDevTodoId(),
           text,
-          createdAt: new Date().toISOString()
+          createdAt: getCurrentDateTimeString()
         },
         ...devTodoItems
       ];

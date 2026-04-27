@@ -626,14 +626,14 @@
           if (!text) return null;
           const id = String(item.id || createDevTodoId()).trim() || createDevTodoId();
           const createdAtInput = String(item.createdAt || "").trim();
-          const createdAtTime = createdAtInput ? new Date(createdAtInput).getTime() : Number.NaN;
+          const createdAtTime = parseDateTimeValue(createdAtInput);
           const createdAt = Number.isFinite(createdAtTime)
-            ? new Date(createdAtTime).toISOString()
-            : new Date().toISOString();
+            ? formatDateTimeFromDate(new Date(createdAtTime))
+            : getCurrentDateTimeString();
           return { id, text, createdAt };
         })
         .filter(Boolean)
-        .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+        .sort((left, right) => parseDateTimeValue(right.createdAt) - parseDateTimeValue(left.createdAt));
     }
 
     function getLockedDispatcherFilterValue() {
@@ -1833,39 +1833,79 @@
       );
     }
 
-    function getTodayISODate() {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, "0");
-      const d = String(now.getDate()).padStart(2, "0");
+    function padDateTimeNumber(value) {
+      return String(Math.trunc(Number(value) || 0)).padStart(2, "0");
+    }
+
+    function formatDateFromDate(dateInput = new Date()) {
+      const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+      if (Number.isNaN(date.getTime())) return "";
+      const y = date.getFullYear();
+      const m = padDateTimeNumber(date.getMonth() + 1);
+      const d = padDateTimeNumber(date.getDate());
       return `${y}-${m}-${d}`;
+    }
+
+    function formatDateTimeFromDate(dateInput = new Date()) {
+      const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+      if (Number.isNaN(date.getTime())) return "";
+      const hh = padDateTimeNumber(date.getHours());
+      const mm = padDateTimeNumber(date.getMinutes());
+      const ss = padDateTimeNumber(date.getSeconds());
+      const dateText = formatDateFromDate(date);
+      return dateText ? `${dateText} ${hh}:${mm}:${ss}` : "";
+    }
+
+    function parseDateTimeValue(rawDateTime) {
+      const source = String(rawDateTime || "").trim();
+      if (!source) return Number.NaN;
+      const structuredMatch = source.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+      if (structuredMatch) {
+        const year = Number(structuredMatch[1]);
+        const month = Number(structuredMatch[2]);
+        const day = Number(structuredMatch[3]);
+        const hour = Number(structuredMatch[4] || 0);
+        const minute = Number(structuredMatch[5] || 0);
+        const second = Number(structuredMatch[6] || 0);
+        const date = new Date(year, month - 1, day, hour, minute, second);
+        if (
+          date.getFullYear() === year
+          && date.getMonth() === month - 1
+          && date.getDate() === day
+          && date.getHours() === hour
+          && date.getMinutes() === minute
+          && date.getSeconds() === second
+        ) {
+          return date.getTime();
+        }
+      }
+      const timestamp = Date.parse(source);
+      return Number.isNaN(timestamp) ? Number.NaN : timestamp;
+    }
+
+    function getCurrentDateTimeString() {
+      return formatDateTimeFromDate(new Date());
+    }
+
+    function getTodayISODate() {
+      return formatDateFromDate(new Date());
     }
 
     function formatDateTimeLocalInputValue(rawDateTime = new Date()) {
-      const source = rawDateTime instanceof Date ? rawDateTime : String(rawDateTime || "").trim();
-      const date = rawDateTime instanceof Date ? rawDateTime : new Date(source);
-      if (Number.isNaN(date.getTime())) {
+      const timestamp = rawDateTime instanceof Date ? rawDateTime.getTime() : parseDateTimeValue(rawDateTime);
+      if (!Number.isFinite(timestamp)) {
         return formatDateTimeLocalInputValue(new Date());
       }
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      const hh = String(date.getHours()).padStart(2, "0");
-      const mm = String(date.getMinutes()).padStart(2, "0");
-      const ss = String(date.getSeconds()).padStart(2, "0");
-      return `${y}-${m}-${d}T${hh}:${mm}:${ss}`;
+      const date = new Date(timestamp);
+      return `${formatDateFromDate(date)}T${padDateTimeNumber(date.getHours())}:${padDateTimeNumber(date.getMinutes())}:${padDateTimeNumber(date.getSeconds())}`;
     }
 
     function formatDateInputValue(rawDate = new Date()) {
-      const source = rawDate instanceof Date ? rawDate : String(rawDate || "").trim();
-      const date = rawDate instanceof Date ? rawDate : new Date(source);
-      if (Number.isNaN(date.getTime())) {
+      const timestamp = rawDate instanceof Date ? rawDate.getTime() : parseDateTimeValue(rawDate);
+      if (!Number.isFinite(timestamp)) {
         return getTodayISODate();
       }
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}-${m}-${d}`;
+      return formatDateFromDate(new Date(timestamp));
     }
 
     function generateCompleteFeedbackImageId() {
@@ -2103,10 +2143,9 @@
     function toISOStringFromDateTimeLocal(rawValue) {
       const source = String(rawValue || "").trim();
       if (!source) return "";
-      const normalizedValue = source.length === 16 ? `${source}:00` : source;
-      const date = new Date(normalizedValue);
-      if (Number.isNaN(date.getTime())) return "";
-      return date.toISOString();
+      const timestamp = parseDateTimeValue(source);
+      if (!Number.isFinite(timestamp)) return "";
+      return formatDateTimeFromDate(new Date(timestamp));
     }
 
     function toMoney(value) {
@@ -2322,16 +2361,9 @@
 
     function formatDateTimeDisplay(rawDateTime) {
       const source = String(rawDateTime || "").trim();
-      const timestamp = Date.parse(source);
+      const timestamp = parseDateTimeValue(source);
       if (Number.isNaN(timestamp)) return source;
-      const date = new Date(timestamp);
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      const hh = String(date.getHours()).padStart(2, "0");
-      const mm = String(date.getMinutes()).padStart(2, "0");
-      const ss = String(date.getSeconds()).padStart(2, "0");
-      return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+      return formatDateTimeFromDate(new Date(timestamp));
     }
 
     function normalizeBuildVersion(rawVersion) {
@@ -2373,12 +2405,12 @@
 
     function formatTimeDisplay(rawDateTime) {
       const source = String(rawDateTime || "").trim();
-      const timestamp = Date.parse(source);
+      const timestamp = parseDateTimeValue(source);
       if (Number.isNaN(timestamp)) return source;
       const date = new Date(timestamp);
-      const hh = String(date.getHours()).padStart(2, "0");
-      const mm = String(date.getMinutes()).padStart(2, "0");
-      const ss = String(date.getSeconds()).padStart(2, "0");
+      const hh = padDateTimeNumber(date.getHours());
+      const mm = padDateTimeNumber(date.getMinutes());
+      const ss = padDateTimeNumber(date.getSeconds());
       return `${hh}:${mm}:${ss}`;
     }
 

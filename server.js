@@ -101,6 +101,19 @@ const STATIC_MIME_TYPES = {
   ".gif": "image/gif",
   ".ico": "image/x-icon"
 };
+const BEIJING_TIME_ZONE = "Asia/Shanghai";
+const STRUCTURED_DATE_TIME_PATTERN = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/;
+const BEIJING_DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  timeZone: BEIJING_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+  hourCycle: "h23"
+});
 
 function appendServerLogLine(line) {
   fs.appendFile(SERVER_LOG_FILE, `${line}\n`, "utf8").catch(() => {});
@@ -113,7 +126,7 @@ function attachRequestLogger(req, res) {
     const method = String(req.method || "GET").toUpperCase();
     const url = String(req.url || "/");
     const status = Number(res.statusCode || 0);
-    const line = `[${new Date().toISOString()}] ${method} ${url} ${status} ${durationMs}ms`;
+    const line = `[${getCurrentBeijingDateTime()}] ${method} ${url} ${status} ${durationMs}ms`;
     console.log(line);
     appendServerLogLine(line);
   });
@@ -232,7 +245,7 @@ function scheduleDevLiveReload(changedPath) {
     const relativePath = changedPath ? path.relative(ROOT_DIR, changedPath) : "";
     broadcastDevLiveReload({
       path: relativePath,
-      time: new Date().toISOString()
+      time: getCurrentBeijingDateTime()
     });
   }, 120);
 }
@@ -299,7 +312,7 @@ function publishAppDataChanges(changes) {
   const payload = {
     seq: appEventSequence,
     changes: normalizedChanges,
-    at: new Date().toISOString()
+    at: getCurrentBeijingDateTime()
   };
 
   for (const client of [...appEventClients]) {
@@ -617,12 +630,77 @@ function normalizeDispatcherPasswords(rawPasswords) {
   return normalized;
 }
 
+function padDateNumber(value) {
+  return String(Math.trunc(Number(value) || 0)).padStart(2, "0");
+}
+
+function getBeijingDateTimeParts(dateInput = new Date()) {
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return null;
+  const parts = {};
+  BEIJING_DATE_TIME_FORMATTER.formatToParts(date).forEach(({ type, value }) => {
+    if (type !== "literal") {
+      parts[type] = value;
+    }
+  });
+  return parts.year && parts.month && parts.day && parts.hour && parts.minute && parts.second
+    ? parts
+    : null;
+}
+
+function formatBeijingDateTime(dateInput = new Date()) {
+  const parts = getBeijingDateTimeParts(dateInput);
+  if (!parts) return "";
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
+}
+
+function formatBeijingDate(dateInput = new Date()) {
+  const parts = getBeijingDateTimeParts(dateInput);
+  if (!parts) return "";
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function getCurrentBeijingDateTime() {
+  return formatBeijingDateTime(new Date());
+}
+
+function getCurrentBeijingDate() {
+  return formatBeijingDate(new Date());
+}
+
+function parseStructuredDateTimeValue(rawValue) {
+  const source = normalizeText(rawValue, 64);
+  if (!source) return null;
+  const match = source.match(STRUCTURED_DATE_TIME_PATTERN);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = typeof match[4] === "undefined" ? 0 : Number(match[4]);
+  const minute = typeof match[5] === "undefined" ? 0 : Number(match[5]);
+  const second = typeof match[6] === "undefined" ? 0 : Number(match[6]);
+  const formattedDate = `${String(year).padStart(4, "0")}-${padDateNumber(month)}-${padDateNumber(day)}`;
+  const formattedDateTime = `${formattedDate} ${padDateNumber(hour)}:${padDateNumber(minute)}:${padDateNumber(second)}`;
+  const utcDate = new Date(Date.UTC(year, month - 1, day, hour - 8, minute, second));
+  if (formatBeijingDateTime(utcDate) !== formattedDateTime) return null;
+  return {
+    hasTime: typeof match[4] !== "undefined",
+    formattedDate,
+    formattedDateTime,
+    date: utcDate
+  };
+}
+
 function normalizeDateTimeValue(value) {
   const source = normalizeText(value, 64);
   if (!source) return "";
+  const structured = parseStructuredDateTimeValue(source);
+  if (structured) {
+    return structured.hasTime ? structured.formattedDateTime : `${structured.formattedDate} 00:00:00`;
+  }
   const date = new Date(source);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toISOString();
+  return formatBeijingDateTime(date);
 }
 
 function getFeedbackImageUrl(fileName) {
@@ -1124,7 +1202,7 @@ function normalizeAuthSessionEntry(rawEntry) {
   const account = normalizeText(rawEntry.account, 64);
   const role = normalizeLoginRole(rawEntry.role);
   const displayName = normalizeAccountantDisplayName(rawEntry.displayName);
-  const createdAt = normalizeDateTimeValue(rawEntry.createdAt) || new Date().toISOString();
+  const createdAt = normalizeDateTimeValue(rawEntry.createdAt) || getCurrentBeijingDateTime();
   if (!token || !account || !role) return null;
   return {
     token,
@@ -1172,7 +1250,7 @@ async function createAuthSession(account, role, extra = {}) {
     account: normalizedAccount,
     role: normalizedRole,
     displayName: normalizedDisplayName,
-    createdAt: new Date().toISOString()
+    createdAt: getCurrentBeijingDateTime()
   });
   await persistAuthSessions();
   return token;
@@ -1837,7 +1915,7 @@ function buildRecordHistoryEntry(options = {}) {
   const operator = getRecordHistoryOperator(options.session);
   return normalizeOperationHistoryEntry({
     historyId: generateId("rhis"),
-    operatedAt: normalizeDateTimeValue(options.operatedAt) || new Date().toISOString(),
+    operatedAt: normalizeDateTimeValue(options.operatedAt) || getCurrentBeijingDateTime(),
     operatedBy: normalizeText(options.operatedBy, 48) || operator.operatedBy || "系统",
     operatedRole: normalizeLoginRole(options.operatedRole) || operator.operatedRole,
     actionKey: normalizeText(options.actionKey, 32).toLowerCase() || "updated",
@@ -1861,6 +1939,10 @@ function ensureRecordIds(sourceRecords) {
   const records = sourceRecords.map((item) => {
     const current = item && typeof item === "object" ? item : {};
     const currentId = normalizeText(current.id, 80);
+    const normalizedCreatedAt = normalizeDateTimeValue(current.createdAt) || getCurrentBeijingDateTime();
+    const normalizedCheckedAt = normalizeDateTimeValue(current.checkedAt);
+    const normalizedCompletedAt = normalizeDateTimeValue(current.completedAt);
+    const normalizedReturnedAt = normalizeDateTimeValue(current.returnedAt);
     const normalizedHistory = normalizeOperationHistory(current.operationHistory);
     const normalizedSettlementFields = getNormalizedRecordSettlementFields(current);
     const normalizedInvoiceFields = getNormalizedRecordInvoiceFields(current);
@@ -1880,6 +1962,10 @@ function ensureRecordIds(sourceRecords) {
       item
       && typeof item === "object"
       && currentId
+      && normalizeText(current.createdAt, 64) === normalizedCreatedAt
+      && normalizeText(current.checkedAt, 64) === normalizedCheckedAt
+      && normalizeText(current.completedAt, 64) === normalizedCompletedAt
+      && normalizeText(current.returnedAt, 64) === normalizedReturnedAt
       && hasNormalizedHistory
       && hasNormalizedSettlement
       && hasNormalizedInvoice
@@ -1891,6 +1977,10 @@ function ensureRecordIds(sourceRecords) {
     return {
       ...current,
       id: currentId || generateId("rec"),
+      createdAt: normalizedCreatedAt,
+      checkedAt: normalizedCheckedAt,
+      completedAt: normalizedCompletedAt,
+      returnedAt: normalizedReturnedAt,
       isMonthlySettlement: normalizedMonthlySettlement,
       operationHistory: normalizedHistory,
       ...normalizedSettlementFields,
@@ -1921,8 +2011,8 @@ function normalizeRecord(input) {
   const normalizedDate = normalizeText(input.date, 32);
   const item = {
     id: generateId("rec"),
-    createdAt: new Date().toISOString(),
-    date: normalizedDate || new Date().toISOString().slice(0, 10),
+    createdAt: getCurrentBeijingDateTime(),
+    date: normalizedDate || getCurrentBeijingDate(),
     isMonthlySettlement: normalizeMonthlySettlementState(input.isMonthlySettlement),
     dispatcher: normalizeDispatcherTag(input.dispatcher) || normalizeText(input.dispatcher, 48),
     accountant: normalizeText(input.accountant, 48),
@@ -1965,7 +2055,7 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
   const nextDate = normalizeText(
     Object.prototype.hasOwnProperty.call(source, "date") ? source.date : current.date,
     32
-  ) || new Date().toISOString().slice(0, 10);
+  ) || getCurrentBeijingDate();
   const nextIsMonthlySettlement = normalizeMonthlySettlementState(
     Object.prototype.hasOwnProperty.call(source, "isMonthlySettlement")
       ? source.isMonthlySettlement
@@ -2051,7 +2141,7 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
       customerFeedback: "",
       serviceFeedbackImages: [],
       ...(returnedPriceSnapshot ? { returnedPriceSnapshot } : {}),
-      returnedAt: new Date().toISOString(),
+      returnedAt: getCurrentBeijingDateTime(),
       returnedBy: normalizeText(session?.account, 48),
       isSettled: false,
       settledAt: "",
@@ -2239,7 +2329,7 @@ function serveAppEvents(req, res, url) {
   res.write("retry: 2000\n\n");
   writeSseEvent(res, "ready", {
     seq: appEventSequence,
-    at: new Date().toISOString()
+    at: getCurrentBeijingDateTime()
   });
 
   const cleanup = () => {
@@ -2459,7 +2549,7 @@ async function serveRecordSettlement(req, res) {
     }
 
     const recordIdSet = new Set(recordIds);
-    const settledAt = new Date().toISOString();
+    const settledAt = getCurrentBeijingDateTime();
     const settledBy = normalizeText(session.account, 48) || BOSS_LOGIN_ACCOUNT;
 
     const result = await withWriteLock(async () => {
@@ -2563,7 +2653,7 @@ async function serveRecordInvoiceUpload(req, res) {
   try {
     const body = await parseBody(req);
     const rawImage = body?.image || body?.invoiceImage || body?.settlementInvoiceImage;
-    const uploadedAt = new Date().toISOString();
+    const uploadedAt = getCurrentBeijingDateTime();
     const uploadedByUsername = normalizeAccountantUsername(session.account);
     const uploadedBy = getSessionAccountantDisplayName(session) || uploadedByUsername;
 
@@ -2697,7 +2787,7 @@ async function serveRecordById(req, res, recordIdRaw) {
         const recycleBinRecords = await readRecycleBin();
         recycleBinRecords.unshift({
           recycleId: generateId("del"),
-          deletedAt: new Date().toISOString(),
+          deletedAt: getCurrentBeijingDateTime(),
           deletedBy,
           record: deletedRecord
         });
@@ -2770,7 +2860,7 @@ async function serveRecordById(req, res, recordIdRaw) {
           const shouldEditRecord = isAccountantEditableRecordPayload(body);
           const operatedByUsername = normalizeAccountantUsername(session.account);
           const operatedBy = getSessionAccountantDisplayName(session) || operatedByUsername;
-          const operatedAt = new Date().toISOString();
+          const operatedAt = getCurrentBeijingDateTime();
           const completedAtInput = normalizeDateTimeValue(body.completedAt || body.completeTime || body.finishedAt);
           const customerFeedback = Object.prototype.hasOwnProperty.call(body, "customerFeedback")
             ? normalizeText(body.customerFeedback, 1000)
@@ -3356,7 +3446,7 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
         const previousDisplayName = normalizeAccountantDisplayName(target.displayName);
         let nextRecords = records;
         if (previousDisplayName && previousDisplayName !== nextDisplayName) {
-          const operatedAt = new Date().toISOString();
+          const operatedAt = getCurrentBeijingDateTime();
           const operatedBy = normalizeText(session.account, 48) || "系统";
           nextRecords = records.map((item) => {
             if (normalizeAccountantDisplayName(item.accountant) !== previousDisplayName) {
@@ -3718,7 +3808,7 @@ const server = http.createServer(async (req, res) => {
     const pathname = decodeURIComponent(url.pathname);
 
     if (pathname === "/api/health") {
-      sendJson(res, 200, { ok: true, time: new Date().toISOString() });
+      sendJson(res, 200, { ok: true, time: getCurrentBeijingDateTime() });
       return;
     }
 

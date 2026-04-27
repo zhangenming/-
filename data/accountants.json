@@ -177,7 +177,7 @@
     "alias": "敏",
     "realName": "",
     "phone": "13018373898",
-    "loginPassword": "123456"
+    "loginPassword": "Whm123456"
   },
   {
     "username": "NanGongYinXue",
@@ -340,6 +340,15 @@
     "realName": "",
     "phone": "",
     "loginPassword": "123456"
+  },
+  {
+    "username": "小顺会计",
+    "displayName": "小顺会计",
+    "name": "小顺会计",
+    "alias": "小顺会计",
+    "realName": "吴晓田",
+    "phone": "18279076370",
+    "loginPassword": "w121122123"
   },
   {
     "username": "18316142404",

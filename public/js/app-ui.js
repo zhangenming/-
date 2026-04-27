@@ -1679,9 +1679,9 @@
         const accountant = String(record?.accountant || "").trim() || "未分配会计";
         const settlement = Number(record?.settlementPrice);
         const settledAt = String(record?.settledAt || "").trim();
-        const settledAtTime = new Date(settledAt || 0).getTime();
+        const settledAtTime = parseDateTimeValue(settledAt);
         const uploadedAt = String(record?.invoiceUploadedAt || "").trim();
-        const uploadedAtTime = new Date(uploadedAt || 0).getTime();
+        const uploadedAtTime = parseDateTimeValue(uploadedAt);
         const uploadedBy = String(record?.invoiceUploadedBy || record?.invoiceUploadedByUsername || "").trim();
         const isUploaded = isRecordInvoiceUploaded(record);
         const current = groupMap.get(accountant) || {
@@ -1700,7 +1700,7 @@
         }
         if (isUploaded) {
           current.uploadedCount += 1;
-          const currentUploadedAtTime = new Date(current.latestUploadedAt || 0).getTime();
+          const currentUploadedAtTime = parseDateTimeValue(current.latestUploadedAt);
           if (!current.latestUploadedAt || uploadedAtTime >= currentUploadedAtTime) {
             current.latestUploadedAt = uploadedAt;
             current.latestUploadedBy = uploadedBy;
@@ -1914,7 +1914,7 @@
         itemMap.set(key, current);
       });
       return Array.from(itemMap.values()).sort((left, right) => {
-        const timeDiff = new Date(right.uploadedAt || 0).getTime() - new Date(left.uploadedAt || 0).getTime();
+        const timeDiff = parseDateTimeValue(right.uploadedAt) - parseDateTimeValue(left.uploadedAt);
         if (timeDiff) return timeDiff;
         return left.accountant.localeCompare(right.accountant, "zh-CN", { numeric: true, sensitivity: "base" });
       });
