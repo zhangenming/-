@@ -18,6 +18,7 @@ const SOURCE_HTML_FILE = path.join(ROOT_DIR, "派单结算录入.html");
 const SOURCE_PUBLIC_DIR = path.join(ROOT_DIR, "public");
 const SOURCE_BUILD_INFO_FILE = path.join(ROOT_DIR, "build-info.json");
 const DIST_DIR = path.join(ROOT_DIR, "dist");
+const HTML_DIR = IS_DEVELOPMENT ? ROOT_DIR : DIST_DIR;
 const HTML_FILE = IS_DEVELOPMENT ? SOURCE_HTML_FILE : path.join(DIST_DIR, "派单结算录入.html");
 const PUBLIC_DIR = IS_DEVELOPMENT ? SOURCE_PUBLIC_DIR : path.join(DIST_DIR, "public");
 const BUILD_INFO_FILE = IS_DEVELOPMENT ? SOURCE_BUILD_INFO_FILE : path.join(DIST_DIR, "build-info.json");
@@ -27,6 +28,7 @@ const RECYCLE_BIN_FILE = path.join(DATA_DIR, "recycle-bin.json");
 const ACCOUNTANTS_FILE = path.join(DATA_DIR, "accountants.json");
 const DISPATCHER_PASSWORDS_FILE = path.join(DATA_DIR, "dispatcher-passwords.json");
 const ACCOUNTANT_OPERATION_LOG_FILE = path.join(DATA_DIR, "accountant-operation-logs.json");
+const AUTH_SESSIONS_FILE = path.join(DATA_DIR, "auth-sessions.json");
 const FEEDBACK_IMAGE_DIR = path.join(DATA_DIR, "feedback-images");
 const FEEDBACK_IMAGE_URL_PREFIX = "/feedback-images/";
 const INVOICE_IMAGE_DIR = path.join(DATA_DIR, "invoice-images");
@@ -75,6 +77,7 @@ const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
 };
 
 let writeQueue = Promise.resolve();
+let authSessionWriteQueue = Promise.resolve();
 const authSessions = new Map();
 const devLiveReloadClients = new Set();
 let devLiveReloadHeartbeat = null;
@@ -421,6 +424,11 @@ async function ensureStorage() {
   } catch {
     await fs.writeFile(ACCOUNTANT_OPERATION_LOG_FILE, "[]\n", "utf8");
   }
+  try {
+    await fs.access(AUTH_SESSIONS_FILE);
+  } catch {
+    await fs.writeFile(AUTH_SESSIONS_FILE, "[]\n", "utf8");
+  }
 }
 
 async function readRecords() {
@@ -456,6 +464,13 @@ async function readAccountantOperationLogs() {
   const raw = await fs.readFile(ACCOUNTANT_OPERATION_LOG_FILE, "utf8");
   const parsed = JSON.parse(raw || "[]");
   return Array.isArray(parsed) ? parsed.map((entry) => normalizeAccountantOperationLogEntry(entry)).filter(Boolean) : [];
+}
+
+async function readAuthSessions() {
+  await ensureStorage();
+  const raw = await fs.readFile(AUTH_SESSIONS_FILE, "utf8");
+  const parsed = JSON.parse(raw || "[]");
+  return Array.isArray(parsed) ? parsed : [];
 }
 
 async function writeRecords(records) {
@@ -499,6 +514,14 @@ async function writeAccountantOperationLogs(logs) {
   await fs.writeFile(tempFile, payload, "utf8");
   await fs.rename(tempFile, ACCOUNTANT_OPERATION_LOG_FILE);
   queueAppDataChanges("accountantOperationLogs");
+}
+
+async function writeAuthSessions(sessions) {
+  await ensureStorage();
+  const tempFile = `${AUTH_SESSIONS_FILE}.tmp`;
+  const payload = `${JSON.stringify(sessions, null, 2)}\n`;
+  await fs.writeFile(tempFile, payload, "utf8");
+  await fs.rename(tempFile, AUTH_SESSIONS_FILE);
 }
 
 function withWriteLock(task) {
@@ -940,7 +963,7 @@ function ensureAccountantUsernameAvailable(username, savedAccountants) {
   }
 }
 
-function ensureAccountantDisplayNameAvailable(displayName, savedAccountants, errorMessage = "显示名称已存在") {
+function ensureAccountantDisplayNameAvailable(displayName, savedAccountants, errorMessage = "别名已存在") {
   if (!displayName) {
     throw new Error(errorMessage);
   }
@@ -1027,6 +1050,7 @@ function normalizeDispatcherTag(rawValue) {
   const source = normalizeText(rawValue, 48);
   if (!source) return "";
   const lower = source.toLowerCase();
+  if (lower === "开心财税") return "开心财税";
   if (lower === "1" || lower.includes("财税1")) return "1";
   if (lower === "a" || lower.includes("财税a")) return "A";
   if (lower === "c" || lower.includes("财税c")) return "C";
@@ -1038,7 +1062,7 @@ function normalizeDispatcherTag(rawValue) {
 function getDispatcherTagForAccount(accountNameRaw) {
   const account = resolveLoginAccountInput(accountNameRaw);
   const lower = normalizeText(account, 16).toLowerCase();
-  if (lower === "开心财税") return "1";
+  if (lower === "开心财税") return "开心财税";
   if (lower === "1") return "1";
   if (lower === "a") return "A";
   if (lower === "c") return "C";
@@ -1047,11 +1071,99 @@ function getDispatcherTagForAccount(accountNameRaw) {
   return "";
 }
 
+function getDispatcherDisplayNameByTag(dispatcherTagRaw) {
+  const dispatcherTag = normalizeDispatcherTag(dispatcherTagRaw);
+  if (dispatcherTag === "开心财税") return "开心财税";
+  return dispatcherTag ? `开心财税${dispatcherTag}` : "";
+}
+
+function buildDispatcherManagementRows(records, dispatcherPasswords) {
+  const orderCountByTag = Array.isArray(records)
+    ? records.reduce((map, item) => {
+      const dispatcherTag = normalizeDispatcherTag(item?.dispatcher);
+      if (!dispatcherTag) return map;
+      map.set(dispatcherTag, (map.get(dispatcherTag) || 0) + 1);
+      return map;
+    }, new Map())
+    : new Map();
+  const tagOrder = ["开心财税", "1", "A", "C", "E", "K"];
+  const rows = tagOrder.map((dispatcherTag) => {
+    const accounts = DISPATCHER_ACCOUNT_LIST.filter((account) => getDispatcherTagForAccount(account) === dispatcherTag);
+    const accountPasswordPairs = accounts.map((account) => ({
+      account,
+      password: normalizeDispatcherPassword(dispatcherPasswords?.[account]) || DISPATCHER_LOGIN_PASSWORD
+    }));
+    const uniquePasswords = Array.from(new Set(accountPasswordPairs.map((item) => item.password)));
+    const accountLabel = accounts.join(" / ");
+    const passwordLabel = uniquePasswords.length === 1
+      ? uniquePasswords[0]
+      : accountPasswordPairs.map((item) => `${item.account}:${item.password}`).join(" / ");
+    return {
+      dispatcherTag,
+      displayName: getDispatcherDisplayNameByTag(dispatcherTag),
+      accountLabel,
+      passwordLabel,
+      orderCount: orderCountByTag.get(dispatcherTag) || 0
+    };
+  });
+
+  return rows.sort((left, right) => {
+    const countDiff = Number(right.orderCount || 0) - Number(left.orderCount || 0);
+    if (countDiff !== 0) return countDiff;
+    return tagOrder.indexOf(left.dispatcherTag) - tagOrder.indexOf(right.dispatcherTag);
+  });
+}
+
 function generateSessionToken() {
   return `sess_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 16)}`;
 }
 
-function createAuthSession(account, role, extra = {}) {
+function normalizeAuthSessionEntry(rawEntry) {
+  if (!rawEntry || typeof rawEntry !== "object") return null;
+  const token = normalizeText(rawEntry.token, 240);
+  const account = normalizeText(rawEntry.account, 64);
+  const role = normalizeLoginRole(rawEntry.role);
+  const displayName = normalizeAccountantDisplayName(rawEntry.displayName);
+  const createdAt = normalizeDateTimeValue(rawEntry.createdAt) || new Date().toISOString();
+  if (!token || !account || !role) return null;
+  return {
+    token,
+    account,
+    role,
+    displayName,
+    createdAt
+  };
+}
+
+function serializeAuthSessions() {
+  return Array.from(authSessions.entries())
+    .map(([token, session]) => normalizeAuthSessionEntry({ token, ...session }))
+    .filter(Boolean);
+}
+
+async function persistAuthSessions() {
+  const next = authSessionWriteQueue.then(() => writeAuthSessions(serializeAuthSessions()), () => writeAuthSessions(serializeAuthSessions()));
+  authSessionWriteQueue = next.catch(() => {});
+  await next;
+}
+
+async function loadPersistedAuthSessions() {
+  const sessions = await readAuthSessions();
+  authSessions.clear();
+  sessions
+    .map((entry) => normalizeAuthSessionEntry(entry))
+    .filter(Boolean)
+    .forEach((entry) => {
+      authSessions.set(entry.token, {
+        account: entry.account,
+        role: entry.role,
+        displayName: entry.displayName,
+        createdAt: entry.createdAt
+      });
+    });
+}
+
+async function createAuthSession(account, role, extra = {}) {
   const normalizedAccount = normalizeText(account, 64);
   const normalizedRole = normalizeLoginRole(role);
   const normalizedDisplayName = normalizeAccountantDisplayName(extra.displayName);
@@ -1062,14 +1174,25 @@ function createAuthSession(account, role, extra = {}) {
     displayName: normalizedDisplayName,
     createdAt: new Date().toISOString()
   });
+  await persistAuthSessions();
   return token;
 }
 
-function syncAccountantAuthSessions(previousProfile, nextProfile) {
+async function deleteAuthSession(rawToken) {
+  const token = normalizeText(rawToken, 240);
+  if (!token) return false;
+  const removed = authSessions.delete(token);
+  if (!removed) return false;
+  await persistAuthSessions();
+  return true;
+}
+
+async function syncAccountantAuthSessions(previousProfile, nextProfile) {
   const previousUsername = normalizeAccountantUsername(previousProfile?.username || previousProfile?.account);
   const previousDisplayName = normalizeAccountantDisplayName(previousProfile?.displayName || previousProfile?.name);
   const nextUsername = normalizeAccountantUsername(nextProfile?.username || nextProfile?.account);
   const nextDisplayName = normalizeAccountantDisplayName(nextProfile?.displayName || nextProfile?.name);
+  let changed = false;
   authSessions.forEach((session, token) => {
     if (!session || normalizeLoginRole(session.role) !== "accountant") return;
     const sessionUsername = normalizeAccountantUsername(session.account);
@@ -1082,7 +1205,11 @@ function syncAccountantAuthSessions(previousProfile, nextProfile) {
       account: nextUsername || session.account,
       displayName: nextDisplayName || session.displayName
     });
+    changed = true;
   });
+  if (changed) {
+    await persistAuthSessions();
+  }
 }
 
 function getAuthSessionFromToken(rawToken) {
@@ -1137,6 +1264,7 @@ const ACCOUNTANT_RECORD_HISTORY_VISIBLE_FIELDS = new Set([
   "dispatcher",
   "customer",
   "summary",
+  "remark",
   "settlementPrice",
   "checkStatus",
   "isSettled"
@@ -1189,6 +1317,7 @@ function sanitizeRecordForAccountant(record) {
     accountant: normalizeAccountantDisplayName(source.accountant),
     customer: normalizeText(source.customer, 120),
     summary: normalizeText(source.summary, 500),
+    remark: normalizeText(source.remark, 500),
     settlementPrice: Number.isFinite(settlementPrice) ? settlementPrice : "",
     checkStatus: normalizeText(source.checkStatus, 24).toLowerCase() || "pending",
     completedAt: normalizeDateTimeValue(source.completedAt),
@@ -1501,6 +1630,7 @@ function normalizeAccountantOperationLogEntry(rawEntry) {
     accountant: normalizeText(rawEntry.accountant, 48),
     customer: normalizeText(rawEntry.customer, 120),
     summary: normalizeText(rawEntry.summary, 500),
+    remark: normalizeText(rawEntry.remark, 500),
     customerFeedback: normalizeText(rawEntry.customerFeedback, 1000),
     completedAt: normalizeDateTimeValue(rawEntry.completedAt)
   };
@@ -1561,8 +1691,9 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
   { field: "orderNo", label: "订单号", kind: "text" },
   { field: "customer", label: "客户", kind: "text" },
   { field: "summary", label: "任务简介", kind: "text" },
+  { field: "remark", label: "备注", kind: "text" },
   { field: "completedAt", label: "完工时间", kind: "datetime" },
-  { field: "customerFeedback", label: "服务记录", kind: "text" }
+  { field: "customerFeedback", label: "客户反馈", kind: "text" }
 ];
 
 function getRecordHistoryFieldDefinition(field) {
@@ -1690,7 +1821,7 @@ function getRecordHistoryOperator(session) {
   if (operatedRole === "dispatcher") {
     const dispatcherTag = getDispatcherTagForAccount(currentSession.account) || normalizeDispatcherTag(currentSession.account);
     return {
-      operatedBy: dispatcherTag ? `开心财税${dispatcherTag}` : normalizeText(currentSession.account, 48),
+      operatedBy: getDispatcherDisplayNameByTag(dispatcherTag) || normalizeText(currentSession.account, 48),
       operatedRole
     };
   }
@@ -1801,6 +1932,7 @@ function normalizeRecord(input) {
     source: normalizeText(input.source, 120),
     customer: normalizeText(input.customer, 120),
     summary: normalizeText(input.summary, 500),
+    remark: normalizeText(input.remark, 500),
     paymentPrice: normalizeOptionalMoneyField(input.paymentPrice),
     totalPrice: normalizeOptionalMoneyField(input.totalPrice),
     settlementPrice: normalizeOptionalMoneyField(input.settlementPrice),
@@ -1870,6 +2002,10 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
     Object.prototype.hasOwnProperty.call(source, "summary") ? source.summary : current.summary,
     500
   );
+  const nextRemark = normalizeText(
+    Object.prototype.hasOwnProperty.call(source, "remark") ? source.remark : current.remark,
+    500
+  );
   const nextPaymentPrice = normalizeOptionalMoneyField(
     Object.prototype.hasOwnProperty.call(source, "paymentPrice") ? source.paymentPrice : current.paymentPrice
   );
@@ -1894,6 +2030,7 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
     source: nextSource,
     customer: nextCustomer,
     summary: nextSummary,
+    remark: nextRemark,
     paymentPrice: nextPaymentPrice,
     totalPrice: nextTotalPrice,
     settlementPrice: nextSettlementPrice,
@@ -1947,10 +2084,10 @@ function isAccountantEditableRecordPayload(payload) {
   return editableKeys.some((key) => Object.prototype.hasOwnProperty.call(source, key));
 }
 
-async function serveHtml(res, options = {}) {
-  const { headOnly = false } = options;
+async function serveHtmlFile(res, filePath, options = {}) {
+  const { headOnly = false, missingMessage = "" } = options;
   try {
-    const html = await fs.readFile(HTML_FILE, "utf8");
+    const html = await fs.readFile(filePath, "utf8");
     res.writeHead(200, {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store"
@@ -1961,21 +2098,67 @@ async function serveHtml(res, options = {}) {
     }
     res.end(withDevLiveReload(html));
   } catch (error) {
-    if (!IS_DEVELOPMENT && error && error.code === "ENOENT") {
-      sendText(res, 503, "生产静态资源还未生成，请先执行 npm run build。");
+    if (error && error.code === "ENOENT" && missingMessage) {
+      sendText(res, 503, missingMessage);
       return;
     }
     throw error;
   }
 }
 
+async function serveHtml(res, options = {}) {
+  await serveHtmlFile(res, HTML_FILE, {
+    ...options,
+    missingMessage: "生产静态资源还未生成，请先执行 npm run build。"
+  });
+}
+
+async function serveRootHtmlAsset(res, pathname, options = {}) {
+  const { headOnly = false } = options;
+  const normalizedPathname = String(pathname || "").trim();
+  if (!normalizedPathname.startsWith("/") || !normalizedPathname.toLowerCase().endsWith(".html")) {
+    sendText(res, 404, "Not Found");
+    return;
+  }
+
+  const relativePath = normalizedPathname.slice(1);
+  if (!relativePath) {
+    sendText(res, 404, "Not Found");
+    return;
+  }
+
+  const filePath = path.resolve(HTML_DIR, relativePath);
+  if (!isPathInDirectory(filePath, HTML_DIR)) {
+    sendText(res, 403, "Forbidden");
+    return;
+  }
+
+  try {
+    const stat = await fs.stat(filePath);
+    if (!stat.isFile()) {
+      sendText(res, 404, "Not Found");
+      return;
+    }
+  } catch (error) {
+    if (error && error.code === "ENOENT") {
+      sendText(res, 404, "Not Found");
+      return;
+    }
+    throw error;
+  }
+
+  await serveHtmlFile(res, filePath, { headOnly });
+}
+
 function getDefaultBuildInfo() {
   const baseVersion = String(APP_PACKAGE?.version || "1.0.0").trim() || "1.0.0";
+  const buildNumber = 0;
   return {
-    version: `${baseVersion}.0`,
+    version: buildNumber > 0 ? `${baseVersion}.${buildNumber}` : baseVersion,
     baseVersion,
-    buildNumber: 0,
+    buildNumber,
     builtAt: "",
+    appEnv: APP_ENV,
     html: path.basename(SOURCE_HTML_FILE),
     publicDir: path.basename(SOURCE_PUBLIC_DIR)
   };
@@ -1985,15 +2168,24 @@ async function serveBuildInfo(res, options = {}) {
   const { headOnly = false } = options;
   try {
     const content = await fs.readFile(BUILD_INFO_FILE, "utf8");
+    const payload = {
+      ...(JSON.parse(content) || {}),
+      appEnv: APP_ENV
+    };
+    setApiCorsHeaders(res);
+    if (headOnly) {
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store"
+      });
+      res.end();
+      return;
+    }
     res.writeHead(200, {
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": "no-store"
     });
-    if (headOnly) {
-      res.end();
-      return;
-    }
-    res.end(content);
+    res.end(JSON.stringify(payload));
   } catch (error) {
     if (error && error.code === "ENOENT") {
       if (headOnly) {
@@ -2606,11 +2798,15 @@ async function serveRecordById(req, res, recordIdRaw) {
             const summary = Object.prototype.hasOwnProperty.call(body, "summary")
               ? normalizeText(body.summary, 500)
               : normalizeText(current.summary, 500);
+            const remark = Object.prototype.hasOwnProperty.call(body, "remark")
+              ? normalizeText(body.remark, 500)
+              : normalizeText(current.remark, 500);
             const returnedPriceSnapshot = buildReturnedPriceSnapshot(current, body.returnedPriceSnapshot);
             updatedRecord = {
               ...current,
               customer,
               summary,
+              remark,
               paymentPrice: 0,
               totalPrice: 0,
               settlementPrice: 0,
@@ -2692,6 +2888,7 @@ async function serveRecordById(req, res, recordIdRaw) {
               accountant: normalizeText(updatedRecord.accountant, 48),
               customer: normalizeText(updatedRecord.customer, 120),
               summary: normalizeText(updatedRecord.summary, 500),
+              remark: normalizeText(updatedRecord.remark, 500),
               customerFeedback: normalizeText(updatedRecord.customerFeedback, 1000),
               completedAt: normalizeDateTimeValue(updatedRecord.completedAt)
             });
@@ -2871,6 +3068,31 @@ async function serveAccountantOperationLogs(req, res) {
     const accountantOperationLogs = await readAccountantOperationLogs();
     sendJson(res, 200, {
       accountantOperationLogs: scopeAccountantOperationLogsBySession(session, accountantOperationLogs)
+    });
+    return;
+  }
+
+  sendJson(res, 405, { error: "方法不支持" });
+}
+
+async function serveDispatchers(req, res) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const session = requireAuthSession(req, res, ["boss"]);
+  if (!session) return;
+
+  if (req.method === "GET") {
+    const [records, dispatcherPasswords] = await Promise.all([
+      readRecords(),
+      readDispatcherPasswords()
+    ]);
+    sendJson(res, 200, {
+      dispatchers: buildDispatcherManagementRows(records, dispatcherPasswords)
     });
     return;
   }
@@ -3115,7 +3337,7 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
           ensureAccountantPhoneAvailable(nextPhone, otherAccountants);
         }
         if (nextDisplayName !== normalizeAccountantDisplayName(target.displayName)) {
-          ensureAccountantDisplayNameAvailable(nextDisplayName, otherAccountants, "显示名已存在");
+          ensureAccountantDisplayNameAvailable(nextDisplayName, otherAccountants, "别名已存在");
         }
 
         const nextProfile = normalizeAccountantProfile({
@@ -3160,7 +3382,7 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
         const accountantsFromRecords = nextRecords.map((item) => normalizeAccountantDisplayName(item.accountant));
         const merged = buildAccountantProfiles([...otherAccountants, nextProfile], accountantsFromRecords);
         await writeAccountants(merged);
-        syncAccountantAuthSessions(target, nextProfile);
+        await syncAccountantAuthSessions(target, nextProfile);
         const scopedSession = isAccountantSelfEdit
           ? { ...session, account: nextProfile.username, displayName: nextProfile.displayName }
           : session;
@@ -3294,6 +3516,30 @@ async function serveAuthPassword(req, res) {
   }
 }
 
+async function serveAuthLogout(req, res) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    sendJson(res, 405, { error: "方法不支持" });
+    return;
+  }
+
+  try {
+    const token = req.headers[AUTH_SESSION_HEADER];
+    if (token) {
+      await deleteAuthSession(token);
+    }
+    sendJson(res, 200, { ok: true });
+  } catch (error) {
+    sendJson(res, 400, { error: error.message || "退出登录失败" });
+  }
+}
+
 async function serveAuthAccountantRegister(req, res) {
   if (req.method === "OPTIONS") {
     setApiCorsHeaders(res);
@@ -3410,7 +3656,7 @@ async function serveAuthLogin(req, res) {
     const bossConfig = getBossLoginConfig(account);
     if (bossConfig) {
       if (passwordInput === normalizeText(bossConfig.password, 64)) {
-        const sessionToken = createAuthSession(bossConfig.account, "boss");
+        const sessionToken = await createAuthSession(bossConfig.account, "boss");
         sendJson(res, 200, { ok: true, account: bossConfig.account, loginAccount: bossConfig.account, role: "boss", sessionToken });
         return;
       }
@@ -3422,7 +3668,7 @@ async function serveAuthLogin(req, res) {
       const dispatcherPasswords = await readDispatcherPasswords();
       const dispatcherPassword = normalizeDispatcherPassword(dispatcherPasswords[account]);
       if (passwordInput === dispatcherPassword) {
-        const sessionToken = createAuthSession(account, "dispatcher");
+        const sessionToken = await createAuthSession(account, "dispatcher");
         sendJson(res, 200, { ok: true, account, loginAccount: account, role: "dispatcher", sessionToken });
         return;
       }
@@ -3457,7 +3703,7 @@ async function serveAuthLogin(req, res) {
         realName: profile.realName || "",
         phone: profile.phone || ""
       },
-      sessionToken: createAuthSession(profile.username, "accountant", { displayName: profile.displayName })
+      sessionToken: await createAuthSession(profile.username, "accountant", { displayName: profile.displayName })
     });
   } catch (error) {
     sendJson(res, 400, { error: error.message || "登录失败" });
@@ -3518,6 +3764,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (pathname === "/api/dispatchers") {
+      await serveDispatchers(req, res);
+      return;
+    }
+
     if (pathname === "/api/accountants") {
       await serveAccountants(req, res);
       return;
@@ -3542,6 +3793,11 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === "/api/auth/accountant-register") {
       await serveAuthAccountantRegister(req, res);
+      return;
+    }
+
+    if (pathname === "/api/auth/logout") {
+      await serveAuthLogout(req, res);
       return;
     }
 
@@ -3580,6 +3836,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if ((req.method === "GET" || req.method === "HEAD") && pathname.toLowerCase().endsWith(".html")) {
+      await serveRootHtmlAsset(res, pathname, { headOnly: req.method === "HEAD" });
+      return;
+    }
+
     sendText(res, 404, "Not Found");
   } catch (error) {
     console.error(error);
@@ -3587,27 +3848,38 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-if (IS_DEV_LIVE_RELOAD_ENABLED) {
-  startDevWatchers();
+async function bootstrapServer() {
+  await ensureStorage();
+  await loadPersistedAuthSessions();
+
+  if (IS_DEV_LIVE_RELOAD_ENABLED) {
+    startDevWatchers();
+  }
+
+  server.listen(PORT, HOST, () => {
+    const bootLines = [
+      `Server running at http://${HOST}:${PORT}`,
+      `App environment: ${APP_ENV}`,
+      `Dev live reload: ${IS_DEV_LIVE_RELOAD_ENABLED ? "enabled" : "disabled"}`,
+      `Data namespace: ${DATA_NAMESPACE}`,
+      `Static root: ${IS_DEVELOPMENT ? ROOT_DIR : DIST_DIR}`,
+      `Data root: ${DATA_DIR}`,
+      `Data file: ${DATA_FILE}`,
+      `Recycle bin file: ${RECYCLE_BIN_FILE}`,
+      `Accountants file: ${ACCOUNTANTS_FILE}`,
+      `Accountant operation log file: ${ACCOUNTANT_OPERATION_LOG_FILE}`,
+      `Auth sessions file: ${AUTH_SESSIONS_FILE}`,
+      `Feedback image dir: ${FEEDBACK_IMAGE_DIR}`,
+      `Invoice image dir: ${INVOICE_IMAGE_DIR}`
+    ];
+    bootLines.forEach((line) => {
+      console.log(line);
+      appendServerLogLine(line);
+    });
+  });
 }
 
-server.listen(PORT, HOST, () => {
-  const bootLines = [
-    `Server running at http://${HOST}:${PORT}`,
-    `App environment: ${APP_ENV}`,
-    `Dev live reload: ${IS_DEV_LIVE_RELOAD_ENABLED ? "enabled" : "disabled"}`,
-    `Data namespace: ${DATA_NAMESPACE}`,
-    `Static root: ${IS_DEVELOPMENT ? ROOT_DIR : DIST_DIR}`,
-    `Data root: ${DATA_DIR}`,
-    `Data file: ${DATA_FILE}`,
-    `Recycle bin file: ${RECYCLE_BIN_FILE}`,
-    `Accountants file: ${ACCOUNTANTS_FILE}`,
-    `Accountant operation log file: ${ACCOUNTANT_OPERATION_LOG_FILE}`,
-    `Feedback image dir: ${FEEDBACK_IMAGE_DIR}`,
-    `Invoice image dir: ${INVOICE_IMAGE_DIR}`
-  ];
-  bootLines.forEach((line) => {
-    console.log(line);
-    appendServerLogLine(line);
-  });
+bootstrapServer().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
 });

@@ -4,12 +4,14 @@
     const API_ENDPOINT_RECORDS_SETTLE = `${API_ENDPOINT_RECORDS}/settle`;
     const API_ENDPOINT_RECORDS_INVOICE = `${API_ENDPOINT_RECORDS}/invoice`;
     const API_ENDPOINT_ACCOUNTANTS = `${API_BASE}/api/accountants`;
+    const API_ENDPOINT_DISPATCHERS = `${API_BASE}/api/dispatchers`;
     const API_ENDPOINT_RECYCLE_BIN = `${API_BASE}/api/recycle-bin`;
     const API_ENDPOINT_ACCOUNTANT_OPERATION_LOGS = `${API_BASE}/api/accountant-operation-logs`;
     const API_ENDPOINT_APP_EVENTS = `${API_BASE}/api/events`;
     const API_ENDPOINT_BUILD_INFO = `${API_BASE}/build-info.json`;
     const API_ENDPOINT_AUTH_ACCOUNTANT_REGISTER = `${API_BASE}/api/auth/accountant-register`;
     const API_ENDPOINT_AUTH_LOGIN = `${API_BASE}/api/auth/login`;
+    const API_ENDPOINT_AUTH_LOGOUT = `${API_BASE}/api/auth/logout`;
     const API_ENDPOINT_AUTH_PASSWORD = `${API_BASE}/api/auth/password`;
     const STORAGE_KEY_ACCOUNT = "dispatch_current_account_v1";
     const STORAGE_KEY_ACCOUNT_ROLE = "dispatch_current_account_role_v1";
@@ -57,13 +59,52 @@
     const isAnalysisButtonEnabled = String(window.location.search || "")
       .toLowerCase()
       .includes(ANALYSIS_BUTTON_QUERY_FLAG);
+    function normalizeAppEnvironment(value) {
+      return String(value || "").trim().toLowerCase() === "development"
+        ? "development"
+        : "production";
+    }
     const normalizedPort = String(window.location.port || "").trim();
     const isDevelopmentPort = normalizedPort === "2999";
+    let runtimeAppEnvironment = normalizeAppEnvironment(isDevelopmentPort ? "development" : "production");
     const isTabScopedPersistenceEnabled = isDevelopmentPort;
+    const authStateStorage = isTabScopedPersistenceEnabled ? window.sessionStorage : window.localStorage;
+    const legacyAuthStateStorage = isTabScopedPersistenceEnabled ? null : window.sessionStorage;
     const persistentStateStorage = isTabScopedPersistenceEnabled ? window.sessionStorage : window.localStorage;
     const legacyPersistentStateStorage = isTabScopedPersistenceEnabled ? window.localStorage : window.sessionStorage;
     const isDevTodoEnabled = isDevelopmentPort;
     const isQuickLoginEnabled = isDevelopmentPort;
+
+    function setAuthStateItem(key, value) {
+      authStateStorage.setItem(key, value);
+      if (legacyAuthStateStorage) {
+        legacyAuthStateStorage.removeItem(key);
+      }
+      if (isTabScopedPersistenceEnabled) {
+        window.localStorage.removeItem(key);
+      }
+    }
+
+    function getAuthStateItem(key) {
+      const raw = authStateStorage.getItem(key);
+      if (raw !== null) return raw;
+      if (!legacyAuthStateStorage) return null;
+      const legacyRaw = legacyAuthStateStorage.getItem(key);
+      if (legacyRaw === null) return null;
+      authStateStorage.setItem(key, legacyRaw);
+      legacyAuthStateStorage.removeItem(key);
+      return legacyRaw;
+    }
+
+    function removeAuthStateItem(key) {
+      authStateStorage.removeItem(key);
+      if (legacyAuthStateStorage) {
+        legacyAuthStateStorage.removeItem(key);
+      }
+      if (isTabScopedPersistenceEnabled) {
+        window.localStorage.removeItem(key);
+      }
+    }
 
     function setPersistentStateItem(key, value) {
       persistentStateStorage.setItem(key, value);
@@ -92,7 +133,7 @@
       "c": "C",
       "e": "E",
       "k": "K",
-      "开心财税": "1"
+      "开心财税": "开心财税"
     };
     const DISPATCHER_ACCOUNT_DISPLAY_NAME = {
       "1": "开心财税1",
@@ -158,10 +199,12 @@
     const headerAccountSubText = document.getElementById("headerAccountSubText");
     const accountRoleBadge = document.getElementById("accountRoleBadge");
     const operationNoticeStack = document.getElementById("operationNoticeStack");
+    const requestLogPanel = document.getElementById("requestLogPanel");
     const requestLogStatusBadge = document.getElementById("requestLogStatusBadge");
     const requestLogList = document.getElementById("requestLogList");
     const requestLogEmptyState = document.getElementById("requestLogEmptyState");
     const openCreateModalBtn = document.getElementById("openCreateModalBtn");
+    const openDispatcherModalBtn = document.getElementById("openDispatcherModalBtn");
     const openAnalysisModalBtn = document.getElementById("openAnalysisModalBtn");
     const openRecycleModalBtn = document.getElementById("openRecycleModalBtn");
     const openAccountantModalBtn = document.getElementById("openAccountantModalBtn");
@@ -224,6 +267,12 @@
     const analysisModal = document.getElementById("analysisModal");
     const analysisModalCard = analysisModal.querySelector(".analysis-modal-card");
     const analysisContent = document.getElementById("analysisContent");
+    const dispatcherModal = document.getElementById("dispatcherModal");
+    const dispatcherModalCard = dispatcherModal.querySelector(".accountant-modal-card");
+    const dispatcherModalHint = document.getElementById("dispatcherModalHint");
+    const dispatcherListWrap = document.getElementById("dispatcherListWrap");
+    const dispatcherList = document.getElementById("dispatcherList");
+    const dispatcherEmptyState = document.getElementById("dispatcherEmptyState");
     const accountantModal = document.getElementById("accountantModal");
     const accountantModalCard = accountantModal.querySelector(".accountant-modal-card");
     const accountantModalHint = document.getElementById("accountantModalHint");
@@ -273,6 +322,7 @@
     const confirmModalConfirmBtn = document.getElementById("confirmModalConfirmBtn");
 
     const dateInput = document.getElementById("date");
+    const dateTodayBtn = document.getElementById("dateTodayBtn");
     const monthlySettlementCheckbox = document.getElementById("monthlySettlement");
     const dispatcherInput = document.getElementById("dispatcher");
     const dispatcherTagButtons = Array.from(document.querySelectorAll(".dispatcher-tag-btn"));
@@ -309,6 +359,7 @@
     const orderNoInput = document.getElementById("orderNo");
     const customerInput = document.getElementById("customer");
     const summaryInput = document.getElementById("summary");
+    const remarkInput = document.getElementById("remark");
     const paymentPriceInput = document.getElementById("paymentPrice");
     const totalPriceInput = document.getElementById("totalPrice");
     const settlementPriceInput = document.getElementById("settlementPrice");
@@ -397,6 +448,7 @@
     let currentSessionToken = "";
     let records = [];
     let accountants = [];
+    let dispatchers = [];
     let recycleBinRecords = [];
     let accountantOperationLogs = [];
     let hasFetchedRecords = false;
@@ -538,6 +590,14 @@
           lockSuggestionGuardField(field);
         });
       });
+    }
+
+    function normalizeText(value, maxLength = 200) {
+      return String(value || "")
+        .replace(/\r\n?/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, maxLength);
     }
 
     function normalizeDevTodoText(value, maxLength = 320) {
@@ -876,6 +936,7 @@
         return DISPATCHER_ACCOUNT_DISPLAY_NAME[normalizedAccount];
       }
       const dispatcherTag = getDispatcherTagForAccount(accountNameRaw);
+      if (dispatcherTag === "开心财税") return "开心财税";
       return dispatcherTag ? `开心财税${dispatcherTag}` : accountName;
     }
 
@@ -1516,7 +1577,7 @@
       } else if (role === "dispatcher") {
         const dispatcherTag = getDispatcherTagForAccount(accountName);
         if (dispatcherTag) {
-          addCandidate(`开心财税${dispatcherTag}`);
+          addCandidate(dispatcherTag === "开心财税" ? "开心财税" : `开心财税${dispatcherTag}`);
         }
       } else if (role === "boss") {
         BOSS_LOGIN_ACCOUNTS.forEach((value) => addCandidate(value));
@@ -1607,6 +1668,22 @@
       return highlightedUpdatedRecordIds.has(recordId);
     }
 
+    function getUpdatedRecordIndicatorLabel(record) {
+      const item = record && typeof record === "object" ? record : {};
+      const latestEntry = getLatestRecordHistoryEntry(item);
+      const actionKey = normalizeText(latestEntry?.actionKey, 32).toLowerCase();
+      if (!actionKey) {
+        return "新派单";
+      }
+      if (actionKey === "checked") return "已确认";
+      if (actionKey === "completed") return "已完成";
+      if (actionKey === "returned") return "已退单";
+      if (actionKey === "settled") return "已结算";
+      if (actionKey === "invoice_uploaded") return "发票已上传";
+      if (actionKey === "updated") return "信息更新";
+      return normalizeText(latestEntry?.actionLabel, 32) || "信息更新";
+    }
+
     function dismissUpdatedRowHighlight(recordIdRaw) {
       const recordId = String(recordIdRaw || "").trim();
       if (!recordId) return;
@@ -1619,6 +1696,22 @@
         ...(dismissedUpdatedRecordSignatures || {}),
         [recordId]: nextSignature
       };
+      saveUpdatedRowDismissState();
+    }
+
+    function addUpdatedRowHighlights(recordIds) {
+      const normalizedIds = (Array.isArray(recordIds) ? recordIds : [recordIds])
+        .map((item) => String(item || "").trim())
+        .filter(Boolean);
+      if (!normalizedIds.length) return;
+      const nextHighlightedIds = new Set(highlightedUpdatedRecordIds || []);
+      const nextDismissedSignatures = { ...(dismissedUpdatedRecordSignatures || {}) };
+      normalizedIds.forEach((recordId) => {
+        nextHighlightedIds.add(recordId);
+        delete nextDismissedSignatures[recordId];
+      });
+      highlightedUpdatedRecordIds = nextHighlightedIds;
+      dismissedUpdatedRecordSignatures = nextDismissedSignatures;
       saveUpdatedRowDismissState();
     }
 
@@ -1816,7 +1909,7 @@
       completeModalMode = normalizeCompleteModalMode(modeRaw);
       const isViewMode = isCompleteModalViewMode();
       if (completeModalTitle) {
-        completeModalTitle.textContent = isViewMode ? "查看服务记录" : "完成数据";
+        completeModalTitle.textContent = isViewMode ? "查看客户反馈" : "完成数据";
       }
       if (completeForm) {
         completeForm.classList.toggle("readonly", isViewMode);
@@ -1834,7 +1927,7 @@
         completeFeedbackUploader.tabIndex = isViewMode ? -1 : 0;
         completeFeedbackUploader.setAttribute("role", isViewMode ? "group" : "button");
         completeFeedbackUploader.setAttribute("aria-disabled", isViewMode ? "true" : "false");
-        completeFeedbackUploader.setAttribute("aria-label", isViewMode ? "服务记录截图" : "添加服务记录截图");
+        completeFeedbackUploader.setAttribute("aria-label", isViewMode ? "客户反馈截图" : "添加客户反馈截图");
       }
       if (completeFeedbackImageInput) {
         completeFeedbackImageInput.disabled = isViewMode;
@@ -1865,7 +1958,7 @@
         const image = document.createElement("img");
         image.className = "feedback-image-preview";
         image.src = item.previewUrl;
-        image.alt = `服务记录截图 ${index + 1}`;
+        image.alt = `客户反馈截图 ${index + 1}`;
 
         const footer = document.createElement("div");
         footer.className = "feedback-image-card-footer";
@@ -2241,9 +2334,31 @@
       return version ? `v${version}` : "v--";
     }
 
+    function isDevelopmentEnvironment() {
+      return runtimeAppEnvironment === "development";
+    }
+
+    function syncRequestLogPanelVisibility() {
+      if (!requestLogPanel) return;
+      const shouldShow = isDevelopmentEnvironment();
+      requestLogPanel.hidden = !shouldShow;
+      if (!shouldShow) {
+        if (requestLogList) {
+          requestLogList.innerHTML = "";
+        }
+        if (requestLogEmptyState) {
+          requestLogEmptyState.hidden = true;
+        }
+        return;
+      }
+      renderRequestLogList();
+    }
+
     function renderBuildInfo(buildInfo) {
       if (!buildInfoPanel || !buildVersionText || !buildTimeText) return;
       const source = buildInfo && typeof buildInfo === "object" ? buildInfo : {};
+      runtimeAppEnvironment = normalizeAppEnvironment(source.appEnv || (isDevelopmentPort ? "development" : "production"));
+      syncRequestLogPanelVisibility();
       const builtAt = String(source.builtAt || "").trim();
       buildVersionText.textContent = `版本 ${normalizeBuildVersion(source.version)}`;
       buildTimeText.textContent = builtAt
@@ -2300,6 +2415,10 @@
 
     function setAccountantModalHint(text, state = "idle") {
       setHintState(accountantModalHint, "login-request-hint form-request-hint", text, state);
+    }
+
+    function setDispatcherModalHint(text, state = "idle") {
+      setHintState(dispatcherModalHint, "login-request-hint form-request-hint", text, state);
     }
 
     function setRecycleModalHint(text, state = "idle") {
@@ -2687,9 +2806,9 @@
     }
 
     function restorePendingOperationNotice() {
-      if (!isAccountantLogin()) return;
-      pendingAccountantNoticeItems = loadPendingAccountantNotices();
-      renderOperationNoticeStack();
+      pendingAccountantNoticeItems = [];
+      clearPendingAccountantNotices();
+      hideOperationNotice();
     }
 
     function resetAccountantAssignmentNoticeState() {
@@ -2700,10 +2819,11 @@
     }
 
     function hideOperationNotice(options = {}) {
-      if (!operationNoticeStack) return;
       const { keepCurrentId = false } = options;
-      operationNoticeStack.hidden = true;
-      operationNoticeStack.innerHTML = "";
+      if (operationNoticeStack) {
+        operationNoticeStack.hidden = true;
+        operationNoticeStack.innerHTML = "";
+      }
       if (!keepCurrentId) {
         currentOperationNoticeLogId = "";
       }
@@ -2756,55 +2876,11 @@
     }
 
     function renderOperationNoticeStack() {
-      if (!operationNoticeStack) return;
-      let items = [];
-      if (!currentAccount) {
-        items = [];
-      } else if (isAccountantLogin()) {
-        items = pendingAccountantNoticeItems
-          .map((item) => buildAccountantNoticeItem(item))
-          .filter(Boolean);
-      } else if (!operationNoticeDismissed && dispatcherOperationNoticeItem) {
-        items = [dispatcherOperationNoticeItem];
-      }
-
-      if (!items.length) {
-        operationNoticeStack.hidden = true;
-        operationNoticeStack.innerHTML = "";
-        return;
-      }
-
-      operationNoticeStack.hidden = false;
-      operationNoticeStack.innerHTML = items.map((item) => `
-        <div class="operation-notice" data-notice-key="${escapeHtml(item.key)}" data-notice-kind="${escapeHtml(item.kind)}">
-          <div class="operation-notice-top">
-            <span class="operation-notice-title">${escapeHtml(item.title)}</span>
-            <button class="operation-notice-close" type="button" aria-label="关闭提示" data-notice-close="1">×</button>
-          </div>
-          <div class="operation-notice-main">${escapeHtml(item.main)}</div>
-        </div>
-      `).join("");
+      hideOperationNotice();
     }
 
     function showAccountantAssignmentNotice(newRecords) {
-      if (!Array.isArray(newRecords) || !newRecords.length) return;
-      const pendingById = new Map(
-        pendingAccountantNoticeItems
-          .map((item) => normalizePendingAccountantNotice(item))
-          .filter(Boolean)
-          .map((item) => [item.id, item])
-      );
-      const nextItems = [];
-      newRecords.forEach((record) => {
-        const normalized = normalizePendingAccountantNotice(record);
-        if (!normalized) return;
-        if (pendingById.has(normalized.id)) return;
-        nextItems.push(normalized);
-      });
-      if (!nextItems.length) return;
-      pendingAccountantNoticeItems = [...nextItems, ...pendingAccountantNoticeItems];
-      savePendingAccountantNotices(pendingAccountantNoticeItems);
-      renderOperationNoticeStack();
+      return;
     }
 
     function syncAccountantAssignmentNotice(nextRecords) {
@@ -2835,47 +2911,16 @@
 
       accountantKnownRecordIds = nextIdSet;
       if (!newAssignedRecords.length) return;
-      currentOperationNoticeLogId = `assign:${String(newAssignedRecords[0]?.id || "").trim()}`;
-      showAccountantAssignmentNotice(newAssignedRecords);
+      addUpdatedRowHighlights(newAssignedRecords.map((item) => String(item?.id || "").trim()));
+      currentOperationNoticeLogId = "";
     }
 
     function syncOperationNotice(logEntries) {
-      if (appPage.classList.contains("accountant-view")) {
-        dispatcherOperationNoticeItem = null;
-        renderOperationNoticeStack();
-        return;
-      }
-      const scopedLogs = Array.isArray(logEntries) ? logEntries : [];
-      if (!scopedLogs.length) {
-        dispatcherOperationNoticeItem = null;
-        renderOperationNoticeStack();
-        return;
-      }
-      const latest = scopedLogs[0] || null;
-      const latestLogId = String(latest?.logId || "").trim();
-      if (!latestLogId) {
-        dispatcherOperationNoticeItem = null;
-        renderOperationNoticeStack();
-        return;
-      }
-      if (dismissedOperationNoticeLogId && dismissedOperationNoticeLogId !== latestLogId) {
-        dismissedOperationNoticeLogId = "";
-        saveOperationNoticePreference();
-      }
-      operationNoticeDismissed = Boolean(
-        dismissedOperationNoticeLogId && dismissedOperationNoticeLogId === latestLogId
-      );
-      if (operationNoticeDismissed) {
-        dispatcherOperationNoticeItem = null;
-        renderOperationNoticeStack();
-        return;
-      }
-      if (currentOperationNoticeLogId !== latestLogId || !dispatcherOperationNoticeItem) {
-        currentOperationNoticeLogId = latestLogId;
-        operationNoticeDismissed = false;
-        dispatcherOperationNoticeItem = buildDispatcherNoticeItem(latest);
-        renderOperationNoticeStack();
-      }
+      dispatcherOperationNoticeItem = null;
+      operationNoticeDismissed = false;
+      dismissedOperationNoticeLogId = "";
+      currentOperationNoticeLogId = "";
+      hideOperationNotice();
     }
 
     function renderRequestLogList() {

@@ -45,6 +45,7 @@
       records = [];
       recycleBinRecords = [];
       accountantOperationLogs = [];
+      dispatchers = [];
       hasFetchedRecords = false;
       clearBossRecordSelection();
       setRecentBossSettlementRecordIds([]);
@@ -65,6 +66,7 @@
       closeInvoicePreviewModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
+      closeDispatcherModal();
       closeAccountantModal();
       closeAccountantEditModal();
       closeAccountantRegisterModal();
@@ -186,6 +188,7 @@
         || !bossSettlementSummaryModal.hidden
         || (bossSettlementDetailModal && !bossSettlementDetailModal.hidden)
         || !analysisModal.hidden
+        || !dispatcherModal.hidden
         || !accountantModal.hidden
         || (accountantEditModal && !accountantEditModal.hidden)
         || (accountantRegisterModal && !accountantRegisterModal.hidden)
@@ -330,6 +333,21 @@
       }
     }
 
+    async function logoutSessionByServer(sessionToken = currentSessionToken) {
+      const token = String(sessionToken || "").trim();
+      if (!token) return;
+      try {
+        await fetch(API_ENDPOINT_AUTH_LOGOUT, {
+          method: "POST",
+          headers: {
+            "X-Dispatch-Session": token
+          }
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
     async function fetchRecords() {
       if (!currentAccount || !currentSessionToken) return;
       const response = await fetchWithClientLog(
@@ -366,6 +384,9 @@
       }
       if (!analysisModal.hidden) {
         renderAnalysisPanel();
+      }
+      if (!dispatcherModal.hidden) {
+        renderDispatcherList();
       }
       if (!accountantModal.hidden) {
         renderAccountantList();
@@ -498,6 +519,69 @@
         row.appendChild(countCell);
         row.appendChild(actionCell);
         accountantList.appendChild(row);
+      });
+    }
+
+    function renderDispatcherList() {
+      dispatcherList.innerHTML = "";
+      if (!dispatchers.length) {
+        dispatcherEmptyState.style.display = "block";
+        return;
+      }
+      dispatcherEmptyState.style.display = "none";
+
+      const orderCountByDispatcher = records.reduce((map, item) => {
+        const dispatcherTag = normalizeDispatcherTag(item?.dispatcher);
+        if (!dispatcherTag) return map;
+        map.set(dispatcherTag, (map.get(dispatcherTag) || 0) + 1);
+        return map;
+      }, new Map());
+
+      dispatchers.forEach((dispatcherProfile) => {
+        const row = document.createElement("tr");
+        row.className = "accountant-list-item";
+
+        const displayName = String(dispatcherProfile.displayName || "").trim();
+        const accountText = String(dispatcherProfile.accountLabel || dispatcherProfile.account || "").trim();
+        const passwordText = String(dispatcherProfile.passwordLabel || dispatcherProfile.password || "").trim();
+        const dispatcherTag = String(dispatcherProfile.dispatcherTag || "").trim();
+        const orderCount = dispatcherTag
+          ? (orderCountByDispatcher.get(dispatcherTag) || 0)
+          : Number(dispatcherProfile.orderCount || 0);
+
+        const displayCell = document.createElement("td");
+        displayCell.className = "dispatcher-col-display";
+        const displaySpan = document.createElement("span");
+        displaySpan.className = "accountant-item-sub";
+        displaySpan.textContent = displayName || "—";
+        displaySpan.title = displayName;
+        displayCell.appendChild(displaySpan);
+
+        const accountCell = document.createElement("td");
+        accountCell.className = "dispatcher-col-account";
+        accountCell.textContent = accountText || "—";
+        accountCell.title = accountText;
+
+        const passwordCell = document.createElement("td");
+        passwordCell.className = "dispatcher-col-password";
+        const passwordSpan = document.createElement("span");
+        passwordSpan.className = "accountant-item-password";
+        passwordSpan.textContent = passwordText || "—";
+        passwordSpan.title = passwordText;
+        passwordCell.appendChild(passwordSpan);
+
+        const countCell = document.createElement("td");
+        countCell.className = "dispatcher-col-count";
+        const countSpan = document.createElement("span");
+        countSpan.className = "accountant-item-count";
+        countSpan.textContent = `${orderCount} 单`;
+        countCell.appendChild(countSpan);
+
+        row.appendChild(displayCell);
+        row.appendChild(accountCell);
+        row.appendChild(passwordCell);
+        row.appendChild(countCell);
+        dispatcherList.appendChild(row);
       });
     }
 
@@ -1040,6 +1124,23 @@
       renderPlatformShopPickerOptions();
     }
 
+    async function fetchDispatchers() {
+      if (!currentAccount || !currentSessionToken) return;
+      const response = await fetchWithClientLog(
+        API_ENDPOINT_DISPATCHERS,
+        { cache: "no-store" },
+        { successMessage: "读取接待列表" }
+      );
+      if (!response.ok) {
+        throw new Error(`读取接待列表失败（${response.status}）`);
+      }
+      const payload = await response.json();
+      dispatchers = Array.isArray(payload.dispatchers) ? payload.dispatchers : [];
+      if (!dispatcherModal.hidden) {
+        renderDispatcherList();
+      }
+    }
+
     async function fetchAccountants() {
       if (!currentAccount || !currentSessionToken) return;
       await fetchAccountantsForLogin();
@@ -1580,13 +1681,6 @@
       return refreshInFlightPromise;
     }
 
-    function triggerImmediateAutoRefresh() {
-      if (!currentAccount || !currentSessionToken) return;
-      if (document.hidden) return;
-      if (Date.now() - lastRefreshStartedAt < 800) return;
-      void runAutoRefreshCycle();
-    }
-
     function closeAppEventStream() {
       if (!appEventSource) return;
       appEventSource.close();
@@ -1634,27 +1728,27 @@
     }
 
     function saveToStorage() {
-      setPersistentStateItem(STORAGE_KEY_ACCOUNT, currentAccount);
-      setPersistentStateItem(STORAGE_KEY_ACCOUNT_ROLE, normalizeLoginRole(currentAccountRole));
+      setAuthStateItem(STORAGE_KEY_ACCOUNT, currentAccount);
+      setAuthStateItem(STORAGE_KEY_ACCOUNT_ROLE, normalizeLoginRole(currentAccountRole));
       if (normalizeLoginRole(currentAccountRole) === "accountant" && currentAccountDisplayName) {
-        setPersistentStateItem(STORAGE_KEY_ACCOUNT_DISPLAY_NAME, currentAccountDisplayName);
+        setAuthStateItem(STORAGE_KEY_ACCOUNT_DISPLAY_NAME, currentAccountDisplayName);
       } else {
-        removePersistentStateItem(STORAGE_KEY_ACCOUNT_DISPLAY_NAME);
+        removeAuthStateItem(STORAGE_KEY_ACCOUNT_DISPLAY_NAME);
       }
       if (normalizeLoginRole(currentAccountRole) === "accountant" && currentAccountRealName) {
-        setPersistentStateItem(STORAGE_KEY_ACCOUNT_REAL_NAME, currentAccountRealName);
+        setAuthStateItem(STORAGE_KEY_ACCOUNT_REAL_NAME, currentAccountRealName);
       } else {
-        removePersistentStateItem(STORAGE_KEY_ACCOUNT_REAL_NAME);
+        removeAuthStateItem(STORAGE_KEY_ACCOUNT_REAL_NAME);
       }
       if (normalizeLoginRole(currentAccountRole) === "accountant" && currentAccountPhone) {
-        setPersistentStateItem(STORAGE_KEY_ACCOUNT_PHONE, currentAccountPhone);
+        setAuthStateItem(STORAGE_KEY_ACCOUNT_PHONE, currentAccountPhone);
       } else {
-        removePersistentStateItem(STORAGE_KEY_ACCOUNT_PHONE);
+        removeAuthStateItem(STORAGE_KEY_ACCOUNT_PHONE);
       }
       if (currentSessionToken) {
-        setPersistentStateItem(STORAGE_KEY_SESSION_TOKEN, currentSessionToken);
+        setAuthStateItem(STORAGE_KEY_SESSION_TOKEN, currentSessionToken);
       } else {
-        removePersistentStateItem(STORAGE_KEY_SESSION_TOKEN);
+        removeAuthStateItem(STORAGE_KEY_SESSION_TOKEN);
       }
     }
 
@@ -1747,12 +1841,12 @@
     }
 
     function loadFromStorage() {
-      const storedAccount = String(getPersistentStateItem(STORAGE_KEY_ACCOUNT) || "").trim();
-      const storedSessionToken = String(getPersistentStateItem(STORAGE_KEY_SESSION_TOKEN) || "").trim();
-      const storedDisplayName = String(getPersistentStateItem(STORAGE_KEY_ACCOUNT_DISPLAY_NAME) || "").trim();
-      const storedRealName = String(getPersistentStateItem(STORAGE_KEY_ACCOUNT_REAL_NAME) || "").trim();
-      const storedPhone = String(getPersistentStateItem(STORAGE_KEY_ACCOUNT_PHONE) || "").trim();
-      let storedRole = normalizeLoginRole(getPersistentStateItem(STORAGE_KEY_ACCOUNT_ROLE));
+      const storedAccount = String(getAuthStateItem(STORAGE_KEY_ACCOUNT) || "").trim();
+      const storedSessionToken = String(getAuthStateItem(STORAGE_KEY_SESSION_TOKEN) || "").trim();
+      const storedDisplayName = String(getAuthStateItem(STORAGE_KEY_ACCOUNT_DISPLAY_NAME) || "").trim();
+      const storedRealName = String(getAuthStateItem(STORAGE_KEY_ACCOUNT_REAL_NAME) || "").trim();
+      const storedPhone = String(getAuthStateItem(STORAGE_KEY_ACCOUNT_PHONE) || "").trim();
+      let storedRole = normalizeLoginRole(getAuthStateItem(STORAGE_KEY_ACCOUNT_ROLE));
       if (!storedRole && storedAccount) {
         storedRole = inferRoleByAccountName(storedAccount);
       }

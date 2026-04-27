@@ -337,78 +337,6 @@
       }
     }
 
-    .operation-notice-stack {
-      position: fixed;
-      top: 14px;
-      right: 14px;
-      width: min(360px, calc(100vw - 28px));
-      display: grid;
-      gap: 10px;
-      z-index: 42;
-      pointer-events: none;
-    }
-
-    .operation-notice {
-      border-radius: var(--radius-md);
-      border: 1px solid #bdd9ce;
-      background: linear-gradient(165deg, #f8fdfb, #eef8f3);
-      box-shadow: var(--shadow-lg);
-      padding: 12px 12px 10px;
-      display: grid;
-      gap: 8px;
-      pointer-events: auto;
-    }
-
-    .operation-notice-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .operation-notice-title {
-      font-size: 13px;
-      font-weight: 800;
-      color: #155845;
-      letter-spacing: 0.2px;
-    }
-
-    .operation-notice-close {
-      width: 24px;
-      height: 24px;
-      border-radius: var(--radius-full);
-      border: 1px solid #c7ddd4;
-      background: #f2f9f5;
-      color: #43685d;
-      font-size: 14px;
-      line-height: 1;
-      padding: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-weight: 700;
-      transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
-    }
-
-    .operation-notice-close:hover {
-      border-color: #adcfc2;
-      background: #e5f3ec;
-      color: #1e5f4e;
-    }
-
-    .operation-notice-close:focus-visible {
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(31, 159, 134, 0.22);
-    }
-
-    .operation-notice-main {
-      color: #2c4d43;
-      font-size: 13px;
-      line-height: 1.45;
-      word-break: break-word;
-    }
-
     .dev-todo-launcher {
       position: fixed;
       top: 14px;
@@ -502,6 +430,7 @@
         "meta meta"
         "prices prices"
         "summary summary"
+        "note note"
         "actions actions";
     }
 
@@ -541,6 +470,7 @@
         "meta meta"
         "prices prices"
         "summary summary"
+        "note note"
         "actions actions";
     }
 
@@ -559,21 +489,28 @@
       grid-row: 5;
     }
 
+    #recordForm .field-note {
+      grid-area: note;
+      grid-column: 1 / -1;
+      grid-row: 6;
+    }
+
     #recordForm .field-date,
     #recordForm .field-dispatcher,
     #recordForm .field-detail-row,
     #recordForm .field-meta-row,
     #recordForm .field-summary,
     #recordForm .field-price-row {
-      padding: 16px 18px 18px;
-      border: 1px solid #e4efea;
-      border-radius: 18px;
-      background: linear-gradient(180deg, rgba(248, 252, 250, 0.98), #ffffff 72%);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
     }
 
     #recordForm .field-date,
     #recordForm .field-dispatcher,
+    #recordForm .field-note,
     #recordForm .field-summary {
       display: grid;
       grid-template-columns: var(--record-label-width) minmax(0, 1fr);
@@ -617,6 +554,7 @@
 
     #recordForm .field-date > label,
     #recordForm .field-dispatcher > label,
+    #recordForm .field-note > label,
     #recordForm .field-summary > label,
     #recordForm .detail-item > label,
     #recordForm .meta-item > label,
@@ -630,6 +568,7 @@
 
     #recordForm .field-date > :is(input:not([type="hidden"]), textarea, select, .tag-group, .accountant-picker),
     #recordForm .field-dispatcher > :is(input:not([type="hidden"]), textarea, select, .tag-group, .accountant-picker),
+    #recordForm .field-note > :is(input:not([type="hidden"]), textarea, select, .tag-group, .accountant-picker),
     #recordForm .field-summary > :is(input:not([type="hidden"]), textarea, select, .tag-group, .accountant-picker),
     #recordForm .detail-item > :is(input, .accountant-picker),
     #recordForm .meta-item > :is(input, .accountant-picker),
@@ -644,10 +583,11 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
     }
 
     #recordForm .field-date > input:not([type="hidden"]),
+    #recordForm .field-note > input:not([type="hidden"]),
     #recordForm .field-summary > textarea,
     #recordForm .detail-item > input,
     #recordForm .meta-item > input,
@@ -661,7 +601,7 @@
 
     #recordForm .field-date > .date-field-controls > input:not([type="hidden"]) {
       min-width: 0;
-      flex: 0 1 220px;
+      flex: 1 1 220px;
       min-height: 50px;
       border-color: #d9e7e0;
       background: #fff;
@@ -670,6 +610,7 @@
     }
 
     #recordForm .field-date > input:not([type="hidden"]):focus,
+    #recordForm .field-note > input:not([type="hidden"]):focus,
     #recordForm .field-summary > textarea:focus,
     #recordForm .detail-item > input:focus,
     #recordForm .meta-item > input:focus,
@@ -681,6 +622,21 @@
     #recordForm .field-date > .date-field-controls > input:not([type="hidden"]):focus {
       border-color: #7cbca9;
       box-shadow: 0 0 0 2px rgba(31, 159, 134, 0.12);
+    }
+
+    #recordForm .date-shortcut-btn {
+      min-height: 50px;
+      padding: 0 14px;
+      border: 1px solid #d9e7e0;
+      border-radius: 14px;
+      background: #f1f6f3;
+      color: #335047;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    #recordForm .date-shortcut-btn:hover {
+      background: #e5efea;
     }
 
     #recordForm .checkbox-toggle-inline {
@@ -699,6 +655,8 @@
       user-select: none;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 1px 1px rgba(22, 74, 58, 0.04);
       transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
+      white-space: nowrap;
+      flex: 0 0 auto;
     }
 
     #recordForm .checkbox-toggle-inline input {
@@ -726,6 +684,11 @@
 
     #recordForm .field-summary > textarea {
       grid-column: 2;
+    }
+
+    #recordForm .field-note > input:not([type="hidden"]) {
+      grid-column: 2;
+      width: 100%;
     }
 
     #recordForm .accountant-picker {
@@ -1023,7 +986,7 @@
     #recordForm .form-actions {
       grid-area: actions;
       grid-column: 1 / -1;
-      grid-row: 6;
+      grid-row: 7;
       display: flex;
       gap: 12px;
       margin-top: 0;
@@ -1219,8 +1182,8 @@
     .app-side-footer {
       display: grid;
       gap: 6px;
-      margin-top: 0;
-      padding: 0;
+      margin-top: auto;
+      padding-top: 12px;
       border: 0;
       border-radius: 0;
       background: transparent;
@@ -3079,6 +3042,25 @@
       width: 20%;
     }
 
+    .dispatcher-table .dispatcher-col-display {
+      width: 30%;
+    }
+
+    .dispatcher-table .dispatcher-col-account {
+      width: 22%;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dispatcher-table .dispatcher-col-password {
+      width: 24%;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dispatcher-table .dispatcher-col-count {
+      width: 18%;
+      text-align: center;
+    }
+
     .dispatcher-self-view .accountant-table .accountant-col-phone,
     .dispatcher-self-view .accountant-table .accountant-col-password,
     .dispatcher-self-view .accountant-table .accountant-col-bank {
@@ -3523,7 +3505,7 @@
     }
 
     .feedback-image-uploader.readonly .feedback-image-list:empty::before {
-      content: "暂无服务记录截图";
+      content: "暂无客户反馈截图";
       background: rgba(250, 253, 251, 0.9);
     }
 
@@ -3920,7 +3902,8 @@
     table {
       width: max-content;
       min-width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       table-layout: auto;
       background: #fff;
     }
@@ -3965,6 +3948,10 @@
       width: 180px;
     }
 
+    col.col-remark {
+      width: 168px;
+    }
+
     col.col-payment {
       width: 116px;
     }
@@ -3986,15 +3973,24 @@
     }
 
     col.col-status {
-      width: 216px;
+      width: var(--table-sticky-status-width);
     }
 
     col.col-action {
-      width: 248px;
+      width: var(--table-sticky-action-width);
     }
 
-    #appPage.accountant-view col.col-action {
-      width: 126px;
+    #appPage {
+      --table-sticky-status-width: 168px;
+      --table-sticky-action-width: 188px;
+      --table-action-history-width: 0px;
+      --table-action-edit-width: 0px;
+      --table-action-delete-width: 0px;
+      --table-action-check-width: 0px;
+    }
+
+    #appPage.accountant-view {
+      --table-sticky-action-width: 124px;
     }
 
     #appPage.accountant-view col.col-accountant,
@@ -4066,10 +4062,6 @@
       background: #ffedbc;
     }
 
-    #tableBody tr.updated-record-row td.data-col-date {
-      box-shadow: inset 4px 0 0 #e09918;
-    }
-
     #tableBody tr:hover td {
       background: #edf8f3;
     }
@@ -4097,6 +4089,14 @@
 
     .data-col-status {
       text-align: center;
+      position: sticky;
+      right: var(--table-sticky-action-width);
+      z-index: 2;
+      width: var(--table-sticky-status-width);
+      min-width: var(--table-sticky-status-width);
+      max-width: var(--table-sticky-status-width);
+      box-sizing: border-box;
+      background-clip: padding-box;
     }
 
     .data-col-payment,
@@ -4211,6 +4211,7 @@
     .row-date-cell {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
       min-width: 0;
     }
@@ -4219,36 +4220,32 @@
       min-width: 0;
     }
 
-    .row-update-dot {
-      width: 10px;
-      height: 10px;
+    .row-date-update {
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
+      padding: 2px 7px;
       border-radius: 999px;
-      background: #e69515;
-      box-shadow: 0 0 0 3px rgba(230, 149, 21, 0.16);
+      border: 1px solid rgba(222, 182, 110, 0.92);
+      background: #fff5de;
+      color: #8b5a08;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
       flex: 0 0 auto;
     }
 
-    .row-update-dismiss-btn {
-      width: 20px;
-      height: 20px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.86);
-      color: #9a650f;
-      padding: 0;
+    .row-status-cell {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
-      font-weight: 800;
-      line-height: 1;
-      box-shadow: inset 0 0 0 1px rgba(217, 186, 124, 0.9);
-      flex: 0 0 auto;
-    }
-
-    .row-update-dismiss-btn:hover {
-      background: #ffffff;
-      color: #7f5002;
-      box-shadow: inset 0 0 0 1px rgba(210, 169, 86, 0.95);
+      gap: 10px;
+      width: max-content;
+      min-width: 0;
+      max-width: none;
+      flex-wrap: nowrap;
+      margin-inline: auto;
     }
 
     #tableBody tr.dispatcher-current-row .dispatcher-chip {
@@ -4263,31 +4260,59 @@
       background: linear-gradient(135deg, #0b6f5b, #15896f);
     }
 
-    .row-action-cell {
+    .row-action-wrap {
       display: grid;
-      grid-template-columns: 68px 54px 54px 54px;
+      grid-template-columns:
+        minmax(0, var(--table-action-history-width))
+        minmax(0, var(--table-action-edit-width))
+        minmax(0, var(--table-action-delete-width))
+        minmax(0, var(--table-action-check-width));
       align-items: center;
       justify-content: center;
       gap: 6px;
       min-height: 36px;
-      padding-inline: 6px;
+      padding-inline: 2px;
+      width: max-content;
+      max-width: 100%;
+      margin-inline: auto;
     }
 
-    #appPage.accountant-view .row-action-cell {
-      grid-template-columns: 68px 54px;
+    #appPage.accountant-view .row-action-wrap {
+      grid-template-columns:
+        minmax(0, var(--table-action-history-width))
+        minmax(0, var(--table-action-check-width));
       gap: 4px;
-      padding-inline: 4px;
     }
 
     th.data-col-action {
+      position: sticky;
+      right: 0;
+      z-index: 4;
+      width: var(--table-sticky-action-width);
+      min-width: var(--table-sticky-action-width);
+      max-width: var(--table-sticky-action-width);
+      box-sizing: border-box;
       background: linear-gradient(180deg, #cfdfd5 0%, #bccfc1 100%);
       color: #183b31;
       text-align: center;
+      box-shadow: inset 1px 0 0 rgba(146, 170, 159, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.74), inset 0 -1px 0 rgba(127, 151, 140, 0.38);
     }
 
     #tableBody td.row-action-cell {
+      position: sticky;
+      right: 0;
+      z-index: 3;
+      width: var(--table-sticky-action-width);
+      min-width: var(--table-sticky-action-width);
+      max-width: var(--table-sticky-action-width);
+      box-sizing: border-box;
+      background-clip: padding-box;
       background: #f2f8f4;
       box-shadow: inset 1px 0 0 #deebe4;
+    }
+
+    #tableBody tr:nth-child(even) td.row-action-cell {
+      background: #f2f8f4;
     }
 
     #tableBody tr:hover td.row-action-cell {
@@ -4303,12 +4328,59 @@
     }
 
     #tableBody tr.updated-record-row td.row-action-cell {
-      background: #f8e7b7;
-      box-shadow: inset 1px 0 0 #ead292;
+      background: #fff2c9;
+      box-shadow: inset 1px 0 0 #efd89c;
     }
 
     #tableBody tr.updated-record-row:hover td.row-action-cell {
-      background: #f3dfaa;
+      background: #ffedbc;
+    }
+
+    th.data-col-status {
+      position: sticky;
+      right: var(--table-sticky-action-width);
+      z-index: 3;
+      width: var(--table-sticky-status-width);
+      min-width: var(--table-sticky-status-width);
+      max-width: var(--table-sticky-status-width);
+      box-sizing: border-box;
+      box-shadow: inset 1px 0 0 rgba(146, 170, 159, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.74), inset 0 -1px 0 rgba(127, 151, 140, 0.38);
+    }
+
+    #tableBody td.data-col-status {
+      width: var(--table-sticky-status-width);
+      min-width: var(--table-sticky-status-width);
+      max-width: var(--table-sticky-status-width);
+      box-sizing: border-box;
+      background-clip: padding-box;
+      background: #f7fbf8;
+      box-shadow: inset 1px 0 0 #deebe4;
+    }
+
+    #tableBody tr:nth-child(even) td.data-col-status {
+      background: #f7fbf8;
+    }
+
+    #tableBody tr:hover td.data-col-status {
+      background: #e7f3ed;
+    }
+
+    #tableBody tr.boss-selected-row td.data-col-status {
+      background: #dcefe6;
+      box-shadow: inset 1px 0 0 #c7dfd3;
+    }
+
+    #tableBody tr.boss-selected-row:hover td.data-col-status {
+      background: #d2e9df;
+    }
+
+    #tableBody tr.updated-record-row td.data-col-status {
+      background: #fff2c9;
+      box-shadow: inset 1px 0 0 #efd89c;
+    }
+
+    #tableBody tr.updated-record-row:hover td.data-col-status {
+      background: #ffedbc;
     }
 
     .row-edit-btn,
@@ -4318,7 +4390,6 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      justify-self: center;
       min-width: 56px;
       border: 1px solid #e8b7b7;
       background: #fff2f2;
@@ -4351,9 +4422,29 @@
 
     .row-history-btn {
       grid-column: 1;
+      gap: 6px;
       border-color: #bfd4cb;
       background: #eff7f3;
       color: #2c6755;
+      min-width: 74px;
+      justify-content: center;
+      text-align: center;
+      padding-inline: 12px;
+    }
+
+    .row-history-btn-label,
+    .row-history-btn-count {
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+    }
+
+    .row-history-btn-count {
+      min-width: 14px;
+      justify-content: center;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
     }
 
     .row-delete-btn {
@@ -4446,17 +4537,18 @@
       align-items: center;
       justify-content: center;
       min-width: 64px;
-      max-width: 100%;
+      max-width: none;
       border-radius: 999px;
       border: 1px solid #c7ddd3;
       background: #eef8f3;
       color: #2a6a58;
       font-size: 12px;
       font-weight: 700;
-      line-height: 1.2;
+      line-height: 1;
       padding: 3px 8px;
       text-align: center;
-      white-space: normal;
+      white-space: nowrap;
+      word-break: keep-all;
     }
 
     .record-status-chip.pending {
@@ -4592,8 +4684,17 @@
       background: rgba(248, 252, 250, 0.5);
     }
 
+    #tableBody tr:nth-child(even).updated-record-row td {
+      background: #fff2c9;
+      border-bottom-color: #efd89c;
+    }
+
     #tableBody tr:nth-child(even):hover td {
       background: #edf8f3;
+    }
+
+    #tableBody tr:nth-child(even).updated-record-row:hover td {
+      background: #ffedbc;
     }
 
     #tableBody tr:nth-child(even).boss-selected-row td {
@@ -4997,7 +5098,8 @@
       text-transform: uppercase;
     }
 
-    td.summary {
+    td.summary,
+    td.remark {
       white-space: normal;
       line-height: 1.4;
       word-break: break-word;
@@ -5054,6 +5156,7 @@
           "meta"
           "prices"
           "summary"
+          "note"
           "actions";
       }
 
@@ -5063,6 +5166,7 @@
       #recordForm .field-meta-row,
       #recordForm .field-price-row,
       #recordForm .field-summary,
+      #recordForm .field-note,
       #recordForm .form-actions {
         grid-column: 1;
       }
@@ -5091,8 +5195,12 @@
         grid-row: 6;
       }
 
-      #recordForm .form-actions {
+      #recordForm .field-note {
         grid-row: 7;
+      }
+
+      #recordForm .form-actions {
+        grid-row: 8;
       }
 
       body.dispatcher-self-view #recordForm {
@@ -5102,6 +5210,7 @@
           "meta"
           "prices"
           "summary"
+          "note"
           "actions";
       }
 
@@ -5129,9 +5238,10 @@
       #recordForm .field-dispatcher,
       #recordForm .field-detail-row,
       #recordForm .field-meta-row,
+      #recordForm .field-note,
       #recordForm .field-summary,
       #recordForm .field-price-row {
-        padding: 14px;
+        padding: 0;
       }
 
       #recordForm {

@@ -70,6 +70,7 @@
       { label: "会计", getValue: (item) => String(item?.accountant || "").trim() },
       { label: "客户", getValue: (item) => String(item?.customer || "").trim() },
       { label: "任务简介", getValue: (item) => String(item?.summary || "").trim() },
+      { label: "备注", getValue: (item) => String(item?.remark || "").trim() },
       { label: "付款价", getValue: (item) => toMoney(item?.paymentPrice) },
       { label: "会计价", getValue: (item) => toMoney(item?.totalPrice) },
       { label: "溢价", getValue: (item) => toMoney(getPremiumValue(item)) },
@@ -77,6 +78,109 @@
       { label: "接待收益", getValue: (item) => formatProfitDisplay(item), visible: () => shouldShowProfitColumn() },
       { label: "状态", getValue: (item) => getRecordStatusWithSettlementText(item) }
     ];
+
+    let stickyTableColumnSyncFrame = 0;
+
+    function getHorizontalPadding(node) {
+      if (!node) return 0;
+      const computedStyle = window.getComputedStyle(node);
+      return (parseFloat(computedStyle.paddingLeft) || 0)
+        + (parseFloat(computedStyle.paddingRight) || 0);
+    }
+
+    function getStickyColumnCellWidth(cell, contentNode) {
+      if (!cell) return 0;
+      const horizontalPadding = getHorizontalPadding(cell);
+      const target = contentNode || cell;
+      const contentWidth = Math.ceil(
+        Math.max(target.scrollWidth || 0, target.getBoundingClientRect?.().width || 0)
+      );
+      return Math.ceil(contentWidth + horizontalPadding);
+    }
+
+    function getMeasuredButtonWidth(selector, options = {}) {
+      const { minWidth = 0 } = options;
+      const measuredWidth = Array.from(tableBody?.querySelectorAll(selector) || []).reduce((maxWidthSoFar, node) => {
+        const rectWidth = Math.ceil(node.getBoundingClientRect?.().width || 0);
+        const scrollWidth = Math.ceil(node.scrollWidth || 0);
+        return Math.max(maxWidthSoFar, rectWidth, scrollWidth);
+      }, 0);
+      return Math.max(minWidth, measuredWidth);
+    }
+
+    function measureStickyColumnWidth(measurements, options = {}) {
+      const {
+        minWidth = 0,
+        maxWidth = 360,
+        extraWidth = 0
+      } = options;
+      const measuredWidth = measurements.reduce((maxWidthSoFar, item) => {
+        if (!item?.cell) return maxWidthSoFar;
+        return Math.max(maxWidthSoFar, getStickyColumnCellWidth(item.cell, item.contentNode));
+      }, 0);
+      return Math.min(maxWidth, Math.max(minWidth, measuredWidth + extraWidth));
+    }
+
+    function syncStickyTableColumnWidths() {
+      const table = tableBody ? tableBody.closest("table") : null;
+      if (!table || !appPage) return;
+
+      const statusCol = table.querySelector("col.col-status");
+      const actionCol = table.querySelector("col.col-action");
+      const actionHeader = table.querySelector("thead th.data-col-action");
+      const statusCells = Array.from(table.querySelectorAll("tbody td.data-col-status"));
+      const actionCells = Array.from(table.querySelectorAll("tbody td.row-action-cell"));
+      const historyWidth = getMeasuredButtonWidth(".row-history-btn", { minWidth: 0 });
+      const editWidth = getMeasuredButtonWidth(".row-edit-btn", { minWidth: 0 });
+      const deleteWidth = getMeasuredButtonWidth(".row-delete-btn", { minWidth: 0 });
+      const checkWidth = getMeasuredButtonWidth(".row-check-btn", { minWidth: 0 });
+      const isAccountantView = Boolean(appPage?.classList.contains("accountant-view"));
+      const actionGap = isAccountantView ? 4 : 6;
+      const actionTrackWidths = isAccountantView
+        ? [historyWidth, checkWidth]
+        : [historyWidth, editWidth, deleteWidth, checkWidth];
+      const visibleTrackWidths = actionTrackWidths.filter((width) => width > 0);
+      const actionPadding = getHorizontalPadding(actionCells[0] || actionHeader);
+      const statusWidth = measureStickyColumnWidth(
+        [
+          ...statusCells.map((cell) => ({
+            cell,
+            contentNode: cell.querySelector(".row-status-cell") || cell
+          }))
+        ],
+        { minWidth: 112, maxWidth: 360, extraWidth: 10 }
+      );
+      const actionWidth = Math.min(
+        360,
+        Math.max(
+          88,
+          Math.ceil(
+            visibleTrackWidths.reduce((sum, width) => sum + width, 0)
+            + Math.max(0, visibleTrackWidths.length - 1) * actionGap
+            + actionPadding
+          )
+        )
+      );
+
+      appPage.style.setProperty("--table-sticky-status-width", `${statusWidth}px`);
+      appPage.style.setProperty("--table-sticky-action-width", `${actionWidth}px`);
+      appPage.style.setProperty("--table-action-history-width", `${historyWidth}px`);
+      appPage.style.setProperty("--table-action-edit-width", `${editWidth}px`);
+      appPage.style.setProperty("--table-action-delete-width", `${deleteWidth}px`);
+      appPage.style.setProperty("--table-action-check-width", `${checkWidth}px`);
+      if (statusCol) statusCol.style.width = `${statusWidth}px`;
+      if (actionCol) actionCol.style.width = `${actionWidth}px`;
+    }
+
+    function scheduleStickyTableColumnWidthSync() {
+      if (stickyTableColumnSyncFrame) {
+        window.cancelAnimationFrame(stickyTableColumnSyncFrame);
+      }
+      stickyTableColumnSyncFrame = window.requestAnimationFrame(() => {
+        stickyTableColumnSyncFrame = 0;
+        syncStickyTableColumnWidths();
+      });
+    }
 
     function getTableExportColumns() {
       return TABLE_EXPORT_COLUMNS.filter((column) => (
@@ -442,6 +546,7 @@
       closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
+      closeDispatcherModal();
       closeRecycleModal();
       closeAccountantEditModal();
       closeDevTodoModal();
@@ -472,6 +577,52 @@
       syncModalOpenState();
     }
 
+    async function openDispatcherModal() {
+      if (!requireAccount()) return;
+      if (!isBossLogin()) {
+        showAppStatus("接待管理仅管理员可用。");
+        return;
+      }
+      closeAllFilterPopovers();
+      closeCreateModal();
+      closeCheckModal();
+      closeCompleteModal();
+      closeReturnPriceModal();
+      closeRecordHistoryModal();
+      closeBossSettlementSummaryModal();
+      closeAnalysisModal();
+      closeAccountantEditModal();
+      closeAccountantModal();
+      closeRecycleModal();
+      closeDevTodoModal();
+      try {
+        await fetchDispatchers();
+      } catch (error) {
+        console.error(error);
+        showAppStatus(error.message || "读取接待列表失败，请稍后重试。");
+        return;
+      }
+      setDispatcherModalHint("", "idle");
+      dispatcherModal.hidden = false;
+      dispatcherModal.classList.remove("modal-enter");
+      dispatcherModalCard.classList.remove("modal-enter");
+      void dispatcherModal.offsetWidth;
+      renderDispatcherList();
+      dispatcherModal.classList.add("modal-enter");
+      dispatcherModalCard.classList.add("modal-enter");
+      syncModalOpenState();
+      if (dispatcherListWrap) {
+        dispatcherListWrap.focus();
+      }
+    }
+
+    function closeDispatcherModal() {
+      dispatcherModal.classList.remove("modal-enter");
+      dispatcherModalCard.classList.remove("modal-enter");
+      dispatcherModal.hidden = true;
+      syncModalOpenState();
+    }
+
     async function openAccountantModal() {
       if (!requireAccount()) return;
       if (isAccountantLogin()) {
@@ -486,6 +637,7 @@
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
+      closeDispatcherModal();
       closeAccountantEditModal();
       closeRecycleModal();
       closeDevTodoModal();
@@ -527,6 +679,7 @@
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
+      closeDispatcherModal();
       closeAccountantEditModal();
       closeAccountantModal();
       closeDevTodoModal();
@@ -807,6 +960,7 @@
       "orderNo",
       "customer",
       "summary",
+      "remark",
       "completedAt",
       "customerFeedback"
     ];
@@ -816,6 +970,7 @@
       "dispatcher",
       "customer",
       "summary",
+      "remark",
       "settlementPrice",
       "checkStatus",
       "isSettled"
@@ -844,8 +999,9 @@
       orderNo: "订单号",
       customer: "客户",
       summary: "任务简介",
+      remark: "备注",
       completedAt: "完工时间",
-      customerFeedback: "服务记录"
+      customerFeedback: "客户反馈"
     };
 
     function getRecordHistoryFieldSortWeight(field) {
@@ -939,7 +1095,8 @@
         "source",
         "orderNo",
         "customer",
-        "summary"
+        "summary",
+        "remark"
       ].includes(normalizedField)) {
         return getRecordHistoryValueText(normalizedField, value) !== "空";
       }
@@ -1001,7 +1158,7 @@
 
     function getRecordHistoryFieldWidth(field) {
       const normalizedField = String(field || "").trim();
-      if (["summary", "customerFeedback"].includes(normalizedField)) return "220px";
+      if (["summary", "remark", "customerFeedback"].includes(normalizedField)) return "220px";
       if (["shopName"].includes(normalizedField)) return "172px";
       if (["settlementInvoiceImage", "invoiceUploadedAt"].includes(normalizedField)) return "168px";
       if (["platform", "source", "customer", "orderNo", "dispatcher", "accountant", "date", "settledBy", "invoiceUploadedBy"].includes(normalizedField)) {
@@ -2302,6 +2459,7 @@
         : "account-role-badge";
       const canOpenAnalysis = isBoss || isAnalysisButtonEnabled;
       openCreateModalBtn.hidden = isAccountant;
+      openDispatcherModalBtn.hidden = !isBoss;
       openAnalysisModalBtn.hidden = isAccountant || !canOpenAnalysis;
       openRecycleModalBtn.hidden = isAccountant;
       openAccountantModalBtn.hidden = isAccountant;
@@ -2345,12 +2503,19 @@
     }
 
     function applyAccountToForm() {
-      dateInput.value = getTodayISODate();
+      setRecordDateInputValue(getTodayISODate());
       setDispatcherTag(getDefaultDispatcherTag());
       setSourcePickerValue("", { autoFilled: false });
       setPlatformShopPickerValue("");
       renderSourcePickerOptions();
       renderPlatformShopPickerOptions();
+    }
+
+    function setRecordDateInputValue(rawValue = getTodayISODate()) {
+      const nextValue = String(rawValue || "").trim() || getTodayISODate();
+      dateInput.readOnly = false;
+      dateInput.removeAttribute("readonly");
+      dateInput.value = formatDateInputValue(nextValue);
     }
 
     function setRecordCreateRequiredState(isCreateMode) {
@@ -2368,7 +2533,7 @@
 
     function resetRecordFormMode() {
       recordEditingIdInput.value = "";
-      dateInput.readOnly = true;
+      setRecordDateInputValue(getTodayISODate());
       setRecordCreateRequiredState(true);
       resetInlineFormState(recordForm, setRecordFormHint);
       recordModalTitle.textContent = "新建数据";
@@ -2471,8 +2636,10 @@
       await syncDataAfterLogin();
     }
 
-    function logoutAccount() {
+    async function logoutAccount() {
+      const tokenToLogout = String(currentSessionToken || "").trim();
       stopAutoRefresh();
+      await logoutSessionByServer(tokenToLogout);
       currentAccount = "";
       currentAccountRole = "";
       currentAccountDisplayName = "";
@@ -2565,6 +2732,7 @@
       if (!filteredRecords.length) {
         emptyState.style.display = "block";
         emptyState.textContent = scopedRecords.length ? "当前筛选无数据。" : "暂无数据，先录入一条。";
+        scheduleStickyTableColumnWidthSync();
         return;
       }
       emptyState.style.display = "none";
@@ -2576,6 +2744,7 @@
         const isCurrentDispatcher = Boolean(currentDispatcherTag && dispatcherTag === currentDispatcherTag);
         const isUpdatedRow = Boolean(recordId && isUpdatedRecordHighlighted(recordId));
         const isSelected = Boolean(recordId && isBossRecordSelected(recordId));
+        const updateNoticeText = isUpdatedRow ? getUpdatedRecordIndicatorLabel(item) : "";
         const settlementSelectable = isBossSettlementRecordSelectable(item);
         const settlementDisabledReason = getBossSettlementSelectionDisabledReason(item);
         if (isCurrentDispatcher) {
@@ -2623,6 +2792,7 @@
           String(item.accountant || ""),
           String(item.customer || ""),
           String(item.summary || ""),
+          String(item.remark || ""),
           toMoney(item.paymentPrice),
           toMoney(item.totalPrice),
           toMoney(getPremiumValue(item)),
@@ -2636,28 +2806,16 @@
             td.classList.add("data-col-date");
             const dateWrap = document.createElement("div");
             dateWrap.className = "row-date-cell";
-            if (isUpdatedRow) {
-              const dot = document.createElement("span");
-              dot.className = "row-update-dot";
-              dot.setAttribute("aria-hidden", "true");
-              dateWrap.appendChild(dot);
+            if (updateNoticeText) {
+              const updateNotice = document.createElement("span");
+              updateNotice.className = "row-date-update";
+              updateNotice.textContent = updateNoticeText;
+              dateWrap.appendChild(updateNotice);
             }
-
             const dateText = document.createElement("span");
             dateText.className = "row-date-text";
             dateText.textContent = String(value || "");
             dateWrap.appendChild(dateText);
-
-            if (isUpdatedRow && recordId) {
-              const dismissBtn = document.createElement("button");
-              dismissBtn.type = "button";
-              dismissBtn.className = "row-update-dismiss-btn";
-              dismissBtn.dataset.recordDismissHighlight = recordId;
-              dismissBtn.setAttribute("aria-label", "关闭本行高亮");
-              dismissBtn.title = "关闭高亮";
-              dismissBtn.textContent = "×";
-              dateWrap.appendChild(dismissBtn);
-            }
 
             td.appendChild(dateWrap);
           } else if (index === 1) {
@@ -2666,12 +2824,15 @@
             chip.className = "dispatcher-chip";
             chip.textContent = value;
             td.appendChild(chip);
-          } else if (index === 14) {
+          } else if (index === 15) {
             td.classList.add("data-col-status");
+            const statusWrap = document.createElement("div");
+            statusWrap.className = "row-status-cell";
             const statusChip = document.createElement("span");
             statusChip.className = `record-status-chip ${getRecordWorkflowStatusKey(item)}`;
             statusChip.textContent = String(value || "");
-            td.appendChild(statusChip);
+            statusWrap.appendChild(statusChip);
+            td.appendChild(statusWrap);
           } else {
             td.textContent = value;
           }
@@ -2681,25 +2842,37 @@
           if (index === 5) td.classList.add("data-col-order");
           if (index === 6) td.classList.add("data-col-accountant");
           if (index === 8) td.classList.add("summary");
-          if (index === 9) td.classList.add("data-col-payment");
-          if (index === 10) td.classList.add("data-col-total");
-          if (index === 11) td.classList.add("data-col-premium");
-          if (index === 12) td.classList.add("data-col-settlement");
-          if (index === 13) td.classList.add("data-col-profit");
+          if (index === 9) td.classList.add("remark");
+          if (index === 10) td.classList.add("data-col-payment");
+          if (index === 11) td.classList.add("data-col-total");
+          if (index === 12) td.classList.add("data-col-premium");
+          if (index === 13) td.classList.add("data-col-settlement");
+          if (index === 14) td.classList.add("data-col-profit");
           tr.appendChild(td);
         });
 
         const actionTd = document.createElement("td");
         actionTd.className = "row-action-cell";
+        const actionWrap = document.createElement("div");
+        actionWrap.className = "row-action-wrap";
         const historyCount = Array.isArray(item.operationHistory) ? item.operationHistory.length : 0;
         if (recordId && historyCount > 0) {
           const historyBtn = document.createElement("button");
           historyBtn.type = "button";
           historyBtn.className = "row-history-btn persistent";
           historyBtn.dataset.recordId = recordId;
+          const historyLabel = document.createElement("span");
+          historyLabel.className = "row-history-btn-label";
+          historyLabel.textContent = "历史";
+          historyBtn.appendChild(historyLabel);
+
+          const historyCountText = document.createElement("span");
+          historyCountText.className = "row-history-btn-count";
+          historyCountText.textContent = String(historyCount);
+          historyBtn.appendChild(historyCountText);
           historyBtn.setAttribute("aria-label", `查看历史，共 ${historyCount} 条`);
-          historyBtn.textContent = `历史 ${historyCount}`;
-          actionTd.appendChild(historyBtn);
+          historyBtn.title = "查看历史";
+          actionWrap.appendChild(historyBtn);
         }
         if (canEditRecords && recordId) {
           const editBtn = document.createElement("button");
@@ -2707,7 +2880,7 @@
           editBtn.className = "row-edit-btn";
           editBtn.dataset.recordId = recordId;
           editBtn.textContent = "修改";
-          actionTd.appendChild(editBtn);
+          actionWrap.appendChild(editBtn);
         }
         if (canDeleteRecords && recordId) {
           const deleteBtn = document.createElement("button");
@@ -2717,7 +2890,7 @@
           deleteBtn.dataset.customer = String(item.customer || "");
           deleteBtn.dataset.date = formatDateDisplay(item.date);
           deleteBtn.textContent = "删除";
-          actionTd.appendChild(deleteBtn);
+          actionWrap.appendChild(deleteBtn);
         }
         if (canCheckRecords && recordId) {
           if (checkStatus !== "completed" && checkStatus !== "returned") {
@@ -2735,12 +2908,14 @@
             checkBtn.dataset.recordId = recordId;
             checkBtn.dataset.checkAction = checkButtonAction;
             checkBtn.textContent = checkButtonText;
-            actionTd.appendChild(checkBtn);
+            actionWrap.appendChild(checkBtn);
           }
         }
+        actionTd.appendChild(actionWrap);
         tr.appendChild(actionTd);
         tableBody.appendChild(tr);
       });
+      scheduleStickyTableColumnWidthSync();
     }
 
     function openCreateModal() {
@@ -2767,7 +2942,7 @@
       settlementPriceAutoFilled = false;
       applyAccountToForm();
       syncPremiumPriceFromPrices();
-      showRecordModal(accountantPickerTrigger);
+      showRecordModal(dateInput);
     }
 
     function openEditModal(record) {
@@ -2795,12 +2970,11 @@
       settlementPriceAutoFilled = false;
 
       recordEditingIdInput.value = String(record.id || "").trim();
-      dateInput.readOnly = false;
+      setRecordDateInputValue(record.date || getTodayISODate());
       setRecordCreateRequiredState(false);
       recordModalTitle.textContent = "修改数据";
       recordReturnBtn.hidden = isAccountantLogin();
       recordSubmitBtn.textContent = "保存修改";
-      dateInput.value = formatDateInputValue(record.date || getTodayISODate());
       setDispatcherTag(normalizeDispatcherTag(record.dispatcher) || getDefaultDispatcherTag());
       setAccountantPickerValue(String(record.accountant || "").trim());
       renderAccountantPickerList("");
@@ -2811,6 +2985,9 @@
       orderNoInput.value = String(record.orderNo || "").trim();
       customerInput.value = String(record.customer || "").trim();
       summaryInput.value = String(record.summary || "").trim();
+      if (remarkInput) {
+        remarkInput.value = String(record.remark || "").trim();
+      }
       if (monthlySettlementCheckbox) {
         monthlySettlementCheckbox.checked = isMonthlySettlementRecord(record);
       }

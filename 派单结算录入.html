@@ -14,7 +14,7 @@
       <h1>派单结算录入</h1>
       <form id="loginForm" autocomplete="off" novalidate>
         <div class="field" style="margin-top: 12px;">
-          <label for="loginCodeInput">手机号 / 登录码</label>
+          <label for="loginCodeInput">手机号</label>
           <input
             id="loginCodeInput"
             name="loginCode"
@@ -123,11 +123,12 @@
       <h2 class="app-side-title">操作</h2>
       <div class="app-side-actions">
         <button id="openCreateModalBtn" class="btn-primary" type="button">新建</button>
+        <button id="openDispatcherModalBtn" class="btn-secondary" type="button">管理接待</button>
         <button id="openAccountantModalBtn" class="btn-secondary" type="button">管理会计</button>
         <button id="openAnalysisModalBtn" class="btn-secondary" type="button">分析数据</button>
         <button id="openRecycleModalBtn" class="btn-secondary" type="button">回收站</button>
       </div>
-      <div class="request-log-panel">
+      <div id="requestLogPanel" class="request-log-panel" hidden>
         <div class="request-log-panel-top">
           <span class="request-log-panel-title">提示记录</span>
         </div>
@@ -210,6 +211,7 @@
             <col class="col-accountant" />
             <col class="col-customer" />
             <col class="col-summary" />
+            <col class="col-remark" />
             <col class="col-payment" />
             <col class="col-total" />
             <col class="col-premium" />
@@ -358,6 +360,7 @@
               </th>
               <th><button class="sort-btn" type="button" data-key="customer" data-label="客户">客户</button></th>
               <th><button class="sort-btn" type="button" data-key="summary" data-label="任务简介">任务简介</button></th>
+              <th><button class="sort-btn" type="button" data-key="remark" data-label="备注">备注</button></th>
               <th class="data-col-payment"><button class="sort-btn" type="button" data-key="paymentPrice" data-label="付款价">付款价</button></th>
               <th class="data-col-total"><button class="sort-btn" type="button" data-key="totalPrice" data-label="会计价">会计价</button></th>
               <th class="data-col-premium"><button class="sort-btn" type="button" data-key="premiumPrice" data-label="溢价">溢价</button></th>
@@ -400,8 +403,6 @@
     </section>
   </main>
 
-  <div id="operationNoticeStack" class="operation-notice-stack" hidden></div>
-
   <div id="createModal" class="modal-overlay" hidden>
     <section class="card modal-card">
       <div class="row" style="margin-top: 0; margin-bottom: 10px;">
@@ -413,7 +414,7 @@
         <div class="field field-date">
           <label for="date">日期</label>
           <div class="date-field-controls">
-            <input id="date" name="date" type="date" readonly autocomplete="off" />
+            <input id="date" name="date" type="date" autocomplete="off" />
             <label for="monthlySettlement" class="checkbox-toggle checkbox-toggle-inline">
               <input id="monthlySettlement" name="monthlySettlement" type="checkbox" />
               <span>月结勾选</span>
@@ -423,6 +424,7 @@
         <div class="field field-dispatcher">
           <label>接待人</label>
           <div id="dispatcherTagGroup" class="tag-group">
+            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="开心财税">开心财税</button>
             <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="1">1</button>
             <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="A">A</button>
             <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="C">C</button>
@@ -562,6 +564,19 @@
             spellcheck="false"
           ></textarea>
         </div>
+        <div class="field field-note">
+          <label for="remark">备注</label>
+          <input
+            id="remark"
+            name="remark"
+            type="text"
+            autocomplete="off"
+            data-no-suggest="true"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+        </div>
         <div class="field field-wide row form-actions">
           <button id="recordReturnBtn" class="btn-danger" type="button" hidden>退单</button>
           <button id="recordSubmitBtn" class="btn-primary" type="submit">保存数据</button>
@@ -625,7 +640,7 @@
           <input id="completeTime" name="completedAt" type="datetime-local" step="1" required autocomplete="off" readonly aria-readonly="true" tabindex="-1" />
         </div>
         <div class="field field-wide field-feedback-text">
-          <label for="customerFeedback">服务记录</label>
+          <label for="customerFeedback">客户反馈</label>
           <textarea
             id="customerFeedback"
             name="customerFeedback"
@@ -744,6 +759,29 @@
     </section>
   </div>
 
+  <div id="dispatcherModal" class="modal-overlay" hidden>
+    <section class="card modal-card accountant-modal-card">
+      <div class="accountant-modal-top">
+        <h2 style="margin: 0; font-size: 20px;">接待管理</h2>
+      </div>
+      <p id="dispatcherModalHint" class="login-request-hint form-request-hint idle" aria-live="polite" hidden></p>
+      <div id="dispatcherListWrap" class="accountant-list-wrap" tabindex="-1">
+        <table class="accountant-table dispatcher-table">
+          <thead>
+            <tr>
+              <th class="dispatcher-col-display">接待</th>
+              <th class="dispatcher-col-account">账号</th>
+              <th class="dispatcher-col-password">密码</th>
+              <th class="dispatcher-col-count">接单数</th>
+            </tr>
+          </thead>
+          <tbody id="dispatcherList"></tbody>
+        </table>
+        <div id="dispatcherEmptyState" class="empty" style="padding: 12px 6px;">暂无接待资料。</div>
+      </div>
+    </section>
+  </div>
+
   <div id="accountantModal" class="modal-overlay" hidden>
     <section class="card modal-card accountant-modal-card">
       <div class="accountant-modal-top">
@@ -755,7 +793,7 @@
         <table class="accountant-table">
           <thead>
             <tr>
-              <th class="accountant-col-display">显示名</th>
+              <th class="accountant-col-display">别名</th>
               <th class="accountant-col-realname">姓名</th>
               <th class="accountant-col-phone">手机号</th>
               <th class="accountant-col-password">密码</th>

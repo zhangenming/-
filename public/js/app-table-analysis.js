@@ -165,7 +165,9 @@
 
     function normalizeDispatcherTag(rawValue) {
       const source = String(rawValue || "").trim();
+      if (!source) return "";
       const lower = source.toLowerCase();
+      if (lower === "开心财税") return "开心财税";
       const upper = lower.toUpperCase();
       if (DISPATCHER_TAGS.includes(upper)) return upper;
       if (lower.includes("财税a")) return "A";
@@ -173,8 +175,7 @@
       if (lower.includes("财税e")) return "E";
       if (lower.includes("财税k")) return "K";
       if (lower.includes("财税1")) return "1";
-      if (lower.includes("开心")) return "1";
-      return "1";
+      return source;
     }
 
     function normalizeRecordCheckStatus(rawValue) {

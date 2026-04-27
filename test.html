@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accountants Poll Test</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "SF Mono", "Menlo", "Monaco", monospace;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #f4f7f6;
+      color: #17342d;
+    }
+
+    .panel {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #d7e3de;
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 12px 30px rgba(16, 57, 46, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 22px;
+    }
+
+    .meta {
+      margin: 0 0 16px;
+      color: #47645b;
+      line-height: 1.6;
+    }
+
+    .status {
+      margin: 0 0 16px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #eef6f2;
+      color: #21483e;
+      font-size: 14px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 0 0 16px;
+    }
+
+    .stat-card {
+      padding: 12px 14px;
+      border: 1px solid #dce8e3;
+      border-radius: 12px;
+      background: #f9fcfb;
+    }
+
+    .stat-label {
+      margin: 0 0 8px;
+      color: #5a766d;
+      font-size: 13px;
+    }
+
+    .stat-value {
+      margin: 0;
+      color: #17342d;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .log {
+      display: grid;
+      gap: 10px;
+    }
+
+    .log-item {
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid #dce8e3;
+      background: #f9fcfb;
+    }
+
+    .log-item.ok {
+      border-color: #b9ddcf;
+      background: #eef9f4;
+    }
+
+    .log-item.error {
+      border-color: #efc8c8;
+      background: #fff4f4;
+    }
+
+    .log-line {
+      margin: 0;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <h1>/api/accountants 轮询测试</h1>
+    <p class="meta">
+      页面启动后每 1000ms 请求一次 <code>/api/accountants</code>，并打印请求时间。
+    </p>
+    <div id="status" class="status">准备开始请求...</div>
+    <section class="stats" aria-label="请求统计">
+      <article class="stat-card">
+        <p class="stat-label">平均时间</p>
+        <p id="avgTimeValue" class="stat-value">--</p>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">最大时间</p>
+        <p id="maxTimeValue" class="stat-value">--</p>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">最小时间</p>
+        <p id="minTimeValue" class="stat-value">--</p>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">请求次数</p>
+        <p id="requestCountValue" class="stat-value">0</p>
+      </article>
+    </section>
+    <section id="log" class="log" aria-live="polite"></section>
+  </main>
+
+  <script>
+    const STORAGE_KEY_SESSION_TOKEN = "dispatch_session_token_v1";
+    const LOGIN_ENDPOINT = "/api/auth/login";
+    const LOGIN_ACCOUNT = "boss";
+    const LOGIN_PASSWORD = "boss123";
+    const REQUEST_INTERVAL_MS = 1000;
+    const MAX_LOG_COUNT = 50;
+    const statusNode = document.getElementById("status");
+    const logNode = document.getElementById("log");
+    const avgTimeValueNode = document.getElementById("avgTimeValue");
+    const maxTimeValueNode = document.getElementById("maxTimeValue");
+    const minTimeValueNode = document.getElementById("minTimeValue");
+    const requestCountValueNode = document.getElementById("requestCountValue");
+    let activeSessionToken = "";
+    let loginPromise = null;
+    const requestStats = {
+      count: 0,
+      totalElapsed: 0,
+      maxElapsed: 0,
+      minElapsed: Infinity
+    };
+
+    function readSessionToken() {
+      if (activeSessionToken) return activeSessionToken;
+      const sessionToken = String(window.sessionStorage.getItem(STORAGE_KEY_SESSION_TOKEN) || "").trim();
+      if (sessionToken) return sessionToken;
+      return String(window.localStorage.getItem(STORAGE_KEY_SESSION_TOKEN) || "").trim();
+    }
+
+    function writeSessionToken(sessionToken) {
+      activeSessionToken = String(sessionToken || "").trim();
+      if (activeSessionToken) {
+        window.sessionStorage.setItem(STORAGE_KEY_SESSION_TOKEN, activeSessionToken);
+        window.localStorage.setItem(STORAGE_KEY_SESSION_TOKEN, activeSessionToken);
+        return;
+      }
+      window.sessionStorage.removeItem(STORAGE_KEY_SESSION_TOKEN);
+      window.localStorage.removeItem(STORAGE_KEY_SESSION_TOKEN);
+    }
+
+    function formatRequestTime(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+      const seconds = String(date.getSeconds()).padStart(2, "0");
+      const milliseconds = String(date.getMilliseconds()).padStart(3, "0");
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+    }
+
+    function appendLog({ requestTime, message, state }) {
+      const item = document.createElement("article");
+      item.className = `log-item ${state}`;
+
+      const line = document.createElement("p");
+      line.className = "log-line";
+      line.textContent = `[${requestTime}] ${message}`;
+      item.appendChild(line);
+
+      logNode.prepend(item);
+      while (logNode.children.length > MAX_LOG_COUNT) {
+        logNode.removeChild(logNode.lastElementChild);
+      }
+    }
+
+    function formatElapsed(elapsed) {
+      return Number.isFinite(elapsed) ? `${Math.round(elapsed)}ms` : "--";
+    }
+
+    function renderRequestStats() {
+      const averageElapsed = requestStats.count > 0
+        ? requestStats.totalElapsed / requestStats.count
+        : NaN;
+      avgTimeValueNode.textContent = formatElapsed(averageElapsed);
+      maxTimeValueNode.textContent = formatElapsed(requestStats.count > 0 ? requestStats.maxElapsed : NaN);
+      minTimeValueNode.textContent = formatElapsed(requestStats.count > 0 ? requestStats.minElapsed : NaN);
+      requestCountValueNode.textContent = String(requestStats.count);
+    }
+
+    function recordRequestStats(elapsed) {
+      if (!Number.isFinite(elapsed)) return;
+      requestStats.count += 1;
+      requestStats.totalElapsed += elapsed;
+      requestStats.maxElapsed = Math.max(requestStats.maxElapsed, elapsed);
+      requestStats.minElapsed = Math.min(requestStats.minElapsed, elapsed);
+      renderRequestStats();
+    }
+
+    async function loginBoss(force = false) {
+      if (!force) {
+        const cachedToken = readSessionToken();
+        if (cachedToken) {
+          activeSessionToken = cachedToken;
+          return cachedToken;
+        }
+      }
+      if (loginPromise) return loginPromise;
+
+      const startedAt = new Date();
+      const requestTime = formatRequestTime(startedAt);
+      statusNode.textContent = `正在登录 ${LOGIN_ACCOUNT}...`;
+
+      loginPromise = (async () => {
+        const response = await fetch(LOGIN_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({
+            account: LOGIN_ACCOUNT,
+            password: LOGIN_PASSWORD
+          })
+        });
+        const elapsed = Date.now() - startedAt.getTime();
+        let payload = {};
+
+        try {
+          payload = await response.json();
+        } catch (error) {
+          payload = {};
+        }
+
+        if (!response.ok) {
+          const message = String(payload.error || `login failed: ${response.status}`).trim();
+          writeSessionToken("");
+          appendLog({
+            requestTime,
+            state: "error",
+            message: `login status=${response.status} elapsed=${elapsed}ms message=${message}`
+          });
+          throw new Error(message);
+        }
+
+        const sessionToken = String(payload.sessionToken || "").trim();
+        if (!sessionToken) {
+          writeSessionToken("");
+          appendLog({
+            requestTime,
+            state: "error",
+            message: `login status=${response.status} elapsed=${elapsed}ms message=missing session token`
+          });
+          throw new Error("missing session token");
+        }
+
+        writeSessionToken(sessionToken);
+        appendLog({
+          requestTime,
+          state: "ok",
+          message: `login status=${response.status} elapsed=${elapsed}ms role=${String(payload.role || "").trim() || "unknown"}`
+        });
+        statusNode.textContent = `已登录 ${LOGIN_ACCOUNT}，开始轮询`;
+        return sessionToken;
+      })();
+
+      try {
+        return await loginPromise;
+      } finally {
+        loginPromise = null;
+      }
+    }
+
+    async function fetchAccountantsOnce(sessionToken, startedAt, requestTime) {
+      const headers = sessionToken
+        ? { "x-dispatch-session": sessionToken }
+        : {};
+
+      statusNode.textContent = `最近请求时间：${requestTime}`;
+
+      const response = await fetch("/api/accountants", {
+        method: "GET",
+        headers,
+        cache: "no-store"
+      });
+      const elapsed = Date.now() - startedAt.getTime();
+      recordRequestStats(elapsed);
+      appendLog({
+        requestTime,
+        state: response.ok ? "ok" : "error",
+        message: `status=${response.status} elapsed=${elapsed}ms token=${sessionToken ? "yes" : "no"}`
+      });
+      return response;
+    }
+
+    async function requestAccountants() {
+      const startedAt = new Date();
+      const requestTime = formatRequestTime(startedAt);
+
+      try {
+        let sessionToken = await loginBoss();
+        let response = await fetchAccountantsOnce(sessionToken, startedAt, requestTime);
+        if (response.status === 401) {
+          sessionToken = await loginBoss(true);
+          response = await fetchAccountantsOnce(sessionToken, startedAt, requestTime);
+        }
+        if (response.ok) {
+          statusNode.textContent = `最近请求时间：${requestTime}`;
+        }
+      } catch (error) {
+        recordRequestStats(Date.now() - startedAt.getTime());
+        statusNode.textContent = `请求失败：${error.message || "unknown error"}`;
+        appendLog({
+          requestTime,
+          state: "error",
+          message: `request failed: ${error.message || "unknown error"}`
+        });
+      }
+    }
+
+    async function startPolling() {
+      try {
+        await loginBoss(true);
+      } catch (error) {
+        statusNode.textContent = `登录失败：${error.message || "unknown error"}`;
+      }
+      await requestAccountants();
+      window.setInterval(requestAccountants, REQUEST_INTERVAL_MS);
+    }
+
+    renderRequestStats();
+    startPolling();
+  </script>
+</body>
+</html>

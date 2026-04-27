@@ -26,39 +26,41 @@
       });
     }
 
-    operationNoticeStack.addEventListener("click", (event) => {
-      const closeBtn = event.target.closest("[data-notice-close]");
-      if (!closeBtn) return;
-      const noticeCard = closeBtn.closest(".operation-notice");
-      if (!noticeCard) return;
-      const noticeKind = String(noticeCard.dataset.noticeKind || "").trim();
-      const noticeKey = String(noticeCard.dataset.noticeKey || "").trim();
+    if (operationNoticeStack) {
+      operationNoticeStack.addEventListener("click", (event) => {
+        const closeBtn = event.target.closest("[data-notice-close]");
+        if (!closeBtn) return;
+        const noticeCard = closeBtn.closest(".operation-notice");
+        if (!noticeCard) return;
+        const noticeKind = String(noticeCard.dataset.noticeKind || "").trim();
+        const noticeKey = String(noticeCard.dataset.noticeKey || "").trim();
 
-      if (noticeKind === "dispatcher") {
-        operationNoticeDismissed = true;
-        dismissedOperationNoticeLogId = noticeKey.startsWith("dispatcher:")
-          ? noticeKey.slice("dispatcher:".length)
-          : String(currentOperationNoticeLogId || "").trim();
-        saveOperationNoticePreference();
-        dispatcherOperationNoticeItem = null;
-        hideOperationNotice({ keepCurrentId: true });
-        return;
-      }
-
-      if (noticeKind === "accountant_assignment") {
-        pendingAccountantNoticeItems = pendingAccountantNoticeItems.filter((item) => {
-          const id = String(item?.id || "").trim();
-          return `assign:${id}` !== noticeKey;
-        });
-        if (pendingAccountantNoticeItems.length) {
-          savePendingAccountantNotices(pendingAccountantNoticeItems);
-          renderOperationNoticeStack();
+        if (noticeKind === "dispatcher") {
+          operationNoticeDismissed = true;
+          dismissedOperationNoticeLogId = noticeKey.startsWith("dispatcher:")
+            ? noticeKey.slice("dispatcher:".length)
+            : String(currentOperationNoticeLogId || "").trim();
+          saveOperationNoticePreference();
+          dispatcherOperationNoticeItem = null;
+          hideOperationNotice({ keepCurrentId: true });
           return;
         }
-        clearPendingAccountantNotices();
-        hideOperationNotice({ keepCurrentId: true });
-      }
-    });
+
+        if (noticeKind === "accountant_assignment") {
+          pendingAccountantNoticeItems = pendingAccountantNoticeItems.filter((item) => {
+            const id = String(item?.id || "").trim();
+            return `assign:${id}` !== noticeKey;
+          });
+          if (pendingAccountantNoticeItems.length) {
+            savePendingAccountantNotices(pendingAccountantNoticeItems);
+            renderOperationNoticeStack();
+            return;
+          }
+          clearPendingAccountantNotices();
+          hideOperationNotice({ keepCurrentId: true });
+        }
+      });
+    }
 
     changePasswordBtn.addEventListener("click", async () => {
       await openChangePasswordFlow();
@@ -140,9 +142,22 @@
       openCreateModal();
     });
 
+    if (dateTodayBtn) {
+      dateTodayBtn.addEventListener("click", () => {
+        setRecordDateInputValue(getTodayISODate());
+        dateInput.focus();
+      });
+    }
+
     openAnalysisModalBtn.addEventListener("click", () => {
       openAnalysisModal();
     });
+
+    if (openDispatcherModalBtn) {
+      openDispatcherModalBtn.addEventListener("click", async () => {
+        await openDispatcherModal();
+      });
+    }
 
     openAccountantModalBtn.addEventListener("click", async () => {
       await openAccountantModal();
@@ -1098,16 +1113,6 @@
     }
 
     tableBody.addEventListener("click", async (event) => {
-      const dismissHighlightBtn = event.target.closest(".row-update-dismiss-btn");
-      if (dismissHighlightBtn) {
-        if (!requireAccount()) return;
-        const recordId = String(dismissHighlightBtn.dataset.recordDismissHighlight || "").trim();
-        if (!recordId) return;
-        dismissUpdatedRowHighlight(recordId);
-        renderTable();
-        return;
-      }
-
       const checkBtn = event.target.closest(".row-check-btn");
       if (checkBtn) {
         if (!requireAccount()) return;
@@ -1145,9 +1150,9 @@
         if (!recordId) return;
         const targetRecord = records.find((item) => String(item.id || "").trim() === recordId) || null;
         if (!targetRecord) return;
+        openRecordHistoryModal(targetRecord);
         dismissUpdatedRowHighlight(recordId);
         renderTable();
-        openRecordHistoryModal(targetRecord);
         return;
       }
 
@@ -1235,6 +1240,12 @@
     analysisModal.addEventListener("click", (event) => {
       if (event.target === analysisModal) {
         closeAnalysisModal();
+      }
+    });
+
+    dispatcherModal.addEventListener("click", (event) => {
+      if (event.target === dispatcherModal) {
+        closeDispatcherModal();
       }
     });
 
@@ -1333,13 +1344,8 @@
       closePlatformShopPicker();
     });
 
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) return;
-      triggerImmediateAutoRefresh();
-    });
-
-    window.addEventListener("focus", () => {
-      triggerImmediateAutoRefresh();
+    window.addEventListener("resize", () => {
+      scheduleStickyTableColumnWidthSync();
     });
 
     window.addEventListener("storage", (event) => {
@@ -1378,6 +1384,10 @@
       }
       if (event.key === "Escape" && !analysisModal.hidden) {
         closeAnalysisModal();
+        return;
+      }
+      if (event.key === "Escape" && !dispatcherModal.hidden) {
+        closeDispatcherModal();
         return;
       }
       if (accountantRegisterModal && event.key === "Escape" && !accountantRegisterModal.hidden) {
@@ -1464,6 +1474,7 @@
         source: String(formData.get("source") || "").trim(),
         customer: String(formData.get("customer") || "").trim(),
         summary: String(formData.get("summary") || "").trim(),
+        remark: String(formData.get("remark") || "").trim(),
         paymentPrice: paymentPriceRaw === "" ? (allowEmptyCreateFields ? "" : Number.NaN) : Number(paymentPriceRaw),
         totalPrice: totalPriceRaw === "" ? (allowEmptyCreateFields ? "" : Number.NaN) : Number(totalPriceRaw),
         settlementPrice: settlementPriceRaw === "" ? (allowEmptyCreateFields ? "" : Number.NaN) : Number(settlementPriceRaw)
@@ -1597,6 +1608,7 @@
         source: String(formData.get("source") || "").trim(),
         customer: String(formData.get("customer") || "").trim(),
         summary: String(formData.get("summary") || "").trim(),
+        remark: String(formData.get("remark") || "").trim(),
         paymentPrice: 0,
         totalPrice: 0,
         settlementPrice: 0,
@@ -1656,6 +1668,7 @@
       closeRecordHistoryModal();
       closeInvoicePreviewModal();
       closeAnalysisModal();
+      closeDispatcherModal();
       closeAccountantModal();
       closeAccountantRegisterModal();
       closeChangePasswordModal();

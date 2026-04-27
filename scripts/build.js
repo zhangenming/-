@@ -10,6 +10,10 @@ const SOURCE_BUILD_INFO_FILE = path.join(ROOT_DIR, "build-info.json");
 const TARGET_HTML_FILE = path.join(DIST_DIR, "派单结算录入.html");
 const TARGET_PUBLIC_DIR = path.join(DIST_DIR, "public");
 const TARGET_BUILD_INFO_FILE = path.join(DIST_DIR, "build-info.json");
+const APP_ENV = String(process.env.APP_ENV || "production").trim().toLowerCase() === "development"
+  ? "development"
+  : "production";
+const ROOT_HTML_BASENAME = path.basename(SOURCE_HTML_FILE);
 
 async function readJsonFile(filePath) {
   try {
@@ -23,6 +27,13 @@ async function readJsonFile(filePath) {
   }
 }
 
+function formatBuildVersion(baseVersion, buildNumber) {
+  const normalizedBaseVersion = String(baseVersion || "1.0.0").trim() || "1.0.0";
+  return Number.isInteger(buildNumber) && buildNumber > 0
+    ? `${normalizedBaseVersion}.${buildNumber}`
+    : normalizedBaseVersion;
+}
+
 async function createBuildInfo() {
   const packageJson = await readJsonFile(PACKAGE_FILE);
   const previousBuildInfo = await readJsonFile(SOURCE_BUILD_INFO_FILE);
@@ -34,13 +45,25 @@ async function createBuildInfo() {
     : 1;
 
   return {
-    version: `${baseVersion}.${buildNumber}`,
+    version: formatBuildVersion(baseVersion, buildNumber),
     baseVersion,
     buildNumber,
     builtAt: new Date().toISOString(),
+    appEnv: APP_ENV,
     html: path.basename(SOURCE_HTML_FILE),
     publicDir: path.basename(SOURCE_PUBLIC_DIR)
   };
+}
+
+async function copyAdditionalHtmlFiles() {
+  const entries = await fs.readdir(ROOT_DIR, { withFileTypes: true });
+  const htmlFiles = entries
+    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".html") && entry.name !== ROOT_HTML_BASENAME)
+    .map((entry) => entry.name);
+
+  await Promise.all(htmlFiles.map(async (fileName) => {
+    await fs.copyFile(path.join(ROOT_DIR, fileName), path.join(DIST_DIR, fileName));
+  }));
 }
 
 async function main() {
@@ -48,6 +71,7 @@ async function main() {
   await fs.rm(DIST_DIR, { recursive: true, force: true });
   await fs.mkdir(DIST_DIR, { recursive: true });
   await fs.copyFile(SOURCE_HTML_FILE, TARGET_HTML_FILE);
+  await copyAdditionalHtmlFiles();
   await fs.cp(SOURCE_PUBLIC_DIR, TARGET_PUBLIC_DIR, { recursive: true });
   const buildInfoJson = `${JSON.stringify(buildInfo, null, 2)}\n`;
   await fs.writeFile(SOURCE_BUILD_INFO_FILE, buildInfoJson, "utf8");
