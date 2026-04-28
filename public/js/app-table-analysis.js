@@ -182,6 +182,8 @@
 
     function normalizeRecordCheckStatus(rawValue) {
       const status = String(rawValue || "").trim().toLowerCase();
+      if (status === "partial_refunded" || status === "部分退款") return "partial_refunded";
+      if (status === "refunded" || status === "退款") return "refunded";
       if (status === "completed" || status === "已完成" || status.includes("待结算")) return "completed";
       if (status === "checked" || status === "已确认" || status.includes("待完成")) return "checked";
       if (status === "returned" || status === "已退单") return "returned";
@@ -280,9 +282,11 @@
         const status = getRecordWorkflowStatusKey(item);
         if (status === "checked") return 1;
         if (status === "completed") return 2;
+        if (status === "partial_refunded") return 2.5;
         if (status === "settled") return 3;
         if (status === "uploaded") return 4;
         if (status === "returned") return 5;
+        if (status === "refunded") return 6;
         return 0;
       }
       if (key === "settled") {
@@ -507,12 +511,12 @@
       const rawStatusValues = Array.from(
         new Set(scopedRecords.map((item) => getRecordWorkflowStatusFilterLabel(item)))
       );
-      const statusValues = ["已接待/待确认", "已确认/待完成", "已完成/待结算", "已结算/待上传", "已上传/待打款", "已退单"]
+      const statusValues = ["已接待/待确认", "已确认/待完成", "已完成/待结算", "部分退款", "已结算/待上传", "已上传/待打款", "已打款", "退款", "已退单"]
         .filter((value) => rawStatusValues.includes(value));
       const rawSettledValues = Array.from(
         new Set(scopedRecords.map((item) => getRecordSettlementFilterLabel(item)).filter(Boolean))
       );
-      const settledValues = ["已完成/待结算", "已结算/待上传", "已上传/待打款"]
+      const settledValues = ["已完成/待结算", "已结算/待上传", "已上传/待打款", "已打款"]
         .filter((value) => rawSettledValues.includes(value));
 
       if (filterState.month && !monthValues.includes(filterState.month)) {

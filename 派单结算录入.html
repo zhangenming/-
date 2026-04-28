@@ -128,13 +128,6 @@
         <button id="openAnalysisModalBtn" class="btn-secondary" type="button">分析数据</button>
         <button id="openRecycleModalBtn" class="btn-secondary" type="button">回收站</button>
       </div>
-      <div id="requestLogPanel" class="request-log-panel" hidden>
-        <div class="request-log-panel-top">
-          <span class="request-log-panel-title">提示记录</span>
-        </div>
-        <div id="requestLogList" class="request-log-list"></div>
-        <div id="requestLogEmptyState" class="request-log-empty">暂无提示记录。</div>
-      </div>
       <div class="app-side-footer">
         <div class="account-panel">
           <div class="account-panel-top">
@@ -191,13 +184,6 @@
         </div>
       </div>
       <div id="appStatusHint" class="login-request-hint app-status-hint idle" aria-live="polite" hidden></div>
-      <section id="invoiceSummaryPanel" class="invoice-summary-panel" hidden>
-        <div class="invoice-summary-head">
-          <h3 id="invoiceSummaryTitle" class="invoice-summary-title">发票</h3>
-          <span id="invoiceSummaryMeta" class="invoice-summary-meta"></span>
-        </div>
-        <div id="invoiceSummaryList" class="invoice-summary-list"></div>
-      </section>
       <div class="table-wrap">
         <table>
           <colgroup>
@@ -360,7 +346,7 @@
               </th>
               <th><button class="sort-btn" type="button" data-key="customer" data-label="客户">客户</button></th>
               <th><button class="sort-btn" type="button" data-key="summary" data-label="任务简介">任务简介</button></th>
-              <th><button class="sort-btn" type="button" data-key="remark" data-label="备注">备注</button></th>
+              <th class="data-col-remark"><button class="sort-btn" type="button" data-key="remark" data-label="备注">备注</button></th>
               <th class="data-col-payment"><button class="sort-btn" type="button" data-key="paymentPrice" data-label="付款价">付款价</button></th>
               <th class="data-col-total"><button class="sort-btn" type="button" data-key="totalPrice" data-label="会计价">会计价</button></th>
               <th class="data-col-premium"><button class="sort-btn" type="button" data-key="premiumPrice" data-label="溢价">溢价</button></th>
@@ -578,7 +564,6 @@
           />
         </div>
         <div class="field field-wide row form-actions">
-          <button id="recordReturnBtn" class="btn-danger" type="button" hidden>退单</button>
           <button id="recordSubmitBtn" class="btn-primary" type="submit">保存数据</button>
         </div>
       </form>
@@ -587,8 +572,8 @@
 
   <div id="checkModal" class="modal-overlay" hidden>
     <section class="card modal-card check-modal-card">
-      <div class="row" style="margin-top: 0; margin-bottom: 10px;">
-        <h2 style="margin: 0; font-size: 20px;">确认数据</h2>
+      <div class="check-modal-header">
+        <h2 class="check-modal-title">确认数据</h2>
       </div>
       <p id="checkFormHint" class="login-request-hint form-request-hint idle" aria-live="polite" hidden></p>
       <form id="checkForm" class="check-form" autocomplete="off" novalidate>
@@ -629,8 +614,8 @@
 
   <div id="completeModal" class="modal-overlay" hidden>
     <section class="card modal-card check-modal-card complete-modal-card">
-      <div class="row complete-modal-header" style="margin-top: 0; margin-bottom: 10px;">
-        <h2 id="completeModalTitle" style="margin: 0; font-size: 20px;">完成数据</h2>
+      <div class="complete-modal-header">
+        <h2 id="completeModalTitle" class="complete-modal-title">完成数据</h2>
       </div>
       <p id="completeFormHint" class="login-request-hint form-request-hint idle" aria-live="polite" hidden></p>
       <form id="completeForm" class="check-form complete-form" autocomplete="off" novalidate>
@@ -667,6 +652,40 @@
         </div>
       </div>
       <div id="returnPriceModalContent" class="return-price-content"></div>
+    </section>
+  </div>
+
+  <div id="refundModal" class="modal-overlay" hidden>
+    <section class="card modal-card refund-modal-card" tabindex="-1">
+      <div class="refund-modal-top">
+        <div class="refund-heading">
+          <h2 class="refund-title">退款</h2>
+          <p id="refundModalMeta" class="refund-meta"></p>
+        </div>
+      </div>
+      <p id="refundFormHint" class="login-request-hint form-request-hint idle" aria-live="polite" hidden></p>
+      <form id="refundForm" class="refund-form" autocomplete="off" novalidate>
+        <input id="refundRecordId" type="hidden" />
+        <div class="refund-current-price">
+          <span class="refund-current-label">当前付款价</span>
+          <strong id="refundCurrentPaymentText" class="refund-current-value">0.00</strong>
+        </div>
+        <div class="field refund-price-field">
+          <label for="refundPaymentPrice">退款后付款价</label>
+          <input
+            id="refundPaymentPrice"
+            name="paymentPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+            autocomplete="off"
+          />
+        </div>
+        <div class="row form-actions refund-actions">
+          <button class="btn-primary" type="submit">提交退款</button>
+        </div>
+      </form>
     </section>
   </div>
 
@@ -727,25 +746,11 @@
         <div class="settlement-detail-heading">
           <h2 class="settlement-detail-title">
             <span>结算详细</span>
-            <span id="bossSettlementDetailTitleCount" class="settlement-detail-title-count">0 条</span>
+            <span id="bossSettlementDetailTitleCount" class="settlement-detail-title-count" hidden></span>
           </h2>
           <p id="bossSettlementDetailMeta" class="settlement-detail-meta"></p>
         </div>
       </div>
-      <section class="settlement-detail-summary">
-        <article class="settlement-detail-summary-card">
-          <span class="settlement-detail-summary-label">会计</span>
-          <strong id="bossSettlementDetailAccountantCount" class="settlement-detail-summary-value">0 位</strong>
-        </article>
-        <article class="settlement-detail-summary-card">
-          <span class="settlement-detail-summary-label">发票进度</span>
-          <strong id="bossSettlementDetailInvoiceProgress" class="settlement-detail-summary-value">0/0</strong>
-        </article>
-        <article class="settlement-detail-summary-card">
-          <span class="settlement-detail-summary-label">结算价合计</span>
-          <strong id="bossSettlementDetailAmount" class="settlement-detail-summary-value">0.00 元</strong>
-        </article>
-      </section>
       <div id="bossSettlementDetailList" class="settlement-detail-list"></div>
     </section>
   </div>

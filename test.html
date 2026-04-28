@@ -291,7 +291,7 @@
 
     async function fetchAccountantsOnce(loginAccount, startedAt, requestTime) {
       const headers = loginAccount
-        ? { "x-dispatch-account": loginAccount }
+        ? { "x-dispatch-account": encodeURIComponent(loginAccount) }
         : {};
 
       statusNode.textContent = `最近请求时间：${requestTime}`;

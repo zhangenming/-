@@ -34,7 +34,6 @@ const INVOICE_IMAGE_DIR = path.join(DATA_DIR, "invoice-images");
 const INVOICE_IMAGE_URL_PREFIX = "/invoice-images/";
 const SERVER_LOG_FILE = path.join(ROOT_DIR, "server.log");
 const DEV_LIVE_RELOAD_PATHNAME = "/__dev/events";
-const APP_EVENT_PATHNAME = "/api/events";
 const DISPATCHER_ACCOUNT_LIST = ["1", "a", "c", "e", "k", "开心财税"];
 const DISPATCHER_ACCOUNTS = new Set(DISPATCHER_ACCOUNT_LIST);
 const DISPATCHER_LOGIN_PASSWORD = "11";
@@ -56,6 +55,9 @@ const BOSS_LOGIN_CODE_TO_ACCOUNT = BOSS_LOGIN_ACCOUNTS.reduce((result, item) => 
   return result;
 }, Object.create(null));
 const DEFAULT_ACCOUNTANT_LOGIN_PASSWORD = "123456";
+const NON_SETTLEMENT_ACCOUNTANT_NAME = "不结算";
+const EXTERNAL_ACCOUNTANT_NAME = "外部人员";
+const BUILT_IN_ACCOUNTANT_NAMES = [NON_SETTLEMENT_ACCOUNTANT_NAME, EXTERNAL_ACCOUNTANT_NAME];
 const FEEDBACK_IMAGE_MAX_COUNT = 8;
 const FEEDBACK_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const SETTLEMENT_INVOICE_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
@@ -80,10 +82,6 @@ const devLiveReloadClients = new Set();
 let devLiveReloadHeartbeat = null;
 let devLiveReloadDebounceTimer = null;
 let devWatchersStarted = false;
-const appEventClients = new Set();
-let appEventHeartbeat = null;
-let appEventSequence = 0;
-let pendingAppDataChangeSet = null;
 
 const STATIC_MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -158,6 +156,46 @@ function appendHtmlBeforeBody(html, content) {
   }
 
   return `${html}\n${content}\n`;
+}
+
+function toInlineJson(value) {
+  return JSON.stringify(value).replace(/[<>&]/g, (char) => ({
+    "<": "\\u003c",
+    ">": "\\u003e",
+    "&": "\\u0026"
+  }[char]));
+}
+
+function buildEnvironmentIconSvg() {
+  const isDevelopment = APP_ENV === "development";
+  const label = isDevelopment ? "开发" : "生产";
+  const backgroundColor = isDevelopment ? "#fff7e6" : "#eaf7f1";
+  const borderColor = isDevelopment ? "#d89a2b" : "#0e7c66";
+  const textColor = isDevelopment ? "#8a5a10" : "#0b5c4b";
+  return [
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">',
+    `<rect width="64" height="64" rx="14" fill="${backgroundColor}"/>`,
+    `<rect x="4" y="4" width="56" height="56" rx="12" fill="none" stroke="${borderColor}" stroke-width="4"/>`,
+    `<text x="32" y="38" text-anchor="middle" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="24" font-weight="800" fill="${textColor}">${label}</text>`,
+    "</svg>"
+  ].join("");
+}
+
+function getEnvironmentIconHref() {
+  return `data:image/svg+xml,${encodeURIComponent(buildEnvironmentIconSvg())}`;
+}
+
+function withRuntimeConfig(html) {
+  const iconHref = getEnvironmentIconHref();
+  const content = [
+    `<link rel="icon" type="image/svg+xml" href="${iconHref}" />`,
+    `<link rel="shortcut icon" type="image/svg+xml" href="${iconHref}" />`,
+    `<script>window.__APP_ENV__ = ${toInlineJson(APP_ENV)};</script>`
+  ].join("\n  ");
+  if (html.includes("</head>")) {
+    return html.replace("</head>", `  ${content}\n</head>`);
+  }
+  return `${content}\n${html}`;
 }
 
 function withDevLiveReload(html) {
@@ -245,94 +283,6 @@ function scheduleDevLiveReload(changedPath) {
       time: getCurrentBeijingDateTime()
     });
   }, 120);
-}
-
-function writeSseEvent(res, eventName, payload) {
-  const lines = [];
-  if (eventName) {
-    lines.push(`event: ${eventName}`);
-  }
-  if (typeof payload !== "undefined") {
-    lines.push(`data: ${JSON.stringify(payload)}`);
-  }
-  res.write(`${lines.join("\n")}\n\n`);
-}
-
-function removeAppEventClient(client) {
-  appEventClients.delete(client);
-  if (!appEventClients.size && appEventHeartbeat) {
-    clearInterval(appEventHeartbeat);
-    appEventHeartbeat = null;
-  }
-}
-
-function startAppEventHeartbeat() {
-  if (appEventHeartbeat || !appEventClients.size) {
-    return;
-  }
-
-  appEventHeartbeat = setInterval(() => {
-    if (!appEventClients.size) {
-      clearInterval(appEventHeartbeat);
-      appEventHeartbeat = null;
-      return;
-    }
-
-    for (const client of [...appEventClients]) {
-      try {
-        client.res.write(": ping\n\n");
-      } catch {
-        removeAppEventClient(client);
-      }
-    }
-  }, 15000);
-}
-
-function normalizeAppDataChanges(changes) {
-  const allowed = new Set(["records", "recycleBin", "accountantOperationLogs"]);
-  return Array.from(
-    new Set(
-      (Array.isArray(changes) ? changes : [changes])
-        .map((item) => normalizeText(item, 64))
-        .filter((item) => allowed.has(item))
-    )
-  );
-}
-
-function publishAppDataChanges(changes) {
-  const normalizedChanges = normalizeAppDataChanges(changes);
-  if (!normalizedChanges.length || !appEventClients.size) {
-    return;
-  }
-
-  appEventSequence += 1;
-  const payload = {
-    seq: appEventSequence,
-    changes: normalizedChanges,
-    at: getCurrentBeijingDateTime()
-  };
-
-  for (const client of [...appEventClients]) {
-    try {
-      writeSseEvent(client.res, "app-data", payload);
-    } catch {
-      removeAppEventClient(client);
-    }
-  }
-}
-
-function queueAppDataChanges(changes) {
-  const normalizedChanges = normalizeAppDataChanges(changes);
-  if (!normalizedChanges.length) {
-    return;
-  }
-
-  if (pendingAppDataChangeSet) {
-    normalizedChanges.forEach((item) => pendingAppDataChangeSet.add(item));
-    return;
-  }
-
-  publishAppDataChanges(normalizedChanges);
 }
 
 function isDevLiveReloadSource(relativePath) {
@@ -477,7 +427,6 @@ async function writeRecords(records) {
   const payload = `${JSON.stringify(records, null, 2)}\n`;
   await fs.writeFile(tempFile, payload, "utf8");
   await fs.rename(tempFile, DATA_FILE);
-  queueAppDataChanges("records");
 }
 
 async function writeRecycleBin(recycleBinRecords) {
@@ -486,7 +435,6 @@ async function writeRecycleBin(recycleBinRecords) {
   const payload = `${JSON.stringify(recycleBinRecords, null, 2)}\n`;
   await fs.writeFile(tempFile, payload, "utf8");
   await fs.rename(tempFile, RECYCLE_BIN_FILE);
-  queueAppDataChanges("recycleBin");
 }
 
 async function writeAccountants(accountants) {
@@ -511,45 +459,10 @@ async function writeAccountantOperationLogs(logs) {
   const payload = `${JSON.stringify(logs, null, 2)}\n`;
   await fs.writeFile(tempFile, payload, "utf8");
   await fs.rename(tempFile, ACCOUNTANT_OPERATION_LOG_FILE);
-  queueAppDataChanges("accountantOperationLogs");
 }
 
 function withWriteLock(task) {
-  const next = writeQueue.then(async () => {
-    const parentChangeSet = pendingAppDataChangeSet;
-    if (!parentChangeSet) {
-      pendingAppDataChangeSet = new Set();
-    }
-
-    try {
-      return await task();
-    } finally {
-      if (!parentChangeSet) {
-        const changes = Array.from(pendingAppDataChangeSet || []);
-        pendingAppDataChangeSet = null;
-        publishAppDataChanges(changes);
-      } else {
-        pendingAppDataChangeSet = parentChangeSet;
-      }
-    }
-  }, async () => {
-    const parentChangeSet = pendingAppDataChangeSet;
-    if (!parentChangeSet) {
-      pendingAppDataChangeSet = new Set();
-    }
-
-    try {
-      return await task();
-    } finally {
-      if (!parentChangeSet) {
-        const changes = Array.from(pendingAppDataChangeSet || []);
-        pendingAppDataChangeSet = null;
-        publishAppDataChanges(changes);
-      } else {
-        pendingAppDataChangeSet = parentChangeSet;
-      }
-    }
-  });
+  const next = writeQueue.then(task, task);
   writeQueue = next.catch(() => {});
   return next;
 }
@@ -741,7 +654,8 @@ function normalizeRecordSettlementState(value) {
     || normalized === "已结算"
     || normalized === "已结算/待上传"
     || normalized === "已上传"
-    || normalized === "已上传/待打款";
+    || normalized === "已上传/待打款"
+    || normalized === "已打款";
 }
 
 function normalizeMonthlySettlementState(value) {
@@ -764,6 +678,31 @@ function getNormalizedRecordSettlementFields(record) {
     isSettled,
     settledAt: isSettled ? normalizeDateTimeValue(source.settledAt) : "",
     settledBy: isSettled ? normalizeText(source.settledBy, 48) : ""
+  };
+}
+
+function normalizeRecordSettlementPaidState(value) {
+  if (value === true) return true;
+  if (value === false) return false;
+  if (typeof value === "number") return value === 1;
+  const normalized = normalizeText(value, 32).toLowerCase();
+  return normalized === "true"
+    || normalized === "1"
+    || normalized === "yes"
+    || normalized === "已打款";
+}
+
+function getNormalizedRecordSettlementPaymentFields(record) {
+  const source = record && typeof record === "object" ? record : {};
+  const isSettlementPaid = normalizeRecordSettlementPaidState(
+    Object.prototype.hasOwnProperty.call(source, "isSettlementPaid")
+      ? source.isSettlementPaid
+      : source.settlementPaid
+  );
+  return {
+    isSettlementPaid,
+    settlementPaidAt: isSettlementPaid ? normalizeDateTimeValue(source.settlementPaidAt) : "",
+    settlementPaidBy: isSettlementPaid ? normalizeText(source.settlementPaidBy, 48) : ""
   };
 }
 
@@ -915,6 +854,34 @@ function normalizeAccountantDisplayName(value) {
   return normalizeText(value, 48);
 }
 
+function isNonSettlementAccountantName(value) {
+  return normalizeAccountantDisplayName(value) === NON_SETTLEMENT_ACCOUNTANT_NAME;
+}
+
+function isBuiltInAccountantName(value) {
+  const normalizedName = normalizeAccountantDisplayName(value);
+  return BUILT_IN_ACCOUNTANT_NAMES.includes(normalizedName);
+}
+
+function shouldAutoCompleteAccountantRecord(value) {
+  return isBuiltInAccountantName(value);
+}
+
+function applyBuiltInAccountantCompletion(record, completedAt = getCurrentBeijingDateTime()) {
+  const source = record && typeof record === "object" ? record : {};
+  if (!shouldAutoCompleteAccountantRecord(source.accountant)) return source;
+  return {
+    ...source,
+    checkStatus: "completed",
+    checkedAt: "",
+    checkedBy: "",
+    completedAt: normalizeDateTimeValue(source.completedAt) || completedAt,
+    completedBy: normalizeText(source.completedBy, 48) || "系统",
+    returnedAt: "",
+    returnedBy: ""
+  };
+}
+
 function normalizeAccountantUsername(value) {
   return normalizeText(value, 64);
 }
@@ -1010,6 +977,9 @@ function isReservedAccountantUsername(username) {
 }
 
 function ensureAccountantUsernameAvailable(username, savedAccountants) {
+  if (isBuiltInAccountantName(username)) {
+    throw new Error("账号已被系统占用");
+  }
   if (isReservedAccountantUsername(username)) {
     throw new Error("账号已被系统占用");
   }
@@ -1021,6 +991,9 @@ function ensureAccountantUsernameAvailable(username, savedAccountants) {
 function ensureAccountantDisplayNameAvailable(displayName, savedAccountants, errorMessage = "别名已存在") {
   if (!displayName) {
     throw new Error(errorMessage);
+  }
+  if (isBuiltInAccountantName(displayName)) {
+    throw new Error("别名已被系统占用");
   }
   if (savedAccountants.some((item) => normalizeAccountantDisplayName(item.displayName) === displayName)) {
     throw new Error(errorMessage);
@@ -1180,8 +1153,18 @@ function buildScopedAccountantProfile(profile) {
   };
 }
 
+function decodeTransportLoginAccount(rawLoginAccount) {
+  const source = normalizeText(rawLoginAccount, 256);
+  if (!source) return "";
+  try {
+    return normalizeText(decodeURIComponent(source), 64);
+  } catch {
+    return normalizeText(source, 64);
+  }
+}
+
 async function resolveAuthSessionByLoginAccount(rawLoginAccount) {
-  const loginAccount = normalizeText(rawLoginAccount, 64);
+  const loginAccount = decodeTransportLoginAccount(rawLoginAccount);
   if (!loginAccount) return null;
   const resolvedAccount = resolveLoginAccountInput(loginAccount);
   const bossConfig = getBossLoginConfig(resolvedAccount);
@@ -1258,10 +1241,10 @@ const ACCOUNTANT_RECORD_HISTORY_VISIBLE_FIELDS = new Set([
   "dispatcher",
   "customer",
   "summary",
-  "remark",
   "settlementPrice",
   "checkStatus",
-  "isSettled"
+  "isSettled",
+  "isSettlementPaid"
 ]);
 
 function sanitizeRecordHistoryEntryForAccountant(rawEntry) {
@@ -1302,6 +1285,7 @@ function sanitizeRecordForAccountant(record) {
   const source = record && typeof record === "object" ? record : {};
   const settlementFields = getNormalizedRecordSettlementFields(source);
   const invoiceFields = getNormalizedRecordInvoiceFields(source);
+  const paymentFields = getNormalizedRecordSettlementPaymentFields(source);
   const settlementPrice = normalizeMoneyValue(source.settlementPrice);
   return {
     id: normalizeText(source.id, 120),
@@ -1311,7 +1295,6 @@ function sanitizeRecordForAccountant(record) {
     accountant: normalizeAccountantDisplayName(source.accountant),
     customer: normalizeText(source.customer, 120),
     summary: normalizeText(source.summary, 500),
-    remark: normalizeText(source.remark, 500),
     settlementPrice: Number.isFinite(settlementPrice) ? settlementPrice : "",
     checkStatus: normalizeText(source.checkStatus, 24).toLowerCase() || "pending",
     completedAt: normalizeDateTimeValue(source.completedAt),
@@ -1323,6 +1306,9 @@ function sanitizeRecordForAccountant(record) {
     invoiceUploadedAt: invoiceFields.invoiceUploadedAt,
     invoiceUploadedBy: invoiceFields.invoiceUploadedBy,
     invoiceUploadedByUsername: invoiceFields.invoiceUploadedByUsername,
+    isSettlementPaid: paymentFields.isSettlementPaid,
+    settlementPaidAt: paymentFields.settlementPaidAt,
+    settlementPaidBy: paymentFields.settlementPaidBy,
     operationHistory: sanitizeOperationHistoryForAccountant(source.operationHistory)
   };
 }
@@ -1373,7 +1359,16 @@ function canAccessAccountantOperationLog(session, entry) {
 }
 
 function scopeAccountantOperationLogsBySession(session, sourceLogs) {
-  return sourceLogs.filter((entry) => canAccessAccountantOperationLog(session, entry));
+  const scopedLogs = sourceLogs.filter((entry) => canAccessAccountantOperationLog(session, entry));
+  if (session?.role !== "accountant") return scopedLogs;
+  return scopedLogs.map((entry) => {
+    const sanitizedEntry = entry && typeof entry === "object" ? { ...entry } : {};
+    delete sanitizedEntry.remark;
+    if (sanitizedEntry.record && typeof sanitizedEntry.record === "object") {
+      sanitizedEntry.record = sanitizeRecordForAccountant(sanitizedEntry.record);
+    }
+    return sanitizedEntry;
+  });
 }
 
 function getDispatcherVisibleAccountantIdentifier(rawProfile) {
@@ -1510,6 +1505,7 @@ function buildAccountantProfiles(savedAccountants, namesFromRecords = []) {
   savedAccountants.forEach((item) => {
     const profile = normalizeAccountantProfile(item);
     if (!profile) return;
+    if (isBuiltInAccountantName(profile.displayName) || isBuiltInAccountantName(profile.username)) return;
     const current = byUsername.get(profile.username);
     if (!current) {
       byUsername.set(profile.username, profile);
@@ -1530,6 +1526,7 @@ function buildAccountantProfiles(savedAccountants, namesFromRecords = []) {
   namesFromRecords.forEach((rawDisplayName) => {
     const displayName = normalizeAccountantDisplayName(rawDisplayName);
     if (!displayName) return;
+    if (isBuiltInAccountantName(displayName)) return;
     const exists = Array.from(byUsername.values()).some(
       (profile) => normalizeAccountantDisplayName(profile.displayName) === displayName
     );
@@ -1579,14 +1576,20 @@ const RECORD_HISTORY_ACTION_LABELS = {
   updated: "修改",
   checked: "确认",
   completed: "完成",
+  partial_refunded: "部分退款",
+  refunded: "退款",
   returned: "退单",
   settled: "结算",
-  invoice_uploaded: "上传发票"
+  invoice_uploaded: "上传发票",
+  settlement_paid: "打款"
 };
 
 function getRecordWorkflowStatusLabelByKey(statusKey) {
+  if (statusKey === "paid") return "已打款";
   if (statusKey === "uploaded") return "已上传/待打款";
   if (statusKey === "settled") return "已结算/待上传";
+  if (statusKey === "partial_refunded") return "部分退款";
+  if (statusKey === "refunded") return "退款";
   if (statusKey === "completed") return "已完成/待结算";
   if (statusKey === "checked") return "已确认/待完成";
   if (statusKey === "returned") return "已退单";
@@ -1595,6 +1598,8 @@ function getRecordWorkflowStatusLabelByKey(statusKey) {
 
 function getRecordSettlementWorkflowStatusLabel(record) {
   const invoiceFields = getNormalizedRecordInvoiceFields(record);
+  const paymentFields = getNormalizedRecordSettlementPaymentFields(record);
+  if (paymentFields.isSettlementPaid) return getRecordWorkflowStatusLabelByKey("paid");
   if (invoiceFields.settlementInvoiceImage) return getRecordWorkflowStatusLabelByKey("uploaded");
   return getNormalizedRecordSettlementFields(record).isSettled
     ? getRecordWorkflowStatusLabelByKey("settled")
@@ -1660,6 +1665,14 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
   },
   { field: "invoiceUploadedAt", label: "发票上传时间", kind: "datetime" },
   { field: "invoiceUploadedBy", label: "发票上传人", kind: "text" },
+  {
+    field: "isSettlementPaid",
+    label: "打款",
+    kind: "text",
+    getValue: (record) => getNormalizedRecordSettlementPaymentFields(record).isSettlementPaid ? "已打款" : ""
+  },
+  { field: "settlementPaidAt", label: "打款时间", kind: "datetime" },
+  { field: "settlementPaidBy", label: "打款人", kind: "text" },
   { field: "date", label: "日期", kind: "text" },
   {
     field: "isMonthlySettlement",
@@ -1859,9 +1872,11 @@ function ensureRecordIds(sourceRecords) {
     const normalizedCheckedAt = normalizeDateTimeValue(current.checkedAt);
     const normalizedCompletedAt = normalizeDateTimeValue(current.completedAt);
     const normalizedReturnedAt = normalizeDateTimeValue(current.returnedAt);
+    const isBuiltInAccountantRecord = shouldAutoCompleteAccountantRecord(current.accountant);
     const normalizedHistory = normalizeOperationHistory(current.operationHistory);
     const normalizedSettlementFields = getNormalizedRecordSettlementFields(current);
     const normalizedInvoiceFields = getNormalizedRecordInvoiceFields(current);
+    const normalizedSettlementPaymentFields = getNormalizedRecordSettlementPaymentFields(current);
     const normalizedMonthlySettlement = normalizeMonthlySettlementState(current.isMonthlySettlement);
     const hasNormalizedHistory = Array.isArray(current.operationHistory)
       && JSON.stringify(current.operationHistory) === JSON.stringify(normalizedHistory);
@@ -1873,7 +1888,20 @@ function ensureRecordIds(sourceRecords) {
       && normalizeDateTimeValue(current.invoiceUploadedAt || current.settlementInvoiceUploadedAt) === normalizedInvoiceFields.invoiceUploadedAt
       && normalizeText(current.invoiceUploadedBy || current.settlementInvoiceUploadedBy, 48) === normalizedInvoiceFields.invoiceUploadedBy
       && normalizeAccountantUsername(current.invoiceUploadedByUsername || current.settlementInvoiceUploadedByUsername) === normalizedInvoiceFields.invoiceUploadedByUsername;
+    const hasNormalizedSettlementPayment = current.isSettlementPaid === normalizedSettlementPaymentFields.isSettlementPaid
+      && normalizeDateTimeValue(current.settlementPaidAt) === normalizedSettlementPaymentFields.settlementPaidAt
+      && normalizeText(current.settlementPaidBy, 48) === normalizedSettlementPaymentFields.settlementPaidBy;
     const hasNormalizedMonthlySettlement = current.isMonthlySettlement === normalizedMonthlySettlement;
+    const hasBuiltInCompletion = !isBuiltInAccountantRecord
+      || (
+        normalizeText(current.checkStatus, 24).toLowerCase() === "completed"
+        && normalizeText(current.checkedAt, 64) === ""
+        && normalizeText(current.checkedBy, 48) === ""
+        && Boolean(normalizeDateTimeValue(current.completedAt))
+        && Boolean(normalizeText(current.completedBy, 48))
+        && normalizeText(current.returnedAt, 64) === ""
+        && normalizeText(current.returnedBy, 48) === ""
+      );
     if (
       item
       && typeof item === "object"
@@ -1885,12 +1913,14 @@ function ensureRecordIds(sourceRecords) {
       && hasNormalizedHistory
       && hasNormalizedSettlement
       && hasNormalizedInvoice
+      && hasNormalizedSettlementPayment
       && hasNormalizedMonthlySettlement
+      && hasBuiltInCompletion
     ) {
       return item;
     }
     changed = true;
-    return {
+    return applyBuiltInAccountantCompletion({
       ...current,
       id: currentId || generateId("rec"),
       createdAt: normalizedCreatedAt,
@@ -1900,8 +1930,9 @@ function ensureRecordIds(sourceRecords) {
       isMonthlySettlement: normalizedMonthlySettlement,
       operationHistory: normalizedHistory,
       ...normalizedSettlementFields,
-      ...normalizedInvoiceFields
-    };
+      ...normalizedInvoiceFields,
+      ...normalizedSettlementPaymentFields
+    }, normalizedCreatedAt);
   });
   return { records, changed };
 }
@@ -1925,13 +1956,16 @@ async function loadAccountantsWithMigration() {
 
 function normalizeRecord(input) {
   const normalizedDate = normalizeText(input.date, 32);
+  const createdAt = getCurrentBeijingDateTime();
+  const accountant = normalizeText(input.accountant, 48);
+  const shouldAutoComplete = shouldAutoCompleteAccountantRecord(accountant);
   const item = {
     id: generateId("rec"),
-    createdAt: getCurrentBeijingDateTime(),
+    createdAt,
     date: normalizedDate || getCurrentBeijingDate(),
     isMonthlySettlement: normalizeMonthlySettlementState(input.isMonthlySettlement),
     dispatcher: normalizeDispatcherTag(input.dispatcher) || normalizeText(input.dispatcher, 48),
-    accountant: normalizeText(input.accountant, 48),
+    accountant,
     platform: normalizeText(input.platform, 80),
     shopName: normalizeText(input.shopName, 160),
     orderNo: normalizeText(input.orderNo, 120),
@@ -1949,8 +1983,14 @@ function normalizeRecord(input) {
     invoiceUploadedAt: "",
     invoiceUploadedBy: "",
     invoiceUploadedByUsername: "",
-    checkStatus: "pending",
+    isSettlementPaid: false,
+    settlementPaidAt: "",
+    settlementPaidBy: "",
+    checkStatus: shouldAutoComplete ? "completed" : "pending",
     checkedAt: "",
+    completedAt: shouldAutoComplete ? createdAt : "",
+    completedBy: shouldAutoComplete ? "系统" : "",
+    customerFeedback: "",
     serviceFeedbackImages: normalizeStoredFeedbackImages(input.serviceFeedbackImages)
   };
 
@@ -1965,6 +2005,7 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
   const source = payload && typeof payload === "object" ? payload : {};
   const currentSettlementFields = getNormalizedRecordSettlementFields(current);
   const currentInvoiceFields = getNormalizedRecordInvoiceFields(current);
+  const currentSettlementPaymentFields = getNormalizedRecordSettlementPaymentFields(current);
   const targetStatus = normalizeText(source.status, 24).toLowerCase();
   const shouldReturn = targetStatus === "returned";
   const returnedPriceSnapshot = shouldReturn ? buildReturnedPriceSnapshot(current, source.returnedPriceSnapshot) : null;
@@ -2026,6 +2067,7 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
     ...current,
     ...currentSettlementFields,
     ...currentInvoiceFields,
+    ...currentSettlementPaymentFields,
     date: nextDate,
     isMonthlySettlement: nextIsMonthlySettlement,
     dispatcher: nextDispatcher,
@@ -2065,11 +2107,69 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
       settlementInvoiceImage: null,
       invoiceUploadedAt: "",
       invoiceUploadedBy: "",
-      invoiceUploadedByUsername: ""
+      invoiceUploadedByUsername: "",
+      isSettlementPaid: false,
+      settlementPaidAt: "",
+      settlementPaidBy: ""
     };
   }
 
-  return nextRecord;
+  return applyBuiltInAccountantCompletion(nextRecord);
+}
+
+function moneyToCents(value) {
+  const amount = normalizeMoneyValue(value);
+  return Number.isFinite(amount) ? Math.round(amount * 100) : Number.NaN;
+}
+
+function isRefundableCheckStatus(value) {
+  const status = normalizeText(value, 24).toLowerCase();
+  return status === "completed" || status === "partial_refunded";
+}
+
+function buildRefundRecordUpdate(currentRecord, payload, session) {
+  const current = currentRecord && typeof currentRecord === "object" ? currentRecord : {};
+  const source = payload && typeof payload === "object" ? payload : {};
+  const currentSettlementFields = getNormalizedRecordSettlementFields(current);
+  const currentInvoiceFields = getNormalizedRecordInvoiceFields(current);
+  const currentStatus = normalizeText(current.checkStatus, 24).toLowerCase();
+  if (!isRefundableCheckStatus(currentStatus)) {
+    throw new Error("当前仅支持已完成订单退款。");
+  }
+  if (currentSettlementFields.isSettled || currentInvoiceFields.settlementInvoiceImage) {
+    throw new Error("已结算订单请先处理结算记录。");
+  }
+
+  const currentPaymentPrice = normalizeMoneyValue(current.paymentPrice);
+  const nextPaymentPrice = normalizeMoneyValue(source.paymentPrice);
+  if (!Number.isFinite(currentPaymentPrice) || currentPaymentPrice <= 0) {
+    throw new Error("当前付款价无效。");
+  }
+  if (!Number.isFinite(nextPaymentPrice) || nextPaymentPrice < 0) {
+    throw new Error("退款后付款价格式无效。");
+  }
+
+  const currentCents = moneyToCents(currentPaymentPrice);
+  const nextCents = moneyToCents(nextPaymentPrice);
+  if (nextCents > currentCents) {
+    throw new Error("退款后付款价需要小于或等于当前付款价。");
+  }
+  if (nextCents === currentCents) {
+    throw new Error("退款后付款价需要小于当前付款价。");
+  }
+
+  const nextStatus = nextCents === 0 ? "refunded" : "partial_refunded";
+  const operatedAt = getCurrentBeijingDateTime();
+  const operatedBy = normalizeText(session?.account, 48);
+  return {
+    ...current,
+    ...currentSettlementFields,
+    ...currentInvoiceFields,
+    paymentPrice: nextPaymentPrice,
+    checkStatus: nextStatus,
+    refundedAt: operatedAt,
+    refundedBy: operatedBy
+  };
 }
 
 function isAccountantEditableRecordPayload(payload) {
@@ -2102,7 +2202,7 @@ async function serveHtmlFile(res, filePath, options = {}) {
       res.end();
       return;
     }
-    res.end(withDevLiveReload(html));
+    res.end(withDevLiveReload(withRuntimeConfig(html)));
   } catch (error) {
     if (error && error.code === "ENOENT" && missingMessage) {
       sendText(res, 503, missingMessage);
@@ -2208,49 +2308,6 @@ async function serveBuildInfo(res, options = {}) {
     }
     throw error;
   }
-}
-
-async function serveAppEvents(req, res) {
-  if (req.method === "OPTIONS") {
-    setApiCorsHeaders(res);
-    res.writeHead(204);
-    res.end();
-    return;
-  }
-
-  if (req.method !== "GET") {
-    sendJson(res, 405, { error: "方法不支持" });
-    return;
-  }
-
-  const session = await getAuthSessionFromRequest(req);
-  if (!session) {
-    sendJson(res, 401, { error: "登录已失效，请重新登录。" });
-    return;
-  }
-
-  setApiCorsHeaders(res);
-  res.writeHead(200, {
-    "Content-Type": "text/event-stream; charset=utf-8",
-    "Cache-Control": "no-store",
-    Connection: "keep-alive",
-    "X-Accel-Buffering": "no"
-  });
-
-  const client = { res };
-  appEventClients.add(client);
-  startAppEventHeartbeat();
-  res.write("retry: 2000\n\n");
-  writeSseEvent(res, "ready", {
-    seq: appEventSequence,
-    at: getCurrentBeijingDateTime()
-  });
-
-  const cleanup = () => {
-    removeAppEventClient(client);
-  };
-  req.on("close", cleanup);
-  req.on("error", cleanup);
 }
 
 function toStaticMimeType(filePath) {
@@ -2490,7 +2547,7 @@ async function serveRecordSettlement(req, res) {
           };
         }
         const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
-        if (currentSettlementFields.isSettled || checkStatus !== "completed") {
+        if (currentSettlementFields.isSettled || (checkStatus !== "completed" && checkStatus !== "partial_refunded")) {
           skippedRecordIds.push(recordId);
           return {
             ...current,
@@ -2582,7 +2639,9 @@ async function serveRecordInvoiceUpload(req, res) {
         const settlementFields = getNormalizedRecordSettlementFields(current);
         const invoiceFields = getNormalizedRecordInvoiceFields(current);
         const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
-        if (!settlementFields.isSettled || invoiceFields.settlementInvoiceImage || checkStatus !== "completed") return;
+        if (!settlementFields.isSettled
+          || invoiceFields.settlementInvoiceImage
+          || (checkStatus !== "completed" && checkStatus !== "partial_refunded")) return;
         targetIndexes.push(index);
       });
 
@@ -2656,6 +2715,130 @@ async function serveRecordInvoiceUpload(req, res) {
     });
   } catch (error) {
     sendJson(res, 400, { error: error.message || "发票上传失败" });
+  }
+}
+
+async function serveRecordSettlementPayout(req, res) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const session = await requireAuthSession(req, res, ["boss"]);
+  if (!session) return;
+
+  if (req.method !== "PATCH") {
+    sendJson(res, 405, { error: "方法不支持" });
+    return;
+  }
+
+  try {
+    const body = await parseBody(req);
+    const recordIds = Array.from(
+      new Set(
+        (Array.isArray(body?.recordIds) ? body.recordIds : [])
+          .map((item) => normalizeText(item, 120))
+          .filter(Boolean)
+      )
+    );
+    if (!recordIds.length) {
+      sendJson(res, 400, { error: "请选择要打款的数据。" });
+      return;
+    }
+
+    const recordIdSet = new Set(recordIds);
+    const paidAt = getCurrentBeijingDateTime();
+    const paidBy = normalizeText(session.account, 48) || BOSS_LOGIN_ACCOUNT;
+
+    const result = await withWriteLock(async () => {
+      const all = await readRecords();
+      const migration = ensureRecordIds(all);
+      const foundRecordIds = new Set();
+      const paidRecordIds = [];
+      const skippedRecordIds = [];
+
+      const nextRecords = migration.records.map((item) => {
+        const current = item && typeof item === "object" ? item : {};
+        const recordId = normalizeText(current.id, 120);
+        const settlementFields = getNormalizedRecordSettlementFields(current);
+        const invoiceFields = getNormalizedRecordInvoiceFields(current);
+        const paymentFields = getNormalizedRecordSettlementPaymentFields(current);
+        if (!recordId || !recordIdSet.has(recordId)) {
+          return {
+            ...current,
+            ...settlementFields,
+            ...invoiceFields,
+            ...paymentFields
+          };
+        }
+
+        foundRecordIds.add(recordId);
+        const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
+        if (!canAccessRecord(session, current)
+          || !settlementFields.isSettled
+          || !invoiceFields.settlementInvoiceImage
+          || paymentFields.isSettlementPaid
+          || (checkStatus !== "completed" && checkStatus !== "partial_refunded")) {
+          skippedRecordIds.push(recordId);
+          return {
+            ...current,
+            ...settlementFields,
+            ...invoiceFields,
+            ...paymentFields
+          };
+        }
+
+        const beforeRecord = {
+          ...current,
+          ...settlementFields,
+          ...invoiceFields,
+          ...paymentFields
+        };
+        const nextRecord = {
+          ...beforeRecord,
+          isSettlementPaid: true,
+          settlementPaidAt: paidAt,
+          settlementPaidBy: paidBy
+        };
+        paidRecordIds.push(recordId);
+        return appendRecordHistory(nextRecord, buildRecordHistoryEntry({
+          beforeRecord,
+          afterRecord: nextRecord,
+          session,
+          actionKey: "settlement_paid",
+          actionLabel: RECORD_HISTORY_ACTION_LABELS.settlement_paid,
+          operatedAt: paidAt,
+          operatedBy: paidBy
+        }));
+      });
+
+      recordIds.forEach((recordId) => {
+        if (!foundRecordIds.has(recordId)) {
+          skippedRecordIds.push(recordId);
+        }
+      });
+
+      if (migration.changed || paidRecordIds.length > 0) {
+        await writeRecords(nextRecords);
+      }
+
+      return {
+        records: scopeRecordsBySession(session, nextRecords),
+        paidRecordIds,
+        skippedRecordIds
+      };
+    });
+
+    sendJson(res, 200, {
+      ok: true,
+      records: result.records,
+      paidRecordIds: result.paidRecordIds,
+      skippedRecordIds: result.skippedRecordIds
+    });
+  } catch (error) {
+    sendJson(res, 400, { error: error.message || "打款失败" });
   }
 }
 
@@ -2771,6 +2954,7 @@ async function serveRecordById(req, res, recordIdRaw) {
           const targetStatus = normalizeText(body.status, 24).toLowerCase();
           const shouldComplete = targetStatus === "completed";
           const shouldReturn = targetStatus === "returned";
+          const shouldRefund = targetStatus === "refunded" || targetStatus === "partial_refunded";
           const shouldEditRecord = isAccountantEditableRecordPayload(body);
           const operatedByUsername = normalizeAccountantUsername(session.account);
           const operatedBy = getSessionAccountantDisplayName(session) || operatedByUsername;
@@ -2780,6 +2964,10 @@ async function serveRecordById(req, res, recordIdRaw) {
             ? normalizeText(body.customerFeedback, 1000)
             : normalizeText(current.customerFeedback, 1000);
           const currentServiceFeedbackImages = normalizeStoredFeedbackImages(current.serviceFeedbackImages);
+
+          if (shouldRefund) {
+            throw new Error("当前账号无退款权限。");
+          }
 
           if (shouldComplete) {
             const serviceFeedbackImages = Object.prototype.hasOwnProperty.call(body, "serviceFeedbackImages")
@@ -2830,7 +3018,10 @@ async function serveRecordById(req, res, recordIdRaw) {
               settlementInvoiceImage: null,
               invoiceUploadedAt: "",
               invoiceUploadedBy: "",
-              invoiceUploadedByUsername: ""
+              invoiceUploadedByUsername: "",
+              isSettlementPaid: false,
+              settlementPaidAt: "",
+              settlementPaidBy: ""
             };
           } else if (shouldEditRecord) {
             updatedRecord = buildEditableRecordUpdate(current, {
@@ -2899,15 +3090,20 @@ async function serveRecordById(req, res, recordIdRaw) {
             await writeAccountantOperationLogs(logs);
           }
         } else {
-          updatedRecord = buildEditableRecordUpdate(current, body, session);
+          const targetStatus = normalizeText(body.status, 24).toLowerCase();
+          const shouldRefund = targetStatus === "refunded" || targetStatus === "partial_refunded";
+          updatedRecord = shouldRefund
+            ? buildRefundRecordUpdate(current, body, session)
+            : buildEditableRecordUpdate(current, body, session);
+          const actionKey = shouldRefund
+            ? normalizeText(updatedRecord.checkStatus, 24).toLowerCase()
+            : (targetStatus === "returned" ? "returned" : "updated");
           updatedRecord = appendRecordHistory(updatedRecord, buildRecordHistoryEntry({
             beforeRecord: current,
             afterRecord: updatedRecord,
             session,
-            actionKey: normalizeText(body.status, 24).toLowerCase() === "returned" ? "returned" : "updated",
-            actionLabel: normalizeText(body.status, 24).toLowerCase() === "returned"
-              ? RECORD_HISTORY_ACTION_LABELS.returned
-              : RECORD_HISTORY_ACTION_LABELS.updated
+            actionKey,
+            actionLabel: RECORD_HISTORY_ACTION_LABELS[actionKey] || RECORD_HISTORY_ACTION_LABELS.updated
           }));
           migration.records[index] = updatedRecord;
           await writeRecords(migration.records);
@@ -3722,11 +3918,6 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (pathname === APP_EVENT_PATHNAME) {
-      await serveAppEvents(req, res);
-      return;
-    }
-
     if (pathname === "/api/records") {
       await serveRecords(req, res);
       return;
@@ -3739,6 +3930,11 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === "/api/records/invoice") {
       await serveRecordInvoiceUpload(req, res);
+      return;
+    }
+
+    if (pathname === "/api/records/payout") {
+      await serveRecordSettlementPayout(req, res);
       return;
     }
 

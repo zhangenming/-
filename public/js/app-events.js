@@ -983,6 +983,72 @@
       closeCompleteModal();
     });
 
+    refundForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!requireAccount()) return;
+      if (isAccountantLogin()) return;
+      const recordId = String(refundRecordIdInput.value || "").trim();
+      if (!recordId) return;
+      const originalPaymentPrice = Number(refundPaymentPriceInput.dataset.originalPaymentPrice || Number.NaN);
+      const nextPaymentPriceRaw = String(refundPaymentPriceInput.value || "").trim();
+      const nextPaymentPrice = nextPaymentPriceRaw === "" ? Number.NaN : Number(nextPaymentPriceRaw);
+      if (!Number.isFinite(nextPaymentPrice) || nextPaymentPrice < 0) {
+        showInlineFormError({
+          form: refundForm,
+          hintSetter: setRefundFormHint,
+          target: refundPaymentPriceInput,
+          message: "退款后付款价格式无效。"
+        });
+        return;
+      }
+      if (!Number.isFinite(originalPaymentPrice) || originalPaymentPrice <= 0) {
+        showInlineFormError({
+          form: refundForm,
+          hintSetter: setRefundFormHint,
+          target: refundPaymentPriceInput,
+          message: "当前付款价无效。"
+        });
+        return;
+      }
+      const originalPaymentCents = Math.round(originalPaymentPrice * 100);
+      const nextPaymentCents = Math.round(nextPaymentPrice * 100);
+      if (nextPaymentCents > originalPaymentCents) {
+        showInlineFormError({
+          form: refundForm,
+          hintSetter: setRefundFormHint,
+          target: refundPaymentPriceInput,
+          message: "退款后付款价需要小于或等于当前付款价。"
+        });
+        return;
+      }
+      if (nextPaymentCents === originalPaymentCents) {
+        showInlineFormError({
+          form: refundForm,
+          hintSetter: setRefundFormHint,
+          target: refundPaymentPriceInput,
+          message: "退款后付款价需要小于当前付款价。"
+        });
+        return;
+      }
+
+      try {
+        await updateRecordById(recordId, {
+          status: nextPaymentCents === 0 ? "refunded" : "partial_refunded",
+          paymentPrice: nextPaymentPrice
+        });
+      } catch (error) {
+        console.error(error);
+        showInlineFormError({
+          form: refundForm,
+          hintSetter: setRefundFormHint,
+          target: refundPaymentPriceInput,
+          message: error.message || "退款失败，请稍后重试。"
+        });
+        return;
+      }
+      closeRefundModal();
+    });
+
     accountantList.addEventListener("click", async (event) => {
       const editBtn = event.target.closest(".accountant-edit-btn");
       if (editBtn) {
@@ -1105,9 +1171,83 @@
       updateBossSettlementControls(getSortedRecords(getFilteredRecords()));
     });
 
-    if (invoiceSummaryList) {
-      invoiceSummaryList.addEventListener("click", (event) => {
-        const invoiceThumb = event.target.closest(".invoice-summary-thumb");
+    tableBody.addEventListener("mouseover", (event) => {
+      const cell = getTableTooltipCell(event.target);
+      if (!cell || !shouldShowTableTooltipCell(cell)) {
+        hideTableHoverTooltip();
+        return;
+      }
+      if (event.relatedTarget instanceof Node && cell.contains(event.relatedTarget)) return;
+      showTableHoverTooltip(cell.dataset.tableTooltip, event);
+    });
+
+    tableBody.addEventListener("mousemove", (event) => {
+      const cell = getTableTooltipCell(event.target);
+      if (!cell || !shouldShowTableTooltipCell(cell)) {
+        hideTableHoverTooltip();
+        return;
+      }
+      if (tableHoverTooltip.hidden) {
+        showTableHoverTooltip(cell.dataset.tableTooltip, event);
+        return;
+      }
+      moveTableHoverTooltip(event);
+    });
+
+    tableBody.addEventListener("mouseout", (event) => {
+      const cell = getTableTooltipCell(event.target);
+      if (!cell) return;
+      if (event.relatedTarget instanceof Node && cell.contains(event.relatedTarget)) return;
+      hideTableHoverTooltip();
+    });
+
+    tableBody.addEventListener("mouseleave", () => {
+      hideTableHoverTooltip();
+    });
+
+    if (bossSettlementDetailList) {
+      bossSettlementDetailList.addEventListener("click", async (event) => {
+        const sortBtn = event.target.closest(".settlement-detail-sort-btn");
+        if (sortBtn) {
+          updateBossSettlementDetailSort(sortBtn.dataset.detailSortKey);
+          return;
+        }
+
+        const payoutSelectedBtn = event.target.closest("[data-settlement-payout-selected]");
+        if (payoutSelectedBtn) {
+          if (!requireAccount()) return;
+          if (payoutSelectedBtn.disabled) return;
+          await submitBossSettlementPayout(getSelectedBossSettlementPayoutRecordIds());
+          return;
+        }
+
+        const payoutSelectAllBtn = event.target.closest("[data-settlement-payout-select-all]");
+        if (payoutSelectAllBtn) {
+          if (!requireAccount()) return;
+          if (payoutSelectAllBtn.disabled) return;
+          const payoutRecordIds = String(payoutSelectAllBtn.dataset.recordIds || "")
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean);
+          const shouldSelectAll = payoutRecordIds.some((recordId) => !isBossSettlementPayoutRecordSelected(recordId));
+          setBossSettlementPayoutRecordSelected(payoutRecordIds, shouldSelectAll);
+          renderBossSettlementDetailModalContent();
+          return;
+        }
+
+        const payoutBtn = event.target.closest(".settlement-detail-payout-btn");
+        if (payoutBtn) {
+          if (!requireAccount()) return;
+          if (payoutBtn.disabled) return;
+          const payoutRecordIds = String(payoutBtn.dataset.recordIds || "")
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean);
+          await submitBossSettlementPayout(payoutRecordIds);
+          return;
+        }
+
+        const invoiceThumb = event.target.closest(".settlement-detail-invoice-thumb");
         if (!invoiceThumb) return;
         if (!requireAccount()) return;
         const recordId = String(invoiceThumb.dataset.recordId || "").trim();
@@ -1115,6 +1255,17 @@
         const targetRecord = records.find((item) => String(item.id || "").trim() === recordId) || null;
         if (!targetRecord) return;
         openInvoicePreviewModal(targetRecord);
+      });
+
+      bossSettlementDetailList.addEventListener("change", (event) => {
+        const checkbox = event.target.closest(".settlement-detail-payout-checkbox");
+        if (!checkbox) return;
+        const payoutRecordIds = String(checkbox.dataset.recordIds || "")
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+        setBossSettlementPayoutRecordSelected(payoutRecordIds, checkbox.checked);
+        renderBossSettlementDetailModalContent();
       });
     }
 
@@ -1146,6 +1297,18 @@
         const targetRecord = records.find((item) => String(item.id || "").trim() === recordId) || null;
         if (!targetRecord) return;
         openEditModal(targetRecord);
+        return;
+      }
+
+      const refundBtn = event.target.closest(".row-refund-btn");
+      if (refundBtn) {
+        if (!requireAccount()) return;
+        if (isAccountantLogin()) return;
+        const recordId = String(refundBtn.dataset.recordId || "").trim();
+        if (!recordId) return;
+        const targetRecord = records.find((item) => String(item.id || "").trim() === recordId) || null;
+        if (!targetRecord) return;
+        openRefundModal(targetRecord);
         return;
       }
 
@@ -1208,6 +1371,12 @@
     returnPriceModal.addEventListener("click", (event) => {
       if (event.target === returnPriceModal) {
         closeReturnPriceModal();
+      }
+    });
+
+    refundModal.addEventListener("click", (event) => {
+      if (event.target === refundModal) {
+        closeRefundModal();
       }
     });
 
@@ -1436,6 +1605,10 @@
         closeReturnPriceModal();
         return;
       }
+      if (event.key === "Escape" && !refundModal.hidden) {
+        closeRefundModal();
+        return;
+      }
       if (event.key === "Escape" && !bossSettlementSummaryModal.hidden) {
         closeBossSettlementSummaryModal();
         return;
@@ -1464,7 +1637,7 @@
       const formData = new FormData(recordForm);
       const editingRecordId = String(recordEditingIdInput.value || "").trim();
       const isCreateMode = !editingRecordId;
-      const allowEmptyCreateFields = isCreateMode && isDevelopmentPort;
+      const allowEmptyCreateFields = isCreateMode && isDevelopmentEnvironment();
       const currentAccountantName = isAccountantLogin() ? getCurrentAccountantDisplayName() : "";
       const paymentPriceRaw = String(formData.get("paymentPrice") || "").trim();
       const totalPriceRaw = String(formData.get("totalPrice") || "").trim();
@@ -1596,69 +1769,6 @@
       closeCreateModal();
     });
 
-    recordReturnBtn.addEventListener("click", async () => {
-      if (!requireAccount()) return;
-      if (isAccountantLogin()) return;
-      const editingRecordId = String(recordEditingIdInput.value || "").trim();
-      if (!editingRecordId) return;
-
-      const formData = new FormData(recordForm);
-      const item = {
-        date: String(formData.get("date") || dateInput.value || getTodayISODate()).trim(),
-        isMonthlySettlement: Boolean(monthlySettlementCheckbox?.checked),
-        dispatcher: dispatcherInput.value || getDefaultDispatcherTag(),
-        accountant: String(formData.get("accountant") || "").trim(),
-        platform: String(formData.get("platform") || "").trim(),
-        shopName: String(formData.get("shopName") || "").trim(),
-        orderNo: String(formData.get("orderNo") || "").trim(),
-        source: String(formData.get("source") || "").trim(),
-        customer: String(formData.get("customer") || "").trim(),
-        summary: String(formData.get("summary") || "").trim(),
-        remark: String(formData.get("remark") || "").trim(),
-        paymentPrice: 0,
-        totalPrice: 0,
-        settlementPrice: 0,
-        returnedPriceSnapshot: {
-          paymentPrice: Number(formData.get("paymentPrice") || 0),
-          totalPrice: Number(formData.get("totalPrice") || 0),
-          premiumPrice: Number(formData.get("paymentPrice") || 0) - Number(formData.get("totalPrice") || 0),
-          settlementPrice: Number(formData.get("settlementPrice") || 0)
-        },
-        status: "returned"
-      };
-
-      if (!item.accountant) {
-        showInlineFormError({
-          form: recordForm,
-          hintSetter: setRecordFormHint,
-          target: accountantPickerTrigger,
-          message: "会计为必填项。",
-          open: () => openAccountantPicker()
-        });
-        return;
-      }
-
-      try {
-        await updateRecordById(editingRecordId, item);
-      } catch (error) {
-        console.error(error);
-        const message = error.message || "退单失败，请稍后重试。";
-        const { target, open } = getRecordFormErrorPresentation(message, customerInput);
-        showInlineFormError({
-          form: recordForm,
-          hintSetter: setRecordFormHint,
-          target,
-          message,
-          open
-        });
-        return;
-      }
-
-      recordForm.reset();
-      applyAccountToForm();
-      closeCreateModal();
-    });
-
     async function init() {
       bindInlineValidation(loginForm || loginPage, setLoginRequestHint);
       bindInlineValidation(recordForm, setRecordFormHint);
@@ -1681,12 +1791,12 @@
       closeRecycleModal();
       closeDevTodoModal();
       setLoginRequestHint("", "idle");
+      renderBuildInfo();
+      await fetchBuildInfo();
       removePersistentStateItem(STORAGE_KEY_OPERATION_NOTICE_DISMISSED_LEGACY);
       syncDevTodoEntryPoint();
       loadDevTodoItems();
       renderDevTodoList();
-      renderBuildInfo();
-      void fetchBuildInfo();
       loadSavedLoginEntries();
       loadFromStorage();
       loadOperationNoticePreference();

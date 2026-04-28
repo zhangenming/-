@@ -746,6 +746,13 @@
       outline: none;
     }
 
+    #recordForm .accountant-picker.non-settlement-selected .accountant-picker-trigger {
+      border-color: oklch(70% 0.14 75);
+      background: oklch(97% 0.026 82);
+      color: oklch(31% 0.07 72);
+      box-shadow: 0 0 0 3px oklch(85% 0.08 78 / 0.28), var(--inset-highlight);
+    }
+
     #recordForm .accountant-picker-trigger:disabled {
       border-color: #d1dfd9;
       background: #f4f8f6;
@@ -802,6 +809,7 @@
       left: 0;
       right: 0;
       top: calc(100% + 8px);
+      max-height: min(64vh, 560px);
       border-radius: 12px;
       border: 1px solid #cfe2d8;
       background: #ffffff;
@@ -809,12 +817,14 @@
       padding: 10px;
       z-index: 12;
       display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
       gap: 8px;
     }
 
     #recordForm #accountantPicker .accountant-picker-dropdown {
       right: auto;
-      width: min(max(100%, 360px), calc(100vw - 72px));
+      width: min(max(100%, 396px), calc(100vw - 72px));
+      max-height: min(68vh, 620px);
     }
 
     #recordForm .accountant-picker-search {
@@ -834,11 +844,15 @@
     }
 
     #recordForm .accountant-picker-list {
-      max-height: 220px;
+      max-height: min(54vh, 500px);
       overflow: auto;
       display: grid;
       gap: 6px;
       padding-right: 2px;
+    }
+
+    #recordForm #accountantPicker .accountant-picker-list {
+      height: min(46vh, 420px);
     }
 
     #recordForm .accountant-picker-option {
@@ -880,6 +894,25 @@
       font-weight: 700;
     }
 
+    #recordForm .accountant-picker-option.non-settlement {
+      border-color: oklch(78% 0.095 78);
+      background: oklch(97.5% 0.024 84);
+      color: oklch(33% 0.07 72);
+    }
+
+    #recordForm .accountant-picker-option.non-settlement:hover,
+    #recordForm .accountant-picker-option.non-settlement:focus-visible {
+      border-color: oklch(68% 0.14 76);
+      background: oklch(94.5% 0.044 84);
+      color: oklch(28% 0.078 72);
+    }
+
+    #recordForm .accountant-picker-option.non-settlement.selected {
+      border-color: oklch(61% 0.15 76);
+      background: oklch(92% 0.058 84);
+      color: oklch(26% 0.08 72);
+    }
+
     #recordForm .accountant-picker-option-meta {
       display: inline-flex;
       align-items: center;
@@ -915,6 +948,12 @@
       line-height: 1.1;
       padding: 2px 7px;
       flex: 0 0 auto;
+    }
+
+    #recordForm .accountant-picker-option-badge.non-settlement-badge {
+      border-color: oklch(76% 0.11 78);
+      background: oklch(91% 0.055 84);
+      color: oklch(31% 0.075 72);
     }
 
     #recordForm .accountant-picker-empty {
@@ -1181,171 +1220,13 @@
 
     .app-side-footer {
       display: grid;
-      gap: 6px;
+      gap: 8px;
       margin-top: auto;
       padding-top: 12px;
       border: 0;
       border-radius: 0;
       background: transparent;
       box-shadow: none;
-    }
-
-    .request-log-panel {
-      flex: 1 1 auto;
-      border-radius: var(--radius-md);
-      padding: 10px 12px;
-      border: 1px solid #dde9e3;
-      background: rgba(255, 255, 255, 0.88);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-height: 0;
-      overflow: hidden;
-    }
-
-    .request-log-panel-top {
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
-    .request-log-panel-title {
-      color: #4c665c;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.2px;
-    }
-
-    .request-log-status-badge {
-      border-radius: 999px;
-      border: 1px solid #c9ddd4;
-      background: #eff8f3;
-      color: #3a5e53;
-      font-size: 11px;
-      font-weight: 700;
-      line-height: 1.2;
-      padding: 2px 8px;
-      white-space: nowrap;
-    }
-
-    .request-log-status-badge.syncing {
-      border-color: #9ecfbe;
-      background: #dff4eb;
-      color: #0d6954;
-    }
-
-    .request-log-status-badge.ok {
-      border-color: #a7d3c2;
-      background: #e7f7ef;
-      color: #0c654f;
-    }
-
-    .request-log-status-badge.error {
-      border-color: #ebbcbc;
-      background: #fff0f0;
-      color: #9a3030;
-    }
-
-    .request-log-list {
-      flex: 1 1 auto;
-      min-height: 0;
-      display: grid;
-      gap: 5px;
-      overflow: auto;
-      padding-right: 2px;
-    }
-
-    .request-log-item {
-      border-radius: 8px;
-      border: 1px solid #dbe9e3;
-      background: #ffffff;
-      padding: 5px 7px;
-      display: grid;
-      gap: 4px;
-      line-height: 1.25;
-    }
-
-    .request-log-item.ok {
-      border-color: #c7dfd4;
-      background: #f7fcf9;
-    }
-
-    .request-log-item.error {
-      border-color: #f0c5c5;
-      background: #fff7f7;
-    }
-
-    .request-log-item-top {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      min-width: 0;
-      font-size: 11px;
-      color: #4d665d;
-    }
-
-    .request-log-time {
-      flex: 0 0 auto;
-      color: #5f766c;
-      font-weight: 700;
-    }
-
-    .request-log-method {
-      flex: 0 0 auto;
-      border-radius: 999px;
-      border: 1px solid #c6ddd2;
-      background: #eef8f3;
-      color: #1d634f;
-      font-size: 10px;
-      font-weight: 700;
-      line-height: 1.1;
-      padding: 2px 7px;
-      text-transform: uppercase;
-      letter-spacing: 0.2px;
-    }
-
-    .request-log-endpoint {
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: #334f45;
-      font-weight: 600;
-    }
-
-    .request-log-item-bottom {
-      font-size: 11px;
-      color: #566f65;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .request-log-status {
-      font-weight: 700;
-    }
-
-    .request-log-item.error .request-log-status {
-      color: #ab3d3d;
-    }
-
-    .request-log-item.ok .request-log-status {
-      color: #0c654f;
-    }
-
-    .request-log-empty {
-      flex: 1 1 auto;
-      min-height: 0;
-      display: grid;
-      place-items: center;
-      font-size: 12px;
-      color: #738980;
-      padding: 8px 2px;
-      text-align: center;
     }
 
     .account-action-row {
@@ -1355,14 +1236,16 @@
     }
 
     .account-panel {
-      border-radius: var(--radius-md);
-      padding: 10px 12px;
+      min-width: 0;
+      border-radius: var(--radius-lg);
+      padding: 12px 14px 13px;
       background:
-        linear-gradient(145deg, rgba(239, 247, 243, 0.96), rgba(249, 252, 250, 0.98)),
-        #f1f7f4;
-      border: 1px solid #d8e6df;
+        linear-gradient(145deg, oklch(98.5% 0.008 160), oklch(95.5% 0.014 160)),
+        oklch(96% 0.012 160);
+      border: 1px solid oklch(88.5% 0.025 160);
       display: grid;
-      gap: 5px;
+      gap: 8px;
+      box-shadow: var(--inset-highlight), 0 10px 24px rgba(18, 60, 47, 0.07);
     }
 
     .account-panel-top {
@@ -1370,25 +1253,29 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      margin-bottom: 2px;
+      min-width: 0;
     }
 
     .account-panel-label {
       font-size: 11px;
-      color: #587165;
-      letter-spacing: 0.2px;
+      color: oklch(44% 0.04 160);
+      letter-spacing: 0.1px;
       font-weight: 800;
+      line-height: 1.2;
     }
 
     .account-role-badge {
+      flex: 0 0 auto;
       border-radius: 999px;
-      padding: 4px 10px;
+      min-height: 24px;
+      padding: 5px 10px;
       font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.2px;
+      font-weight: 800;
+      letter-spacing: 0.1px;
       line-height: 1;
-      color: #1f5548;
-      background: #e5f2ec;
+      color: oklch(34% 0.07 160);
+      background: oklch(94.5% 0.025 160);
+      box-shadow: inset 0 0 0 1px oklch(99% 0.006 160 / 0.7);
     }
 
     .account-role-badge.dispatcher {
@@ -1407,10 +1294,10 @@
     }
 
     .account-panel-name {
-      font-size: 17px;
-      font-weight: 700;
-      line-height: 1.2;
-      color: #223d35;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.15;
+      color: oklch(25% 0.045 160);
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1418,14 +1305,43 @@
     }
 
     .account-panel-sub {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 5px 10px;
       font-size: 12px;
-      color: #5f756a;
+      color: oklch(43% 0.035 160);
       line-height: 1.35;
       min-height: 0;
+      min-width: 0;
     }
 
     .account-panel-sub:empty {
       display: none;
+    }
+
+    .account-panel-meta {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 2px;
+      max-width: 100%;
+      min-width: 0;
+      white-space: nowrap;
+    }
+
+    .account-panel-meta-label {
+      flex: 0 0 auto;
+      color: oklch(49% 0.035 160);
+      font-weight: 700;
+    }
+
+    .account-panel-meta-value {
+      min-width: 0;
+      overflow: hidden;
+      color: oklch(34% 0.04 160);
+      text-overflow: ellipsis;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
     }
 
     .switch-account-btn {
@@ -1577,6 +1493,68 @@
       min-width: 0;
     }
 
+    .table-invoice-upload-btn {
+      min-width: 224px;
+      display: grid;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 1px solid #d2e3db;
+      background: #edf6f2;
+      color: #29473d;
+      text-align: left;
+      line-height: 1.2;
+      box-shadow: var(--inset-highlight), 0 8px 18px rgba(17, 53, 40, 0.07);
+    }
+
+    .table-invoice-upload-btn:hover {
+      background: #e6f2ed;
+      box-shadow: var(--inset-highlight), 0 12px 22px rgba(17, 53, 40, 0.11);
+    }
+
+    .invoice-upload-btn-title {
+      display: block;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 800;
+      color: #213c33;
+      white-space: nowrap;
+    }
+
+    .invoice-upload-btn-stats {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+      padding-top: 7px;
+      border-top: 1px solid rgba(151, 181, 168, 0.48);
+    }
+
+    .invoice-upload-btn-stat {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: minmax(70px, max-content) minmax(0, 1fr);
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .invoice-upload-btn-label {
+      color: #5d756c;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .invoice-upload-btn-value {
+      min-width: 0;
+      color: #1f493e;
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .table-invoice-upload-btn[disabled],
     .table-export-btn[disabled],
     .table-settlement-btn[disabled],
@@ -1585,141 +1563,39 @@
       cursor: not-allowed;
     }
 
-    .invoice-summary-panel {
-      margin: 0 0 10px;
-      padding: 12px;
-      border: 1px solid #d8e6df;
-      border-radius: var(--radius-lg);
-      background: linear-gradient(180deg, #fbfefd, #f2f8f5);
-      box-shadow: var(--inset-highlight);
-    }
-
-    .invoice-summary-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-
-    .invoice-summary-title {
-      margin: 0;
-      color: #1f493e;
-      font-size: 14px;
-      font-weight: 800;
-      line-height: 1.2;
-    }
-
-    .invoice-summary-meta {
-      color: #637a71;
-      font-size: 12px;
-      font-weight: 700;
-      line-height: 1.2;
-      white-space: nowrap;
-    }
-
-    .invoice-summary-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-      gap: 10px;
-    }
-
-    .invoice-summary-card {
-      min-width: 0;
-      display: grid;
-      grid-template-columns: 76px minmax(0, 1fr);
-      gap: 10px;
-      align-items: center;
-      padding: 10px;
-      border: 1px solid #d7e5de;
-      border-radius: var(--radius-lg);
-      background: rgba(255, 255, 255, 0.92);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .invoice-summary-thumb {
-      width: 76px;
-      height: 56px;
-      padding: 2px;
-      border: 1px solid #d7c490;
-      border-radius: var(--radius-md);
-      background: #fffaf0;
-      cursor: pointer;
-      box-shadow: 0 6px 14px rgba(86, 63, 16, 0.1);
-      transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
-    }
-
-    .invoice-summary-thumb:hover,
-    .invoice-summary-thumb:focus-visible {
-      transform: translateY(-1px);
-      border-color: #ba8c27;
-      box-shadow: 0 10px 20px rgba(86, 63, 16, 0.16);
-      outline: none;
-    }
-
-    .invoice-summary-thumb img {
-      width: 100%;
-      height: 100%;
-      display: block;
-      object-fit: cover;
-      border-radius: 8px;
-      background: #f4ead0;
-    }
-
-    .invoice-summary-body {
-      min-width: 0;
-      display: grid;
-      gap: 5px;
-    }
-
-    .invoice-summary-card-top {
-      min-width: 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .invoice-summary-accountant {
-      min-width: 0;
-      color: #1f493e;
-      font-size: 13px;
-      line-height: 1.25;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .invoice-summary-count {
-      flex: 0 0 auto;
-      padding: 3px 7px;
-      border-radius: 999px;
-      border: 1px solid #c6d9d1;
-      background: #edf6f1;
-      color: #315d50;
-      font-size: 11px;
-      font-weight: 800;
-      line-height: 1;
-    }
-
-    .invoice-summary-card-meta,
-    .invoice-summary-amount {
-      min-width: 0;
-      color: #687d75;
-      font-size: 12px;
-      line-height: 1.35;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .invoice-summary-amount {
-      color: #465f56;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-    }
-
     #appPage {
       transition: filter 0.24s ease, transform 0.24s ease;
+    }
+
+    .table-hover-tooltip {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 80;
+      max-width: min(560px, calc(100vw - 28px));
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid oklch(78% 0.08 160);
+      background:
+        linear-gradient(180deg, oklch(98% 0.015 160), oklch(94% 0.026 160)),
+        #f0faf5;
+      color: oklch(30% 0.055 165);
+      box-shadow: 0 18px 42px rgba(18, 69, 51, 0.22), var(--inset-highlight);
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.45;
+      letter-spacing: 0.1px;
+      pointer-events: none;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+
+    .table-hover-tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     body.modal-open {
@@ -1743,12 +1619,22 @@
       z-index: 20;
     }
 
+    .modal-overlay.invoice-preview-stacked {
+      z-index: 32;
+    }
+
     .modal-card {
       width: min(1040px, 96vw);
       max-height: calc(100vh - 40px);
       overflow-y: auto;
       overflow-x: hidden;
       transform-origin: center top;
+    }
+
+    @media (min-width: 861px) {
+      #createModal > .modal-card {
+        overflow: visible;
+      }
     }
 
     .analysis-modal-card {
@@ -1767,8 +1653,34 @@
       gap: 12px;
     }
 
+    #checkModal > .check-modal-card {
+      width: min(620px, 94vw);
+      gap: 14px;
+      padding: 20px;
+    }
+
+    .check-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e1ede7;
+    }
+
+    .check-modal-title {
+      margin: 0;
+      color: #20362e;
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
     .complete-modal-card {
-      width: min(980px, 96vw);
+      width: min(640px, 94vw);
+      gap: 14px;
+      padding: 20px;
     }
 
     .return-price-modal-card {
@@ -1776,6 +1688,15 @@
       max-height: calc(100vh - 30px);
       display: grid;
       gap: 16px;
+    }
+
+    .refund-modal-card {
+      width: min(520px, 94vw);
+      max-height: calc(100vh - 30px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 20px;
     }
 
     .record-history-modal-card {
@@ -1811,7 +1732,7 @@
     }
 
     .settlement-detail-modal-card {
-      width: min(920px, 96vw);
+      width: min(1120px, 96vw);
       max-height: calc(100vh - 30px);
       display: grid;
       gap: 18px;
@@ -2056,6 +1977,98 @@
       color: #6d827a;
       font-size: 13px;
       line-height: 1.6;
+    }
+
+    .refund-modal-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e1ede7;
+    }
+
+    .refund-heading {
+      min-width: 0;
+      display: grid;
+      gap: 6px;
+    }
+
+    .refund-title {
+      margin: 0;
+      color: #20362e;
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .refund-meta {
+      margin: 0;
+      color: #678176;
+      font-size: 12px;
+      line-height: 1.45;
+      word-break: break-all;
+    }
+
+    .refund-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .refund-current-price {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid #d8e6df;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #fbfefd, #f3f8f6);
+      box-shadow: var(--inset-highlight);
+    }
+
+    .refund-current-label {
+      color: #587165;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .refund-current-value {
+      color: #153e33;
+      font-size: 22px;
+      font-weight: 850;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .refund-form .field {
+      gap: 7px;
+      padding: 0;
+    }
+
+    .refund-form .field > label {
+      color: #3f5a50;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .refund-form input {
+      min-height: 44px;
+      border-radius: 10px;
+      background: #fbfefd;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .refund-actions {
+      margin-top: 0;
+      justify-content: flex-end;
+    }
+
+    .refund-actions .btn-primary {
+      min-width: 132px;
+      min-height: 42px;
+      padding: 11px 24px;
+      border-radius: 10px;
     }
 
     .invoice-preview-image-wrap {
@@ -2753,7 +2766,33 @@
 
     .settlement-detail-list {
       display: grid;
+      align-content: start;
+      gap: 30px;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .settlement-detail-section {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .settlement-detail-section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 12px;
+      min-width: 0;
+    }
+
+    .settlement-detail-section-title {
+      margin: 0;
+      color: #1e4b40;
+      font-size: 15px;
+      font-weight: 850;
+      line-height: 1.25;
+      letter-spacing: 0;
     }
 
     .settlement-detail-empty {
@@ -2764,6 +2803,402 @@
       color: #6d8379;
       font-size: 14px;
       text-align: center;
+    }
+
+    .settlement-detail-table-wrap {
+      overflow: auto;
+      border: 1px solid #dbe8e1;
+      border-radius: var(--radius-xl);
+      background: #fcfefd;
+      box-shadow: var(--inset-highlight), var(--shadow-sm);
+    }
+
+    .settlement-detail-table-wrap-paid {
+      border-color: #dbe8e1;
+      background: #fcfefd;
+    }
+
+    .settlement-detail-table {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: separate;
+      border-spacing: 0;
+      color: #24473d;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .settlement-detail-table col.settlement-detail-col-accountant {
+      width: 18%;
+    }
+
+    .settlement-detail-table col.settlement-detail-col-money {
+      width: 15%;
+    }
+
+    .settlement-detail-table col.settlement-detail-col-invoice {
+      width: 21%;
+    }
+
+    .settlement-detail-table col.settlement-detail-col-payout {
+      width: 16%;
+    }
+
+    .settlement-detail-table th,
+    .settlement-detail-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #e1ece6;
+      vertical-align: middle;
+    }
+
+    .settlement-detail-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f3f8f5;
+      color: #597166;
+      font-size: 12px;
+      font-weight: 800;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .settlement-detail-heading-cell.money {
+      text-align: right;
+    }
+
+    .settlement-detail-heading-cell.invoice,
+    .settlement-detail-heading-cell.payout {
+      text-align: center;
+    }
+
+    .settlement-detail-sort-btn {
+      width: 100%;
+      min-height: 40px;
+      display: grid;
+      grid-template-columns: minmax(0, max-content) auto;
+      grid-template-areas:
+        "label mark"
+        "summary summary";
+      gap: 3px 8px;
+      align-items: center;
+      justify-items: start;
+      justify-content: start;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: inherit;
+      cursor: pointer;
+    }
+
+    .settlement-detail-sort-btn.is-summary-hidden {
+      min-height: 24px;
+      grid-template-areas: "label mark";
+    }
+
+    .settlement-detail-sort-btn:hover .settlement-detail-sort-label,
+    .settlement-detail-sort-btn:focus-visible .settlement-detail-sort-label {
+      color: #173f34;
+    }
+
+    .settlement-detail-sort-btn:focus-visible {
+      border-radius: 8px;
+      outline: 2px solid rgba(32, 135, 102, 0.28);
+      outline-offset: 3px;
+    }
+
+    .settlement-detail-heading-cell.money .settlement-detail-sort-btn {
+      justify-items: end;
+      justify-content: end;
+    }
+
+    .settlement-detail-heading-cell.invoice .settlement-detail-sort-btn,
+    .settlement-detail-heading-cell.payout .settlement-detail-sort-btn {
+      justify-items: center;
+      justify-content: center;
+    }
+
+    .settlement-detail-sort-label,
+    .settlement-detail-sort-summary {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .settlement-detail-sort-label {
+      grid-area: label;
+    }
+
+    .settlement-detail-sort-summary {
+      grid-area: summary;
+      color: #6d8379;
+      font-size: 11px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+
+    .settlement-detail-sort-mark {
+      grid-area: mark;
+      color: #2a6a58;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .settlement-detail-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .settlement-detail-table tbody tr:hover td {
+      background: #f8fbf9;
+    }
+
+    .settlement-detail-row td {
+      transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+    }
+
+    .settlement-detail-row.tone-payable td {
+      border-bottom-color: oklch(0.86 0.055 158);
+      background: oklch(0.955 0.038 158);
+    }
+
+    .settlement-detail-row.tone-payable:hover td {
+      background: oklch(0.935 0.052 158);
+    }
+
+    .settlement-detail-row.tone-pending td {
+      border-bottom-color: #e1ece6;
+      background: #fcfefd;
+    }
+
+    .settlement-detail-row.tone-pending:hover td {
+      background: #f8fbf9;
+    }
+
+    .settlement-detail-row.tone-paid td {
+      border-bottom-color: #e1ece6;
+      background: #fcfefd;
+    }
+
+    .settlement-detail-row.tone-paid:hover td {
+      background: #f8fbf9;
+    }
+
+    .settlement-detail-payout-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-bottom: 0;
+    }
+
+    .settlement-detail-payout-toolbar-text {
+      color: #5d756c;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .settlement-detail-payout-select-all-btn,
+    .settlement-detail-payout-batch-btn,
+    .settlement-detail-payout-btn {
+      min-height: 32px;
+      border: 1px solid #bbd7cb;
+      border-radius: 999px;
+      background: #eaf6f1;
+      color: #1f5d4e;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: var(--inset-highlight);
+      transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+    }
+
+    .settlement-detail-payout-select-all-btn,
+    .settlement-detail-payout-batch-btn {
+      padding: 0 14px;
+    }
+
+    .settlement-detail-payout-btn {
+      padding: 0 12px;
+    }
+
+    .settlement-detail-payout-select-all-btn:hover,
+    .settlement-detail-payout-batch-btn:hover,
+    .settlement-detail-payout-btn:hover,
+    .settlement-detail-payout-select-all-btn:focus-visible,
+    .settlement-detail-payout-batch-btn:focus-visible,
+    .settlement-detail-payout-btn:focus-visible {
+      border-color: #238565;
+      background: #dcf0e8;
+      color: #174d40;
+      outline: none;
+      transform: translateY(-1px);
+    }
+
+    .settlement-detail-payout-select-all-btn:disabled,
+    .settlement-detail-payout-batch-btn:disabled,
+    .settlement-detail-payout-btn:disabled {
+      opacity: 0.52;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .settlement-detail-accountant-cell {
+      min-width: 150px;
+      text-align: left;
+    }
+
+    .settlement-detail-accountant-cell,
+    .settlement-detail-status-cell {
+      display: table-cell;
+    }
+
+    .settlement-detail-accountant-meta,
+    .settlement-detail-progress {
+      display: block;
+      margin-top: 5px;
+      color: #667b72;
+      font-size: 12px;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .settlement-detail-money {
+      color: #173f34;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .settlement-detail-invoice-cell {
+      min-width: 168px;
+      text-align: center;
+    }
+
+    .settlement-detail-payout-cell {
+      min-width: 150px;
+      text-align: center;
+    }
+
+    .settlement-detail-payout-actions {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .settlement-detail-payout-select {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: #5b7268;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .settlement-detail-payout-checkbox {
+      width: 15px;
+      height: 15px;
+      margin: 0;
+      accent-color: #208766;
+      cursor: pointer;
+    }
+
+    .settlement-detail-payout-checkbox:disabled {
+      cursor: not-allowed;
+    }
+
+    .settlement-detail-payout-state {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 30px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #d9e4de;
+      background: #f7faf8;
+      color: #546a61;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .settlement-detail-payout-state.paid {
+      border-color: #d9e4de;
+      background: #fcfefd;
+      color: #546a61;
+    }
+
+    .settlement-detail-invoice-list {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .settlement-detail-invoice-thumb {
+      position: relative;
+      width: 64px;
+      height: 48px;
+      padding: 2px;
+      border: 1px solid #d7c490;
+      border-radius: var(--radius-md);
+      background: #fffaf0;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(86, 63, 16, 0.1);
+      transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .settlement-detail-invoice-thumb:hover,
+    .settlement-detail-invoice-thumb:focus-visible {
+      transform: translateY(-1px);
+      border-color: #ba8c27;
+      box-shadow: 0 10px 20px rgba(86, 63, 16, 0.16);
+      outline: none;
+    }
+
+    .settlement-detail-invoice-thumb img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #f4ead0;
+    }
+
+    .settlement-detail-invoice-more,
+    .settlement-detail-invoice-pending {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 30px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #d9e4de;
+      background: #f7faf8;
+      color: #546a61;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .settlement-detail-row.tone-pending .settlement-detail-invoice-pending {
+      border-color: #d9e4de;
+      background: #fcfefd;
+      color: #546a61;
     }
 
     .settlement-detail-card {
@@ -2805,6 +3240,7 @@
     }
 
     .settlement-detail-accountant {
+      display: block;
       min-width: 0;
       color: #183f34;
       font-size: 16px;
@@ -3218,11 +3654,21 @@
     }
 
     .complete-modal-header {
-      margin: 0 0 6px;
+      display: flex;
       align-items: center;
       justify-content: space-between;
-      padding-bottom: 14px;
+      gap: 12px;
+      margin: 0;
+      padding-bottom: 12px;
       border-bottom: 1px solid #e1ede7;
+    }
+
+    .complete-modal-title {
+      margin: 0;
+      color: #20362e;
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.2;
     }
 
     .check-form {
@@ -3300,13 +3746,56 @@
       grid-column: 1;
     }
 
+    #checkForm {
+      gap: 14px;
+    }
+
+    #checkForm .field {
+      grid-template-columns: 1fr;
+      align-items: start;
+      gap: 7px;
+      padding: 0;
+    }
+
+    #checkForm .field > label,
+    #checkForm .field.field-wide > label {
+      grid-column: 1;
+      padding-top: 0;
+      text-align: left;
+      color: #3f5a50;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    #checkForm .field > :is(input, textarea),
+    #checkForm .field.field-wide > textarea {
+      grid-column: 1;
+      border-radius: 10px;
+      background: #fbfefd;
+    }
+
+    #checkForm .field > input {
+      min-height: 44px;
+    }
+
+    #checkForm .field.field-wide textarea {
+      min-height: 112px;
+      max-height: 260px;
+      line-height: 1.5;
+    }
+
+    #checkForm .field.field-validation-group-error > .field-inline-error,
+    #checkForm .field.field-wide.field-validation-group-error > .field-inline-error {
+      grid-column: 1;
+      margin-top: 0;
+    }
+
     .complete-form .field-feedback-time {
-      grid-template-columns: 72px minmax(260px, 340px);
-      align-items: center;
+      grid-template-columns: minmax(0, 240px);
+      align-items: start;
       justify-content: start;
-      column-gap: 14px;
-      row-gap: 8px;
-      padding: 2px 0 0;
+      gap: 7px;
+      padding: 0;
     }
 
     .complete-form .field-feedback-text,
@@ -3319,41 +3808,45 @@
     }
 
     .complete-form .field-feedback-time > label {
+      grid-column: 1;
       text-align: left;
       font-size: 13px;
-      font-weight: 700;
-      color: #5e746b;
+      font-weight: 800;
+      color: #3f5a50;
     }
 
     .complete-form .field-feedback-time > :is(input) {
-      grid-column: 2;
+      grid-column: 1;
       min-width: 0;
     }
 
     .complete-form .field-feedback-time > input {
-      max-width: 340px;
-      min-height: 50px;
-      padding: 12px 14px;
-      border-radius: 16px;
+      max-width: none;
+      min-height: 44px;
+      padding: 10px 12px;
+      border-radius: 10px;
       border-color: #d8e5df;
       background: linear-gradient(180deg, #f4f8f6, #fbfdfc);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
       color: #27453c;
       cursor: default;
       pointer-events: none;
+      font-variant-numeric: tabular-nums;
     }
 
     .complete-form .field-feedback-text > textarea {
       min-width: 0;
-      min-height: 156px;
+      min-height: 118px;
+      max-height: 260px;
       padding: 14px 16px;
-      line-height: 1.55;
-      border-radius: 16px;
+      line-height: 1.5;
+      border-radius: 10px;
       border-color: #dbe7e1;
+      background: #fbfefd;
     }
 
     .complete-form .field-feedback-time.field-validation-group-error > .field-inline-error {
-      grid-column: 2;
+      grid-column: 1;
     }
 
     .complete-form .field-feedback-text.field-validation-group-error > .field-inline-error,
@@ -3575,8 +4068,27 @@
       min-width: 140px;
     }
 
+    #checkForm .form-actions {
+      display: flex;
+      align-items: center;
+      margin-top: 0;
+      padding-top: 4px;
+      justify-content: flex-end;
+    }
+
+    #checkForm .form-actions .btn-primary {
+      flex: 0 0 auto;
+      min-width: 132px;
+      min-height: 42px;
+      padding: 11px 24px;
+      border-radius: 10px;
+    }
+
     .complete-form .form-actions {
-      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-top: 0;
       padding-top: 4px;
     }
 
@@ -3598,9 +4110,11 @@
     }
 
     .complete-form .form-actions .btn-primary {
-      min-width: 160px;
-      min-height: 46px;
-      border-radius: 14px;
+      flex: 0 0 auto;
+      min-width: 132px;
+      min-height: 42px;
+      padding: 11px 24px;
+      border-radius: 10px;
     }
 
     .complete-form .form-actions .btn-secondary {
@@ -3998,6 +4512,7 @@
     #appPage.accountant-view col.col-shop,
     #appPage.accountant-view col.col-order,
     #appPage.accountant-view col.col-source,
+    #appPage.accountant-view col.col-remark,
     #appPage.accountant-view col.col-payment,
     #appPage.accountant-view col.col-total,
     #appPage.accountant-view col.col-premium,
@@ -4007,6 +4522,8 @@
     #appPage.accountant-view .data-col-shop,
     #appPage.accountant-view .data-col-order,
     #appPage.accountant-view .data-col-source,
+    #appPage.accountant-view .data-col-remark,
+    #appPage.accountant-view td.remark,
     #appPage.accountant-view .data-col-payment,
     #appPage.accountant-view .data-col-total,
     #appPage.accountant-view .data-col-premium,
@@ -4047,6 +4564,11 @@
 
     #tableBody td {
       transition: background-color 0.16s ease;
+      height: 41px;
+      line-height: 24px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     #tableBody tr.boss-selected-row td {
@@ -4088,6 +4610,7 @@
     }
 
     .data-col-status {
+      --table-status-divider-color: #c9ddd4;
       text-align: center;
       position: sticky;
       right: var(--table-sticky-action-width);
@@ -4096,7 +4619,19 @@
       min-width: var(--table-sticky-status-width);
       max-width: var(--table-sticky-status-width);
       box-sizing: border-box;
-      background-clip: padding-box;
+      background-clip: border-box;
+      isolation: isolate;
+    }
+
+    .data-col-status::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: var(--table-status-divider-color);
+      pointer-events: none;
     }
 
     .data-col-payment,
@@ -4241,11 +4776,12 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      width: max-content;
+      width: 100%;
       min-width: 0;
-      max-width: none;
+      max-width: 100%;
       flex-wrap: nowrap;
-      margin-inline: auto;
+      margin-inline: 0;
+      box-sizing: border-box;
     }
 
     #tableBody tr.dispatcher-current-row .dispatcher-chip {
@@ -4295,24 +4831,52 @@
       background: linear-gradient(180deg, #cfdfd5 0%, #bccfc1 100%);
       color: #183b31;
       text-align: center;
-      box-shadow: inset 1px 0 0 rgba(146, 170, 159, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.74), inset 0 -1px 0 rgba(127, 151, 140, 0.38);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74), inset 0 -1px 0 rgba(127, 151, 140, 0.38);
+    }
+
+    th.data-col-action::before {
+      content: "";
+      position: absolute;
+      left: -4px;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      background: inherit;
+      pointer-events: none;
     }
 
     #tableBody td.row-action-cell {
       position: sticky;
       right: 0;
-      z-index: 3;
+      z-index: 5;
       width: var(--table-sticky-action-width);
       min-width: var(--table-sticky-action-width);
       max-width: var(--table-sticky-action-width);
       box-sizing: border-box;
-      background-clip: padding-box;
-      background: #f2f8f4;
-      box-shadow: inset 1px 0 0 #deebe4;
+      background-clip: border-box;
+      background: #f7fbf8;
+      overflow: visible;
+    }
+
+    #tableBody td.row-action-cell::before {
+      content: "";
+      position: absolute;
+      left: -4px;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      background: inherit;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #tableBody td.row-action-cell > * {
+      position: relative;
+      z-index: 2;
     }
 
     #tableBody tr:nth-child(even) td.row-action-cell {
-      background: #f2f8f4;
+      background: #f7fbf8;
     }
 
     #tableBody tr:hover td.row-action-cell {
@@ -4329,7 +4893,6 @@
 
     #tableBody tr.updated-record-row td.row-action-cell {
       background: #fff2c9;
-      box-shadow: inset 1px 0 0 #efd89c;
     }
 
     #tableBody tr.updated-record-row:hover td.row-action-cell {
@@ -4337,6 +4900,7 @@
     }
 
     th.data-col-status {
+      --table-status-divider-color: rgba(118, 146, 133, 0.62);
       position: sticky;
       right: var(--table-sticky-action-width);
       z-index: 3;
@@ -4344,17 +4908,35 @@
       min-width: var(--table-sticky-status-width);
       max-width: var(--table-sticky-status-width);
       box-sizing: border-box;
-      box-shadow: inset 1px 0 0 rgba(146, 170, 159, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.74), inset 0 -1px 0 rgba(127, 151, 140, 0.38);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74), inset 0 -1px 0 rgba(127, 151, 140, 0.38);
+    }
+
+    .table-wrap > table > thead th {
+      z-index: 10;
+      overflow: visible;
+    }
+
+    .table-wrap > table > thead th.data-col-status {
+      z-index: 12;
+    }
+
+    .table-wrap > table > thead th.data-col-action {
+      z-index: 15;
+    }
+
+    .table-wrap > table > thead th:has(.filter-popover:not([hidden])) {
+      z-index: 30;
     }
 
     #tableBody td.data-col-status {
+      --table-status-divider-color: #c9ddd4;
       width: var(--table-sticky-status-width);
       min-width: var(--table-sticky-status-width);
       max-width: var(--table-sticky-status-width);
       box-sizing: border-box;
-      background-clip: padding-box;
+      background-clip: border-box;
       background: #f7fbf8;
-      box-shadow: inset 1px 0 0 #deebe4;
+      box-shadow: none;
     }
 
     #tableBody tr:nth-child(even) td.data-col-status {
@@ -4366,8 +4948,8 @@
     }
 
     #tableBody tr.boss-selected-row td.data-col-status {
+      --table-status-divider-color: #b6d4c6;
       background: #dcefe6;
-      box-shadow: inset 1px 0 0 #c7dfd3;
     }
 
     #tableBody tr.boss-selected-row:hover td.data-col-status {
@@ -4375,8 +4957,8 @@
     }
 
     #tableBody tr.updated-record-row td.data-col-status {
+      --table-status-divider-color: #e5c56f;
       background: #fff2c9;
-      box-shadow: inset 1px 0 0 #efd89c;
     }
 
     #tableBody tr.updated-record-row:hover td.data-col-status {
@@ -4384,6 +4966,7 @@
     }
 
     .row-edit-btn,
+    .row-refund-btn,
     .row-delete-btn,
     .row-check-btn,
     .row-history-btn {
@@ -4411,6 +4994,13 @@
       border-color: #9dcdbd;
       background: #ebf8f2;
       color: #1d6f58;
+    }
+
+    .row-refund-btn {
+      grid-column: 2;
+      border-color: #d7a45d;
+      background: #fff3d9;
+      color: #865410;
     }
 
     .row-check-btn {
@@ -4482,10 +5072,12 @@
     }
 
     #tableBody tr:hover .row-edit-btn,
+    #tableBody tr:hover .row-refund-btn,
     #tableBody tr:hover .row-delete-btn,
     #tableBody tr:hover .row-check-btn,
     #tableBody tr:hover .row-history-btn,
     #tableBody tr:focus-within .row-edit-btn,
+    #tableBody tr:focus-within .row-refund-btn,
     #tableBody tr:focus-within .row-delete-btn,
     #tableBody tr:focus-within .row-history-btn {
       opacity: 1;
@@ -4500,6 +5092,11 @@
     .row-edit-btn:hover {
       background: #dcf1e8;
       border-color: #7fb8a5;
+    }
+
+    .row-refund-btn:hover {
+      background: #ffe9bd;
+      border-color: #c98e3b;
     }
 
     .row-delete-btn:hover {
@@ -4536,6 +5133,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      flex: 0 0 auto;
       min-width: 64px;
       max-width: none;
       border-radius: 999px;
@@ -4569,6 +5167,18 @@
       color: #0d6246;
     }
 
+    .record-status-chip.partial_refunded {
+      border-color: #d0a45a;
+      background: #fff2d8;
+      color: #8a5710;
+    }
+
+    .record-status-chip.refunded {
+      border-color: #e2b2b2;
+      background: #ffe8e8;
+      color: #a43a3a;
+    }
+
     .record-status-chip.settled {
       border-color: #1b8f6d;
       background: #d3eee1;
@@ -4579,6 +5189,12 @@
       border-color: #c59635;
       background: #fff2cb;
       color: #66480a;
+    }
+
+    .record-status-chip.paid {
+      border-color: #16825f;
+      background: #d9f1e6;
+      color: #0f5f45;
     }
 
     .record-status-chip.partial {
@@ -4659,6 +5275,19 @@
       box-shadow: 0 0 0 3px rgba(139, 100, 15, 0.14);
     }
 
+    .settlement-state-chip.paid {
+      border-color: #16825f;
+      background: linear-gradient(180deg, #d9f1e6, #9ed9bf);
+      color: #0f5f45;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 8px 16px rgba(22, 130, 95, 0.14);
+    }
+
+    .settlement-state-chip.paid::before {
+      background: #16825f;
+      opacity: 1;
+      box-shadow: 0 0 0 3px rgba(22, 130, 95, 0.14);
+    }
+
     th {
       background: linear-gradient(180deg, #cfdfd5 0%, #bccfc1 100%);
       color: #183b31;
@@ -4674,6 +5303,7 @@
       border-bottom: 1px solid var(--line);
       font-size: 13px;
       white-space: nowrap;
+      vertical-align: middle;
     }
 
     #tableBody tr:last-child td {
@@ -4879,7 +5509,7 @@
       border-radius: 10px;
       padding: 10px;
       box-shadow: 0 14px 28px rgba(20, 54, 43, 0.16);
-      z-index: 8;
+      z-index: 40;
     }
 
     #filterMonthPopover {
@@ -5100,9 +5730,12 @@
 
     td.summary,
     td.remark {
-      white-space: normal;
-      line-height: 1.4;
-      word-break: break-word;
+      max-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 24px;
+      word-break: normal;
     }
 
     .empty {
@@ -5474,6 +6107,20 @@
 
       .check-form .form-actions .btn-primary,
       .check-form .form-actions .btn-secondary {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .refund-current-price {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .refund-actions {
+        justify-content: stretch;
+      }
+
+      .refund-actions .btn-primary {
         width: 100%;
         min-width: 0;
       }

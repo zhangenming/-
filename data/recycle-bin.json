@@ -1,5 +1,63 @@
 [
   {
+    "recycleId": "del_moibx7itz6v2jt",
+    "deletedAt": "2026-04-28 15:53:22",
+    "deletedBy": "c",
+    "record": {
+      "id": "rec_5c71a44a44a34a",
+      "createdAt": "2026-04-27 14:11:24",
+      "date": "2026-04-17",
+      "isMonthlySettlement": false,
+      "dispatcher": "C",
+      "accountant": "李银慧",
+      "platform": "闲鱼",
+      "shopName": "开心财税",
+      "orderNo": "2701860351023020787",
+      "source": "闲鱼",
+      "customer": "旅游定制：胡捷18083836505",
+      "summary": "旅游定制胡捷",
+      "remark": "",
+      "paymentPrice": 238,
+      "totalPrice": 200,
+      "premiumPrice": 38,
+      "settlementPrice": 120,
+      "isSettled": false,
+      "settledAt": "",
+      "settledBy": "",
+      "settlementInvoiceImage": null,
+      "invoiceUploadedAt": "",
+      "invoiceUploadedBy": "",
+      "invoiceUploadedByUsername": "",
+      "checkStatus": "pending",
+      "checkedAt": "",
+      "serviceFeedbackImages": [],
+      "customerFeedback": "",
+      "operationHistory": [
+        {
+          "historyId": "rhis_mogu3un0slpemr",
+          "operatedAt": "2026-04-27 14:46:53",
+          "operatedBy": "开心财税C",
+          "operatedRole": "dispatcher",
+          "actionKey": "updated",
+          "actionLabel": "修改",
+          "changes": [
+            {
+              "field": "accountant",
+              "label": "会计",
+              "before": "李银慧会计师",
+              "after": "李银慧"
+            }
+          ]
+        }
+      ],
+      "completedAt": "",
+      "returnedAt": "",
+      "isSettlementPaid": false,
+      "settlementPaidAt": "",
+      "settlementPaidBy": ""
+    }
+  },
+  {
     "recycleId": "del_mofe4mhcmm0uqt",
     "deletedAt": "2026-04-26 14:31:49",
     "deletedBy": "开心财税",

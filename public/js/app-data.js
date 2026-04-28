@@ -1,10 +1,16 @@
 // Data: API access, CRUD actions, accountant picker data sync, auto refresh, persisted view state.
+    function getEncodedLoginAccountHeaderValue() {
+      const loginAccount = String(currentLoginAccount || "").trim();
+      return loginAccount ? encodeURIComponent(loginAccount) : "";
+    }
+
     async function fetchWithClientLog(url, options = {}, meta = {}) {
       const { skipAuth = false } = meta;
       const buildHeaders = () => {
         const headers = new Headers(options.headers || {});
-        if (!skipAuth && currentLoginAccount) {
-          headers.set("X-Dispatch-Account", currentLoginAccount);
+        const encodedLoginAccount = getEncodedLoginAccountHeaderValue();
+        if (!skipAuth && encodedLoginAccount) {
+          headers.set("X-Dispatch-Account", encodedLoginAccount);
         }
         return headers;
       };
@@ -43,7 +49,6 @@
       closeDevTodoModal();
       closeConfirmDialog(false);
       setPageMode(false);
-      renderRequestLogList();
       loginCodeInput.value = "";
       loginPasswordInput.value = "";
       setLoginRequestHint("登录状态已失效，请重新登录", "error");
@@ -58,6 +63,7 @@
       dispatchers = [];
       hasFetchedRecords = false;
       clearBossRecordSelection();
+      clearBossSettlementPayoutSelection();
       setRecentBossSettlementRecordIds([]);
       currentOperationNoticeLogId = "";
       operationNoticeDismissed = false;
@@ -87,6 +93,7 @@
         ? String(authResult?.profile?.phone || "").trim()
         : "";
       setRecentBossSettlementRecordIds([]);
+      clearBossSettlementPayoutSelection();
       hasFetchedRecords = false;
       resetAccountantAssignmentNoticeState();
       loadOperationNoticePreference();
@@ -102,6 +109,7 @@
         || !checkModal.hidden
         || !completeModal.hidden
         || !returnPriceModal.hidden
+        || !refundModal.hidden
         || !recordHistoryModal.hidden
         || (invoicePreviewModal && !invoicePreviewModal.hidden)
         || !bossSettlementSummaryModal.hidden
@@ -230,6 +238,16 @@
       premiumHint.classList.toggle("negative", premium < 0);
     }
 
+    function syncNonSettlementPriceDefaults(accountantName) {
+      if (!isNonSettlementAccountantName(accountantName)) return;
+      totalPriceInput.value = "0";
+      settlementPriceInput.value = "0";
+      settlementPriceAutoFilled = false;
+      clearInlineFieldError(totalPriceInput);
+      clearInlineFieldError(settlementPriceInput);
+      syncPremiumPriceFromPrices();
+    }
+
     function getRecordsRenderSignature(sourceRecords) {
       if (!Array.isArray(sourceRecords) || !sourceRecords.length) return "";
       return sourceRecords.map((item) => getRecordComparisonSignature(item)).join("\u0002");
@@ -310,7 +328,6 @@
       const payload = await response.json();
       recycleBinRecords = Array.isArray(payload.recycleBinRecords) ? payload.recycleBinRecords : [];
       accountantOperationLogs = Array.isArray(payload.accountantOperationLogs) ? payload.accountantOperationLogs : [];
-      renderRequestLogList();
       if (!recycleModal.hidden) {
         renderRecycleBinTable();
         renderAccountantOperationLogs();
@@ -329,7 +346,6 @@
       }
       const payload = await response.json();
       accountantOperationLogs = Array.isArray(payload.accountantOperationLogs) ? payload.accountantOperationLogs : [];
-      renderRequestLogList();
       if (!recycleModal.hidden) {
         renderAccountantOperationLogs();
       }
@@ -578,9 +594,11 @@
     function setAccountantPickerValue(value) {
       const normalizedValue = String(value || "").trim();
       accountantInput.value = normalizedValue;
+      accountantPicker.classList.toggle("non-settlement-selected", isNonSettlementAccountantName(normalizedValue));
       if (normalizedValue) {
         accountantPickerValue.textContent = normalizedValue;
         accountantPickerValue.classList.remove("placeholder");
+        syncNonSettlementPriceDefaults(normalizedValue);
         return;
       }
       accountantPickerValue.textContent = "";
@@ -729,11 +747,16 @@
 
       accountantPickerEmpty.hidden = true;
       filteredOptions.forEach((name) => {
+        const isBuiltInOption = isBuiltInAccountantName(name);
         const optionBtn = document.createElement("button");
         optionBtn.type = "button";
         optionBtn.className = "accountant-picker-option";
         optionBtn.dataset.value = name;
         optionBtn.setAttribute("role", "option");
+        if (isBuiltInOption) {
+          optionBtn.classList.add("non-settlement");
+          optionBtn.title = "内置会计选项";
+        }
         const isSelected = name === selectedValue;
         optionBtn.setAttribute("aria-selected", String(isSelected));
         if (isSelected) optionBtn.classList.add("selected");
@@ -745,10 +768,19 @@
         const rightMeta = document.createElement("span");
         rightMeta.className = "accountant-picker-option-meta";
 
-        const countBadge = document.createElement("span");
-        countBadge.className = "accountant-picker-option-count";
-        countBadge.textContent = `${accountantPickerOrderCountMap.get(name) || 0} 单`;
-        rightMeta.appendChild(countBadge);
+        if (!isBuiltInOption) {
+          const countBadge = document.createElement("span");
+          countBadge.className = "accountant-picker-option-count";
+          countBadge.textContent = `${accountantPickerOrderCountMap.get(name) || 0} 单`;
+          rightMeta.appendChild(countBadge);
+        }
+
+        if (isBuiltInOption) {
+          const systemBadge = document.createElement("span");
+          systemBadge.className = "accountant-picker-option-badge non-settlement-badge";
+          systemBadge.textContent = "内置";
+          rightMeta.appendChild(systemBadge);
+        }
 
         if (isSelected) {
           const badge = document.createElement("span");
@@ -977,10 +1009,10 @@
       const orderCountByAccountant = getAccountantOrderCountMap();
       const availableAccountantNames = currentAccountantName
         ? [currentAccountantName]
-        : getOrderSortedAccountantNames(
+        : withBuiltInAccountantOptions(getOrderSortedAccountantNames(
             accountants.map((item) => String(item.displayName || item.name || "").trim()),
             orderCountByAccountant
-          );
+          ));
       const currentValue = String(accountantInput.value || "").trim();
       accountantPickerOptions = availableAccountantNames;
       accountantPickerOrderCountMap = orderCountByAccountant;
@@ -1496,6 +1528,7 @@
       syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: true });
       records = nextRecords;
       clearBossRecordSelection();
+      clearBossSettlementPayoutSelection();
       renderTable();
       if (!analysisModal.hidden) {
         renderAnalysisPanel();
@@ -1545,6 +1578,59 @@
       return {
         uploadedRecordIds: Array.isArray(body.uploadedRecordIds) ? body.uploadedRecordIds : [],
         invoiceImage: body.invoiceImage || null
+      };
+    }
+
+    async function payoutSettlementRecordsByIds(recordIds) {
+      const normalizedRecordIds = Array.from(
+        new Set(
+          (Array.isArray(recordIds) ? recordIds : [])
+            .map((item) => String(item || "").trim())
+            .filter(Boolean)
+        )
+      );
+      if (!normalizedRecordIds.length) {
+        throw new Error("请选择要打款的数据。");
+      }
+
+      const response = await fetchWithClientLog(API_ENDPOINT_RECORDS_PAYOUT, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recordIds: normalizedRecordIds })
+      }, {
+        successMessage: "打款",
+        errorMessage: "打款"
+      });
+
+      if (!response.ok) {
+        let message = `打款失败（${response.status}）`;
+        try {
+          const body = await response.json();
+          if (body.error) message = body.error;
+        } catch (error) {
+          console.error(error);
+        }
+        throw new Error(message);
+      }
+
+      const body = await response.json();
+      const nextRecords = Array.isArray(body.records) ? body.records : records;
+      syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: true });
+      records = nextRecords;
+      syncBossSettlementPayoutSelection(records);
+      renderTable();
+      if (bossSettlementDetailModal && !bossSettlementDetailModal.hidden) {
+        renderBossSettlementDetailModalContent();
+      }
+      if (!analysisModal.hidden) {
+        renderAnalysisPanel();
+      }
+      if (!accountantModal.hidden) {
+        renderAccountantList();
+      }
+      return {
+        paidRecordIds: Array.isArray(body.paidRecordIds) ? body.paidRecordIds : [],
+        skippedRecordIds: Array.isArray(body.skippedRecordIds) ? body.skippedRecordIds : []
       };
     }
 
@@ -1671,7 +1757,6 @@
       if (document.hidden) return;
       if (refreshInFlightPromise) return refreshInFlightPromise;
 
-      lastRefreshStartedAt = Date.now();
       refreshInFlightPromise = (async () => {
         try {
           await fetchRecords();
@@ -1690,154 +1775,7 @@
       return refreshInFlightPromise;
     }
 
-    function dispatchParsedAppEvent(eventName, payloadText) {
-      if (eventName !== "app-data") return;
-      if (payloadText) {
-        try {
-          JSON.parse(payloadText);
-        } catch (error) {
-          console.error(error);
-        }
-      }
-      if (document.hidden) return;
-      void runAutoRefreshCycle();
-    }
-
-    function flushAppEventStreamState(parserState) {
-      const eventName = String(parserState.eventName || "message").trim() || "message";
-      const payloadText = parserState.dataLines.join("\n");
-      parserState.eventName = "";
-      parserState.dataLines = [];
-      if (!payloadText) return;
-      dispatchParsedAppEvent(eventName, payloadText);
-    }
-
-    function processAppEventStreamChunk(parserState, chunkText, flush = false) {
-      if (chunkText) {
-        parserState.buffer += chunkText;
-      }
-      if (flush && parserState.buffer) {
-        parserState.buffer += "\n";
-      }
-      let lineBreakIndex = parserState.buffer.indexOf("\n");
-      while (lineBreakIndex >= 0) {
-        let line = parserState.buffer.slice(0, lineBreakIndex);
-        parserState.buffer = parserState.buffer.slice(lineBreakIndex + 1);
-        if (line.endsWith("\r")) {
-          line = line.slice(0, -1);
-        }
-        if (!line) {
-          flushAppEventStreamState(parserState);
-          lineBreakIndex = parserState.buffer.indexOf("\n");
-          continue;
-        }
-        if (line.startsWith(":")) {
-          lineBreakIndex = parserState.buffer.indexOf("\n");
-          continue;
-        }
-        const separatorIndex = line.indexOf(":");
-        const field = separatorIndex >= 0 ? line.slice(0, separatorIndex) : line;
-        let value = separatorIndex >= 0 ? line.slice(separatorIndex + 1) : "";
-        if (value.startsWith(" ")) {
-          value = value.slice(1);
-        }
-        if (field === "event") {
-          parserState.eventName = value;
-        } else if (field === "data") {
-          parserState.dataLines.push(value);
-        }
-        lineBreakIndex = parserState.buffer.indexOf("\n");
-      }
-      if (flush && (parserState.eventName || parserState.dataLines.length)) {
-        flushAppEventStreamState(parserState);
-      }
-    }
-
-    function scheduleAppEventReconnect() {
-      if (!hasAuthenticatedAccount()) return;
-      if (appEventReconnectTimer) return;
-      appEventReconnectTimer = window.setTimeout(() => {
-        appEventReconnectTimer = null;
-        if (!hasAuthenticatedAccount()) return;
-        openAppEventStream();
-      }, 1500);
-    }
-
-    function closeAppEventStream() {
-      if (!appEventSource) return;
-      appEventSource.close();
-      appEventSource = null;
-    }
-
-    function openAppEventStream() {
-      if (!hasAuthenticatedAccount()) return;
-      if (typeof window.fetch !== "function") return;
-      if (appEventReconnectTimer) {
-        window.clearTimeout(appEventReconnectTimer);
-        appEventReconnectTimer = null;
-      }
-      closeAppEventStream();
-      const abortController = new AbortController();
-      let isClosed = false;
-      const source = {
-        close() {
-          if (isClosed) return;
-          isClosed = true;
-          abortController.abort();
-        }
-      };
-      appEventSource = source;
-      void (async () => {
-        try {
-          const response = await fetch(API_ENDPOINT_APP_EVENTS, {
-            method: "GET",
-            cache: "no-store",
-            headers: {
-              "X-Dispatch-Account": currentLoginAccount
-            },
-            signal: abortController.signal
-          });
-          if (isClosed) return;
-          if (response.status === 401) {
-            handleUnauthorizedSession();
-            return;
-          }
-          if (!response.ok || !response.body) {
-            throw new Error(`实时消息连接失败（${response.status}）`);
-          }
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder("utf-8");
-          const parserState = { buffer: "", eventName: "", dataLines: [] };
-          while (true) {
-            const { value, done } = await reader.read();
-            if (isClosed) return;
-            if (done) break;
-            processAppEventStreamChunk(parserState, decoder.decode(value, { stream: true }));
-          }
-          processAppEventStreamChunk(parserState, decoder.decode(), true);
-          if (appEventSource === source) {
-            appEventSource = null;
-          }
-          scheduleAppEventReconnect();
-        } catch (error) {
-          if (isClosed || (error && error.name === "AbortError")) {
-            return;
-          }
-          console.error(error);
-          if (appEventSource === source) {
-            appEventSource = null;
-          }
-          scheduleAppEventReconnect();
-        }
-      })();
-    }
-
     function stopAutoRefresh() {
-      if (appEventReconnectTimer) {
-        window.clearTimeout(appEventReconnectTimer);
-        appEventReconnectTimer = null;
-      }
-      closeAppEventStream();
       if (!refreshTimer) return;
       clearInterval(refreshTimer);
       refreshTimer = null;
@@ -1845,10 +1783,9 @@
 
     function startAutoRefresh() {
       stopAutoRefresh();
-      openAppEventStream();
       refreshTimer = setInterval(() => {
         void runAutoRefreshCycle();
-      }, 45000);
+      }, AUTO_REFRESH_INTERVAL_MS);
     }
 
     function saveToStorage() {

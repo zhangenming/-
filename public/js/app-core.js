@@ -3,15 +3,16 @@
     const API_ENDPOINT_RECORDS = `${API_BASE}/api/records`;
     const API_ENDPOINT_RECORDS_SETTLE = `${API_ENDPOINT_RECORDS}/settle`;
     const API_ENDPOINT_RECORDS_INVOICE = `${API_ENDPOINT_RECORDS}/invoice`;
+    const API_ENDPOINT_RECORDS_PAYOUT = `${API_ENDPOINT_RECORDS}/payout`;
     const API_ENDPOINT_ACCOUNTANTS = `${API_BASE}/api/accountants`;
     const API_ENDPOINT_DISPATCHERS = `${API_BASE}/api/dispatchers`;
     const API_ENDPOINT_RECYCLE_BIN = `${API_BASE}/api/recycle-bin`;
     const API_ENDPOINT_ACCOUNTANT_OPERATION_LOGS = `${API_BASE}/api/accountant-operation-logs`;
-    const API_ENDPOINT_APP_EVENTS = `${API_BASE}/api/events`;
     const API_ENDPOINT_BUILD_INFO = `${API_BASE}/build-info.json`;
     const API_ENDPOINT_AUTH_ACCOUNTANT_REGISTER = `${API_BASE}/api/auth/accountant-register`;
     const API_ENDPOINT_AUTH_LOGIN = `${API_BASE}/api/auth/login`;
     const API_ENDPOINT_AUTH_PASSWORD = `${API_BASE}/api/auth/password`;
+    const AUTO_REFRESH_INTERVAL_MS = 45000;
     const STORAGE_KEY_ACCOUNT = "dispatch_current_account_v1";
     const STORAGE_KEY_ACCOUNT_ROLE = "dispatch_current_account_role_v1";
     const STORAGE_KEY_ACCOUNT_DISPLAY_NAME = "dispatch_current_account_display_name_v1";
@@ -40,6 +41,9 @@
     const COMPLETE_FEEDBACK_IMAGE_MAX_COUNT = 8;
     const COMPLETE_FEEDBACK_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
     const SETTLEMENT_INVOICE_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
+    const NON_SETTLEMENT_ACCOUNTANT_NAME = "不结算";
+    const EXTERNAL_ACCOUNTANT_NAME = "外部人员";
+    const BUILT_IN_ACCOUNTANT_NAMES = [NON_SETTLEMENT_ACCOUNTANT_NAME, EXTERNAL_ACCOUNTANT_NAME];
     const SOURCE_OPTIONS = ["小红书", "淘宝", "闲鱼", "抖音", "其他"];
     const PLATFORM_SHOP_OPTIONS = [
       { label: "闲鱼-开心财税", platform: "闲鱼", shopName: "开心财税" },
@@ -63,15 +67,36 @@
         ? "development"
         : "production";
     }
-    const normalizedPort = String(window.location.port || "").trim();
-    const isDevelopmentPort = normalizedPort === "2999";
-    let runtimeAppEnvironment = normalizeAppEnvironment(isDevelopmentPort ? "development" : "production");
-    const isTabScopedPersistenceEnabled = isDevelopmentPort;
+    function getInitialAppEnvironment() {
+      const explicitEnvironment = String(document.documentElement?.dataset?.appEnv || window.__APP_ENV__ || "").trim();
+      return normalizeAppEnvironment(explicitEnvironment || "production");
+    }
+    let runtimeAppEnvironment = getInitialAppEnvironment();
+    let isTabScopedPersistenceEnabled = false;
     const authStateStorage = window.sessionStorage;
-    const persistentStateStorage = isTabScopedPersistenceEnabled ? window.sessionStorage : window.localStorage;
-    const legacyPersistentStateStorage = isTabScopedPersistenceEnabled ? window.localStorage : window.sessionStorage;
-    const isDevTodoEnabled = isDevelopmentPort;
-    const isQuickLoginEnabled = isDevelopmentPort;
+    let persistentStateStorage = window.localStorage;
+    let legacyPersistentStateStorage = window.sessionStorage;
+    let isDevTodoEnabled = false;
+    let isQuickLoginEnabled = false;
+
+    function isDevelopmentEnvironment() {
+      return runtimeAppEnvironment === "development";
+    }
+
+    function isProductionEnvironment() {
+      return runtimeAppEnvironment === "production";
+    }
+
+    function applyRuntimeEnvironment(rawEnvironment) {
+      runtimeAppEnvironment = normalizeAppEnvironment(rawEnvironment);
+      isTabScopedPersistenceEnabled = isDevelopmentEnvironment();
+      persistentStateStorage = isTabScopedPersistenceEnabled ? window.sessionStorage : window.localStorage;
+      legacyPersistentStateStorage = isTabScopedPersistenceEnabled ? window.localStorage : window.sessionStorage;
+      isDevTodoEnabled = isDevelopmentEnvironment();
+      isQuickLoginEnabled = isDevelopmentEnvironment();
+    }
+
+    applyRuntimeEnvironment(runtimeAppEnvironment);
 
     function setAuthStateItem(key, value) {
       authStateStorage.setItem(key, value);
@@ -182,10 +207,6 @@
     const headerAccountSubText = document.getElementById("headerAccountSubText");
     const accountRoleBadge = document.getElementById("accountRoleBadge");
     const operationNoticeStack = document.getElementById("operationNoticeStack");
-    const requestLogPanel = document.getElementById("requestLogPanel");
-    const requestLogStatusBadge = document.getElementById("requestLogStatusBadge");
-    const requestLogList = document.getElementById("requestLogList");
-    const requestLogEmptyState = document.getElementById("requestLogEmptyState");
     const openCreateModalBtn = document.getElementById("openCreateModalBtn");
     const openDispatcherModalBtn = document.getElementById("openDispatcherModalBtn");
     const openAnalysisModalBtn = document.getElementById("openAnalysisModalBtn");
@@ -221,6 +242,14 @@
     const returnPriceModalCard = returnPriceModal.querySelector(".return-price-modal-card");
     const returnPriceModalMeta = document.getElementById("returnPriceModalMeta");
     const returnPriceModalContent = document.getElementById("returnPriceModalContent");
+    const refundModal = document.getElementById("refundModal");
+    const refundModalCard = refundModal.querySelector(".refund-modal-card");
+    const refundModalMeta = document.getElementById("refundModalMeta");
+    const refundFormHint = document.getElementById("refundFormHint");
+    const refundForm = document.getElementById("refundForm");
+    const refundRecordIdInput = document.getElementById("refundRecordId");
+    const refundCurrentPaymentText = document.getElementById("refundCurrentPaymentText");
+    const refundPaymentPriceInput = document.getElementById("refundPaymentPrice");
     const recordHistoryModal = document.getElementById("recordHistoryModal");
     const recordHistoryModalCard = recordHistoryModal.querySelector(".record-history-modal-card");
     const recordHistoryModalMeta = document.getElementById("recordHistoryModalMeta");
@@ -312,7 +341,6 @@
     const dispatcherTagButtons = Array.from(document.querySelectorAll(".dispatcher-tag-btn"));
     const recordForm = document.getElementById("recordForm");
     const recordEditingIdInput = document.getElementById("recordEditingId");
-    const recordReturnBtn = document.getElementById("recordReturnBtn");
     const recordSubmitBtn = document.getElementById("recordSubmitBtn");
     const accountantInput = document.getElementById("accountant");
     const accountantPicker = document.getElementById("accountantPicker");
@@ -371,10 +399,6 @@
     const bossSettlementDetailBtn = document.getElementById("bossSettlementDetailBtn");
     const accountantInvoiceUploadBtn = document.getElementById("accountantInvoiceUploadBtn");
     const accountantInvoiceImageInput = document.getElementById("accountantInvoiceImageInput");
-    const invoiceSummaryPanel = document.getElementById("invoiceSummaryPanel");
-    const invoiceSummaryTitle = document.getElementById("invoiceSummaryTitle");
-    const invoiceSummaryMeta = document.getElementById("invoiceSummaryMeta");
-    const invoiceSummaryList = document.getElementById("invoiceSummaryList");
     const tableSelectCol = document.getElementById("tableSelectCol");
     const tableSelectHead = document.getElementById("tableSelectHead");
     const tableSelectAllCheckbox = document.getElementById("tableSelectAllCheckbox");
@@ -423,6 +447,11 @@
     const filterDateEndInput = document.getElementById("filterDateEndInput");
     const filterDateRangeApplyBtn = document.getElementById("filterDateRangeApplyBtn");
     const filterDateRangeClearBtn = document.getElementById("filterDateRangeClearBtn");
+    const tableHoverTooltip = document.createElement("div");
+    tableHoverTooltip.id = "tableHoverTooltip";
+    tableHoverTooltip.className = "table-hover-tooltip";
+    tableHoverTooltip.hidden = true;
+    document.body.appendChild(tableHoverTooltip);
 
     let currentAccount = "";
     let currentAccountRole = "";
@@ -438,9 +467,6 @@
     let hasFetchedRecords = false;
     let refreshTimer = null;
     let refreshInFlightPromise = null;
-    let appEventSource = null;
-    let appEventReconnectTimer = null;
-    let lastRefreshStartedAt = 0;
     let settlementPriceAutoFilled = false;
     let accountantPickerOptions = [];
     let accountantPickerOrderCountMap = new Map();
@@ -469,8 +495,14 @@
     let completeModalMode = "edit";
     let devTodoItems = [];
     let selectedBossRecordIds = new Set();
+    let selectedBossSettlementPayoutRecordIds = new Set();
     let isBossSettlementSubmitting = false;
+    let isBossSettlementPayoutSubmitting = false;
     let isInvoiceUploadSubmitting = false;
+    const bossSettlementDetailSortState = {
+      key: "accountant",
+      direction: "asc"
+    };
     const sortState = {
       key: "date",
       direction: "desc"
@@ -713,6 +745,22 @@
       ).sort((left, right) => compareAccountantNameByOrderCount(left, right, orderCountMap));
     }
 
+    function withBuiltInAccountantOptions(sourceNames) {
+      const names = Array.isArray(sourceNames) ? sourceNames : [];
+      return [
+        ...BUILT_IN_ACCOUNTANT_NAMES,
+        ...names.filter((name) => !isBuiltInAccountantName(name))
+      ];
+    }
+
+    function isNonSettlementAccountantName(value) {
+      return String(value || "").trim() === NON_SETTLEMENT_ACCOUNTANT_NAME;
+    }
+
+    function isBuiltInAccountantName(value) {
+      return BUILT_IN_ACCOUNTANT_NAMES.includes(String(value || "").trim());
+    }
+
     function getAccountantOrderCountMap() {
       return records.reduce((map, item) => {
         const key = String(item.accountant || "").trim();
@@ -728,6 +776,7 @@
         .map((item) => normalizeAccountantProfile(item))
         .filter(Boolean)
         .forEach((profile) => {
+          if (isBuiltInAccountantName(profile.displayName) || isBuiltInAccountantName(profile.username)) return;
           const current = profileByUsername.get(profile.username);
           if (!current) {
             profileByUsername.set(profile.username, profile);
@@ -748,6 +797,7 @@
       extraNames.forEach((name) => {
         const normalizedDisplayName = String(name || "").trim();
         if (!normalizedDisplayName) return;
+        if (isBuiltInAccountantName(normalizedDisplayName)) return;
         const exists = Array.from(profileByUsername.values()).some(
           (profile) => String(profile.displayName || "").trim() === normalizedDisplayName
         );
@@ -912,7 +962,7 @@
     function getSavedLoginGroupTitle(roleKey) {
       if (roleKey === "dispatcher") return "接待账号";
       if (roleKey === "boss") return "管理员账号";
-      return "会计手机号";
+      return "会计账号";
     }
 
     function getDispatcherAccountDisplayName(accountNameRaw) {
@@ -1051,6 +1101,10 @@
       return isBossLogin() || isDispatcherLogin();
     }
 
+    function canCurrentAccountPayoutSettlementRecords() {
+      return isBossLogin();
+    }
+
     function shouldShowProfitColumn(accountName = currentAccount) {
       return isDispatcherLogin(accountName);
     }
@@ -1070,10 +1124,13 @@
       }
       const state = getBossSettlementRecordState(record);
       if (state === "settled") {
-        return `该数据当前状态是${getRecordWorkflowStatusLabelByKey("settled")}。`;
+        return `该数据当前状态是${getRecordSettlementLabel(record)}。`;
       }
       if (state === "returned") {
         return "该数据已退单。";
+      }
+      if (state === "refunded") {
+        return "该数据已退款。";
       }
       if (state === "not_completed") {
         return `当前支持结算的状态是${getRecordWorkflowStatusLabelByKey("completed")}。`;
@@ -1134,6 +1191,68 @@
       });
     }
 
+    function clearBossSettlementPayoutSelection() {
+      selectedBossSettlementPayoutRecordIds = new Set();
+    }
+
+    function normalizeRecordSettlementPaidState(value) {
+      if (value === true || value === 1) return true;
+      const normalized = String(value || "").trim().toLowerCase();
+      return normalized === "true"
+        || normalized === "1"
+        || normalized === "yes"
+        || normalized === "已打款";
+    }
+
+    function isRecordSettlementPaid(record) {
+      if (!record || typeof record !== "object") return false;
+      return normalizeRecordSettlementPaidState(
+        Object.prototype.hasOwnProperty.call(record, "isSettlementPaid")
+          ? record.isSettlementPaid
+          : record.settlementPaid
+      );
+    }
+
+    function isBossSettlementPayoutRecordSelectable(record) {
+      if (!canCurrentAccountPayoutSettlementRecords()) return false;
+      if (!isRecordCompleted(record)) return false;
+      return isRecordInvoiceUploaded(record) && !isRecordSettlementPaid(record);
+    }
+
+    function syncBossSettlementPayoutSelection(sourceRecords = records) {
+      const validRecordIds = new Set(
+        (Array.isArray(sourceRecords) ? sourceRecords : [])
+          .filter((item) => isBossSettlementPayoutRecordSelectable(item))
+          .map((item) => String(item?.id || "").trim())
+          .filter(Boolean)
+      );
+      selectedBossSettlementPayoutRecordIds = new Set(
+        Array.from(selectedBossSettlementPayoutRecordIds).filter((recordId) => validRecordIds.has(recordId))
+      );
+    }
+
+    function isBossSettlementPayoutRecordSelected(recordId) {
+      const normalizedRecordId = String(recordId || "").trim();
+      return Boolean(normalizedRecordId && selectedBossSettlementPayoutRecordIds.has(normalizedRecordId));
+    }
+
+    function setBossSettlementPayoutRecordSelected(recordIds, isSelected) {
+      const ids = (Array.isArray(recordIds) ? recordIds : [recordIds])
+        .map((item) => String(item || "").trim())
+        .filter(Boolean);
+      ids.forEach((recordId) => {
+        if (isSelected) {
+          selectedBossSettlementPayoutRecordIds.add(recordId);
+        } else {
+          selectedBossSettlementPayoutRecordIds.delete(recordId);
+        }
+      });
+    }
+
+    function getSelectedBossSettlementPayoutRecordIds() {
+      return Array.from(selectedBossSettlementPayoutRecordIds).filter(Boolean);
+    }
+
     function isRecordSettled(record) {
       if (!record || typeof record !== "object") return false;
       if (record.isSettled === true || record.isSettled === 1) return true;
@@ -1144,7 +1263,8 @@
         || normalized === "已结算"
         || normalized === "已结算/待上传"
         || normalized === "已上传"
-        || normalized === "已上传/待打款";
+        || normalized === "已上传/待打款"
+        || normalized === "已打款";
     }
 
     function isMonthlySettlementRecord(record) {
@@ -1197,8 +1317,11 @@
     }
 
     function getRecordWorkflowStatusLabelByKey(statusKey) {
+      if (statusKey === "paid") return "已打款";
       if (statusKey === "uploaded") return "已上传/待打款";
       if (statusKey === "settled") return "已结算/待上传";
+      if (statusKey === "partial_refunded") return "部分退款";
+      if (statusKey === "refunded") return "退款";
       if (statusKey === "completed") return "已完成/待结算";
       if (statusKey === "checked") return "已确认/待完成";
       if (statusKey === "returned") return "已退单";
@@ -1208,6 +1331,7 @@
     function normalizeSettlementWorkflowStatus(value) {
       const status = String(value || "").trim().toLowerCase();
       if (!status) return "";
+      if (status === "已打款") return "paid";
       if (status === "已上传" || status === "已上传/待打款") return "uploaded";
       if (status === "已结算" || status === "已结算/待上传") return "settled";
       if (status === "未结算" || status === "待结算" || status === "已完成/待结算") return "completed";
@@ -1220,19 +1344,34 @@
     }
 
     function getRecordSettlementLabel(record) {
+      if (isRecordSettlementPaid(record)) return getRecordWorkflowStatusLabelByKey("paid");
       if (isRecordInvoiceUploaded(record)) return getRecordWorkflowStatusLabelByKey("uploaded");
       if (isRecordSettled(record)) return getRecordWorkflowStatusLabelByKey("settled");
       return isRecordCompleted(record) ? getRecordWorkflowStatusLabelByKey("completed") : "未结算";
     }
 
     function isRecordCompleted(record) {
-      return String(record?.checkStatus || "").trim().toLowerCase() === "completed";
+      const checkStatus = String(record?.checkStatus || "").trim().toLowerCase();
+      return checkStatus === "completed" || checkStatus === "partial_refunded";
+    }
+
+    function isRecordRefundable(record) {
+      const statusKey = getRecordWorkflowStatusKey(record);
+      return statusKey === "completed" || statusKey === "partial_refunded";
     }
 
     function getRecordWorkflowStatusKey(record) {
       const checkStatus = String(record?.checkStatus || "").trim().toLowerCase();
+      if (checkStatus === "refunded") return "refunded";
+      if (checkStatus === "partial_refunded") {
+        if (isRecordSettlementPaid(record)) return "paid";
+        if (isRecordInvoiceUploaded(record)) return "uploaded";
+        if (isRecordSettled(record)) return "settled";
+        return "partial_refunded";
+      }
       if (checkStatus === "returned") return "returned";
       if (checkStatus === "completed") {
+        if (isRecordSettlementPaid(record)) return "paid";
         if (isRecordInvoiceUploaded(record)) return "uploaded";
         if (isRecordSettled(record)) return "settled";
         return "completed";
@@ -1261,6 +1400,7 @@
     }
 
     function getRecordSettlementChipClass(record) {
+      if (isRecordSettlementPaid(record)) return "paid";
       if (isRecordInvoiceUploaded(record)) return "uploaded";
       if (isRecordSettled(record)) return "settled";
       return "pending";
@@ -1270,15 +1410,52 @@
       if (!isAccountantLogin()) return [];
       return (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) => {
         const checkStatus = String(item?.checkStatus || "").trim().toLowerCase();
-        return isRecordSettled(item) && !isRecordInvoiceUploaded(item) && checkStatus === "completed";
+        return isRecordSettled(item)
+          && !isRecordInvoiceUploaded(item)
+          && (checkStatus === "completed" || checkStatus === "partial_refunded");
       });
+    }
+
+    function getAccountantInvoiceUploadSummary(sourceRecords = records) {
+      const targetRecords = getAccountantInvoiceUploadTargetRecords(sourceRecords);
+      const invoiceAmount = targetRecords.reduce((sum, item) => {
+        const settlement = Number(item?.settlementPrice);
+        return Number.isFinite(settlement) ? sum + settlement : sum;
+      }, 0);
+      const taxAmount = getSettlementTaxAmount(invoiceAmount);
+      return {
+        targetRecords,
+        count: targetRecords.length,
+        invoiceAmount,
+        taxAmount,
+        payableAmount: invoiceAmount - taxAmount
+      };
+    }
+
+    function isBossSettlementDetailRecord(record) {
+      if (!isRecordSettled(record)) return false;
+      const checkStatus = String(record?.checkStatus || "").trim().toLowerCase();
+      return checkStatus === "completed" || checkStatus === "partial_refunded";
+    }
+
+    function isBossSettlementPendingUploadRecord(record) {
+      return isBossSettlementDetailRecord(record) && !isRecordInvoiceUploaded(record);
+    }
+
+    function getBossSettlementDetailRecords(sourceRecords = records) {
+      return (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) => isBossSettlementDetailRecord(item));
+    }
+
+    function getBossSettlementPendingUploadRecords(sourceRecords = records) {
+      return (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) => isBossSettlementPendingUploadRecord(item));
     }
 
     function getBossSettlementRecordState(record) {
       if (isRecordSettled(record)) return "settled";
       const checkStatus = String(record?.checkStatus || "").trim().toLowerCase();
+      if (checkStatus === "refunded") return "refunded";
       if (checkStatus === "returned") return "returned";
-      if (checkStatus !== "completed") return "not_completed";
+      if (checkStatus !== "completed" && checkStatus !== "partial_refunded") return "not_completed";
       return "ready";
     }
 
@@ -1287,6 +1464,7 @@
       const readySelectedRecords = selectedRecords.filter((item) => getBossSettlementRecordState(item) === "ready");
       const alreadySettledCount = selectedRecords.filter((item) => getBossSettlementRecordState(item) === "settled").length;
       const returnedCount = selectedRecords.filter((item) => getBossSettlementRecordState(item) === "returned").length;
+      const refundedCount = selectedRecords.filter((item) => getBossSettlementRecordState(item) === "refunded").length;
       const totalSettlement = readySelectedRecords.reduce((sum, item) => {
         const settlement = Number(item?.settlementPrice);
         return Number.isFinite(settlement) ? sum + settlement : sum;
@@ -1298,7 +1476,8 @@
         readyCount: readySelectedRecords.length,
         alreadySettledCount,
         returnedCount,
-        skippedCount: alreadySettledCount + returnedCount,
+        refundedCount,
+        skippedCount: alreadySettledCount + returnedCount + refundedCount,
         totalSettlement
       };
     }
@@ -1663,6 +1842,8 @@
       }
       if (actionKey === "checked") return "已确认";
       if (actionKey === "completed") return "已完成";
+      if (actionKey === "partial_refunded") return "部分退款";
+      if (actionKey === "refunded") return "已退款";
       if (actionKey === "returned") return "已退单";
       if (actionKey === "settled") return "已结算";
       if (actionKey === "invoice_uploaded") return "发票已上传";
@@ -2152,10 +2333,11 @@
     function getSettlementTaxAmount(value) {
       const income = Number(value);
       if (!Number.isFinite(income) || income <= 0) return 0;
+      if (income <= 800) return 0;
       if (income <= 4000) {
-        return Math.max(income - 800, 0) * 0.2;
+        return (income - 800) * 0.2;
       }
-      return income * 0.8 * 0.2;
+      return income * 0.16;
     }
 
     function getPremiumValue(source) {
@@ -2364,31 +2546,10 @@
       return version ? `v${version}` : "v--";
     }
 
-    function isDevelopmentEnvironment() {
-      return runtimeAppEnvironment === "development";
-    }
-
-    function syncRequestLogPanelVisibility() {
-      if (!requestLogPanel) return;
-      const shouldShow = isDevelopmentEnvironment();
-      requestLogPanel.hidden = !shouldShow;
-      if (!shouldShow) {
-        if (requestLogList) {
-          requestLogList.innerHTML = "";
-        }
-        if (requestLogEmptyState) {
-          requestLogEmptyState.hidden = true;
-        }
-        return;
-      }
-      renderRequestLogList();
-    }
-
     function renderBuildInfo(buildInfo) {
-      if (!buildInfoPanel || !buildVersionText || !buildTimeText) return;
       const source = buildInfo && typeof buildInfo === "object" ? buildInfo : {};
-      runtimeAppEnvironment = normalizeAppEnvironment(source.appEnv || (isDevelopmentPort ? "development" : "production"));
-      syncRequestLogPanelVisibility();
+      applyRuntimeEnvironment(source.appEnv || runtimeAppEnvironment);
+      if (!buildInfoPanel || !buildVersionText || !buildTimeText) return;
       const builtAt = String(source.builtAt || "").trim();
       buildVersionText.textContent = `版本 ${normalizeBuildVersion(source.version)}`;
       buildTimeText.textContent = builtAt
@@ -2413,6 +2574,68 @@
       node.textContent = normalizedText;
       node.className = `${className} ${state}`;
       node.hidden = !normalizedText;
+    }
+
+    function getTableTooltipCell(target) {
+      if (!(target instanceof Element)) return null;
+      const cell = target.closest("[data-table-tooltip]");
+      if (!cell || !tableBody || !tableBody.contains(cell)) return null;
+      return cell;
+    }
+
+    function isTableTooltipCellOverflowing(cell) {
+      if (!(cell instanceof HTMLElement)) return false;
+      if (cell.scrollWidth > cell.clientWidth + 1) return true;
+      return Array.from(cell.children).some((child) => (
+        child instanceof HTMLElement && child.scrollWidth > child.clientWidth + 1
+      ));
+    }
+
+    function shouldShowTableTooltipCell(cell) {
+      if (!(cell instanceof HTMLElement)) return false;
+      if (cell.dataset.tableTooltipMode === "always") return true;
+      return isTableTooltipCellOverflowing(cell);
+    }
+
+    function placeTableHoverTooltip(event) {
+      if (!(event instanceof MouseEvent) || tableHoverTooltip.hidden) return;
+      const margin = 14;
+      const offset = 16;
+      const rect = tableHoverTooltip.getBoundingClientRect();
+      let left = event.clientX + offset;
+      let top = event.clientY + offset;
+
+      if (left + rect.width + margin > window.innerWidth) {
+        left = event.clientX - rect.width - offset;
+      }
+      if (top + rect.height + margin > window.innerHeight) {
+        top = event.clientY - rect.height - offset;
+      }
+
+      tableHoverTooltip.style.left = `${Math.max(margin, Math.round(left))}px`;
+      tableHoverTooltip.style.top = `${Math.max(margin, Math.round(top))}px`;
+    }
+
+    function showTableHoverTooltip(text, event) {
+      const normalizedText = String(text || "").trim();
+      if (!normalizedText) {
+        hideTableHoverTooltip();
+        return;
+      }
+      tableHoverTooltip.textContent = normalizedText;
+      tableHoverTooltip.hidden = false;
+      tableHoverTooltip.classList.add("visible");
+      placeTableHoverTooltip(event);
+    }
+
+    function moveTableHoverTooltip(event) {
+      placeTableHoverTooltip(event);
+    }
+
+    function hideTableHoverTooltip() {
+      tableHoverTooltip.classList.remove("visible");
+      tableHoverTooltip.hidden = true;
+      tableHoverTooltip.textContent = "";
     }
 
     function setLoginRequestHint(text, state = "idle") {
@@ -2443,6 +2666,10 @@
       setHintState(completeFormHint, "login-request-hint form-request-hint", text, state);
     }
 
+    function setRefundFormHint(text, state = "idle") {
+      setHintState(refundFormHint, "login-request-hint form-request-hint", text, state);
+    }
+
     function setAccountantModalHint(text, state = "idle") {
       setHintState(accountantModalHint, "login-request-hint form-request-hint", text, state);
     }
@@ -2457,12 +2684,6 @@
 
     function setChangePasswordHint(text, state = "idle") {
       setHintState(changePasswordHint, "login-request-hint accountant-register-hint", text, state);
-    }
-
-    function setRequestLogStatusBadge(text, state = "idle") {
-      if (!requestLogStatusBadge) return;
-      requestLogStatusBadge.textContent = text;
-      requestLogStatusBadge.className = `request-log-status-badge ${state}`;
     }
 
     function getInlineValidationGroup(target) {
@@ -2943,65 +3164,4 @@
       if (!newAssignedRecords.length) return;
       addUpdatedRowHighlights(newAssignedRecords.map((item) => String(item?.id || "").trim()));
       currentOperationNoticeLogId = "";
-    }
-
-    function syncOperationNotice(logEntries) {
-      dispatcherOperationNoticeItem = null;
-      operationNoticeDismissed = false;
-      dismissedOperationNoticeLogId = "";
-      currentOperationNoticeLogId = "";
-      hideOperationNotice();
-    }
-
-    function renderRequestLogList() {
-      if (!requestLogList || !requestLogEmptyState) return;
-      const shouldSyncDispatcherNotice = !isAccountantLogin();
-      const scopedLogs = getVisibleAccountantOperationLogs().slice(0, 18);
-      if (!scopedLogs.length) {
-        requestLogList.innerHTML = "";
-        requestLogEmptyState.hidden = false;
-        setRequestLogStatusBadge("等待会计操作", "idle");
-        if (shouldSyncDispatcherNotice) {
-          syncOperationNotice(scopedLogs);
-        }
-        return;
-      }
-
-      requestLogEmptyState.hidden = true;
-      requestLogList.innerHTML = scopedLogs
-        .map((entry) => {
-          const actionKeyRaw = String(entry?.actionKey || "").trim().toLowerCase();
-          const actionKey = actionKeyRaw === "completed" || actionKeyRaw === "returned" ? actionKeyRaw : "checked";
-          const actionLabel = actionKey === "completed" ? "完成" : (actionKey === "returned" ? "退单" : "确认");
-          const operator = String(entry?.operatedBy || "").trim() || "未知会计";
-          const dispatcher = normalizeDispatcherTag(entry?.dispatcher);
-          const accountantName = String(entry?.accountant || "").trim() || "未填会计";
-          const customerName = String(entry?.customer || "").trim() || "未填客户";
-          const detailParts = [
-            formatDateDisplay(entry?.date),
-            accountantName,
-            customerName
-          ];
-          if (!isDispatcherLogin()) {
-            detailParts.splice(1, 0, dispatcher);
-          }
-          const detailText = detailParts.filter(Boolean).join(" · ");
-          return `
-            <div class="request-log-item ${actionKey === "completed" ? "ok" : (actionKey === "returned" ? "error" : "")}">
-              <div class="request-log-item-top">
-                <span class="request-log-time">${escapeHtml(formatTimeDisplay(entry?.operatedAt))}</span>
-                <span class="request-log-method">${escapeHtml(actionLabel)}</span>
-                <span class="request-log-endpoint" title="${escapeHtml(operator)}">${escapeHtml(operator)}</span>
-              </div>
-              <div class="request-log-item-bottom">
-                <span class="request-log-status">${escapeHtml(detailText)}</span>
-              </div>
-            </div>
-          `;
-        })
-        .join("");
-      setRequestLogStatusBadge("会计列表操作", "ok");
-      if (shouldSyncDispatcherNotice) {
-        syncOperationNotice(scopedLogs);
-      }
     }
