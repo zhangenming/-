@@ -465,7 +465,6 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
@@ -503,7 +502,6 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
@@ -553,7 +551,6 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeDispatcherModal();
@@ -598,7 +595,6 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
@@ -644,7 +640,6 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
@@ -686,7 +681,6 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
@@ -726,7 +720,6 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
@@ -770,7 +763,6 @@
       closeAccountantModal();
       closeRecycleModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeDevTodoModal();
@@ -804,7 +796,6 @@
       closeAllFilterPopovers();
       closeCreateModal();
       closeCheckModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
@@ -818,7 +809,6 @@
       completeRecordIdInput.value = String(record.id || "").trim();
       completeTimeInput.value = formatDateTimeLocalInputValue(record.completedAt || new Date());
       completeCustomerFeedbackInput.value = String(record.customerFeedback || "").trim();
-      setCompleteFeedbackImageItems(record.serviceFeedbackImages);
       completeModal.hidden = false;
       completeModal.classList.remove("modal-enter");
       completeModalCard.classList.remove("modal-enter");
@@ -836,102 +826,8 @@
       completeRecordIdInput.value = "";
       completeTimeInput.value = "";
       completeCustomerFeedbackInput.value = "";
-      resetCompleteFeedbackImageItems();
       setCompleteModalMode("edit");
       resetInlineFormState(completeForm, setCompleteFormHint);
-      syncModalOpenState();
-    }
-
-    function renderReturnPriceModalContent(record) {
-      if (!returnPriceModalContent || !returnPriceModalMeta) return;
-      returnPriceModalContent.innerHTML = "";
-      const snapshot = getReturnedPriceSnapshot(record);
-      const metaParts = [
-        formatDateDisplay(record?.date),
-        String(record?.customer || "").trim() || "未填客户"
-      ].filter(Boolean);
-      const orderNo = String(record?.orderNo || "").trim();
-      if (orderNo && !isAccountantLogin()) {
-        metaParts.push(`订单号 ${orderNo}`);
-      }
-      const returnedAt = String(formatDateTimeDisplay(record?.returnedAt)).trim();
-      if (returnedAt) {
-        metaParts.push(`退单时间 ${returnedAt}`);
-      }
-      returnPriceModalMeta.textContent = metaParts.join(" · ");
-
-      if (!snapshot) {
-        const emptyState = document.createElement("div");
-        emptyState.className = "return-price-empty";
-        emptyState.textContent = "未保存退单前价格";
-        returnPriceModalContent.appendChild(emptyState);
-        return;
-      }
-
-      const grid = document.createElement("div");
-      grid.className = "return-price-grid";
-      [
-        { label: "付款价", value: snapshot.paymentPrice },
-        { label: "会计价", value: snapshot.totalPrice },
-        { label: "溢价", value: snapshot.premiumPrice },
-        { label: "结算价", value: snapshot.settlementPrice }
-      ].forEach((entry) => {
-        const item = document.createElement("section");
-        item.className = "return-price-item";
-
-        const label = document.createElement("span");
-        label.className = "return-price-label";
-        label.textContent = entry.label;
-
-        const value = document.createElement("strong");
-        value.className = "return-price-value";
-        value.textContent = Number.isFinite(Number(entry.value)) ? toMoney(entry.value) : "未记录";
-
-        item.appendChild(label);
-        item.appendChild(value);
-        grid.appendChild(item);
-      });
-      returnPriceModalContent.appendChild(grid);
-    }
-
-    function openReturnPriceModal(record) {
-      if (!record || typeof record !== "object") return;
-      if (isAccountantLogin()) return;
-      closeAllFilterPopovers();
-      closeCreateModal();
-      closeCheckModal();
-      closeCompleteModal();
-      closeAnalysisModal();
-      closeAccountantModal();
-      closeRecycleModal();
-      closeDevTodoModal();
-      closeRecordHistoryModal();
-      closeAccountantPicker();
-      closeSourcePicker();
-      closePlatformShopPicker();
-      renderReturnPriceModalContent(record);
-      returnPriceModal.hidden = false;
-      returnPriceModal.classList.remove("modal-enter");
-      returnPriceModalCard.classList.remove("modal-enter");
-      void returnPriceModal.offsetWidth;
-      returnPriceModal.classList.add("modal-enter");
-      returnPriceModalCard.classList.add("modal-enter");
-      syncModalOpenState();
-      if (returnPriceModalCard) {
-        returnPriceModalCard.focus();
-      }
-    }
-
-    function closeReturnPriceModal() {
-      returnPriceModal.classList.remove("modal-enter");
-      returnPriceModalCard.classList.remove("modal-enter");
-      returnPriceModal.hidden = true;
-      if (returnPriceModalMeta) {
-        returnPriceModalMeta.textContent = "";
-      }
-      if (returnPriceModalContent) {
-        returnPriceModalContent.innerHTML = "";
-      }
       syncModalOpenState();
     }
 
@@ -949,7 +845,6 @@
       closeRecycleModal();
       closeDevTodoModal();
       closeRecordHistoryModal();
-      closeReturnPriceModal();
       closeAccountantPicker();
       closeSourcePicker();
       closePlatformShopPicker();
@@ -1541,7 +1436,6 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
       closeAccountantModal();
@@ -1589,7 +1483,6 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       if (shouldKeepBossSettlementDetailOpen) {
         if (bossSettlementSummaryModal && !bossSettlementSummaryModal.hidden) {
@@ -2577,7 +2470,6 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
@@ -2612,7 +2504,6 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
@@ -3094,10 +2985,9 @@
       accountRoleBadge.className = isLoggedIn
         ? `account-role-badge ${isAccountant ? "accountant" : (isBoss ? "boss" : "dispatcher")}`
         : "account-role-badge";
-      const canOpenAnalysis = isBoss || isAnalysisButtonEnabled;
       openCreateModalBtn.hidden = isAccountant;
       openDispatcherModalBtn.hidden = !isBoss;
-      openAnalysisModalBtn.hidden = isAccountant || !canOpenAnalysis;
+      openAnalysisModalBtn.hidden = !isBoss;
       openRecycleModalBtn.hidden = isAccountant;
       openAccountantModalBtn.hidden = isAccountant;
       if (exportTableBtn) {
@@ -3118,19 +3008,6 @@
       if (isDispatcher) {
         syncDispatcherSelfViewState();
         filterDispatcherPopover.hidden = true;
-      }
-      if (!isLoggedIn) {
-        dispatcherOperationNoticeItem = null;
-        pendingAccountantNoticeItems = [];
-        hideOperationNotice({ keepCurrentId: true });
-      }
-      if (isDispatcher && operationNoticeDismissed) {
-        dispatcherOperationNoticeItem = null;
-      }
-      if (isLoggedIn && isAccountant) {
-        restorePendingOperationNotice();
-      } else {
-        renderOperationNoticeStack();
       }
       updateBossSettlementControls();
       updateBossSettlementDetailControls();
@@ -3277,7 +3154,6 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeInvoicePreviewModal();
       closeBossSettlementSummaryModal();
@@ -3562,7 +3438,6 @@
       closeAllFilterPopovers();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
@@ -3590,7 +3465,6 @@
       closeAllFilterPopovers();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();

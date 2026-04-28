@@ -1,4 +1,4 @@
-// Core: constants, DOM refs, runtime state, account/role helpers, notice rendering.
+// Core: constants, DOM refs, runtime state, account/role helpers.
     const API_BASE = window.location.protocol === "file:" ? "http://127.0.0.1:3000" : "";
     const API_ENDPOINT_RECORDS = `${API_BASE}/api/records`;
     const API_ENDPOINT_RECORDS_SETTLE = `${API_ENDPOINT_RECORDS}/settle`;
@@ -22,12 +22,8 @@
     const STORAGE_KEY_SAVED_LOGINS = "dispatch_saved_logins_v1";
     const STORAGE_KEY_DEV_TODO_ITEMS = "dispatch_dev_todo_items_v1";
     const STORAGE_KEY_VIEW_STATE = "dispatch_view_state_v1";
-    const STORAGE_KEY_OPERATION_NOTICE_DISMISSED_PREFIX = "dispatch_operation_notice_dismissed_v2";
-    const STORAGE_KEY_OPERATION_NOTICE_DISMISSED_LEGACY = "dispatch_operation_notice_dismissed_v1";
-    const STORAGE_KEY_OPERATION_NOTICE_PENDING_PREFIX = "dispatch_operation_notice_pending_v1";
     const STORAGE_KEY_UPDATED_ROW_DISMISSED_PREFIX = "dispatch_updated_row_dismissed_v1";
     const STORAGE_KEY_UPDATED_ROW_HIGHLIGHT_PREFIX = "dispatch_updated_row_highlight_v1";
-    const ALLOWED_ACCOUNTS = ["1", "a", "c", "e", "k", "开心财税"];
     const DISPATCHER_LOGIN_PASSWORD = "11";
     const BOSS_LOGIN_ACCOUNT = "开心";
     const BOSS_LOGIN_LEGACY_ACCOUNT = "boss";
@@ -38,8 +34,6 @@
       [BOSS_LOGIN_LEGACY_ACCOUNT]: BOSS_LOGIN_ACCOUNT,
       "管理员": "管理员"
     };
-    const COMPLETE_FEEDBACK_IMAGE_MAX_COUNT = 8;
-    const COMPLETE_FEEDBACK_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
     const SETTLEMENT_INVOICE_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
     const NON_SETTLEMENT_ACCOUNTANT_NAME = "不结算";
     const EXTERNAL_ACCOUNTANT_NAME = "外部人员";
@@ -58,10 +52,6 @@
       { label: "企业微信", platform: "企业微信", shopName: "企业微信" },
       { label: "其他", platform: "其他", shopName: "其他" }
     ];
-    const ANALYSIS_BUTTON_QUERY_FLAG = "zem";
-    const isAnalysisButtonEnabled = String(window.location.search || "")
-      .toLowerCase()
-      .includes(ANALYSIS_BUTTON_QUERY_FLAG);
     function normalizeAppEnvironment(value) {
       return String(value || "").trim().toLowerCase() === "development"
         ? "development"
@@ -206,7 +196,6 @@
     const headerAccountText = document.getElementById("headerAccountText");
     const headerAccountSubText = document.getElementById("headerAccountSubText");
     const accountRoleBadge = document.getElementById("accountRoleBadge");
-    const operationNoticeStack = document.getElementById("operationNoticeStack");
     const openCreateModalBtn = document.getElementById("openCreateModalBtn");
     const openDispatcherModalBtn = document.getElementById("openDispatcherModalBtn");
     const openAnalysisModalBtn = document.getElementById("openAnalysisModalBtn");
@@ -232,16 +221,7 @@
     const completeRecordIdInput = document.getElementById("completeRecordId");
     const completeTimeInput = document.getElementById("completeTime");
     const completeCustomerFeedbackInput = document.getElementById("customerFeedback");
-    const completeFeedbackUploader = document.getElementById("completeFeedbackUploader");
-    const completeFeedbackImageSelectBtn = document.getElementById("completeFeedbackImageSelectBtn");
-    const completeFeedbackImageInput = document.getElementById("completeFeedbackImageInput");
-    const completeFeedbackImageCount = document.getElementById("completeFeedbackImageCount");
-    const completeFeedbackImageList = document.getElementById("completeFeedbackImageList");
     const completeModalSubmitBtn = document.getElementById("completeModalSubmitBtn");
-    const returnPriceModal = document.getElementById("returnPriceModal");
-    const returnPriceModalCard = returnPriceModal.querySelector(".return-price-modal-card");
-    const returnPriceModalMeta = document.getElementById("returnPriceModalMeta");
-    const returnPriceModalContent = document.getElementById("returnPriceModalContent");
     const refundModal = document.getElementById("refundModal");
     const refundModalCard = refundModal.querySelector(".refund-modal-card");
     const refundModalMeta = document.getElementById("refundModalMeta");
@@ -273,9 +253,6 @@
       : null;
     const bossSettlementDetailTitleCount = document.getElementById("bossSettlementDetailTitleCount");
     const bossSettlementDetailMeta = document.getElementById("bossSettlementDetailMeta");
-    const bossSettlementDetailAccountantCount = document.getElementById("bossSettlementDetailAccountantCount");
-    const bossSettlementDetailInvoiceProgress = document.getElementById("bossSettlementDetailInvoiceProgress");
-    const bossSettlementDetailAmount = document.getElementById("bossSettlementDetailAmount");
     const bossSettlementDetailList = document.getElementById("bossSettlementDetailList");
     const analysisModal = document.getElementById("analysisModal");
     const analysisModalCard = analysisModal.querySelector(".analysis-modal-card");
@@ -289,9 +266,6 @@
     const accountantModal = document.getElementById("accountantModal");
     const accountantModalCard = accountantModal.querySelector(".accountant-modal-card");
     const accountantModalHint = document.getElementById("accountantModalHint");
-    const accountantForm = document.getElementById("accountantForm");
-    const accountantUsernameInput = document.getElementById("accountantUsernameInput");
-    const accountantNameInput = document.getElementById("accountantNameInput");
     const accountantListWrap = document.getElementById("accountantListWrap");
     const accountantList = document.getElementById("accountantList");
     const accountantEmptyState = document.getElementById("accountantEmptyState");
@@ -335,7 +309,6 @@
     const confirmModalConfirmBtn = document.getElementById("confirmModalConfirmBtn");
 
     const dateInput = document.getElementById("date");
-    const dateTodayBtn = document.getElementById("dateTodayBtn");
     const monthlySettlementCheckbox = document.getElementById("monthlySettlement");
     const dispatcherInput = document.getElementById("dispatcher");
     const dispatcherTagButtons = Array.from(document.querySelectorAll(".dispatcher-tag-btn"));
@@ -473,11 +446,6 @@
     let sourcePickerOptions = [...SOURCE_OPTIONS];
     let sourcePickerAutoFilled = false;
     let platformShopPickerOptions = [...PLATFORM_SHOP_OPTIONS];
-    let currentOperationNoticeLogId = "";
-    let dispatcherOperationNoticeItem = null;
-    let pendingAccountantNoticeItems = [];
-    let operationNoticeDismissed = false;
-    let dismissedOperationNoticeLogId = "";
     let accountantKnownRecordIds = new Set();
     let accountantKnownRecordIdsInitialized = false;
     let highlightedUpdatedRecordIds = new Set();
@@ -491,7 +459,6 @@
     let editingAccountantUsername = "";
     let accountantEditMode = "admin";
     let recentBossSettlementRecordIds = [];
-    let completeFeedbackImageItems = [];
     let completeModalMode = "edit";
     let devTodoItems = [];
     let selectedBossRecordIds = new Set();
@@ -649,20 +616,6 @@
         .sort((left, right) => parseDateTimeValue(right.createdAt) - parseDateTimeValue(left.createdAt));
     }
 
-    function getLockedDispatcherFilterValue() {
-      if (!isDispatcherLogin()) return "";
-      return getCurrentDispatcherTag();
-    }
-
-    function syncDispatcherFilterByLogin(options = {}) {
-      const { force = false } = options;
-      const lockedDispatcher = getLockedDispatcherFilterValue();
-      if (!lockedDispatcher) return;
-      if (!force && hasDispatcherFilterPreference) return;
-      if (!force && filterState.dispatcher) return;
-      filterState.dispatcher = lockedDispatcher;
-    }
-
     function resolveAccountantProfileDisplayName(rawProfile) {
       if (!rawProfile || typeof rawProfile !== "object") return "";
       return String(
@@ -725,12 +678,6 @@
         phone,
         loginPassword
       };
-    }
-
-    function getSortedAccountantNames(sourceNames) {
-      return Array.from(
-        new Set(sourceNames.map((name) => String(name || "").trim()).filter(Boolean))
-      ).sort((left, right) => left.localeCompare(right, "zh-CN", { numeric: true, sensitivity: "base" }));
     }
 
     function compareAccountantNameByOrderCount(leftName, rightName, orderCountMap) {
@@ -1399,13 +1346,6 @@
       return getRecordWorkflowStatusText(record);
     }
 
-    function getRecordSettlementChipClass(record) {
-      if (isRecordSettlementPaid(record)) return "paid";
-      if (isRecordInvoiceUploaded(record)) return "uploaded";
-      if (isRecordSettled(record)) return "settled";
-      return "pending";
-    }
-
     function getAccountantInvoiceUploadTargetRecords(sourceRecords = records) {
       if (!isAccountantLogin()) return [];
       return (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) => {
@@ -1438,16 +1378,8 @@
       return checkStatus === "completed" || checkStatus === "partial_refunded";
     }
 
-    function isBossSettlementPendingUploadRecord(record) {
-      return isBossSettlementDetailRecord(record) && !isRecordInvoiceUploaded(record);
-    }
-
     function getBossSettlementDetailRecords(sourceRecords = records) {
       return (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) => isBossSettlementDetailRecord(item));
-    }
-
-    function getBossSettlementPendingUploadRecords(sourceRecords = records) {
-      return (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) => isBossSettlementPendingUploadRecord(item));
     }
 
     function getBossSettlementRecordState(record) {
@@ -1496,16 +1428,6 @@
       if (typeof updateBossSettlementDetailControls === "function") {
         updateBossSettlementDetailControls();
       }
-    }
-
-    function getRecentBossSettlementRecords(sourceRecords = records) {
-      if (!recentBossSettlementRecordIds.length) return [];
-      const recordMap = new Map(
-        (Array.isArray(sourceRecords) ? sourceRecords : []).map((item) => [String(item?.id || "").trim(), item])
-      );
-      return recentBossSettlementRecordIds
-        .map((recordId) => recordMap.get(recordId) || null)
-        .filter(Boolean);
     }
 
     function getBossSettlementDetailStatusKey(recordCount, uploadedCount) {
@@ -1882,24 +1804,6 @@
       saveUpdatedRowDismissState();
     }
 
-    function getAllowedLoginAccounts() {
-      const set = new Set([...ALLOWED_ACCOUNTS, ...BOSS_LOGIN_ACCOUNTS]);
-      accountants.forEach((item) => {
-        const loginName = String(item.username || item.name || "").trim();
-        const phone = String(item.phone || "").trim();
-        if (loginName) set.add(loginName);
-        if (phone) set.add(phone);
-      });
-      return set;
-    }
-
-    function isValidLoginAccount(accountName) {
-      const normalized = String(resolveLoginAccountInput(accountName) || accountName || "").trim();
-      if (!normalized) return false;
-      return getAllowedLoginAccounts().has(normalized)
-        || getAllowedLoginAccounts().has(getAccountantLoginIdentifier(normalized));
-    }
-
     function resolveLoginAccountInput(rawInput) {
       const source = String(rawInput || "").trim();
       if (!source) return "";
@@ -1913,19 +1817,6 @@
     function isBossAccountName(accountNameRaw) {
       const normalized = String(resolveLoginAccountInput(accountNameRaw) || accountNameRaw || "").trim().toLowerCase();
       return Boolean(normalized && BOSS_LOGIN_ACCOUNT_SET.has(normalized));
-    }
-
-    function isDispatcherPasswordValid(accountName, passwordInput) {
-      if (!isDispatcherLogin(accountName)) return false;
-      const password = String(passwordInput || "").trim();
-      return password === DISPATCHER_LOGIN_PASSWORD;
-    }
-
-    function isAccountantPasswordValid(accountName, passwordInput) {
-      const profile = getAccountantProfileByLoginName(accountName);
-      if (!profile) return false;
-      const password = String(passwordInput || "").trim();
-      return Boolean(password) && password === String(profile.loginPassword || "").trim();
     }
 
     function clearCurrentAccountIdentity() {
@@ -2082,40 +1973,6 @@
       return formatDateFromDate(new Date(timestamp));
     }
 
-    function generateCompleteFeedbackImageId() {
-      return `fbimg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-    }
-
-    function normalizeCompleteFeedbackImageItem(rawItem, index = 0) {
-      if (!rawItem) return null;
-      const fallbackName = `截图${index + 1}`;
-      if (typeof rawItem === "string") {
-        const dataUrl = rawItem.trim();
-        if (!dataUrl.startsWith("data:image/")) return null;
-        return {
-          id: generateCompleteFeedbackImageId(),
-          name: fallbackName,
-          previewUrl: dataUrl,
-          dataUrl,
-          url: "",
-          fileName: ""
-        };
-      }
-      if (typeof rawItem !== "object") return null;
-      const dataUrl = String(rawItem.dataUrl || "").trim();
-      const url = String(rawItem.url || "").trim();
-      const previewUrl = dataUrl || url;
-      if (!previewUrl) return null;
-      return {
-        id: String(rawItem.id || "").trim() || generateCompleteFeedbackImageId(),
-        name: String(rawItem.name || "").trim() || fallbackName,
-        previewUrl,
-        dataUrl,
-        url,
-        fileName: String(rawItem.fileName || "").trim()
-      };
-    }
-
     function normalizeCompleteModalMode(modeRaw) {
       return String(modeRaw || "").trim().toLowerCase() === "view" ? "view" : "edit";
     }
@@ -2141,96 +1998,9 @@
       if (completeCustomerFeedbackInput) {
         completeCustomerFeedbackInput.readOnly = isViewMode;
       }
-      if (completeFeedbackUploader) {
-        completeFeedbackUploader.classList.toggle("readonly", isViewMode);
-        completeFeedbackUploader.tabIndex = isViewMode ? -1 : 0;
-        completeFeedbackUploader.setAttribute("role", isViewMode ? "group" : "button");
-        completeFeedbackUploader.setAttribute("aria-disabled", isViewMode ? "true" : "false");
-        completeFeedbackUploader.setAttribute("aria-label", isViewMode ? "客户反馈截图" : "添加客户反馈截图");
-      }
-      if (completeFeedbackImageInput) {
-        completeFeedbackImageInput.disabled = isViewMode;
-      }
-      if (completeFeedbackImageSelectBtn) {
-        completeFeedbackImageSelectBtn.hidden = isViewMode;
-        completeFeedbackImageSelectBtn.disabled = isViewMode;
-      }
       if (completeModalSubmitBtn) {
         completeModalSubmitBtn.hidden = isViewMode;
       }
-      renderCompleteFeedbackImageList();
-    }
-
-    function renderCompleteFeedbackImageList() {
-      if (!completeFeedbackImageList || !completeFeedbackImageCount || !completeFeedbackUploader) return;
-      const items = Array.isArray(completeFeedbackImageItems) ? completeFeedbackImageItems : [];
-      const isViewMode = isCompleteModalViewMode();
-      completeFeedbackImageList.innerHTML = "";
-      completeFeedbackImageCount.textContent = `${items.length} 张`;
-      completeFeedbackUploader.classList.toggle("has-images", Boolean(items.length));
-      completeFeedbackUploader.classList.toggle("readonly", isViewMode);
-
-      items.forEach((item, index) => {
-        const card = document.createElement("div");
-        card.className = "feedback-image-card";
-
-        const image = document.createElement("img");
-        image.className = "feedback-image-preview";
-        image.src = item.previewUrl;
-        image.alt = `客户反馈截图 ${index + 1}`;
-
-        const footer = document.createElement("div");
-        footer.className = "feedback-image-card-footer";
-
-        const name = document.createElement("span");
-        name.className = "feedback-image-name";
-        name.textContent = item.name || `截图${index + 1}`;
-
-        const removeBtn = document.createElement("button");
-        removeBtn.type = "button";
-        removeBtn.className = "feedback-image-remove-btn";
-        removeBtn.dataset.feedbackImageId = String(item.id || "");
-        removeBtn.textContent = "移除";
-
-        footer.appendChild(name);
-        if (!isViewMode) {
-          footer.appendChild(removeBtn);
-        }
-        card.appendChild(image);
-        card.appendChild(footer);
-        completeFeedbackImageList.appendChild(card);
-      });
-    }
-
-    function setCompleteFeedbackImageItems(items) {
-      const source = Array.isArray(items) ? items : [];
-      completeFeedbackImageItems = source
-        .map((item, index) => normalizeCompleteFeedbackImageItem(item, index))
-        .filter(Boolean)
-        .slice(0, COMPLETE_FEEDBACK_IMAGE_MAX_COUNT);
-      renderCompleteFeedbackImageList();
-    }
-
-    function removeCompleteFeedbackImageItem(imageId) {
-      const targetId = String(imageId || "").trim();
-      if (!targetId) return;
-      completeFeedbackImageItems = completeFeedbackImageItems.filter((item) => item.id !== targetId);
-      renderCompleteFeedbackImageList();
-    }
-
-    function resetCompleteFeedbackImageItems() {
-      if (completeFeedbackImageInput) {
-        completeFeedbackImageInput.value = "";
-      }
-      if (completeFeedbackUploader) {
-        completeFeedbackUploader.classList.remove("dragging");
-      }
-      setCompleteFeedbackImageItems([]);
-    }
-
-    function setCompleteFeedbackUploaderDragging(isDragging) {
-      if (!completeFeedbackUploader) return;
-      completeFeedbackUploader.classList.toggle("dragging", Boolean(isDragging));
     }
 
     function readFileAsDataUrl(file) {
@@ -2239,78 +2009,6 @@
         reader.onload = () => resolve(String(reader.result || ""));
         reader.onerror = () => reject(new Error("读取图片失败"));
         reader.readAsDataURL(file);
-      });
-    }
-
-    async function appendCompleteFeedbackFiles(fileList) {
-      const sourceFiles = Array.from(fileList || []);
-      if (!sourceFiles.length) return;
-      const imageFiles = sourceFiles.filter((file) => String(file?.type || "").toLowerCase().startsWith("image/"));
-      if (!imageFiles.length) {
-        showInlineFormError({
-          form: completeForm,
-          hintSetter: setCompleteFormHint,
-          target: completeFeedbackUploader,
-          message: "只支持图片文件。"
-        });
-        return;
-      }
-      if (imageFiles.length !== sourceFiles.length) {
-        setCompleteFormHint("已跳过非图片文件。", "error");
-      }
-      const availableCount = COMPLETE_FEEDBACK_IMAGE_MAX_COUNT - completeFeedbackImageItems.length;
-      if (availableCount <= 0) {
-        showInlineFormError({
-          form: completeForm,
-          hintSetter: setCompleteFormHint,
-          target: completeFeedbackUploader,
-          message: `最多添加 ${COMPLETE_FEEDBACK_IMAGE_MAX_COUNT} 张截图。`
-        });
-        return;
-      }
-      const acceptedFiles = imageFiles.slice(0, availableCount);
-      if (imageFiles.length > availableCount) {
-        setCompleteFormHint(`最多添加 ${COMPLETE_FEEDBACK_IMAGE_MAX_COUNT} 张截图。`, "error");
-      }
-      const nextItems = [...completeFeedbackImageItems];
-      for (const file of acceptedFiles) {
-        if (Number(file.size || 0) > COMPLETE_FEEDBACK_IMAGE_MAX_SIZE_BYTES) {
-          setCompleteFormHint(`图片“${file.name || "未命名图片"}”超过 5MB。`, "error");
-          continue;
-        }
-        const dataUrl = await readFileAsDataUrl(file);
-        const nextItem = normalizeCompleteFeedbackImageItem({
-          id: generateCompleteFeedbackImageId(),
-          name: String(file.name || "").trim(),
-          dataUrl
-        }, nextItems.length);
-        if (nextItem) {
-          nextItems.push(nextItem);
-        }
-      }
-      setCompleteFeedbackImageItems(nextItems);
-      clearInlineFieldError(completeFeedbackUploader);
-      if (!completeForm.querySelector(".field-validation-group-error")) {
-        setCompleteFormHint("", "idle");
-      }
-    }
-
-    function getCompleteFeedbackImagePayload() {
-      return completeFeedbackImageItems.map((item) => {
-        const payload = {
-          id: String(item.id || "").trim(),
-          name: String(item.name || "").trim()
-        };
-        if (item.dataUrl) {
-          payload.dataUrl = item.dataUrl;
-        }
-        if (item.url) {
-          payload.url = item.url;
-        }
-        if (item.fileName) {
-          payload.fileName = item.fileName;
-        }
-        return payload;
       });
     }
 
@@ -2511,29 +2209,6 @@
       ].join("\n");
     }
 
-    function getReturnedPriceSnapshot(record) {
-      const source = record && typeof record === "object" ? record.returnedPriceSnapshot : null;
-      if (!source || typeof source !== "object") return null;
-      const paymentPrice = Number(source.paymentPrice);
-      const totalPrice = Number(source.totalPrice);
-      const settlementPrice = Number(source.settlementPrice);
-      const premiumInput = Number(source.premiumPrice);
-      const premiumPrice = Number.isFinite(premiumInput)
-        ? premiumInput
-        : (Number.isFinite(paymentPrice) && Number.isFinite(totalPrice) ? paymentPrice - totalPrice : Number.NaN);
-
-      if (!Number.isFinite(paymentPrice) || !Number.isFinite(totalPrice) || !Number.isFinite(settlementPrice) || !Number.isFinite(premiumPrice)) {
-        return null;
-      }
-
-      return {
-        paymentPrice,
-        totalPrice,
-        premiumPrice,
-        settlementPrice
-      };
-    }
-
     function formatDateTimeDisplay(rawDateTime) {
       const source = String(rawDateTime || "").trim();
       const timestamp = parseDateTimeValue(source);
@@ -2689,7 +2364,7 @@
     function getInlineValidationGroup(target) {
       if (!(target instanceof Element)) return null;
       return target.closest(
-        ".detail-item, .meta-item, .price-item, .field-feedback-time, .field-feedback-text, .field-feedback-images, .field, .accountant-picker, .feedback-image-uploader"
+        ".detail-item, .meta-item, .price-item, .field-feedback-time, .field-feedback-text, .field, .accountant-picker"
       );
     }
 
@@ -2864,9 +2539,6 @@
       if (messageIncludesAnyKeyword(message, ["服务记录", "客户反馈"])) {
         return completeCustomerFeedbackInput;
       }
-      if (messageIncludesAnyKeyword(message, ["截图", "图片"])) {
-        return completeFeedbackUploader;
-      }
       return completeTimeInput;
     }
 
@@ -2991,150 +2663,12 @@
       }
     }
 
-    function getOperationNoticePendingStorageKey(accountName = currentAccount) {
-      const normalizedAccount = String(accountName || "").trim();
-      if (!normalizedAccount) return "";
-      return `${STORAGE_KEY_OPERATION_NOTICE_PENDING_PREFIX}_${encodeURIComponent(normalizedAccount)}`;
-    }
-
-    function normalizePendingAccountantNotice(raw) {
-      if (!raw || typeof raw !== "object") return null;
-      const id = String(raw.id || "").trim();
-      if (!id) return null;
-      const rawUnitPrice = Number(
-        raw.unitPrice !== undefined && raw.unitPrice !== null && raw.unitPrice !== ""
-          ? raw.unitPrice
-          : (raw.settlementPrice !== undefined && raw.settlementPrice !== null && raw.settlementPrice !== ""
-            ? raw.settlementPrice
-            : raw.totalPrice)
-      );
-      const unitPrice = Number.isFinite(rawUnitPrice) ? rawUnitPrice : Number.NaN;
-      return {
-        type: "accountant_assignment",
-        id,
-        date: String(raw.date || "").trim(),
-        dispatcher: normalizeDispatcherTag(raw.dispatcher),
-        accountant: String(raw.accountant || "").trim(),
-        customer: String(raw.customer || "").trim(),
-        summary: String(raw.summary || "").trim(),
-        unitPrice
-      };
-    }
-
-    function savePendingAccountantNotices(items) {
-      const key = getOperationNoticePendingStorageKey();
-      if (!key) return;
-      const safeItems = Array.isArray(items)
-        ? items.map((item) => normalizePendingAccountantNotice(item)).filter(Boolean)
-        : [];
-      setPersistentStateItem(key, JSON.stringify(safeItems));
-    }
-
-    function loadPendingAccountantNotices() {
-      const key = getOperationNoticePendingStorageKey();
-      if (!key) return [];
-      const raw = String(getPersistentStateItem(key) || "").trim();
-      if (!raw) return [];
-      try {
-        const parsed = JSON.parse(raw);
-        const source = Array.isArray(parsed) ? parsed : [parsed];
-        const noticeById = new Map();
-        source.forEach((item) => {
-          const normalized = normalizePendingAccountantNotice(item);
-          if (!normalized) return;
-          noticeById.set(normalized.id, normalized);
-        });
-        return Array.from(noticeById.values());
-      } catch (error) {
-        return [];
-      }
-    }
-
-    function clearPendingAccountantNotices() {
-      const key = getOperationNoticePendingStorageKey();
-      if (!key) return;
-      removePersistentStateItem(key);
-    }
-
-    function restorePendingOperationNotice() {
-      pendingAccountantNoticeItems = [];
-      clearPendingAccountantNotices();
-      hideOperationNotice();
-    }
-
-    function resetAccountantAssignmentNoticeState() {
+    function resetAccountantAssignmentTrackingState() {
       accountantKnownRecordIds = new Set();
       accountantKnownRecordIdsInitialized = false;
-      pendingAccountantNoticeItems = [];
-      dispatcherOperationNoticeItem = null;
     }
 
-    function hideOperationNotice(options = {}) {
-      const { keepCurrentId = false } = options;
-      if (operationNoticeStack) {
-        operationNoticeStack.hidden = true;
-        operationNoticeStack.innerHTML = "";
-      }
-      if (!keepCurrentId) {
-        currentOperationNoticeLogId = "";
-      }
-    }
-
-    function buildDispatcherNoticeItem(entry) {
-      if (!entry || typeof entry !== "object") return null;
-      const logId = String(entry?.logId || "").trim();
-      if (!logId) return null;
-      const actionKeyRaw = String(entry?.actionKey || "").trim().toLowerCase();
-      const actionKey = actionKeyRaw === "completed" || actionKeyRaw === "returned" ? actionKeyRaw : "checked";
-      const actionLabel = actionKey === "completed" ? "完成" : (actionKey === "returned" ? "退单" : "确认");
-      const operator = String(entry?.operatedBy || "").trim() || "未知会计";
-      const dispatcher = normalizeDispatcherTag(entry?.dispatcher);
-      const accountantName = String(entry?.accountant || "").trim() || "未填会计";
-      const customerName = String(entry?.customer || "").trim() || "未填客户";
-      const summaryText = String(entry?.summary || "").trim();
-      const parts = [
-        `${formatDateDisplay(entry?.date)} ${formatTimeDisplay(entry?.operatedAt)}`,
-        `${operator} 已${actionLabel}`,
-        `会计 ${accountantName}`,
-        `客户 ${customerName}`
-      ];
-      if (!isDispatcherLogin()) {
-        parts.splice(2, 0, `接待 ${dispatcher}`);
-      }
-      if (summaryText) {
-        parts.push(`任务简介 ${summaryText}`);
-      }
-      return {
-        key: `dispatcher:${logId}`,
-        kind: "dispatcher",
-        title: "会计列表有新操作",
-        main: parts.join(" | ")
-      };
-    }
-
-    function buildAccountantNoticeItem(entry) {
-      const normalized = normalizePendingAccountantNotice(entry);
-      if (!normalized) return null;
-      const priceText = Number.isFinite(normalized.unitPrice)
-        ? `${toMoney(normalized.unitPrice)}`
-        : "--";
-      return {
-        key: `assign:${normalized.id}`,
-        kind: "accountant_assignment",
-        title: "有新接待",
-        main: `单价：${priceText}元`
-      };
-    }
-
-    function renderOperationNoticeStack() {
-      hideOperationNotice();
-    }
-
-    function showAccountantAssignmentNotice(newRecords) {
-      return;
-    }
-
-    function syncAccountantAssignmentNotice(nextRecords) {
+    function syncAccountantAssignmentHighlights(nextRecords) {
       if (!isAccountantLogin()) return;
       if (!Array.isArray(nextRecords)) return;
       const accountantName = getCurrentAccountantDisplayName();
@@ -3163,5 +2697,4 @@
       accountantKnownRecordIds = nextIdSet;
       if (!newAssignedRecords.length) return;
       addUpdatedRowHighlights(newAssignedRecords.map((item) => String(item?.id || "").trim()));
-      currentOperationNoticeLogId = "";
     }

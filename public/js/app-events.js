@@ -26,42 +26,6 @@
       });
     }
 
-    if (operationNoticeStack) {
-      operationNoticeStack.addEventListener("click", (event) => {
-        const closeBtn = event.target.closest("[data-notice-close]");
-        if (!closeBtn) return;
-        const noticeCard = closeBtn.closest(".operation-notice");
-        if (!noticeCard) return;
-        const noticeKind = String(noticeCard.dataset.noticeKind || "").trim();
-        const noticeKey = String(noticeCard.dataset.noticeKey || "").trim();
-
-        if (noticeKind === "dispatcher") {
-          operationNoticeDismissed = true;
-          dismissedOperationNoticeLogId = noticeKey.startsWith("dispatcher:")
-            ? noticeKey.slice("dispatcher:".length)
-            : String(currentOperationNoticeLogId || "").trim();
-          saveOperationNoticePreference();
-          dispatcherOperationNoticeItem = null;
-          hideOperationNotice({ keepCurrentId: true });
-          return;
-        }
-
-        if (noticeKind === "accountant_assignment") {
-          pendingAccountantNoticeItems = pendingAccountantNoticeItems.filter((item) => {
-            const id = String(item?.id || "").trim();
-            return `assign:${id}` !== noticeKey;
-          });
-          if (pendingAccountantNoticeItems.length) {
-            savePendingAccountantNotices(pendingAccountantNoticeItems);
-            renderOperationNoticeStack();
-            return;
-          }
-          clearPendingAccountantNotices();
-          hideOperationNotice({ keepCurrentId: true });
-        }
-      });
-    }
-
     changePasswordBtn.addEventListener("click", async () => {
       await openChangePasswordFlow();
     });
@@ -142,13 +106,6 @@
       openCreateModal();
     });
 
-    if (dateTodayBtn) {
-      dateTodayBtn.addEventListener("click", () => {
-        setRecordDateInputValue(getTodayISODate());
-        dateInput.focus();
-      });
-    }
-
     openAnalysisModalBtn.addEventListener("click", () => {
       openAnalysisModal();
     });
@@ -217,76 +174,6 @@
     settlementPriceInput.addEventListener("input", () => {
       settlementPriceAutoFilled = false;
     });
-
-    if (
-      completeFeedbackImageSelectBtn
-      && completeFeedbackImageInput
-      && completeFeedbackUploader
-      && completeFeedbackImageList
-    ) {
-      completeFeedbackImageSelectBtn.addEventListener("click", (event) => {
-        if (isCompleteModalViewMode()) return;
-        event.preventDefault();
-        event.stopPropagation();
-        completeFeedbackImageInput.click();
-      });
-
-      completeFeedbackUploader.addEventListener("click", (event) => {
-        if (isCompleteModalViewMode()) return;
-        if (event.target.closest(".feedback-image-remove-btn")) return;
-        completeFeedbackImageInput.click();
-      });
-
-      completeFeedbackUploader.addEventListener("keydown", (event) => {
-        if (isCompleteModalViewMode()) return;
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        completeFeedbackImageInput.click();
-      });
-
-      completeFeedbackImageInput.addEventListener("change", async () => {
-        if (isCompleteModalViewMode()) return;
-        await appendCompleteFeedbackFiles(completeFeedbackImageInput.files);
-        completeFeedbackImageInput.value = "";
-      });
-
-      completeFeedbackUploader.addEventListener("dragenter", (event) => {
-        if (isCompleteModalViewMode()) return;
-        event.preventDefault();
-        setCompleteFeedbackUploaderDragging(true);
-      });
-
-      completeFeedbackUploader.addEventListener("dragover", (event) => {
-        if (isCompleteModalViewMode()) return;
-        event.preventDefault();
-        setCompleteFeedbackUploaderDragging(true);
-      });
-
-      completeFeedbackUploader.addEventListener("dragleave", (event) => {
-        if (isCompleteModalViewMode()) return;
-        event.preventDefault();
-        const relatedTarget = event.relatedTarget;
-        if (relatedTarget instanceof Node && completeFeedbackUploader.contains(relatedTarget)) return;
-        setCompleteFeedbackUploaderDragging(false);
-      });
-
-      completeFeedbackUploader.addEventListener("drop", async (event) => {
-        if (isCompleteModalViewMode()) return;
-        event.preventDefault();
-        setCompleteFeedbackUploaderDragging(false);
-        const files = event.dataTransfer ? event.dataTransfer.files : null;
-        await appendCompleteFeedbackFiles(files);
-      });
-
-      completeFeedbackImageList.addEventListener("click", (event) => {
-        if (isCompleteModalViewMode()) return;
-        const removeBtn = event.target.closest(".feedback-image-remove-btn");
-        if (!removeBtn) return;
-        event.preventDefault();
-        event.stopPropagation();
-        removeCompleteFeedbackImageItem(removeBtn.dataset.feedbackImageId);
-      });
-    }
 
     if (bossSettlementSummarySubmitBtn) {
       bossSettlementSummarySubmitBtn.addEventListener("click", async () => {
@@ -709,36 +596,6 @@
       renderTable();
     });
 
-    if (accountantForm) {
-      accountantForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const username = String(accountantUsernameInput?.value || "").trim();
-        const displayName = String(accountantNameInput?.value || "").trim();
-        if (!username) {
-          accountantUsernameInput?.focus();
-          return;
-        }
-        if (!displayName) {
-          accountantNameInput?.focus();
-          return;
-        }
-        try {
-          await createAccountant(username, displayName);
-        } catch (error) {
-          console.error(error);
-          if (!username) {
-            accountantUsernameInput?.focus();
-          } else {
-            accountantNameInput?.focus();
-          }
-          return;
-        }
-        if (accountantUsernameInput) accountantUsernameInput.value = "";
-        if (accountantNameInput) accountantNameInput.value = "";
-        accountantUsernameInput?.focus();
-      });
-    }
-
     if (accountantRegisterForm) {
       accountantRegisterForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -966,8 +823,7 @@
         await checkRecordById(recordId, {
           status: "completed",
           completedAt,
-          customerFeedback,
-          serviceFeedbackImages: getCompleteFeedbackImagePayload()
+          customerFeedback
         });
       } catch (error) {
         console.error(error);
@@ -1368,12 +1224,6 @@
       }
     });
 
-    returnPriceModal.addEventListener("click", (event) => {
-      if (event.target === returnPriceModal) {
-        closeReturnPriceModal();
-      }
-    });
-
     refundModal.addEventListener("click", (event) => {
       if (event.target === refundModal) {
         closeRefundModal();
@@ -1602,10 +1452,6 @@
         closeInvoicePreviewModal();
         return;
       }
-      if (event.key === "Escape" && !returnPriceModal.hidden) {
-        closeReturnPriceModal();
-        return;
-      }
       if (event.key === "Escape" && !refundModal.hidden) {
         closeRefundModal();
         return;
@@ -1794,13 +1640,11 @@
       setLoginRequestHint("", "idle");
       renderBuildInfo();
       await fetchBuildInfo();
-      removePersistentStateItem(STORAGE_KEY_OPERATION_NOTICE_DISMISSED_LEGACY);
       syncDevTodoEntryPoint();
       loadDevTodoItems();
       renderDevTodoList();
       loadSavedLoginEntries();
       loadFromStorage();
-      loadOperationNoticePreference();
       loadViewState();
 
       validateCurrentAccount();

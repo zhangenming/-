@@ -35,7 +35,6 @@
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
-      closeReturnPriceModal();
       closeRecordHistoryModal();
       closeInvoicePreviewModal();
       closeBossSettlementSummaryModal();
@@ -65,12 +64,8 @@
       clearBossRecordSelection();
       clearBossSettlementPayoutSelection();
       setRecentBossSettlementRecordIds([]);
-      currentOperationNoticeLogId = "";
-      operationNoticeDismissed = false;
-      dismissedOperationNoticeLogId = "";
-      resetAccountantAssignmentNoticeState();
+      resetAccountantAssignmentTrackingState();
       resetUpdatedRowHighlightState();
-      hideOperationNotice();
     }
 
     function storeAuthenticatedSession(authResult, accountName, password, options = {}) {
@@ -95,8 +90,7 @@
       setRecentBossSettlementRecordIds([]);
       clearBossSettlementPayoutSelection();
       hasFetchedRecords = false;
-      resetAccountantAssignmentNoticeState();
-      loadOperationNoticePreference();
+      resetAccountantAssignmentTrackingState();
       loadUpdatedRowDismissState();
       if (persistSavedLogin) {
         saveSuccessfulLoginEntry(loginAccount, password, currentAccountRole);
@@ -108,7 +102,6 @@
       const hasOpenModal = !createModal.hidden
         || !checkModal.hidden
         || !completeModal.hidden
-        || !returnPriceModal.hidden
         || !refundModal.hidden
         || !recordHistoryModal.hidden
         || (invoicePreviewModal && !invoicePreviewModal.hidden)
@@ -290,7 +283,7 @@
         return;
       }
       syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: shouldTrackRowChanges });
-      syncAccountantAssignmentNotice(nextRecords);
+      syncAccountantAssignmentHighlights(nextRecords);
       records = nextRecords;
       syncAccountantsFromRecords();
       renderAccountantSelectOptions();
@@ -1235,33 +1228,6 @@
       return payload;
     }
 
-    async function createAccountant(username, displayName) {
-      const response = await fetchWithClientLog(API_ENDPOINT_ACCOUNTANTS, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, displayName })
-      });
-
-      if (!response.ok) {
-        let message = `新增会计失败（${response.status}）`;
-        try {
-          const payload = await response.json();
-          if (payload.error) message = payload.error;
-        } catch (error) {
-          console.error(error);
-        }
-        throw new Error(message);
-      }
-
-      const payload = await response.json();
-      const createdAccountants = Array.isArray(payload.accountants) ? payload.accountants : accountants;
-      accountants = mergeAccountantProfiles(createdAccountants);
-      highlightedAccountantUsername = String(payload?.accountant?.username || username || "").trim();
-      syncAccountantsFromRecords();
-      renderAccountantList();
-      renderAccountantSelectOptions();
-    }
-
     async function updateAccountantProfile(originalUsername, profile) {
       const previousLoginAccount = getAccountantLoginIdentifier(originalUsername);
       const response = await fetchWithClientLog(`${API_ENDPOINT_ACCOUNTANTS}/${encodeURIComponent(originalUsername)}`, {
@@ -1929,43 +1895,6 @@
         saveToStorage();
       }
       loadUpdatedRowDismissState();
-    }
-
-    function getOperationNoticeDismissStorageKey(accountName = currentAccount) {
-      const normalizedAccount = String(accountName || "").trim();
-      if (isBossLogin(normalizedAccount)) {
-        return `${STORAGE_KEY_OPERATION_NOTICE_DISMISSED_PREFIX}_boss`;
-      }
-      const dispatcherTag = getDispatcherTagForAccount(normalizedAccount);
-      if (!dispatcherTag) return "";
-      return `${STORAGE_KEY_OPERATION_NOTICE_DISMISSED_PREFIX}_${dispatcherTag}`;
-    }
-
-    function saveOperationNoticePreference() {
-      const key = getOperationNoticeDismissStorageKey();
-      if (!key) return;
-      if (dismissedOperationNoticeLogId) {
-        setPersistentStateItem(key, dismissedOperationNoticeLogId);
-      } else {
-        removePersistentStateItem(key);
-      }
-    }
-
-    function loadOperationNoticePreference() {
-      const key = getOperationNoticeDismissStorageKey();
-      if (!key) {
-        operationNoticeDismissed = false;
-        dismissedOperationNoticeLogId = "";
-        return;
-      }
-      const raw = String(getPersistentStateItem(key) || "").trim();
-      if (raw === "1") {
-        removePersistentStateItem(key);
-        dismissedOperationNoticeLogId = "";
-      } else {
-        dismissedOperationNoticeLogId = raw;
-      }
-      operationNoticeDismissed = false;
     }
 
     function getAllowedSortKeySet() {

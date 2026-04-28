@@ -1475,20 +1475,6 @@ function normalizeAccountantProfile(raw) {
   };
 }
 
-function generateRandomSixDigitCode() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function generateUniqueSixDigitCode(usedCodes, errorMessage) {
-  for (let i = 0; i < 10000; i += 1) {
-    const code = generateRandomSixDigitCode();
-    if (!usedCodes.has(code)) {
-      return code;
-    }
-  }
-  throw new Error(errorMessage);
-}
-
 function sortAccountantProfiles(profiles) {
   return [...profiles].sort((left, right) =>
     String(left.displayName || left.name || "").localeCompare(
