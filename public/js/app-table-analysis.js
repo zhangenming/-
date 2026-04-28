@@ -1,4 +1,7 @@
 // Table & Analysis: date/status formatting, sorting/filtering, analytics aggregations and panel rendering.
+    let analysisTrendChartInstance = null;
+    let analysisTrendChartRenderFrame = 0;
+
     function parseDateValue(rawDate) {
       const source = String(rawDate || "").trim();
       let match = source.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/);
@@ -894,6 +897,352 @@
       return fallback;
     }
 
+    function getTrendSummaryLabel(rawValue) {
+      const source = String(rawValue || "").trim();
+      if (!source) return "未填";
+      return source.length > 18 ? `${source.slice(0, 18)}...` : source;
+    }
+
+    function buildAnalysisTrendRows(scopeRecords) {
+      const groups = new Map();
+      scopeRecords.forEach((item) => {
+        const timestamp = parseDateValue(item.date);
+        const dayKey = Number.isNaN(timestamp) ? "未知日期" : toDayLabel(timestamp);
+        const bucket = groups.get(dayKey) || {
+          key: dayKey,
+          sortValue: Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : toStartOfDay(timestamp),
+          count: 0,
+          total: 0,
+          settlement: 0,
+          summaries: new Map()
+        };
+        const summary = getTrendSummaryLabel(item.summary);
+        bucket.count += 1;
+        bucket.total += toNumber(item.totalPrice);
+        bucket.settlement += toNumber(item.settlementPrice);
+        bucket.summaries.set(summary, (bucket.summaries.get(summary) || 0) + 1);
+        groups.set(dayKey, bucket);
+      });
+
+      return Array.from(groups.values())
+        .sort((a, b) => a.sortValue - b.sortValue || a.key.localeCompare(b.key, "zh-CN", {
+          numeric: true,
+          sensitivity: "base"
+        }))
+        .map((row) => {
+          const summaryText = Array.from(row.summaries.entries())
+            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "zh-CN", {
+              numeric: true,
+              sensitivity: "base"
+            }))
+            .slice(0, 3)
+            .map(([text, count]) => `${text} ${formatCount(count)}单`)
+            .join(" / ");
+          return {
+            key: row.key,
+            count: row.count,
+            total: row.total,
+            settlement: row.settlement,
+            summaryText
+          };
+        });
+    }
+
+    function isWeekendTrendDateKey(rawDateKey) {
+      const timestamp = parseDateValue(rawDateKey);
+      if (Number.isNaN(timestamp)) return false;
+      const day = new Date(timestamp).getDay();
+      return day === 0 || day === 6;
+    }
+
+    function formatTrendAxisDayLabel(rawDateKey) {
+      const timestamp = parseDateValue(rawDateKey);
+      if (Number.isNaN(timestamp)) return String(rawDateKey || "").trim();
+      return `${new Date(timestamp).getDate()}日`;
+    }
+
+    function formatAverageCount(value) {
+      return Number(value || 0).toLocaleString("zh-CN", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+      });
+    }
+
+    function buildAnalysisTrendSummaryItems(trendRows, keywordRows) {
+      if (!trendRows.length) return [];
+      const latest = [...trendRows].reverse().find((row) => row.key !== "未知日期") || trendRows[trendRows.length - 1];
+      const latestIndex = trendRows.lastIndexOf(latest);
+      const previous = trendRows.slice(0, latestIndex).reverse().find((row) => row.key !== "未知日期");
+      const peak = trendRows.reduce((best, row) => (row.count > best.count ? row : best), trendRows[0]);
+      const orderTotal = trendRows.reduce((sum, row) => sum + row.count, 0);
+      const avgDailyCount = trendRows.length ? orderTotal / trendRows.length : 0;
+      const countChange = previous ? latest.count - previous.count : latest.count;
+      const countChangeText = previous
+        ? `${countChange >= 0 ? "+" : ""}${formatCount(countChange)} 较前一日`
+        : "首个日期";
+      const topKeyword = keywordRows[0]
+        ? `${getTrendSummaryLabel(keywordRows[0].keyword)} / ${formatCount(keywordRows[0].count)}次`
+        : (latest.summaryText || "待积累");
+
+      return [
+        {
+          label: "最新接单",
+          value: `${formatCount(latest.count)} 单`,
+          meta: `${formatDateDisplay(latest.key)} / ${countChangeText}`
+        },
+        {
+          label: "峰值接单日",
+          value: `${formatCount(peak.count)} 单`,
+          meta: `${formatDateDisplay(peak.key)} / ${formatCurrency(peak.settlement)} 结算价`
+        },
+        {
+          label: "日均接单",
+          value: `${formatAverageCount(avgDailyCount)} 单`,
+          meta: `${formatCount(trendRows.length)} 个有单日期`
+        },
+        {
+          label: "高频总结",
+          value: topKeyword,
+          meta: latest.summaryText ? `最新：${latest.summaryText}` : "任务简介关键词"
+        }
+      ];
+    }
+
+    function buildAnalysisTrendSummaryHtml(items) {
+      return items
+        .map((item) => `
+          <div class="analysis-trend-summary-item">
+            <div class="analysis-trend-summary-label">${escapeHtml(item.label)}</div>
+            <div class="analysis-trend-summary-value">${escapeHtml(item.value)}</div>
+            <div class="analysis-trend-summary-meta">${escapeHtml(item.meta)}</div>
+          </div>
+        `)
+        .join("");
+    }
+
+    function disposeAnalysisTrendChart() {
+      if (analysisTrendChartRenderFrame) {
+        window.cancelAnimationFrame(analysisTrendChartRenderFrame);
+        analysisTrendChartRenderFrame = 0;
+      }
+      if (analysisTrendChartInstance) {
+        analysisTrendChartInstance.dispose();
+        analysisTrendChartInstance = null;
+      }
+    }
+
+    function renderAnalysisTrendChart(trendRows) {
+      const chartElement = document.getElementById("analysisTrendChart");
+      if (!chartElement) {
+        disposeAnalysisTrendChart();
+        return;
+      }
+      if (!window.echarts) {
+        chartElement.innerHTML = '<div class="analysis-chart-state">ECharts 图表库加载中</div>';
+        return;
+      }
+
+      if (analysisTrendChartInstance) {
+        analysisTrendChartInstance.dispose();
+      }
+      chartElement.innerHTML = "";
+      analysisTrendChartInstance = window.echarts.init(chartElement, null, {
+        renderer: "canvas"
+      });
+
+      const visiblePercent = trendRows.length > 18 ? Math.max(0, 100 - (18 / trendRows.length) * 100) : 0;
+      const dataZoom = trendRows.length > 18
+        ? [
+          {
+            type: "inside",
+            start: visiblePercent,
+            end: 100,
+            minValueSpan: 3
+          },
+          {
+            type: "slider",
+            start: visiblePercent,
+            end: 100,
+            height: 18,
+            bottom: 6,
+            borderColor: "#d3e2db",
+            fillerColor: "rgba(35, 118, 91, 0.14)",
+            handleStyle: {
+              color: "#23765b"
+            },
+            textStyle: {
+              color: "#61746c"
+            }
+          }
+        ]
+        : [];
+
+      analysisTrendChartInstance.setOption({
+        color: ["#23765b", "#d48634", "#2f63aa"],
+        animationDuration: 220,
+        tooltip: {
+          trigger: "axis",
+          confine: true,
+          backgroundColor: "#fbfdfc",
+          borderColor: "#cfe0d8",
+          textStyle: {
+            color: "#1d4137"
+          },
+          formatter(params) {
+            const dataIndex = params[0]?.dataIndex || 0;
+            const row = trendRows[dataIndex];
+            if (!row) return "";
+            const dateClass = isWeekendTrendDateKey(row.key) ? ' class="analysis-chart-weekend-date"' : "";
+            return `
+              <div class="analysis-chart-tooltip">
+                <strong${dateClass}>${escapeHtml(formatTrendAxisDayLabel(row.key))}</strong>
+                <span>接单量：${escapeHtml(formatCount(row.count))} 单</span>
+                <span>会计价：${escapeHtml(formatCurrency(row.total))}</span>
+                <span>结算价：${escapeHtml(formatCurrency(row.settlement))}</span>
+                <span>总结：${escapeHtml(row.summaryText || "待积累")}</span>
+              </div>
+            `;
+          }
+        },
+        legend: {
+          top: 0,
+          right: 4,
+          itemWidth: 12,
+          itemHeight: 8,
+          textStyle: {
+            color: "#43645a",
+            fontSize: 12
+          }
+        },
+        grid: {
+          top: 42,
+          right: 48,
+          bottom: trendRows.length > 18 ? 52 : 24,
+          left: 42,
+          containLabel: true
+        },
+        xAxis: {
+          type: "category",
+          boundaryGap: true,
+          data: trendRows.map((row) => formatTrendAxisDayLabel(row.key)),
+          axisLine: {
+            lineStyle: {
+              color: "#d6e4dd"
+            }
+          },
+          axisTick: {
+            show: false
+          },
+          axisLabel: {
+            interval: 0,
+            formatter(value, index) {
+              const row = trendRows[index];
+              const styleName = row && isWeekendTrendDateKey(row.key) ? "weekend" : "normal";
+              return `{${styleName}|${value}}`;
+            },
+            rich: {
+              normal: {
+                color: "#61746c",
+                fontSize: 11
+              },
+              weekend: {
+                color: "#d7352d",
+                fontSize: 11,
+                fontWeight: 700
+              }
+            }
+          }
+        },
+        yAxis: [
+          {
+            type: "value",
+            name: "单量",
+            minInterval: 1,
+            splitLine: {
+              lineStyle: {
+                color: "#e8f0ec"
+              }
+            },
+            axisLabel: {
+              color: "#61746c"
+            },
+            nameTextStyle: {
+              color: "#61746c"
+            }
+          },
+          {
+            type: "value",
+            name: "金额",
+            splitLine: {
+              show: false
+            },
+            axisLabel: {
+              color: "#61746c",
+              formatter(value) {
+                if (Math.abs(value) >= 10000) return `${(value / 10000).toFixed(1)}万`;
+                return value;
+              }
+            },
+            nameTextStyle: {
+              color: "#61746c"
+            }
+          }
+        ],
+        dataZoom,
+        series: [
+          {
+            name: "接单量",
+            type: "bar",
+            yAxisIndex: 0,
+            barMaxWidth: 24,
+            itemStyle: {
+              borderRadius: [5, 5, 0, 0]
+            },
+            data: trendRows.map((row) => row.count)
+          },
+          {
+            name: "会计价走势",
+            type: "line",
+            yAxisIndex: 1,
+            smooth: true,
+            symbolSize: 6,
+            lineStyle: {
+              width: 2
+            },
+            data: trendRows.map((row) => Number(row.total.toFixed(2)))
+          },
+          {
+            name: "结算价走势",
+            type: "line",
+            yAxisIndex: 1,
+            smooth: true,
+            symbolSize: 6,
+            lineStyle: {
+              width: 2
+            },
+            data: trendRows.map((row) => Number(row.settlement.toFixed(2)))
+          }
+        ]
+      });
+      analysisTrendChartInstance.resize();
+    }
+
+    function scheduleAnalysisTrendChartRender(trendRows) {
+      if (analysisTrendChartRenderFrame) {
+        window.cancelAnimationFrame(analysisTrendChartRenderFrame);
+      }
+      analysisTrendChartRenderFrame = window.requestAnimationFrame(() => {
+        analysisTrendChartRenderFrame = 0;
+        renderAnalysisTrendChart(trendRows);
+      });
+    }
+
+    function resizeAnalysisTrendChart() {
+      if (analysisTrendChartInstance && analysisModal && !analysisModal.hidden) {
+        analysisTrendChartInstance.resize();
+      }
+    }
+
     function buildHtmlTable(columns, rows) {
       if (!rows.length) {
         return '<div class="analysis-empty">暂无可展示数据</div>';
@@ -940,6 +1289,7 @@
     }
 
     function renderAnalysisPanel() {
+      disposeAnalysisTrendChart();
       const scopeRecords = getFilteredRecords();
       const allRecords = getVisibleRecords();
       const showDispatcherSections = !isDispatcherLogin();
@@ -951,10 +1301,6 @@
 
       const totalValues = scopeRecords.map((item) => toNumber(item.totalPrice));
       const settlementValues = scopeRecords.map((item) => toNumber(item.settlementPrice));
-      const ratios = scopeRecords.map((item) => {
-        const total = toNumber(item.totalPrice);
-        return total > 0 ? toNumber(item.settlementPrice) / total : 0;
-      });
 
       const sumTotal = totalValues.reduce((sum, value) => sum + value, 0);
       const sumSettlement = settlementValues.reduce((sum, value) => sum + value, 0);
@@ -973,6 +1319,8 @@
         .sort((a, b) => b.settlement - a.settlement);
       const coopRows = buildCoopRows(scopeRecords);
       const keywordRows = buildKeywordRows(scopeRecords);
+      const trendRows = buildAnalysisTrendRows(scopeRecords);
+      const trendSummaryHtml = buildAnalysisTrendSummaryHtml(buildAnalysisTrendSummaryItems(trendRows, keywordRows));
       const uniqueCustomerCount = byCustomer.length;
       const repeatCustomerRows = byCustomer.filter((row) => row.count >= 2);
       const repeatCustomerCount = repeatCustomerRows.length;
@@ -1010,15 +1358,7 @@
         [0, 100, 300, 500, 1000, Infinity],
         ["0-100", "100-300", "300-500", "500-1000", "1000+"]
       );
-      const ratioBandRows = buildBandRows(
-        ratios,
-        [0, 0.4, 0.6, 0.8, 1.01, Infinity],
-        ["<=40%", "40%-60%", "60%-80%", "80%-100%", ">100%"]
-      );
 
-      const q1 = quantile(totalValues, 0.25);
-      const q3 = quantile(totalValues, 0.75);
-      const upperBound = q3 + 1.5 * (q3 - q1);
       const anomalies = scopeRecords
         .map((item) => {
           const total = toNumber(item.totalPrice);
@@ -1026,8 +1366,6 @@
           const ratio = total > 0 ? settlement / total : 0;
           const reasons = [];
           if (settlement > total) reasons.push("结算价高于会计价");
-          if (total > 0 && ratio < 0.4) reasons.push("结算率偏低");
-          if (upperBound > 0 && total > upperBound) reasons.push("会计价高值");
           return {
             date: formatDateDisplay(item.date),
             dispatcher: normalizeDispatcherTag(item.dispatcher),
@@ -1122,15 +1460,6 @@
         ])
       );
 
-      const ratioBandTable = buildHtmlTable(
-        ["结算率区间", "数量", "占比"],
-        ratioBandRows.map((row) => [
-          row.label,
-          formatCount(row.count),
-          formatPercent(scopeRecords.length ? row.count / scopeRecords.length : 0)
-        ])
-      );
-
       const anomalyTable = showDispatcherSections
         ? buildHtmlTable(
           ["日期", "接待人", "会计", "客户", "会计价", "结算价", "结算率", "原因"],
@@ -1205,6 +1534,22 @@
       );
 
       analysisContent.innerHTML = `
+        <section class="analysis-trend-card">
+          <div class="analysis-trend-main">
+            <div class="analysis-trend-head">
+              <div>
+                <h3>数据走势</h3>
+                <p>按日期汇总接单量、会计价和结算价</p>
+              </div>
+              <span class="analysis-trend-badge">${formatCount(trendRows.length)} 个日期</span>
+            </div>
+            <div id="analysisTrendChart" class="analysis-trend-chart" role="img" aria-label="数据走势、接单量和金额趋势图"></div>
+          </div>
+          <aside class="analysis-trend-summary" aria-label="趋势总结">
+            <h3>趋势总结</h3>
+            <div class="analysis-trend-summary-list">${trendSummaryHtml}</div>
+          </aside>
+        </section>
         <div class="analysis-scope">
           分析范围：当前筛选 ${formatCount(scopeRecords.length)} 条 / 全部 ${formatCount(allRecords.length)} 条
         </div>
@@ -1230,7 +1575,7 @@
           <div class="analysis-kpi"><div class="analysis-kpi-label">结算中位数</div><div class="analysis-kpi-value">${formatCurrency(medianSettlement)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">客户集中度Top1</div><div class="analysis-kpi-value">${formatPercent(topCustomerShare)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">客户集中度Top5</div><div class="analysis-kpi-value">${formatPercent(top5Share)}</div></div>
-          <div class="analysis-kpi"><div class="analysis-kpi-label">异常记录数</div><div class="analysis-kpi-value">${formatCount(anomalies.length)}</div></div>
+          <div class="analysis-kpi"><div class="analysis-kpi-label">数据异常数</div><div class="analysis-kpi-value">${formatCount(anomalies.length)}</div></div>
         </div>
         <div class="analysis-tags">${tagsHtml || '<span class="analysis-empty">暂无关键结论</span>'}</div>
         <div class="analysis-grid">
@@ -1244,8 +1589,8 @@
           <section class="analysis-panel"><h3>星期维度</h3>${weekdayTable}</section>
           <section class="analysis-panel"><h3>任务简介关键词热度</h3>${keywordTable}</section>
           <section class="analysis-panel"><h3>会计价区间分布</h3>${totalBandTable}</section>
-          <section class="analysis-panel"><h3>结算率区间分布</h3>${ratioBandTable}</section>
-          <section class="analysis-panel"><h3>异常与风险样本</h3>${anomalyTable}</section>
+          <section class="analysis-panel"><h3>数据异常样本</h3>${anomalyTable}</section>
         </div>
       `;
+      scheduleAnalysisTrendChartRender(trendRows);
     }

@@ -1521,6 +1521,7 @@
 
     window.addEventListener("resize", () => {
       scheduleStickyTableColumnWidthSync();
+      resizeAnalysisTrendChart();
     });
 
     window.addEventListener("storage", (event) => {

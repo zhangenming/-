@@ -581,6 +581,7 @@
     }
 
     function closeAnalysisModal() {
+      disposeAnalysisTrendChart();
       analysisModal.classList.remove("modal-enter");
       analysisModalCard.classList.remove("modal-enter");
       analysisModal.hidden = true;

@@ -4290,6 +4290,149 @@
       padding: 8px 10px;
     }
 
+    .analysis-trend-card {
+      border: 1px solid #dceae3;
+      border: 1px solid oklch(88% 0.024 164);
+      border-radius: 10px;
+      background: #fbfdfc;
+      background: oklch(98.5% 0.006 164);
+      padding: 12px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+      gap: 14px;
+      align-items: stretch;
+      min-height: 324px;
+    }
+
+    .analysis-trend-main {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto minmax(260px, 1fr);
+      gap: 8px;
+    }
+
+    .analysis-trend-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .analysis-trend-head h3,
+    .analysis-trend-summary h3 {
+      margin: 0;
+      color: #28483f;
+      font-size: 15px;
+      line-height: 1.25;
+    }
+
+    .analysis-trend-head p {
+      margin: 4px 0 0;
+      color: #61746c;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .analysis-trend-badge {
+      border: 1px solid #c8ddd4;
+      border: 1px solid oklch(85% 0.03 164);
+      background: #f1f8f4;
+      background: oklch(96% 0.014 164);
+      color: #35554b;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    .analysis-trend-chart {
+      min-width: 0;
+      width: 100%;
+      height: 270px;
+      position: relative;
+    }
+
+    .analysis-chart-state {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      color: #61746c;
+      font-size: 13px;
+      background: #f4faf7;
+      border-radius: 8px;
+    }
+
+    .analysis-chart-tooltip {
+      display: grid;
+      gap: 3px;
+      font-size: 12px;
+      line-height: 1.35;
+      max-width: 280px;
+    }
+
+    .analysis-chart-tooltip strong {
+      color: #1d4137;
+      font-size: 13px;
+    }
+
+    .analysis-chart-tooltip .analysis-chart-weekend-date {
+      color: #d7352d;
+    }
+
+    .analysis-trend-summary {
+      border: 1px solid #dceae3;
+      border: 1px solid oklch(88% 0.024 164);
+      border-radius: 8px;
+      background: #f4faf7;
+      background: oklch(97.5% 0.012 164);
+      padding: 10px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .analysis-trend-summary-list {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .analysis-trend-summary-item {
+      border-bottom: 1px solid #dceae3;
+      padding-bottom: 8px;
+      min-width: 0;
+    }
+
+    .analysis-trend-summary-item:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .analysis-trend-summary-label {
+      color: #61746c;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .analysis-trend-summary-value {
+      color: #1d4137;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .analysis-trend-summary-meta {
+      color: #61746c;
+      font-size: 12px;
+      line-height: 1.35;
+      margin-top: 3px;
+      overflow-wrap: anywhere;
+    }
+
     .analysis-kpis {
       display: grid;
       grid-template-columns: repeat(6, minmax(120px, 1fr));
@@ -6034,6 +6177,23 @@
       }
 
       .analysis-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .analysis-trend-card {
+        grid-template-columns: 1fr;
+        min-height: 0;
+      }
+
+      .analysis-trend-main {
+        grid-template-rows: auto 260px;
+      }
+
+      .analysis-trend-chart {
+        height: 260px;
+      }
+
+      .analysis-trend-summary-list {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
