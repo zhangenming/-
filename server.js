@@ -82,6 +82,7 @@ const devLiveReloadClients = new Set();
 let devLiveReloadHeartbeat = null;
 let devLiveReloadDebounceTimer = null;
 let devWatchersStarted = false;
+let staticAssetVersion = "";
 
 const STATIC_MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -185,12 +186,71 @@ function getEnvironmentIconHref() {
   return `data:image/svg+xml,${encodeURIComponent(buildEnvironmentIconSvg())}`;
 }
 
+function normalizeStaticAssetVersion(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 96);
+}
+
+function getStaticAssetVersion() {
+  return staticAssetVersion || normalizeStaticAssetVersion(APP_PACKAGE?.version || "1.0.0");
+}
+
+async function loadStaticAssetVersion() {
+  if (IS_DEVELOPMENT) {
+    staticAssetVersion = normalizeStaticAssetVersion(`${APP_PACKAGE?.version || "1.0.0"}-dev`);
+    return;
+  }
+
+  try {
+    const content = await fs.readFile(BUILD_INFO_FILE, "utf8");
+    const payload = JSON.parse(content);
+    staticAssetVersion = normalizeStaticAssetVersion(
+      payload?.version || payload?.builtAt || APP_PACKAGE?.version || "1.0.0"
+    );
+  } catch {
+    staticAssetVersion = normalizeStaticAssetVersion(APP_PACKAGE?.version || "1.0.0");
+  }
+}
+
+function appendVersionToStaticAssetUrl(rawUrl, assetVersion) {
+  const normalizedUrl = String(rawUrl || "").trim();
+  const normalizedVersion = normalizeStaticAssetVersion(assetVersion);
+  if (!normalizedUrl || !normalizedVersion || normalizedUrl.startsWith("data:")) {
+    return normalizedUrl;
+  }
+
+  const hashIndex = normalizedUrl.indexOf("#");
+  const beforeHash = hashIndex >= 0 ? normalizedUrl.slice(0, hashIndex) : normalizedUrl;
+  const hash = hashIndex >= 0 ? normalizedUrl.slice(hashIndex) : "";
+  const separator = beforeHash.includes("?") ? "&" : "?";
+  return `${beforeHash}${separator}v=${encodeURIComponent(normalizedVersion)}${hash}`;
+}
+
+function withStaticAssetVersion(html, assetVersion) {
+  const normalizedVersion = normalizeStaticAssetVersion(assetVersion);
+  if (!normalizedVersion) {
+    return html;
+  }
+
+  return html.replace(/\b(href|src)="(\.\/public\/[^"]+)"/g, (match, attrName, assetUrl) => (
+    `${attrName}="${appendVersionToStaticAssetUrl(assetUrl, normalizedVersion)}"`
+  ));
+}
+
+function getPublicAssetCacheControl() {
+  return IS_DEVELOPMENT ? "no-store" : "public, max-age=31536000, immutable";
+}
+
 function withRuntimeConfig(html) {
   const iconHref = getEnvironmentIconHref();
+  const assetVersion = getStaticAssetVersion();
   const content = [
     `<link rel="icon" type="image/svg+xml" href="${iconHref}" />`,
     `<link rel="shortcut icon" type="image/svg+xml" href="${iconHref}" />`,
-    `<script>window.__APP_ENV__ = ${toInlineJson(APP_ENV)};</script>`
+    `<script>window.__APP_ENV__ = ${toInlineJson(APP_ENV)};window.__STATIC_ASSET_VERSION__ = ${toInlineJson(assetVersion)};</script>`
   ].join("\n  ");
   if (html.includes("</head>")) {
     return html.replace("</head>", `  ${content}\n</head>`);
@@ -2116,6 +2176,14 @@ function isRefundableCheckStatus(value) {
   return status === "checked" || status === "completed" || status === "partial_refunded";
 }
 
+function resolveRefundStatusByPaymentPrice(paymentPrice, invalidMessage = "付款价无效。") {
+  const paymentCents = moneyToCents(paymentPrice);
+  if (!Number.isFinite(paymentCents) || paymentCents < 0) {
+    throw new Error(invalidMessage);
+  }
+  return paymentCents === 0 ? "refunded" : "partial_refunded";
+}
+
 function buildRefundRecordUpdate(currentRecord, payload, session) {
   const current = currentRecord && typeof currentRecord === "object" ? currentRecord : {};
   const source = payload && typeof payload === "object" ? payload : {};
@@ -2147,6 +2215,7 @@ function buildRefundRecordUpdate(currentRecord, payload, session) {
   }
 
   if (isAccountantRefund) {
+    const nextStatus = resolveRefundStatusByPaymentPrice(currentPaymentPrice, "当前付款价无效。");
     if (!Number.isFinite(currentTotalPrice) || currentTotalPrice < 0) {
       throw new Error("当前会计价无效。");
     }
@@ -2166,7 +2235,6 @@ function buildRefundRecordUpdate(currentRecord, payload, session) {
     if (nextTotalCents >= currentTotalCents && nextSettlementCents >= currentSettlementCents) {
       throw new Error("会计价、会计结算价至少一项需要小于原数据。");
     }
-    const nextStatus = nextSettlementCents === 0 ? "refunded" : "partial_refunded";
     const operatedAt = getCurrentBeijingDateTime();
     const operatedBy = normalizeText(session?.account, 48);
     return {
@@ -2218,7 +2286,7 @@ function buildRefundRecordUpdate(currentRecord, payload, session) {
     throw new Error("付款价、会计价、会计结算价至少一项需要小于原数据。");
   }
 
-  const nextStatus = nextPaymentCents === 0 ? "refunded" : "partial_refunded";
+  const nextStatus = resolveRefundStatusByPaymentPrice(nextPaymentPrice, "付款价格式无效。");
   const operatedAt = getCurrentBeijingDateTime();
   const operatedBy = normalizeText(session?.account, 48);
   return {
@@ -2256,6 +2324,9 @@ async function serveHtmlFile(res, filePath, options = {}) {
   const { headOnly = false, missingMessage = "" } = options;
   try {
     const html = await fs.readFile(filePath, "utf8");
+    const htmlWithRuntime = withDevLiveReload(withRuntimeConfig(
+      withStaticAssetVersion(html, getStaticAssetVersion())
+    ));
     res.writeHead(200, {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store"
@@ -2264,7 +2335,7 @@ async function serveHtmlFile(res, filePath, options = {}) {
       res.end();
       return;
     }
-    res.end(withDevLiveReload(withRuntimeConfig(html)));
+    res.end(htmlWithRuntime);
   } catch (error) {
     if (error && error.code === "ENOENT" && missingMessage) {
       sendText(res, 503, missingMessage);
@@ -2412,7 +2483,9 @@ async function servePublicAsset(res, pathname, options = {}) {
     const content = await fs.readFile(filePath);
     res.writeHead(200, {
       "Content-Type": toStaticMimeType(filePath),
-      "Cache-Control": "no-store"
+      "Cache-Control": getPublicAssetCacheControl(),
+      "Content-Length": stat.size,
+      "Last-Modified": stat.mtime.toUTCString()
     });
     if (headOnly) {
       res.end();
@@ -4105,6 +4178,7 @@ const server = http.createServer(async (req, res) => {
 
 async function bootstrapServer() {
   await ensureStorage();
+  await loadStaticAssetVersion();
 
   if (IS_DEV_LIVE_RELOAD_ENABLED) {
     startDevWatchers();

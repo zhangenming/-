@@ -47,18 +47,22 @@
           return;
         }
 
-        setChangePasswordHint("密码保存中...", "pending");
-        if (changePasswordSubmitBtn) {
-          changePasswordSubmitBtn.disabled = true;
-          changePasswordSubmitBtn.textContent = "保存中...";
-        }
-
         try {
-          if (isDispatcherLogin()) {
-            await changeDispatcherPassword(newPassword);
-          } else {
-            await changeAccountantPassword(accountName, newPassword);
-          }
+          setChangePasswordHint("密码保存中...", "pending");
+          await withLoading(
+            {
+              button: changePasswordSubmitBtn,
+              form: changePasswordForm,
+              buttonText: "保存中..."
+            },
+            async () => {
+              if (isDispatcherLogin()) {
+                await changeDispatcherPassword(newPassword);
+              } else {
+                await changeAccountantPassword(accountName, newPassword);
+              }
+            }
+          );
         } catch (error) {
           console.error(error);
           showInlineFormError({
@@ -67,10 +71,6 @@
             target: changePasswordInput,
             message: error.message || "修改密码失败，请稍后重试。"
           });
-          if (changePasswordSubmitBtn) {
-            changePasswordSubmitBtn.disabled = false;
-            changePasswordSubmitBtn.textContent = "保存密码";
-          }
           return;
         }
 
@@ -87,8 +87,13 @@
 
     if (openAccountantRegisterBtn) {
       openAccountantRegisterBtn.addEventListener("click", () => {
-        accountantRegisterReturnTarget = "accountant-modal";
-        openAccountantRegisterModal();
+        openAccountantRegisterModal({ returnTarget: "accountant-modal" });
+      });
+    }
+
+    if (closeAccountantModalBtn) {
+      closeAccountantModalBtn.addEventListener("click", () => {
+        closeAccountantModal();
       });
     }
 
@@ -636,19 +641,21 @@
           return;
         }
 
-        setAccountantRegisterHint("新增会计中...", "pending");
-        if (accountantRegisterSubmitBtn) {
-          accountantRegisterSubmitBtn.disabled = true;
-          accountantRegisterSubmitBtn.textContent = "新增中...";
-        }
-
         try {
-          await registerAccountantProfile({
-            password,
-            alias,
-            realName,
-            phone
-          });
+          setAccountantRegisterHint("新增会计中...", "pending");
+          await withLoading(
+            {
+              button: accountantRegisterSubmitBtn,
+              form: accountantRegisterForm,
+              buttonText: "新增中..."
+            },
+            () => registerAccountantProfile({
+              password,
+              alias,
+              realName,
+              phone
+            })
+          );
         } catch (error) {
           console.error(error);
           const message = error.message || "新增会计失败";
@@ -658,10 +665,6 @@
             target: getAccountantRegisterErrorTarget(message),
             message
           });
-          if (accountantRegisterSubmitBtn) {
-            accountantRegisterSubmitBtn.disabled = false;
-            accountantRegisterSubmitBtn.textContent = "确认新增";
-          }
           return;
         }
 
@@ -706,12 +709,6 @@
           return;
         }
 
-        setAccountantEditHint(accountantEditMode === "self" ? "个人信息与密码保存中..." : "修改提交中...", "pending");
-        if (accountantEditSubmitBtn) {
-          accountantEditSubmitBtn.disabled = true;
-          accountantEditSubmitBtn.textContent = "提交中...";
-        }
-
         try {
           const payload = {
             alias,
@@ -721,7 +718,15 @@
             payload.password = password;
             payload.phone = phone;
           }
-          await updateAccountantProfile(originalUsername, payload);
+          setAccountantEditHint(accountantEditMode === "self" ? "个人信息与密码保存中..." : "修改提交中...", "pending");
+          await withLoading(
+            {
+              button: accountantEditSubmitBtn,
+              form: accountantEditForm,
+              buttonText: "提交中..."
+            },
+            () => updateAccountantProfile(originalUsername, payload)
+          );
         } catch (error) {
           console.error(error);
           const message = error.message || "修改失败";
@@ -731,10 +736,6 @@
             target: getAccountantEditErrorTarget(message, accountantEditMode),
             message
           });
-          if (accountantEditSubmitBtn) {
-            accountantEditSubmitBtn.disabled = false;
-            accountantEditSubmitBtn.textContent = "保存修改";
-          }
           return;
         }
 
@@ -773,7 +774,15 @@
         summary
       };
       try {
-        await checkRecordById(recordId, payload);
+        setCheckFormHint("提交确认中...", "pending");
+        await withLoading(
+          {
+            button: checkFormSubmitBtn,
+            form: checkForm,
+            buttonText: "提交中..."
+          },
+          () => checkRecordById(recordId, payload)
+        );
       } catch (error) {
         console.error(error);
         const message = error.message || "确认失败，请稍后重试。";
@@ -820,11 +829,19 @@
         return;
       }
       try {
-        await checkRecordById(recordId, {
-          status: "completed",
-          completedAt,
-          customerFeedback
-        });
+        setCompleteFormHint("确认完成中...", "pending");
+        await withLoading(
+          {
+            button: completeModalSubmitBtn,
+            form: completeForm,
+            buttonText: "提交中..."
+          },
+          () => checkRecordById(recordId, {
+            status: "completed",
+            completedAt,
+            customerFeedback
+          })
+        );
       } catch (error) {
         console.error(error);
         const message = error.message || "状态更新失败，请稍后重试。";
@@ -906,11 +923,19 @@
           return;
         }
         try {
-          await updateRecordById(recordId, {
-            status: nextSettlementCents === 0 ? "refunded" : "partial_refunded",
-            totalPrice: nextTotalPrice,
-            settlementPrice: nextSettlementPrice
-          });
+          setRefundFormHint("提交退款中...", "pending");
+          await withLoading(
+            {
+              button: refundFormSubmitBtn,
+              form: refundForm,
+              buttonText: "提交中..."
+            },
+            () => updateRecordById(recordId, {
+              status: "partial_refunded",
+              totalPrice: nextTotalPrice,
+              settlementPrice: nextSettlementPrice
+            })
+          );
         } catch (error) {
           console.error(error);
           const message = error.message || "退款失败，请稍后重试。";
@@ -972,12 +997,20 @@
       }
 
       try {
-        await updateRecordById(recordId, {
-          status: nextPaymentCents === 0 ? "refunded" : "partial_refunded",
-          paymentPrice: nextPaymentPrice,
-          totalPrice: nextTotalPrice,
-          settlementPrice: nextSettlementPrice
-        });
+        setRefundFormHint("提交退款中...", "pending");
+        await withLoading(
+          {
+            button: refundFormSubmitBtn,
+            form: refundForm,
+            buttonText: "提交中..."
+          },
+          () => updateRecordById(recordId, {
+            status: nextPaymentCents === 0 ? "refunded" : "partial_refunded",
+            paymentPrice: nextPaymentPrice,
+            totalPrice: nextTotalPrice,
+            settlementPrice: nextSettlementPrice
+          })
+        );
       } catch (error) {
         console.error(error);
         const message = error.message || "退款失败，请稍后重试。";
@@ -1025,7 +1058,13 @@
       });
       if (!confirmed) return;
       try {
-        await deleteAccountant(accountantUsername);
+        await withLoading(
+          {
+            button: deleteBtn,
+            buttonText: "删除中"
+          },
+          () => deleteAccountant(accountantUsername)
+        );
       } catch (error) {
         console.error(error);
         setAccountantModalHint(error.message || "删除会计失败，请稍后重试。", "error");
@@ -1288,7 +1327,13 @@
       if (!confirmed) return;
 
       try {
-        await deleteRecordById(recordId);
+        await withLoading(
+          {
+            button: deleteBtn,
+            buttonText: "删除中"
+          },
+          () => deleteRecordById(recordId)
+        );
       } catch (error) {
         console.error(error);
         showAppStatus(error.message || "删除失败，请稍后重试。");
@@ -1398,20 +1443,17 @@
       const recycleId = String(trigger.dataset.recycleRestoreId || "").trim();
       if (!recycleId || trigger.disabled) return;
 
-      const originalText = trigger.textContent;
-      trigger.disabled = true;
-      trigger.textContent = "还原中";
-
       try {
-        await restoreRecycleBinRecordById(recycleId);
+        await withLoading(
+          {
+            button: trigger,
+            buttonText: "还原中"
+          },
+          () => restoreRecycleBinRecordById(recycleId)
+        );
       } catch (error) {
         console.error(error);
         setRecycleModalHint(error.message || "还原失败，请稍后重试。", "error");
-      } finally {
-        if (trigger.isConnected) {
-          trigger.disabled = false;
-          trigger.textContent = originalText;
-        }
       }
     });
 
@@ -1678,14 +1720,24 @@
       }
 
       try {
-        if (editingRecordId) {
-          await updateRecordById(editingRecordId, item);
-        } else {
-          await createRecord({
-            ...item,
-            checkStatus: "pending"
-          });
-        }
+        setRecordFormHint(editingRecordId ? "修改保存中..." : "数据保存中...", "pending");
+        await withLoading(
+          {
+            button: recordSubmitBtn,
+            form: recordForm,
+            buttonText: editingRecordId ? "保存中..." : "提交中..."
+          },
+          async () => {
+            if (editingRecordId) {
+              await updateRecordById(editingRecordId, item);
+            } else {
+              await createRecord({
+                ...item,
+                checkStatus: "pending"
+              });
+            }
+          }
+        );
       } catch (error) {
         console.error(error);
         const message = error.message || (editingRecordId ? "修改失败，请稍后重试。" : "保存失败，请稍后重试。");
@@ -1705,52 +1757,76 @@
       closeCreateModal();
     });
 
-    async function init() {
-      bindInlineValidation(loginForm || loginPage, setLoginRequestHint);
-      bindInlineValidation(recordForm, setRecordFormHint);
-      bindInlineValidation(checkForm, setCheckFormHint);
-      bindInlineValidation(completeForm, setCompleteFormHint);
-      bindInlineValidation(accountantRegisterForm, setAccountantRegisterHint);
-      bindInlineValidation(accountantEditForm, setAccountantEditHint);
-      bindInlineValidation(changePasswordForm, setChangePasswordHint);
-      initializeSuggestionGuard();
-      closeCreateModal();
-      closeCheckModal();
-      closeCompleteModal();
-      closeRecordHistoryModal();
-      closeInvoicePreviewModal();
-      closeAnalysisModal();
-      closeDispatcherModal();
-      closeAccountantModal();
-      closeAccountantRegisterModal();
-      closeChangePasswordModal();
-      closeRecycleModal();
-      closeDevTodoModal();
-      setLoginRequestHint("", "idle");
+    function finishBoot({ keepLoginHint = false } = {}) {
+      if (!keepLoginHint) {
+        setLoginRequestHint("", "idle");
+      }
       renderBuildInfo();
-      await fetchBuildInfo();
+      void fetchBuildInfo();
       syncDevTodoEntryPoint();
       loadDevTodoItems();
       renderDevTodoList();
-      loadSavedLoginEntries();
-      loadFromStorage();
-      loadViewState();
+    }
 
-      validateCurrentAccount();
-      applyAccountToForm();
-      renderSourcePickerOptions();
-      renderPlatformShopPickerOptions();
+    async function init() {
+      let shouldSyncData = false;
+      let shouldFocusLogin = false;
+      let bootFailed = false;
 
-      if (hasAuthenticatedAccount()) {
+      try {
+        bindInlineValidation(loginForm || loginPage, setLoginRequestHint);
+        bindInlineValidation(recordForm, setRecordFormHint);
+        bindInlineValidation(checkForm, setCheckFormHint);
+        bindInlineValidation(completeForm, setCompleteFormHint);
+        bindInlineValidation(accountantRegisterForm, setAccountantRegisterHint);
+        bindInlineValidation(accountantEditForm, setAccountantEditHint);
+        bindInlineValidation(changePasswordForm, setChangePasswordHint);
+        initializeSuggestionGuard();
+        closeCreateModal();
+        closeCheckModal();
+        closeCompleteModal();
+        closeRecordHistoryModal();
+        closeInvoicePreviewModal();
+        closeAnalysisModal();
+        closeDispatcherModal();
+        closeAccountantModal();
+        closeAccountantRegisterModal();
+        closeChangePasswordModal();
+        closeRecycleModal();
+        closeDevTodoModal();
+        loadSavedLoginEntries();
+        loadFromStorage();
+        loadViewState();
+
+        validateCurrentAccount();
+        applyAccountToForm();
+        renderSourcePickerOptions();
+        renderPlatformShopPickerOptions();
+
+        shouldSyncData = hasAuthenticatedAccount();
+        shouldFocusLogin = !shouldSyncData;
         loginCodeInput.value = "";
         loginPasswordInput.value = "";
-        setPageMode(true);
-        await syncDataAfterLogin();
-      } else {
-        stopAutoRefresh();
+        setPageMode(shouldSyncData);
+      } catch (error) {
+        bootFailed = true;
+        shouldSyncData = false;
+        shouldFocusLogin = true;
+        console.error(error);
         setPageMode(false);
-        loginCodeInput.value = "";
-        loginPasswordInput.value = "";
+        setLoginRequestHint("页面初始化失败，请刷新重试。", "error");
+      } finally {
+        try {
+          finishBoot({ keepLoginHint: bootFailed });
+        } catch (error) {
+          console.error(error);
+        }
+        document.body.classList.remove("app-booting");
+      }
+
+      if (shouldSyncData) {
+        await syncDataAfterLogin();
+      } else if (shouldFocusLogin) {
         loginCodeInput.focus();
       }
     }

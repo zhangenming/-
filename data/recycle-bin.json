@@ -1,5 +1,64 @@
 [
   {
+    "recycleId": "del_mok07axhaqlcxv",
+    "deletedAt": "2026-04-29 20:00:50",
+    "deletedBy": "开心财税",
+    "record": {
+      "id": "rec_mohhx1xwsbfe2k",
+      "createdAt": "2026-04-28 01:53:26",
+      "date": "2026-04-26",
+      "isMonthlySettlement": false,
+      "dispatcher": "开心财税",
+      "accountant": "有幸",
+      "platform": "淘宝",
+      "shopName": "智算财税",
+      "orderNo": "5112499824551003647",
+      "source": "淘宝",
+      "customer": "雷",
+      "summary": "算运费",
+      "remark": "",
+      "paymentPrice": 260,
+      "totalPrice": 260,
+      "settlementPrice": 156,
+      "isSettled": false,
+      "settledAt": "",
+      "settledBy": "",
+      "settlementInvoiceImage": null,
+      "invoiceUploadedAt": "",
+      "invoiceUploadedBy": "",
+      "invoiceUploadedByUsername": "",
+      "checkStatus": "checked",
+      "checkedAt": "2026-04-28 14:28:02",
+      "completedAt": "",
+      "completedBy": "",
+      "customerFeedback": "",
+      "serviceFeedbackImages": [],
+      "operationHistory": [
+        {
+          "historyId": "rhis_moi8vgkk8144ll",
+          "operatedAt": "2026-04-28 14:28:02",
+          "operatedBy": "有幸",
+          "operatedRole": "accountant",
+          "actionKey": "checked",
+          "actionLabel": "确认",
+          "changes": [
+            {
+              "field": "checkStatus",
+              "label": "状态",
+              "before": "pending",
+              "after": "checked"
+            }
+          ]
+        }
+      ],
+      "checkedBy": "有幸",
+      "returnedAt": "",
+      "isSettlementPaid": false,
+      "settlementPaidAt": "",
+      "settlementPaidBy": ""
+    }
+  },
+  {
     "recycleId": "del_moislzuuw2hobb",
     "deletedAt": "2026-04-28 23:40:32",
     "deletedBy": "1",

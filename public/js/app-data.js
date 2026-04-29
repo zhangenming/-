@@ -29,7 +29,6 @@
 
     function handleUnauthorizedSession() {
       clearAuthenticatedRuntimeState();
-      stopAutoRefresh();
       saveToStorage();
       applyAccountToForm();
       closeCreateModal();
@@ -247,6 +246,11 @@
     }
 
     async function fetchBuildInfo() {
+      if (buildInfoPanel) {
+        setRegionLoading(buildInfoPanel, true, "正在读取版本...");
+        if (buildVersionText) buildVersionText.textContent = "版本读取中...";
+        if (buildTimeText) buildTimeText.textContent = "Build 读取中...";
+      }
       try {
         const response = await fetch(API_ENDPOINT_BUILD_INFO, { cache: "no-store" });
         if (!response.ok) {
@@ -260,6 +264,8 @@
         console.error(error);
         renderBuildInfo();
         return null;
+      } finally {
+        setRegionLoading(buildInfoPanel, false);
       }
     }
 
@@ -375,6 +381,7 @@
 
         const displayNameCell = document.createElement("td");
         displayNameCell.className = "accountant-col-display";
+        displayNameCell.dataset.label = "别名";
         const displayNameSpan = document.createElement("span");
         displayNameSpan.className = "accountant-item-sub";
         setNodeText(displayNameSpan, displayName);
@@ -382,10 +389,12 @@
 
         const realNameCell = document.createElement("td");
         realNameCell.className = "accountant-col-realname";
+        realNameCell.dataset.label = "姓名";
         setNodeText(realNameCell, realName);
 
         const phoneCell = document.createElement("td");
         phoneCell.className = "accountant-col-phone";
+        phoneCell.dataset.label = "手机号";
         setNodeText(phoneCell, phone);
 
         const passwordSpan = document.createElement("span");
@@ -393,6 +402,7 @@
         setNodeText(passwordSpan, profile.loginPassword);
         const passwordCell = document.createElement("td");
         passwordCell.className = "accountant-col-password";
+        passwordCell.dataset.label = "密码";
         passwordCell.appendChild(passwordSpan);
 
         const countSpan = document.createElement("span");
@@ -400,29 +410,41 @@
         countSpan.textContent = `${orderCount} 单`;
         const countCell = document.createElement("td");
         countCell.className = "accountant-col-count";
+        countCell.dataset.label = "单量";
         countCell.appendChild(countSpan);
 
+        const actionLabel = displayName || phone || usernameText || "会计";
         const editBtn = document.createElement("button");
         editBtn.type = "button";
-        editBtn.className = "accountant-edit-btn";
+        editBtn.className = "accountant-action-btn accountant-edit-btn";
         editBtn.dataset.accountantUsername = usernameText;
         editBtn.dataset.accountantPhone = phone;
+        editBtn.setAttribute("aria-label", `修改${actionLabel}`);
         editBtn.textContent = "修改";
 
         const deleteBtn = document.createElement("button");
         deleteBtn.type = "button";
-        deleteBtn.className = "accountant-delete-btn";
+        deleteBtn.className = "accountant-action-btn accountant-delete-btn";
         deleteBtn.dataset.accountantUsername = String(profile.username || profile.name || "").trim();
         deleteBtn.dataset.accountantPhone = phone;
         deleteBtn.dataset.accountantDisplayName = displayName;
         deleteBtn.dataset.relatedCount = String(orderCount);
         deleteBtn.disabled = orderCount > 0;
         deleteBtn.title = orderCount > 0 ? `当前有 ${orderCount} 条数据，暂不可删除` : "删除会计";
+        deleteBtn.setAttribute(
+          "aria-label",
+          orderCount > 0 ? `${actionLabel}当前有 ${orderCount} 条数据，暂不可删除` : `删除${actionLabel}`
+        );
         deleteBtn.textContent = "删除";
+        const actionGroup = document.createElement("div");
+        actionGroup.className = "accountant-action-group";
+        actionGroup.setAttribute("aria-label", `${actionLabel}操作`);
+        actionGroup.appendChild(editBtn);
+        actionGroup.appendChild(deleteBtn);
         const actionCell = document.createElement("td");
         actionCell.className = "accountant-col-action";
-        actionCell.appendChild(editBtn);
-        actionCell.appendChild(deleteBtn);
+        actionCell.dataset.label = "操作";
+        actionCell.appendChild(actionGroup);
 
         row.appendChild(phoneCell);
         row.appendChild(passwordCell);
@@ -545,6 +567,7 @@
 
         const displayCell = document.createElement("td");
         displayCell.className = "dispatcher-col-display";
+        displayCell.dataset.label = "接待";
         const displaySpan = document.createElement("span");
         displaySpan.className = "accountant-item-sub";
         displaySpan.textContent = displayName || "—";
@@ -553,11 +576,13 @@
 
         const accountCell = document.createElement("td");
         accountCell.className = "dispatcher-col-account";
+        accountCell.dataset.label = "账号";
         accountCell.textContent = accountText || "—";
         accountCell.title = accountText;
 
         const passwordCell = document.createElement("td");
         passwordCell.className = "dispatcher-col-password";
+        passwordCell.dataset.label = "密码";
         const passwordSpan = document.createElement("span");
         passwordSpan.className = "accountant-item-password";
         passwordSpan.textContent = passwordText || "—";
@@ -566,6 +591,7 @@
 
         const countCell = document.createElement("td");
         countCell.className = "dispatcher-col-count";
+        countCell.dataset.label = "接单数";
         const countSpan = document.createElement("span");
         countSpan.className = "accountant-item-count";
         countSpan.textContent = `${orderCount} 单`;
@@ -1716,42 +1742,6 @@
       if (!accountantModal.hidden) {
         renderAccountantList();
       }
-    }
-
-    async function runAutoRefreshCycle() {
-      if (!hasAuthenticatedAccount()) return;
-      if (document.hidden) return;
-      if (refreshInFlightPromise) return refreshInFlightPromise;
-
-      refreshInFlightPromise = (async () => {
-        try {
-          await fetchRecords();
-          if (!recycleModal.hidden) {
-            await fetchRecycleBinRecords();
-          } else {
-            await fetchAccountantOperationLogs();
-          }
-        } catch (error) {
-          console.error(error);
-        } finally {
-          refreshInFlightPromise = null;
-        }
-      })();
-
-      return refreshInFlightPromise;
-    }
-
-    function stopAutoRefresh() {
-      if (!refreshTimer) return;
-      clearInterval(refreshTimer);
-      refreshTimer = null;
-    }
-
-    function startAutoRefresh() {
-      stopAutoRefresh();
-      refreshTimer = setInterval(() => {
-        void runAutoRefreshCycle();
-      }, AUTO_REFRESH_INTERVAL_MS);
     }
 
     function saveToStorage() {

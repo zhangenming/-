@@ -493,8 +493,13 @@
       syncModalOpenState();
     }
 
-    function openAccountantRegisterModal() {
+    function openAccountantRegisterModal(options = {}) {
       if (!accountantRegisterModal || !accountantRegisterModalCard) return;
+      const nextReturnTarget = String(options.returnTarget || accountantRegisterReturnTarget || "").trim();
+      if (nextReturnTarget) {
+        accountantRegisterReturnTarget = nextReturnTarget;
+      }
+      const shouldKeepAccountantModalOpen = accountantRegisterReturnTarget === "accountant-modal";
       closeAllFilterPopovers();
       closeCreateModal();
       closeCheckModal();
@@ -503,12 +508,15 @@
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
       closeAccountantEditModal();
-      closeAccountantModal();
+      if (!shouldKeepAccountantModalOpen) {
+        closeAccountantModal();
+      }
       closeChangePasswordModal();
       closeRecycleModal();
       closeDevTodoModal();
       resetAccountantRegisterForm();
       accountantRegisterModal.hidden = false;
+      accountantRegisterModal.classList.toggle("modal-stacked", shouldKeepAccountantModalOpen);
       accountantRegisterModal.classList.remove("modal-enter");
       accountantRegisterModalCard.classList.remove("modal-enter");
       void accountantRegisterModal.offsetWidth;
@@ -524,19 +532,26 @@
       const shouldRestore = accountantRegisterReturnTarget === "accountant-modal"
         && Boolean(currentAccount)
         && !isAccountantLogin();
+      const isAccountantModalOpen = accountantModal && !accountantModal.hidden;
       const hintText = String(options.hintText || "").trim();
       const hintState = options.hintState || "idle";
       closeAccountantRegisterModal();
       if (!shouldRestore) return;
-      await openAccountantModal();
+      if (!isAccountantModalOpen) {
+        await openAccountantModal();
+      }
       if (hintText) {
         setAccountantModalHint(hintText, hintState);
+      }
+      if (accountantListWrap && accountantModal && !accountantModal.hidden) {
+        accountantListWrap.focus();
       }
     }
 
     function closeAccountantRegisterModal() {
       if (!accountantRegisterModal || !accountantRegisterModalCard) return;
       accountantRegisterModal.classList.remove("modal-enter");
+      accountantRegisterModal.classList.remove("modal-stacked");
       accountantRegisterModalCard.classList.remove("modal-enter");
       accountantRegisterModal.hidden = true;
       accountantRegisterReturnTarget = "";
@@ -599,22 +614,27 @@
       closeAccountantModal();
       closeRecycleModal();
       closeDevTodoModal();
-      try {
-        await fetchDispatchers();
-      } catch (error) {
-        console.error(error);
-        showAppStatus(error.message || "读取接待列表失败，请稍后重试。");
-        return;
-      }
       setDispatcherModalHint("", "idle");
       dispatcherModal.hidden = false;
       dispatcherModal.classList.remove("modal-enter");
       dispatcherModalCard.classList.remove("modal-enter");
       void dispatcherModal.offsetWidth;
-      renderDispatcherList();
       dispatcherModal.classList.add("modal-enter");
       dispatcherModalCard.classList.add("modal-enter");
       syncModalOpenState();
+      renderListLoadingState(dispatcherList, dispatcherEmptyState, "正在读取接待列表...");
+      try {
+        await fetchDispatchers();
+      } catch (error) {
+        console.error(error);
+        showAppStatus(error.message || "读取接待列表失败，请稍后重试。");
+        closeDispatcherModal();
+        return;
+      } finally {
+        setRegionLoading(dispatcherListWrap, false);
+      }
+      if (dispatcherModal.hidden) return;
+      renderDispatcherList();
       if (dispatcherListWrap) {
         dispatcherListWrap.focus();
       }
@@ -644,13 +664,6 @@
       closeAccountantEditModal();
       closeRecycleModal();
       closeDevTodoModal();
-      try {
-        await fetchAccountants();
-      } catch (error) {
-        console.error(error);
-        showAppStatus(error.message || "读取会计列表失败，请稍后重试。");
-        return;
-      }
       setAccountantModalHint("", "idle");
       accountantModal.hidden = false;
       accountantModal.classList.remove("modal-enter");
@@ -659,6 +672,18 @@
       accountantModal.classList.add("modal-enter");
       accountantModalCard.classList.add("modal-enter");
       syncModalOpenState();
+      renderListLoadingState(accountantList, accountantEmptyState, "正在读取会计列表...");
+      try {
+        await fetchAccountants();
+      } catch (error) {
+        console.error(error);
+        showAppStatus(error.message || "读取会计列表失败，请稍后重试。");
+        closeAccountantModal();
+        return;
+      } finally {
+        setRegionLoading(accountantListWrap, false);
+      }
+      if (accountantModal.hidden) return;
       if (accountantListWrap) {
         accountantListWrap.focus();
       }
@@ -685,13 +710,6 @@
       closeAccountantEditModal();
       closeAccountantModal();
       closeDevTodoModal();
-      try {
-        await fetchRecycleBinRecords();
-      } catch (error) {
-        console.error(error);
-        showAppStatus(error.message || "读取回收站失败，请稍后重试。");
-        return;
-      }
       setRecycleModalHint("", "idle");
       recycleModal.hidden = false;
       recycleModal.classList.remove("modal-enter");
@@ -699,9 +717,23 @@
       void recycleModal.offsetWidth;
       recycleModal.classList.add("modal-enter");
       recycleModalCard.classList.add("modal-enter");
+      renderListLoadingState(recycleTableBody, recycleEmptyState, "正在读取回收站...");
+      renderListLoadingState(accountantLogList, accountantLogEmptyState, "正在读取会计操作日志...");
+      syncModalOpenState();
+      try {
+        await fetchRecycleBinRecords();
+      } catch (error) {
+        console.error(error);
+        showAppStatus(error.message || "读取回收站失败，请稍后重试。");
+        closeRecycleModal();
+        return;
+      } finally {
+        setRegionLoading(recycleTableBody.closest(".table-wrap"), false);
+        setRegionLoading(accountantLogList.parentElement, false);
+      }
+      if (recycleModal.hidden) return;
       renderRecycleBinTable();
       renderAccountantOperationLogs();
-      syncModalOpenState();
     }
 
     function closeRecycleModal() {
@@ -888,7 +920,7 @@
       resetInlineFormState(refundForm, setRefundFormHint);
       refundRecordIdInput.value = String(record.id || "").trim();
       refundPaymentPriceInput.value = isAccountantRefund ? "" : toMoney(paymentPrice);
-      refundPaymentPriceInput.dataset.originalPaymentPrice = isAccountantRefund ? "" : String(paymentPrice);
+      refundPaymentPriceInput.dataset.originalPaymentPrice = String(paymentPrice);
       refundTotalPriceInput.value = toMoney(totalPrice);
       refundTotalPriceInput.dataset.originalTotalPrice = String(totalPrice);
       refundSettlementPriceInput.value = toMoney(settlementPrice);
@@ -2471,9 +2503,18 @@
 
       const title = document.createElement("span");
       title.className = "invoice-upload-btn-title";
-      title.textContent = count > 0
+      if (isInvoiceUploadSubmitting) {
+        const spinner = document.createElement("span");
+        spinner.className = "loading-spinner";
+        spinner.setAttribute("aria-hidden", "true");
+        title.appendChild(spinner);
+      }
+      const titleText = document.createElement("span");
+      titleText.className = "invoice-upload-btn-title-text";
+      titleText.textContent = count > 0
         ? `${isInvoiceUploadSubmitting ? "上传中" : "上传发票"}（${count}）`
         : "上传发票";
+      title.appendChild(titleText);
       accountantInvoiceUploadBtn.appendChild(title);
 
       if (count > 0) {
@@ -2503,6 +2544,7 @@
       }
 
       accountantInvoiceUploadBtn.setAttribute("aria-busy", String(isInvoiceUploadSubmitting));
+      accountantInvoiceUploadBtn.classList.toggle("is-loading", Boolean(isInvoiceUploadSubmitting));
       accountantInvoiceUploadBtn.setAttribute(
         "aria-label",
         count > 0
@@ -2642,9 +2684,17 @@
 
       isBossSettlementSubmitting = true;
       showSettlementSummaryStatus("", "idle");
-      renderBossSettlementSummaryContent();
       try {
-        const { settledRecordIds, skippedRecordIds } = await settleRecordsByIds(recordIds);
+        renderBossSettlementSummaryContent();
+        const { settledRecordIds, skippedRecordIds } = await withLoading(
+          {
+            button: bossSettlementSummarySubmitBtn,
+            region: bossSettlementSummaryModalCard,
+            buttonText: "结算中...",
+            regionText: "正在结算..."
+          },
+          () => settleRecordsByIds(recordIds)
+        );
         setRecentBossSettlementRecordIds(settledRecordIds);
         closeBossSettlementSummaryModal();
         const messageParts = [];
@@ -2680,9 +2730,15 @@
       }
 
       isBossSettlementPayoutSubmitting = true;
-      renderBossSettlementDetailModalContent();
       try {
-        const { paidRecordIds, skippedRecordIds } = await payoutSettlementRecordsByIds(normalizedRecordIds);
+        renderBossSettlementDetailModalContent();
+        const { paidRecordIds, skippedRecordIds } = await withLoading(
+          {
+            region: bossSettlementDetailList,
+            regionText: "正在打款..."
+          },
+          () => payoutSettlementRecordsByIds(normalizedRecordIds)
+        );
         const messageParts = [];
         if (paidRecordIds.length) {
           messageParts.push(`已打款 ${paidRecordIds.length} 条`);
@@ -2988,6 +3044,7 @@
     function setPageMode(isLoggedIn) {
       loginPage.hidden = isLoggedIn;
       appPage.hidden = !isLoggedIn;
+      document.body.classList.toggle("login-mode", !isLoggedIn);
       const isAccountant = isAccountantLogin();
       const isBoss = isBossLogin();
       const isDispatcher = Boolean(isLoggedIn && !isAccountant && !isBoss);
@@ -3121,13 +3178,13 @@
 
     function requireAccount() {
       if (hasAuthenticatedAccount()) return true;
-      stopAutoRefresh();
       setPageMode(false);
       loginCodeInput.focus();
       return false;
     }
 
     async function syncDataAfterLogin() {
+      renderTableLoadingState("正在加载工作数据...");
       try {
         await fetchAccountants();
       } catch (error) {
@@ -3139,15 +3196,15 @@
       } catch (error) {
         console.error(error);
         showAppStatus("读取共享数据失败，请确认 Node 服务已启动。");
+        renderTable();
       }
       try {
         await fetchAccountantOperationLogs();
       } catch (error) {
         console.error(error);
         showAppStatus(error.message || "读取会计操作日志失败，请稍后重试。");
-      }
-      if (hasAuthenticatedAccount()) {
-        startAutoRefresh();
+      } finally {
+        setRegionLoading(mainTableWrap, false);
       }
     }
 
@@ -3168,7 +3225,14 @@
       clearInlineFieldError(loginPasswordInput);
       let authResult;
       try {
-        authResult = await verifyLoginByServer(rawName, rawPassword);
+        authResult = await withLoading(
+          {
+            button: enterBtn,
+            form: loginForm,
+            buttonText: "登录中..."
+          },
+          () => verifyLoginByServer(rawName, rawPassword)
+        );
       } catch (error) {
         console.error(error);
         setLoginRequestHint(error.message || "登录失败", "error");
@@ -3202,7 +3266,6 @@
     }
 
     async function logoutAccount() {
-      stopAutoRefresh();
       clearAuthenticatedRuntimeState();
       saveToStorage();
       applyAccountToForm();

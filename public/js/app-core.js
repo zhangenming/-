@@ -12,7 +12,8 @@
     const API_ENDPOINT_AUTH_ACCOUNTANT_REGISTER = `${API_BASE}/api/auth/accountant-register`;
     const API_ENDPOINT_AUTH_LOGIN = `${API_BASE}/api/auth/login`;
     const API_ENDPOINT_AUTH_PASSWORD = `${API_BASE}/api/auth/password`;
-    const AUTO_REFRESH_INTERVAL_MS = 45000;
+    const STATIC_ASSET_VERSION = String(window.__STATIC_ASSET_VERSION__ || "").trim();
+    const ECHARTS_ASSET_URL = "./public/vendor/echarts.min.js";
     const STORAGE_KEY_ACCOUNT = "dispatch_current_account_v1";
     const STORAGE_KEY_ACCOUNT_ROLE = "dispatch_current_account_role_v1";
     const STORAGE_KEY_ACCOUNT_DISPLAY_NAME = "dispatch_current_account_display_name_v1";
@@ -210,6 +211,7 @@
     const checkModalCard = checkModal.querySelector(".check-modal-card");
     const checkFormHint = document.getElementById("checkFormHint");
     const checkForm = document.getElementById("checkForm");
+    const checkFormSubmitBtn = checkForm ? checkForm.querySelector("button[type='submit']") : null;
     const checkRecordIdInput = document.getElementById("checkRecordId");
     const checkCustomerInput = document.getElementById("checkCustomer");
     const checkSummaryInput = document.getElementById("checkSummary");
@@ -227,6 +229,7 @@
     const refundModalMeta = document.getElementById("refundModalMeta");
     const refundFormHint = document.getElementById("refundFormHint");
     const refundForm = document.getElementById("refundForm");
+    const refundFormSubmitBtn = refundForm ? refundForm.querySelector("button[type='submit']") : null;
     const refundRecordIdInput = document.getElementById("refundRecordId");
     const refundPaymentPriceInput = document.getElementById("refundPaymentPrice");
     const refundTotalPriceInput = document.getElementById("refundTotalPrice");
@@ -268,6 +271,7 @@
     const accountantModal = document.getElementById("accountantModal");
     const accountantModalCard = accountantModal.querySelector(".accountant-modal-card");
     const accountantModalHint = document.getElementById("accountantModalHint");
+    const closeAccountantModalBtn = document.getElementById("closeAccountantModalBtn");
     const accountantListWrap = document.getElementById("accountantListWrap");
     const accountantList = document.getElementById("accountantList");
     const accountantEmptyState = document.getElementById("accountantEmptyState");
@@ -366,6 +370,7 @@
       "textarea"
     ].join(", ");
     const tableBody = document.getElementById("tableBody");
+    const mainTableWrap = tableBody ? tableBody.closest(".table-wrap") : null;
     const emptyState = document.getElementById("emptyState");
     const tableTotalCount = document.getElementById("tableTotalCount");
     const clearFilterBtn = document.getElementById("clearFilterBtn");
@@ -440,8 +445,6 @@
     let recycleBinRecords = [];
     let accountantOperationLogs = [];
     let hasFetchedRecords = false;
-    let refreshTimer = null;
-    let refreshInFlightPromise = null;
     let settlementPriceAutoFilled = false;
     let accountantPickerOptions = [];
     let accountantPickerOrderCountMap = new Map();
@@ -914,6 +917,26 @@
       return "会计账号";
     }
 
+    function getSavedLoginRoleLabel(roleKey) {
+      if (roleKey === "dispatcher") return "接待";
+      if (roleKey === "boss") return "管理";
+      return "会计";
+    }
+
+    function getSavedLoginMetaText(accountNameRaw, roleRaw) {
+      const accountName = String(accountNameRaw || "").trim();
+      const roleKey = getSavedLoginRoleKey(accountNameRaw, roleRaw);
+      if (roleKey === "dispatcher") {
+        const dispatcherTag = getDispatcherTagForAccount(accountNameRaw);
+        return dispatcherTag ? `接待号 ${dispatcherTag}` : "接待账号";
+      }
+      if (roleKey === "boss") {
+        return "负责人视图";
+      }
+      const resolvedAccount = String(resolveLoginAccountInput(accountName) || accountName).trim();
+      return resolvedAccount ? `账号 ${resolvedAccount}` : "会计账号";
+    }
+
     function getDispatcherAccountDisplayName(accountNameRaw) {
       const accountName = String(accountNameRaw || "").trim();
       const normalizedAccount = String(resolveLoginAccountInput(accountNameRaw) || accountName || "").trim().toLowerCase();
@@ -986,6 +1009,7 @@
         group.appendChild(header);
 
         entries.forEach((normalized) => {
+          const roleKey = getSavedLoginRoleKey(normalized.account, normalized.role);
           const itemButton = document.createElement("button");
           itemButton.type = "button";
           itemButton.className = "saved-login-item";
@@ -998,8 +1022,18 @@
           name.className = "saved-login-item-name";
           name.textContent = getSavedLoginDisplayName(normalized.account, normalized.role);
 
+          const meta = document.createElement("span");
+          meta.className = "saved-login-item-meta";
+          meta.textContent = getSavedLoginMetaText(normalized.account, normalized.role);
+
+          const role = document.createElement("span");
+          role.className = `saved-login-item-role ${roleKey}`;
+          role.textContent = getSavedLoginRoleLabel(roleKey);
+
           main.appendChild(name);
+          main.appendChild(meta);
           itemButton.appendChild(main);
+          itemButton.appendChild(role);
           groupList.appendChild(itemButton);
         });
 
@@ -2293,6 +2327,167 @@
       node.textContent = normalizedText;
       node.className = `${className} ${state}`;
       node.hidden = !normalizedText;
+    }
+
+    function getElementFormControls(root) {
+      if (!(root instanceof HTMLElement)) return [];
+      return Array.from(root.querySelectorAll("button, input, textarea, select")).filter((node) => (
+        node instanceof HTMLButtonElement
+        || node instanceof HTMLInputElement
+        || node instanceof HTMLTextAreaElement
+        || node instanceof HTMLSelectElement
+      ));
+    }
+
+    function setButtonLoading(button, active, loadingText = "") {
+      if (!(button instanceof HTMLButtonElement)) return;
+      const isActive = Boolean(active);
+      if (isActive) {
+        if (!button.dataset.loadingOriginalHtml) {
+          button.dataset.loadingOriginalHtml = button.innerHTML;
+        }
+        if (!button.dataset.loadingOriginalDisabled) {
+          button.dataset.loadingOriginalDisabled = button.disabled ? "true" : "false";
+        }
+        const text = String(loadingText || button.textContent || "处理中...").trim() || "处理中...";
+        button.disabled = true;
+        button.setAttribute("aria-busy", "true");
+        button.classList.add("is-loading");
+        button.innerHTML = "";
+        const spinner = document.createElement("span");
+        spinner.className = "loading-spinner";
+        spinner.setAttribute("aria-hidden", "true");
+        const label = document.createElement("span");
+        label.className = "loading-label";
+        label.textContent = text;
+        button.appendChild(spinner);
+        button.appendChild(label);
+        return;
+      }
+
+      const originalHtml = button.dataset.loadingOriginalHtml;
+      if (typeof originalHtml === "string") {
+        button.innerHTML = originalHtml;
+      }
+      button.disabled = button.dataset.loadingOriginalDisabled === "true";
+      button.removeAttribute("aria-busy");
+      button.classList.remove("is-loading");
+      delete button.dataset.loadingOriginalHtml;
+      delete button.dataset.loadingOriginalDisabled;
+    }
+
+    function setFormLoading(form, active) {
+      if (!(form instanceof HTMLElement)) return;
+      const controls = getElementFormControls(form);
+      if (active) {
+        form.setAttribute("aria-busy", "true");
+        form.classList.add("is-loading");
+        controls.forEach((control) => {
+          if (!control.dataset.loadingOriginalDisabled) {
+            control.dataset.loadingOriginalDisabled = control.disabled ? "true" : "false";
+          }
+          control.disabled = true;
+        });
+        return;
+      }
+      form.removeAttribute("aria-busy");
+      form.classList.remove("is-loading");
+      controls.forEach((control) => {
+        if (control.dataset.loadingOriginalDisabled) {
+          control.disabled = control.dataset.loadingOriginalDisabled === "true";
+          delete control.dataset.loadingOriginalDisabled;
+        }
+      });
+    }
+
+    function setRegionLoading(region, active, text = "加载中...") {
+      if (!(region instanceof HTMLElement)) return;
+      const isActive = Boolean(active);
+      region.classList.toggle("is-loading", isActive);
+      if (isActive) {
+        region.setAttribute("aria-busy", "true");
+        region.dataset.loadingText = String(text || "加载中...").trim() || "加载中...";
+      } else {
+        region.removeAttribute("aria-busy");
+        delete region.dataset.loadingText;
+      }
+    }
+
+    async function withLoading(options = {}, task) {
+      const {
+        button = null,
+        form = null,
+        region = null,
+        buttonText = "",
+        regionText = "加载中..."
+      } = options || {};
+      if (button) setButtonLoading(button, true, buttonText);
+      if (form) setFormLoading(form, true);
+      if (region) setRegionLoading(region, true, regionText);
+      try {
+        return await task();
+      } finally {
+        if (region) setRegionLoading(region, false);
+        if (button) setButtonLoading(button, false);
+        if (form) setFormLoading(form, false);
+      }
+    }
+
+    function renderTableLoadingState(message = "正在加载工作数据...") {
+      if (!tableBody) return;
+      tableBody.innerHTML = "";
+      const rowCount = 7;
+      const cellCount = 16 + (canCurrentAccountSettleRecords() ? 1 : 0);
+      for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+        const row = document.createElement("tr");
+        row.className = "table-skeleton-row";
+        for (let cellIndex = 0; cellIndex < cellCount; cellIndex += 1) {
+          const cell = document.createElement("td");
+          const bar = document.createElement("span");
+          bar.className = "skeleton-bar";
+          bar.style.setProperty("--skeleton-width", `${42 + ((rowIndex + cellIndex) % 5) * 11}%`);
+          cell.appendChild(bar);
+          row.appendChild(cell);
+        }
+        tableBody.appendChild(row);
+      }
+      emptyState.style.display = "none";
+      setRegionLoading(mainTableWrap, true, message);
+      if (tableTotalCount) tableTotalCount.textContent = "加载中...";
+    }
+
+    function renderListLoadingState(container, emptyNode, message = "加载中...") {
+      if (!(container instanceof HTMLElement)) return;
+      container.innerHTML = "";
+      if (emptyNode instanceof HTMLElement) {
+        emptyNode.style.display = "none";
+      }
+      const isTableBody = container.tagName.toLowerCase() === "tbody";
+      const headerCellCount = isTableBody
+        ? (container.closest("table")?.querySelectorAll("thead th").length || 6)
+        : 4;
+      for (let index = 0; index < 4; index += 1) {
+        const row = document.createElement(isTableBody ? "tr" : "div");
+        row.className = isTableBody ? "table-skeleton-row" : "list-skeleton-row";
+        const cellTotal = isTableBody ? headerCellCount : 4;
+        for (let cellIndex = 0; cellIndex < cellTotal; cellIndex += 1) {
+          const cell = isTableBody ? document.createElement("td") : null;
+          const bar = document.createElement("span");
+          bar.className = "skeleton-bar";
+          bar.style.setProperty("--skeleton-width", `${38 + ((index + cellIndex) % 4) * 14}%`);
+          if (cell) {
+            cell.appendChild(bar);
+            row.appendChild(cell);
+          } else {
+            row.appendChild(bar);
+          }
+        }
+        container.appendChild(row);
+      }
+      const region = container.closest(".table-wrap")
+        || container.closest(".accountant-list-wrap")
+        || (container.parentElement instanceof HTMLElement ? container.parentElement : container);
+      setRegionLoading(region, true, message);
     }
 
     function getTableTooltipCell(target) {

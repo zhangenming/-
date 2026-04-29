@@ -6,50 +6,93 @@
   <title>派单结算录入</title>
   <link rel="stylesheet" href="./public/css/app.css" />
 </head>
-<body>
+<body class="app-booting">
   <button id="devTodoLauncher" class="btn-secondary dev-todo-launcher" type="button" hidden>Todo</button>
 
   <section id="loginPage" class="login-shell">
-    <div class="card login-card">
-      <h1>派单结算录入</h1>
-      <form id="loginForm" autocomplete="off" novalidate>
-        <div class="field" style="margin-top: 12px;">
-          <label for="loginCodeInput">手机号</label>
-          <input
-            id="loginCodeInput"
-            name="loginCode"
-            type="text"
-            autocomplete="username"
-            data-no-suggest="true"
-            autocapitalize="off"
-            autocorrect="off"
-            spellcheck="false"
-          />
+    <div class="login-workbench">
+      <section class="login-brief" aria-label="工作台概览">
+        <div class="login-brand">
+          <span class="login-brand-mark" aria-hidden="true">结</span>
+          <div class="login-brand-text">
+            <span class="login-brand-kicker">Dispatch Settlement Console</span>
+            <h1>派单结算录入</h1>
+          </div>
         </div>
-        <div class="field">
-          <label for="loginPasswordInput">密码</label>
-          <input
-            id="loginPasswordInput"
-            type="password"
-            name="loginPassword"
-            autocomplete="current-password"
-            data-no-suggest="true"
-            spellcheck="false"
-          />
+        <div class="login-brief-body">
+          <p class="login-brief-title">统一处理派单录入、会计核对、完工结算与回收审计。</p>
+          <div class="login-role-grid" aria-label="角色工作边界">
+            <section class="login-role-card">
+              <span class="login-role-label">接待</span>
+              <strong>录入与追踪</strong>
+              <span>订单、客户、金额与状态持续同步</span>
+            </section>
+            <section class="login-role-card">
+              <span class="login-role-label">会计</span>
+              <strong>核对与完工</strong>
+              <span>确认任务、反馈结果、上传结算凭证</span>
+            </section>
+            <section class="login-role-card">
+              <span class="login-role-label">负责人</span>
+              <strong>结算与审计</strong>
+              <span>分析负载、批量结算、查看回收记录</span>
+            </section>
+          </div>
         </div>
-        <div class="row login-action-row single-action">
-          <button id="enterBtn" class="btn-primary" type="submit">登录进入</button>
+      </section>
+
+      <section class="card login-card" aria-label="登录入口">
+        <div class="login-card-head">
+          <div>
+            <span class="login-card-kicker">工作台登录</span>
+            <h2 class="login-card-title">进入当前账套</h2>
+          </div>
+          <span class="login-card-status">本地数据</span>
         </div>
-        <div id="loginRequestHint" class="login-request-hint idle" aria-live="polite" hidden></div>
-        <section id="savedLoginSection" class="saved-login-section" hidden>
-          <div class="saved-login-top">
-            <div class="saved-login-heading">
-              <span class="saved-login-title">快捷登录</span>
+        <form id="loginForm" autocomplete="off" novalidate>
+          <div class="login-form-grid">
+            <div class="field login-field">
+              <label for="loginCodeInput">账号</label>
+              <input
+                id="loginCodeInput"
+                name="loginCode"
+                type="text"
+                autocomplete="username"
+                data-no-suggest="true"
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck="false"
+                placeholder="手机号 / 接待号 / 管理员"
+              />
+            </div>
+            <div class="field login-field">
+              <label for="loginPasswordInput">密码</label>
+              <input
+                id="loginPasswordInput"
+                type="password"
+                name="loginPassword"
+                autocomplete="current-password"
+                data-no-suggest="true"
+                spellcheck="false"
+                placeholder="输入登录密码"
+              />
             </div>
           </div>
-          <div id="savedLoginList" class="saved-login-list"></div>
-        </section>
-      </form>
+          <div class="row login-action-row single-action">
+            <button id="enterBtn" class="btn-primary" type="submit">登录进入</button>
+          </div>
+          <div id="loginRequestHint" class="login-request-hint idle" aria-live="polite" hidden></div>
+          <section id="savedLoginSection" class="saved-login-section" hidden>
+            <div class="saved-login-top">
+              <div class="saved-login-heading">
+                <span class="saved-login-title">快捷登录</span>
+                <span class="saved-login-subtitle">按角色分组，直接进入最近使用账号</span>
+              </div>
+            </div>
+            <div id="savedLoginList" class="saved-login-list"></div>
+          </section>
+        </form>
+      </section>
     </div>
   </section>
 
@@ -799,8 +842,15 @@
   <div id="accountantModal" class="modal-overlay" hidden>
     <section class="card modal-card accountant-modal-card">
       <div class="accountant-modal-top">
-        <h2 style="margin: 0; font-size: 20px;">会计管理</h2>
-        <button id="openAccountantRegisterBtn" class="btn-primary accountant-modal-create-btn" type="button">新增会计</button>
+        <div class="accountant-modal-heading">
+          <h2 class="accountant-modal-title">会计管理</h2>
+        </div>
+        <div class="accountant-modal-actions">
+          <button id="openAccountantRegisterBtn" class="btn-primary accountant-modal-create-btn" type="button">
+            <span aria-hidden="true">+</span>
+            <span>新增会计</span>
+          </button>
+        </div>
       </div>
       <p id="accountantModalHint" class="login-request-hint form-request-hint idle" aria-live="polite" hidden></p>
       <div id="accountantListWrap" class="accountant-list-wrap" tabindex="-1">
@@ -991,7 +1041,6 @@
     </section>
   </div>
 
-  <script src="./public/vendor/echarts.min.js"></script>
   <script src="./public/js/app-core.js"></script>
   <script src="./public/js/app-data.js"></script>
   <script src="./public/js/app-table-analysis.js"></script>

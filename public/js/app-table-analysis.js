@@ -1,6 +1,38 @@
 // Table & Analysis: date/status formatting, sorting/filtering, analytics aggregations and panel rendering.
-    let analysisTrendChartInstance = null;
-    let analysisTrendChartRenderFrame = 0;
+    const analysisChartInstances = new Map();
+    let analysisChartRenderFrame = 0;
+    let echartsLoadPromise = null;
+    const ANALYSIS_CHART_COLORS = ["#23765b", "#d48634", "#2f63aa", "#9a5b38", "#61746c", "#8c6a32", "#3c7c87", "#b35b5b"];
+
+    function getVersionedAssetUrl(assetUrl) {
+      const normalizedUrl = String(assetUrl || "").trim();
+      const version = String(STATIC_ASSET_VERSION || "").trim();
+      if (!normalizedUrl || !version) return normalizedUrl;
+      const separator = normalizedUrl.includes("?") ? "&" : "?";
+      return `${normalizedUrl}${separator}v=${encodeURIComponent(version)}`;
+    }
+
+    function loadEcharts() {
+      if (window.echarts) {
+        return Promise.resolve(window.echarts);
+      }
+      if (echartsLoadPromise) {
+        return echartsLoadPromise;
+      }
+
+      echartsLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = getVersionedAssetUrl(ECHARTS_ASSET_URL);
+        script.async = true;
+        script.onload = () => resolve(window.echarts);
+        script.onerror = () => {
+          echartsLoadPromise = null;
+          reject(new Error("图表库加载失败"));
+        };
+        document.head.appendChild(script);
+      });
+      return echartsLoadPromise;
+    }
 
     function parseDateValue(rawDate) {
       const source = String(rawDate || "").trim();
@@ -880,6 +912,26 @@
         .sort(compareCoopRowsByCount);
     }
 
+    function summarizeByCoopDimension(coopRows, keyResolver) {
+      const groups = new Map();
+      (Array.isArray(coopRows) ? coopRows : []).forEach((item) => {
+        const key = String(keyResolver(item) || "未分类");
+        const bucket = groups.get(key) || { key, count: 0, total: 0, settlement: 0 };
+        bucket.count += toNumber(item.count);
+        bucket.total += toNumber(item.total);
+        bucket.settlement += toNumber(item.settlement);
+        groups.set(key, bucket);
+      });
+      return Array.from(groups.values())
+        .map((row) => ({
+          ...row,
+          margin: row.total - row.settlement,
+          ratio: row.total > 0 ? row.settlement / row.total : 0,
+          avgTotal: row.count ? row.total / row.count : 0
+        }))
+        .sort(compareSummaryRowsByCount);
+    }
+
     function buildKeywordRows(scopeRecords) {
       const keywords = [
         "利润表", "利润", "对账", "抖音", "视频号", "拼多多", "补账", "建账",
@@ -1037,35 +1089,224 @@
         .join("");
     }
 
+    function buildStatusRows(scopeRecords) {
+      const statusOrder = ["pending", "checked", "completed", "partial_refunded", "settled", "uploaded", "paid", "refunded", "returned"];
+      const rowsByKey = new Map(statusOrder.map((key) => [key, {
+        key,
+        label: getRecordWorkflowStatusLabelByKey(key),
+        count: 0,
+        total: 0,
+        settlement: 0
+      }]));
+
+      scopeRecords.forEach((item) => {
+        const key = getRecordWorkflowStatusKey(item);
+        const row = rowsByKey.get(key) || {
+          key,
+          label: getRecordWorkflowStatusLabelByKey(key),
+          count: 0,
+          total: 0,
+          settlement: 0
+        };
+        row.count += 1;
+        row.total += toNumber(item.totalPrice);
+        row.settlement += toNumber(item.settlementPrice);
+        rowsByKey.set(key, row);
+      });
+
+      return Array.from(rowsByKey.values()).filter((row) => row.count > 0);
+    }
+
+    function isRecordEffectivelyCompleted(record) {
+      const statusKey = getRecordWorkflowStatusKey(record);
+      const checkStatus = String(record?.checkStatus || "").trim().toLowerCase();
+      return checkStatus === "completed"
+        || checkStatus === "partial_refunded"
+        || statusKey === "settled"
+        || statusKey === "uploaded"
+        || statusKey === "paid";
+    }
+
+    function buildSettlementFunnelRows(scopeRecords) {
+      const total = scopeRecords.length;
+      const stages = [
+        { key: "created", label: "已派单", match: () => true },
+        { key: "confirmed", label: "已确认", match: (item) => hasRecordAccountantConfirmation(item) },
+        { key: "completed", label: "已完成", match: (item) => isRecordEffectivelyCompleted(item) },
+        { key: "settled", label: "已结算", match: (item) => isRecordSettled(item) },
+        { key: "uploaded", label: "已上传发票", match: (item) => isRecordInvoiceUploaded(item) },
+        { key: "paid", label: "已打款", match: (item) => isRecordSettlementPaid(item) }
+      ];
+      return stages.map((stage) => {
+        const matchedRecords = scopeRecords.filter((item) => stage.match(item));
+        const settlement = matchedRecords.reduce((sum, item) => sum + toNumber(item.settlementPrice), 0);
+        return {
+          ...stage,
+          count: matchedRecords.length,
+          settlement,
+          rate: total ? matchedRecords.length / total : 0
+        };
+      });
+    }
+
+    function buildOperationActionRows(scopeRecords) {
+      const labelMap = {
+        created: "新建",
+        updated: "修改",
+        checked: "确认",
+        completed: "完成",
+        partial_refunded: "部分退款",
+        refunded: "退款",
+        returned: "退单",
+        settled: "结算",
+        invoice_uploaded: "上传发票",
+        settlement_paid: "打款"
+      };
+      const rowsByKey = new Map();
+      scopeRecords.forEach((item) => {
+        const history = Array.isArray(item.operationHistory) ? item.operationHistory : [];
+        history.forEach((entry) => {
+          const key = String(entry?.actionKey || "updated").trim() || "updated";
+          const label = labelMap[key] || String(entry?.actionLabel || "").trim() || "修改";
+          const row = rowsByKey.get(key) || { key, label, count: 0 };
+          row.count += 1;
+          rowsByKey.set(key, row);
+        });
+      });
+      return Array.from(rowsByKey.values())
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "zh-CN", {
+          numeric: true,
+          sensitivity: "base"
+        }));
+    }
+
+    function buildAgeRows(scopeRecords) {
+      const rows = [
+        { key: "today", label: "当天", pending: 0, checked: 0 },
+        { key: "one", label: "1天", pending: 0, checked: 0 },
+        { key: "two", label: "2天", pending: 0, checked: 0 },
+        { key: "threePlus", label: "3天+", pending: 0, checked: 0 }
+      ];
+      const getAgeKey = (days) => {
+        if (days <= 0) return "today";
+        if (days === 1) return "one";
+        if (days === 2) return "two";
+        return "threePlus";
+      };
+      scopeRecords.forEach((item) => {
+        const statusKey = getRecordWorkflowStatusKey(item);
+        if (statusKey !== "pending" && statusKey !== "checked") return;
+        const baseTime = statusKey === "checked"
+          ? parseDateOrDateTimeValue(item.checkedAt || item.date || item.createdAt)
+          : parseDateOrDateTimeValue(item.createdAt || item.date);
+        const ageKey = getAgeKey(getElapsedDaysFromNow(baseTime));
+        const row = rows.find((entry) => entry.key === ageKey);
+        if (!row) return;
+        row[statusKey] += 1;
+      });
+      return rows;
+    }
+
+    function buildMonthlySettlementRows(scopeRecords) {
+      const rowsByKey = new Map([
+        ["monthly", { key: "monthly", label: "月结", count: 0, total: 0, settlement: 0 }],
+        ["instant", { key: "instant", label: "即时结算", count: 0, total: 0, settlement: 0 }]
+      ]);
+      scopeRecords.forEach((item) => {
+        const key = isMonthlySettlementRecord(item) ? "monthly" : "instant";
+        const row = rowsByKey.get(key);
+        row.count += 1;
+        row.total += toNumber(item.totalPrice);
+        row.settlement += toNumber(item.settlementPrice);
+      });
+      return Array.from(rowsByKey.values()).filter((row) => row.count > 0);
+    }
+
+    function withRemainderRow(rows, limit, label = "其他") {
+      const sourceRows = Array.isArray(rows) ? rows : [];
+      if (sourceRows.length <= limit) return sourceRows;
+      const visible = sourceRows.slice(0, limit);
+      const remainder = sourceRows.slice(limit).reduce((sum, row) => ({
+        key: label,
+        count: sum.count + toNumber(row.count),
+        total: sum.total + toNumber(row.total),
+        settlement: sum.settlement + toNumber(row.settlement)
+      }), { key: label, count: 0, total: 0, settlement: 0 });
+      return [...visible, {
+        ...remainder,
+        ratio: remainder.total > 0 ? remainder.settlement / remainder.total : 0,
+        avgTotal: remainder.count ? remainder.total / remainder.count : 0
+      }];
+    }
+
+    function formatChartCurrencyAxis(value) {
+      const amount = Number(value);
+      if (!Number.isFinite(amount)) return "0";
+      if (Math.abs(amount) >= 10000) return `${(amount / 10000).toFixed(1)}万`;
+      return amount.toFixed(0);
+    }
+
+    function getBaseChartOption() {
+      return {
+        color: ANALYSIS_CHART_COLORS,
+        animationDuration: 220,
+        textStyle: {
+          color: "#28483f",
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'
+        },
+        tooltip: {
+          confine: true,
+          backgroundColor: "#fbfdfc",
+          borderColor: "#cfe0d8",
+          textStyle: {
+            color: "#1d4137"
+          }
+        }
+      };
+    }
+
+    function setAnalysisChartState(chartId, message) {
+      const chartElement = document.getElementById(chartId);
+      if (!chartElement) return;
+      chartElement.innerHTML = `<div class="analysis-chart-state">${escapeHtml(message)}</div>`;
+    }
+
+    function createAnalysisChart(chartId) {
+      const chartElement = document.getElementById(chartId);
+      if (!chartElement) return null;
+      if (!window.echarts) {
+        setAnalysisChartState(chartId, "ECharts 图表库加载中");
+        return null;
+      }
+      const existing = analysisChartInstances.get(chartId);
+      if (existing) {
+        existing.dispose();
+        analysisChartInstances.delete(chartId);
+      }
+      chartElement.innerHTML = "";
+      const chart = window.echarts.init(chartElement, null, {
+        renderer: "canvas"
+      });
+      analysisChartInstances.set(chartId, chart);
+      return chart;
+    }
+
     function disposeAnalysisTrendChart() {
-      if (analysisTrendChartRenderFrame) {
-        window.cancelAnimationFrame(analysisTrendChartRenderFrame);
-        analysisTrendChartRenderFrame = 0;
+      if (analysisChartRenderFrame) {
+        window.cancelAnimationFrame(analysisChartRenderFrame);
+        analysisChartRenderFrame = 0;
       }
-      if (analysisTrendChartInstance) {
-        analysisTrendChartInstance.dispose();
-        analysisTrendChartInstance = null;
-      }
+      analysisChartInstances.forEach((chart) => chart.dispose());
+      analysisChartInstances.clear();
     }
 
     function renderAnalysisTrendChart(trendRows) {
-      const chartElement = document.getElementById("analysisTrendChart");
-      if (!chartElement) {
-        disposeAnalysisTrendChart();
+      if (!trendRows.length) {
+        setAnalysisChartState("analysisTrendChart", "暂无趋势数据");
         return;
       }
-      if (!window.echarts) {
-        chartElement.innerHTML = '<div class="analysis-chart-state">ECharts 图表库加载中</div>';
-        return;
-      }
-
-      if (analysisTrendChartInstance) {
-        analysisTrendChartInstance.dispose();
-      }
-      chartElement.innerHTML = "";
-      analysisTrendChartInstance = window.echarts.init(chartElement, null, {
-        renderer: "canvas"
-      });
+      const chart = createAnalysisChart("analysisTrendChart");
+      if (!chart) return;
 
       const visiblePercent = trendRows.length > 18 ? Math.max(0, 100 - (18 / trendRows.length) * 100) : 0;
       const dataZoom = trendRows.length > 18
@@ -1094,17 +1335,12 @@
         ]
         : [];
 
-      analysisTrendChartInstance.setOption({
+      chart.setOption({
+        ...getBaseChartOption(),
         color: ["#23765b", "#d48634", "#2f63aa"],
-        animationDuration: 220,
         tooltip: {
+          ...getBaseChartOption().tooltip,
           trigger: "axis",
-          confine: true,
-          backgroundColor: "#fbfdfc",
-          borderColor: "#cfe0d8",
-          textStyle: {
-            color: "#1d4137"
-          },
           formatter(params) {
             const dataIndex = params[0]?.dataIndex || 0;
             const row = trendRows[dataIndex];
@@ -1195,10 +1431,7 @@
             },
             axisLabel: {
               color: "#61746c",
-              formatter(value) {
-                if (Math.abs(value) >= 10000) return `${(value / 10000).toFixed(1)}万`;
-                return value;
-              }
+              formatter: formatChartCurrencyAxis
             },
             nameTextStyle: {
               color: "#61746c"
@@ -1241,22 +1474,904 @@
           }
         ]
       });
-      analysisTrendChartInstance.resize();
+      chart.resize();
     }
 
-    function scheduleAnalysisTrendChartRender(trendRows) {
-      if (analysisTrendChartRenderFrame) {
-        window.cancelAnimationFrame(analysisTrendChartRenderFrame);
+    function renderAnalysisStatusChart(statusRows) {
+      if (!statusRows.length) {
+        setAnalysisChartState("analysisStatusChart", "暂无状态数据");
+        return;
       }
-      analysisTrendChartRenderFrame = window.requestAnimationFrame(() => {
-        analysisTrendChartRenderFrame = 0;
-        renderAnalysisTrendChart(trendRows);
+      const chart = createAnalysisChart("analysisStatusChart");
+      if (!chart) return;
+      chart.setOption({
+        ...getBaseChartOption(),
+        tooltip: {
+          ...getBaseChartOption().tooltip,
+          trigger: "item",
+          formatter(params) {
+            const row = params.data?.raw;
+            if (!row) return "";
+            return `
+              <div class="analysis-chart-tooltip">
+                <strong>${escapeHtml(row.label)}</strong>
+                <span>单量：${escapeHtml(formatCount(row.count))} 单</span>
+                <span>会计结算价：${escapeHtml(formatCurrency(row.settlement))}</span>
+                <span>占比：${escapeHtml(formatPercent(params.percent / 100))}</span>
+              </div>
+            `;
+          }
+        },
+        legend: {
+          orient: "vertical",
+          right: 4,
+          top: "middle",
+          itemWidth: 10,
+          itemHeight: 8,
+          textStyle: {
+            color: "#43645a",
+            fontSize: 11
+          }
+        },
+        series: [
+          {
+            name: "状态",
+            type: "pie",
+            radius: ["46%", "70%"],
+            center: ["40%", "52%"],
+            avoidLabelOverlap: true,
+            label: {
+              color: "#35554b",
+              fontSize: 11,
+              formatter: "{b}\n{c}单"
+            },
+            labelLine: {
+              length: 8,
+              length2: 6
+            },
+            data: statusRows.map((row) => ({
+              name: row.label,
+              value: row.count,
+              raw: row
+            }))
+          }
+        ]
+      });
+      chart.resize();
+    }
+
+    function renderAnalysisFunnelChart(funnelRows) {
+      if (!funnelRows.length) {
+        setAnalysisChartState("analysisFunnelChart", "暂无链路数据");
+        return;
+      }
+      const chart = createAnalysisChart("analysisFunnelChart");
+      if (!chart) return;
+      chart.setOption({
+        ...getBaseChartOption(),
+        tooltip: {
+          ...getBaseChartOption().tooltip,
+          trigger: "item",
+          formatter(params) {
+            const row = params.data?.raw;
+            if (!row) return "";
+            return `
+              <div class="analysis-chart-tooltip">
+                <strong>${escapeHtml(row.label)}</strong>
+                <span>单量：${escapeHtml(formatCount(row.count))} 单</span>
+                <span>转化：${escapeHtml(formatPercent(row.rate))}</span>
+                <span>会计结算价：${escapeHtml(formatCurrency(row.settlement))}</span>
+              </div>
+            `;
+          }
+        },
+        series: [
+          {
+            type: "funnel",
+            sort: "none",
+            left: "8%",
+            top: 10,
+            bottom: 8,
+            width: "84%",
+            minSize: "16%",
+            maxSize: "100%",
+            gap: 3,
+            label: {
+              color: "#1d4137",
+              fontSize: 11,
+              formatter(params) {
+                const row = params.data?.raw;
+                return row ? `${row.label} ${formatCount(row.count)}` : "";
+              }
+            },
+            itemStyle: {
+              borderColor: "#fbfdfc",
+              borderWidth: 2
+            },
+            data: funnelRows.map((row) => ({
+              name: row.label,
+              value: row.count,
+              raw: row
+            }))
+          }
+        ]
+      });
+      chart.resize();
+    }
+
+    function renderAnalysisHorizontalBarChart(chartId, rows, options = {}) {
+      const visibleRows = withRemainderRow(rows, options.limit || 10);
+      if (!visibleRows.length) {
+        setAnalysisChartState(chartId, "暂无维度数据");
+        return;
+      }
+      const chart = createAnalysisChart(chartId);
+      if (!chart) return;
+      const metric = options.metric || "settlement";
+      const metricName = options.metricName || "会计结算价";
+      const displayRows = [...visibleRows].reverse();
+      chart.setOption({
+        ...getBaseChartOption(),
+        grid: {
+          top: 18,
+          right: 18,
+          bottom: 18,
+          left: options.left || 72,
+          containLabel: true
+        },
+        tooltip: {
+          ...getBaseChartOption().tooltip,
+          trigger: "axis",
+          axisPointer: {
+            type: "shadow"
+          },
+          formatter(params) {
+            const row = params[0]?.data?.raw;
+            if (!row) return "";
+            return `
+              <div class="analysis-chart-tooltip">
+                <strong>${escapeHtml(row.key || row.label)}</strong>
+                <span>单量：${escapeHtml(formatCount(row.count))} 单</span>
+                <span>会计价：${escapeHtml(formatCurrency(row.total))}</span>
+                <span>会计结算价：${escapeHtml(formatCurrency(row.settlement))}</span>
+                <span>结算率：${escapeHtml(formatPercent(row.ratio || 0))}</span>
+              </div>
+            `;
+          }
+        },
+        xAxis: {
+          type: "value",
+          axisLabel: {
+            color: "#61746c",
+            formatter: metric === "count" ? (value) => formatCount(value) : formatChartCurrencyAxis
+          },
+          splitLine: {
+            lineStyle: {
+              color: "#e8f0ec"
+            }
+          }
+        },
+        yAxis: {
+          type: "category",
+          data: displayRows.map((row) => row.key || row.label),
+          axisTick: {
+            show: false
+          },
+          axisLine: {
+            lineStyle: {
+              color: "#d6e4dd"
+            }
+          },
+          axisLabel: {
+            color: "#43645a",
+            fontSize: 11,
+            overflow: "truncate",
+            width: options.labelWidth || 74
+          }
+        },
+        series: [
+          {
+            name: metricName,
+            type: "bar",
+            barMaxWidth: 16,
+            itemStyle: {
+              borderRadius: [0, 5, 5, 0]
+            },
+            data: displayRows.map((row) => ({
+              value: Number(toNumber(row[metric]).toFixed(2)),
+              raw: row
+            }))
+          }
+        ]
+      });
+      chart.resize();
+    }
+
+    function renderAnalysisSourceChart(sourceRows, monthlyRows) {
+      const rows = sourceRows.length ? withRemainderRow(sourceRows, 8) : monthlyRows;
+      if (!rows.length) {
+        setAnalysisChartState("analysisSourceChart", "暂无来源数据");
+        return;
+      }
+      const chart = createAnalysisChart("analysisSourceChart");
+      if (!chart) return;
+      chart.setOption({
+        ...getBaseChartOption(),
+        tooltip: {
+          ...getBaseChartOption().tooltip,
+          trigger: "item",
+          formatter(params) {
+            const row = params.data?.raw;
+            if (!row) return "";
+            return `
+              <div class="analysis-chart-tooltip">
+                <strong>${escapeHtml(row.key || row.label)}</strong>
+                <span>单量：${escapeHtml(formatCount(row.count))} 单</span>
+                <span>会计结算价：${escapeHtml(formatCurrency(row.settlement))}</span>
+              </div>
+            `;
+          }
+        },
+        series: [
+          {
+            type: "pie",
+            radius: ["28%", "66%"],
+            center: ["50%", "52%"],
+            roseType: "radius",
+            label: {
+              color: "#35554b",
+              fontSize: 11,
+              formatter: "{b} {c}"
+            },
+            data: rows.map((row) => ({
+              name: row.key || row.label,
+              value: row.count,
+              raw: row
+            }))
+          }
+        ]
+      });
+      chart.resize();
+    }
+
+    function renderAnalysisBandChart(totalBandRows) {
+      if (!totalBandRows.length) {
+        setAnalysisChartState("analysisBandChart", "暂无金额区间数据");
+        return;
+      }
+      const chart = createAnalysisChart("analysisBandChart");
+      if (!chart) return;
+      chart.setOption({
+        ...getBaseChartOption(),
+        grid: {
+          top: 16,
+          right: 14,
+          bottom: 28,
+          left: 34,
+          containLabel: true
+        },
+        tooltip: {
+          ...getBaseChartOption().tooltip,
+          trigger: "axis",
+          axisPointer: {
+            type: "shadow"
+          }
+        },
+        xAxis: {
+          type: "category",
+          data: totalBandRows.map((row) => row.label),
+          axisTick: {
+            show: false
+          },
+          axisLabel: {
+            color: "#61746c",
+            fontSize: 11
+          }
+        },
+        yAxis: {
+          type: "value",
+          minInterval: 1,
+          axisLabel: {
+            color: "#61746c"
+          },
+          splitLine: {
+            lineStyle: {
+              color: "#e8f0ec"
+            }
+          }
+        },
+        series: [
+          {
+            name: "单量",
+            type: "bar",
+            barMaxWidth: 26,
+            itemStyle: {
+              borderRadius: [5, 5, 0, 0]
+            },
+            data: totalBandRows.map((row) => row.count)
+          }
+        ]
+      });
+      chart.resize();
+    }
+
+    function renderAnalysisScatterChart(scopeRecords) {
+      const chartRows = scopeRecords
+        .map((item) => {
+          const total = toNumber(item.totalPrice);
+          const settlement = toNumber(item.settlementPrice);
+          return {
+            total,
+            settlement,
+            premium: Number.isFinite(getPremiumValue(item)) ? getPremiumValue(item) : 0,
+            customer: String(item.customer || "").trim() || "未填",
+            accountant: String(item.accountant || "").trim() || "未填",
+            dispatcher: normalizeDispatcherTag(item.dispatcher),
+            summary: getTrendSummaryLabel(item.summary)
+          };
+        })
+        .filter((row) => row.total > 0 || row.settlement > 0);
+      if (!chartRows.length) {
+        setAnalysisChartState("analysisScatterChart", "暂无金额散点数据");
+        return;
+      }
+      const chart = createAnalysisChart("analysisScatterChart");
+      if (!chart) return;
+      const maxValue = Math.max(...chartRows.flatMap((row) => [row.total, row.settlement]), 1);
+      chart.setOption({
+        ...getBaseChartOption(),
+        grid: {
+          top: 18,
+          right: 18,
+          bottom: 34,
+          left: 46,
+          containLabel: true
+        },
+        tooltip: {
+          ...getBaseChartOption().tooltip,
+          trigger: "item",
+          formatter(params) {
+            const row = params.data?.raw;
+            if (!row) return "";
+            return `
+              <div class="analysis-chart-tooltip">
+                <strong>${escapeHtml(row.customer)}</strong>
+                <span>会计：${escapeHtml(row.accountant)} / 接待：${escapeHtml(row.dispatcher)}</span>
+                <span>会计价：${escapeHtml(formatCurrency(row.total))}</span>
+                <span>会计结算价：${escapeHtml(formatCurrency(row.settlement))}</span>
+                <span>任务：${escapeHtml(row.summary)}</span>
+              </div>
+            `;
+          }
+        },
+        xAxis: {
+          type: "value",
+          name: "会计价",
+          max: Math.ceil(maxValue * 1.08),
+          axisLabel: {
+            color: "#61746c",
+            formatter: formatChartCurrencyAxis
+          },
+          splitLine: {
+            lineStyle: {
+              color: "#e8f0ec"
+            }
+          }
+        },
+        yAxis: {
+          type: "value",
+          name: "结算价",
+          max: Math.ceil(maxValue * 1.08),
+          axisLabel: {
+            color: "#61746c",
+            formatter: formatChartCurrencyAxis
+          },
+          splitLine: {
+            lineStyle: {
+              color: "#e8f0ec"
+            }
+          }
+        },
+        series: [
+          {
+            name: "订单",
+            type: "scatter",
+            symbolSize(value) {
+              return Math.max(7, Math.min(20, Math.sqrt(Math.abs(value[0])) / 1.8));
+            },
+            data: chartRows.map((row) => ({
+              value: [row.total, row.settlement],
+              raw: row
+            })),
+            markLine: {
+              symbol: "none",
+              silent: true,
+              lineStyle: {
+                color: "#c9d6d0",
+                type: "dashed"
+              },
+              data: [
+                [
+                  { coord: [0, 0] },
+                  { coord: [maxValue, maxValue] }
+                ]
+              ]
+            }
+          }
+        ]
+      });
+      chart.resize();
+    }
+
+    function renderAnalysisKeywordChart(keywordRows) {
+      const rows = keywordRows.slice(0, 10);
+      if (!rows.length) {
+        setAnalysisChartState("analysisKeywordChart", "暂无关键词数据");
+        return;
+      }
+      const chart = createAnalysisChart("analysisKeywordChart");
+      if (!chart) return;
+      const displayRows = [...rows].reverse();
+      chart.setOption({
+        ...getBaseChartOption(),
+        grid: {
+          top: 18,
+          right: 18,
+          bottom: 18,
+          left: 74,
+          containLabel: true
+        },
+        tooltip: {
+          ...getBaseChartOption().tooltip,
+          trigger: "axis",
+          axisPointer: {
+            type: "shadow"
+          },
+          formatter(params) {
+            const row = params[0]?.data?.raw;
+            if (!row) return "";
+            return `
+              <div class="analysis-chart-tooltip">
+                <strong>${escapeHtml(row.keyword)}</strong>
+                <span>命中数：${escapeHtml(formatCount(row.count))}</span>
+                <span>会计结算价贡献：${escapeHtml(formatCurrency(row.settlement))}</span>
+              </div>
+            `;
+          }
+        },
+        xAxis: {
+          type: "value",
+          minInterval: 1,
+          axisLabel: {
+            color: "#61746c"
+          },
+          splitLine: {
+            lineStyle: {
+              color: "#e8f0ec"
+            }
+          }
+        },
+        yAxis: {
+          type: "category",
+          data: displayRows.map((row) => row.keyword),
+          axisTick: {
+            show: false
+          },
+          axisLabel: {
+            color: "#43645a",
+            fontSize: 11,
+            overflow: "truncate",
+            width: 80
+          }
+        },
+        series: [
+          {
+            name: "命中数",
+            type: "bar",
+            barMaxWidth: 16,
+            itemStyle: {
+              borderRadius: [0, 5, 5, 0]
+            },
+            data: displayRows.map((row) => ({
+              value: row.count,
+              raw: row
+            }))
+          }
+        ]
+      });
+      chart.resize();
+    }
+
+    function renderAnalysisAgeChart(ageRows) {
+      const total = ageRows.reduce((sum, row) => sum + row.pending + row.checked, 0);
+      if (!total) {
+        setAnalysisChartState("analysisAgeChart", "暂无待处理账龄");
+        return;
+      }
+      const chart = createAnalysisChart("analysisAgeChart");
+      if (!chart) return;
+      chart.setOption({
+        ...getBaseChartOption(),
+        legend: {
+          top: 0,
+          right: 0,
+          itemWidth: 10,
+          itemHeight: 8,
+          textStyle: {
+            color: "#43645a",
+            fontSize: 11
+          }
+        },
+        grid: {
+          top: 34,
+          right: 14,
+          bottom: 24,
+          left: 34,
+          containLabel: true
+        },
+        tooltip: {
+          ...getBaseChartOption().tooltip,
+          trigger: "axis",
+          axisPointer: {
+            type: "shadow"
+          }
+        },
+        xAxis: {
+          type: "category",
+          data: ageRows.map((row) => row.label),
+          axisTick: {
+            show: false
+          },
+          axisLabel: {
+            color: "#61746c"
+          }
+        },
+        yAxis: {
+          type: "value",
+          minInterval: 1,
+          axisLabel: {
+            color: "#61746c"
+          },
+          splitLine: {
+            lineStyle: {
+              color: "#e8f0ec"
+            }
+          }
+        },
+        series: [
+          {
+            name: "待确认",
+            type: "bar",
+            stack: "age",
+            barMaxWidth: 28,
+            itemStyle: {
+              borderRadius: [0, 0, 4, 4]
+            },
+            data: ageRows.map((row) => row.pending)
+          },
+          {
+            name: "待完成",
+            type: "bar",
+            stack: "age",
+            barMaxWidth: 28,
+            itemStyle: {
+              borderRadius: [4, 4, 0, 0]
+            },
+            data: ageRows.map((row) => row.checked)
+          }
+        ]
+      });
+      chart.resize();
+    }
+
+    function renderAnalysisOperationChart(operationRows) {
+      const rows = operationRows.slice(0, 8);
+      if (!rows.length) {
+        setAnalysisChartState("analysisOperationChart", "暂无操作历史数据");
+        return;
+      }
+      const chart = createAnalysisChart("analysisOperationChart");
+      if (!chart) return;
+      chart.setOption({
+        ...getBaseChartOption(),
+        grid: {
+          top: 18,
+          right: 14,
+          bottom: 28,
+          left: 36,
+          containLabel: true
+        },
+        tooltip: {
+          ...getBaseChartOption().tooltip,
+          trigger: "axis",
+          axisPointer: {
+            type: "shadow"
+          }
+        },
+        xAxis: {
+          type: "category",
+          data: rows.map((row) => row.label),
+          axisTick: {
+            show: false
+          },
+          axisLabel: {
+            color: "#61746c",
+            fontSize: 11
+          }
+        },
+        yAxis: {
+          type: "value",
+          minInterval: 1,
+          axisLabel: {
+            color: "#61746c"
+          },
+          splitLine: {
+            lineStyle: {
+              color: "#e8f0ec"
+            }
+          }
+        },
+        series: [
+          {
+            name: "操作次数",
+            type: "bar",
+            barMaxWidth: 28,
+            itemStyle: {
+              borderRadius: [5, 5, 0, 0]
+            },
+            data: rows.map((row) => row.count)
+          }
+        ]
+      });
+      chart.resize();
+    }
+
+    function renderAnalysisCoopHeatmapChart(coopRows) {
+      if (!coopRows.length) {
+        setAnalysisChartState("analysisCoopHeatmapChart", "暂无协同数据");
+        return;
+      }
+      const dispatcherRows = summarizeByCoopDimension(coopRows, (row) => row.dispatcher).slice(0, 8);
+      const accountantRows = summarizeByCoopDimension(coopRows, (row) => row.accountant).slice(0, 8);
+      const dispatchers = dispatcherRows.map((row) => row.key);
+      const accountants = accountantRows.map((row) => row.key);
+      const pairMap = new Map(coopRows.map((row) => [`${row.dispatcher}|${row.accountant}`, row]));
+      const data = [];
+      dispatchers.forEach((dispatcher, yIndex) => {
+        accountants.forEach((accountant, xIndex) => {
+          const row = pairMap.get(`${dispatcher}|${accountant}`);
+          data.push([xIndex, yIndex, row ? row.count : 0, row || null]);
+        });
+      });
+      const maxCount = Math.max(...data.map((row) => row[2]), 1);
+      const chart = createAnalysisChart("analysisCoopHeatmapChart");
+      if (!chart) return;
+      chart.setOption({
+        ...getBaseChartOption(),
+        tooltip: {
+          ...getBaseChartOption().tooltip,
+          position: "top",
+          formatter(params) {
+            const row = params.data?.[3];
+            if (!row) {
+              return `
+                <div class="analysis-chart-tooltip">
+                  <strong>${escapeHtml(dispatchers[params.data?.[1]] || "")} / ${escapeHtml(accountants[params.data?.[0]] || "")}</strong>
+                  <span>单量：0 单</span>
+                </div>
+              `;
+            }
+            return `
+              <div class="analysis-chart-tooltip">
+                <strong>${escapeHtml(row.dispatcher)} / ${escapeHtml(row.accountant)}</strong>
+                <span>单量：${escapeHtml(formatCount(row.count))} 单</span>
+                <span>会计结算价：${escapeHtml(formatCurrency(row.settlement))}</span>
+                <span>结算率：${escapeHtml(formatPercent(row.ratio))}</span>
+              </div>
+            `;
+          }
+        },
+        grid: {
+          top: 18,
+          right: 18,
+          bottom: 54,
+          left: 58,
+          containLabel: true
+        },
+        xAxis: {
+          type: "category",
+          data: accountants,
+          axisLabel: {
+            color: "#61746c",
+            interval: 0,
+            rotate: 35
+          },
+          axisTick: {
+            show: false
+          }
+        },
+        yAxis: {
+          type: "category",
+          data: dispatchers,
+          axisLabel: {
+            color: "#61746c"
+          },
+          axisTick: {
+            show: false
+          }
+        },
+        visualMap: {
+          min: 0,
+          max: maxCount,
+          calculable: true,
+          orient: "horizontal",
+          left: "center",
+          bottom: 6,
+          itemHeight: 80,
+          itemWidth: 10,
+          inRange: {
+            color: ["#eef7f2", "#9fcbb9", "#23765b"]
+          },
+          textStyle: {
+            color: "#61746c",
+            fontSize: 11
+          }
+        },
+        series: [
+          {
+            name: "协同单量",
+            type: "heatmap",
+            data,
+            label: {
+              show: true,
+              color: "#1d4137",
+              fontSize: 11,
+              formatter(params) {
+                return params.data?.[2] ? String(params.data[2]) : "";
+              }
+            },
+            emphasis: {
+              itemStyle: {
+                shadowBlur: 8,
+                shadowColor: "rgba(35, 118, 91, 0.25)"
+              }
+            }
+          }
+        ]
+      });
+      chart.resize();
+    }
+
+    function renderAnalysisCustomerTreemapChart(customerRows) {
+      const rows = customerRows.slice(0, 18);
+      if (!rows.length) {
+        setAnalysisChartState("analysisCustomerChart", "暂无客户数据");
+        return;
+      }
+      const chart = createAnalysisChart("analysisCustomerChart");
+      if (!chart) return;
+      chart.setOption({
+        ...getBaseChartOption(),
+        tooltip: {
+          ...getBaseChartOption().tooltip,
+          trigger: "item",
+          formatter(params) {
+            const row = params.data?.raw;
+            if (!row) return "";
+            return `
+              <div class="analysis-chart-tooltip">
+                <strong>${escapeHtml(row.key)}</strong>
+                <span>单量：${escapeHtml(formatCount(row.count))} 单</span>
+                <span>会计结算价：${escapeHtml(formatCurrency(row.settlement))}</span>
+                <span>会计价：${escapeHtml(formatCurrency(row.total))}</span>
+              </div>
+            `;
+          }
+        },
+        series: [
+          {
+            type: "treemap",
+            roam: false,
+            breadcrumb: {
+              show: false
+            },
+            nodeClick: false,
+            left: 0,
+            right: 0,
+            top: 4,
+            bottom: 0,
+            label: {
+              color: "#fbfdfc",
+              fontSize: 11,
+              formatter(params) {
+                return params.name;
+              }
+            },
+            upperLabel: {
+              show: false
+            },
+            itemStyle: {
+              borderColor: "#fbfdfc",
+              borderWidth: 2,
+              gapWidth: 2
+            },
+            data: rows.map((row) => ({
+              name: row.key,
+              value: Math.max(row.settlement, row.count),
+              raw: row
+            }))
+          }
+        ]
+      });
+      chart.resize();
+    }
+
+    function renderAnalysisCharts(payload) {
+      const data = payload || {};
+      renderAnalysisTrendChart(data.trendRows || []);
+      renderAnalysisStatusChart(data.statusRows || []);
+      renderAnalysisFunnelChart(data.funnelRows || []);
+      renderAnalysisSourceChart(data.sourceRows || [], data.monthlySettlementRows || []);
+      renderAnalysisHorizontalBarChart("analysisAccountantChart", data.accountantRows || [], {
+        limit: 10,
+        left: 80,
+        labelWidth: 86,
+        metric: "settlement",
+        metricName: "会计结算价"
+      });
+      if (data.showDispatcherSections) {
+        renderAnalysisHorizontalBarChart("analysisDispatcherChart", data.dispatcherRows || [], {
+          limit: 8,
+          left: 48,
+          labelWidth: 54,
+          metric: "settlement",
+          metricName: "会计结算价"
+        });
+        renderAnalysisCoopHeatmapChart(data.coopRows || []);
+      }
+      renderAnalysisCustomerTreemapChart(data.customerRows || []);
+      renderAnalysisBandChart(data.totalBandRows || []);
+      renderAnalysisScatterChart(data.scopeRecords || []);
+      renderAnalysisKeywordChart(data.keywordRows || []);
+      renderAnalysisAgeChart(data.ageRows || []);
+      renderAnalysisOperationChart(data.operationRows || []);
+    }
+
+    function scheduleAnalysisTrendChartRender(payload) {
+      if (analysisChartRenderFrame) {
+        window.cancelAnimationFrame(analysisChartRenderFrame);
+      }
+      analysisChartRenderFrame = window.requestAnimationFrame(() => {
+        analysisChartRenderFrame = 0;
+        void loadEcharts()
+          .then(() => {
+            renderAnalysisCharts(payload);
+          })
+          .catch(() => {
+            [
+              "analysisTrendChart",
+              "analysisStatusChart",
+              "analysisFunnelChart",
+              "analysisSourceChart",
+              "analysisAccountantChart",
+              "analysisDispatcherChart",
+              "analysisCoopHeatmapChart",
+              "analysisCustomerChart",
+              "analysisBandChart",
+              "analysisScatterChart",
+              "analysisKeywordChart",
+              "analysisAgeChart",
+              "analysisOperationChart"
+            ].forEach((chartId) => {
+              setAnalysisChartState(chartId, "图表库加载失败，请刷新重试");
+            });
+          });
       });
     }
 
     function resizeAnalysisTrendChart() {
-      if (analysisTrendChartInstance && analysisModal && !analysisModal.hidden) {
-        analysisTrendChartInstance.resize();
+      if (analysisModal && !analysisModal.hidden) {
+        analysisChartInstances.forEach((chart) => chart.resize());
       }
     }
 
@@ -1337,6 +2452,11 @@
       const coopRows = buildCoopRows(scopeRecords);
       const keywordRows = buildKeywordRows(scopeRecords);
       const trendRows = buildAnalysisTrendRows(scopeRecords);
+      const statusRows = buildStatusRows(scopeRecords);
+      const funnelRows = buildSettlementFunnelRows(scopeRecords);
+      const operationRows = buildOperationActionRows(scopeRecords);
+      const ageRows = buildAgeRows(scopeRecords);
+      const monthlySettlementRows = buildMonthlySettlementRows(scopeRecords);
       const trendSummaryHtml = buildAnalysisTrendSummaryHtml(buildAnalysisTrendSummaryItems(trendRows, keywordRows));
       const uniqueCustomerCount = byCustomer.length;
       const repeatCustomerRows = byCustomer.filter((row) => row.count >= 2);
@@ -1369,6 +2489,13 @@
         if (Number.isNaN(ts)) return "未知";
         return toWeekdayLabel(ts);
       }).sort((a, b) => a.key.localeCompare(b.key, "zh-CN", { numeric: true }));
+
+      const sourceRows = summarizeBy(scopeRecords, (item) => getSourceFilterValue(item) || "未填")
+        .sort(compareSummaryRowsByCount);
+      const platformRows = summarizeBy(scopeRecords, (item) => getPlatformFilterValue(item) || "未填")
+        .sort(compareSummaryRowsByCount);
+      const shopRows = summarizeBy(scopeRecords, (item) => getShopNameFilterValue(item) || "未填")
+        .sort(compareSummaryRowsByCount);
 
       const totalBandRows = buildBandRows(
         totalValues,
@@ -1474,6 +2601,89 @@
           row.label,
           formatCount(row.count),
           formatPercent(scopeRecords.length ? row.count / scopeRecords.length : 0)
+        ])
+      );
+
+      const statusTable = buildHtmlTable(
+        ["状态", "单量", "会计价", "会计结算价", "占比"],
+        statusRows.map((row) => [
+          row.label,
+          formatCount(row.count),
+          formatCurrency(row.total),
+          formatCurrency(row.settlement),
+          formatPercent(scopeRecords.length ? row.count / scopeRecords.length : 0)
+        ])
+      );
+
+      const settlementFunnelTable = buildHtmlTable(
+        ["链路节点", "单量", "转化", "会计结算价"],
+        funnelRows.map((row) => [
+          row.label,
+          formatCount(row.count),
+          formatPercent(row.rate),
+          formatCurrency(row.settlement)
+        ])
+      );
+
+      const sourceTable = buildHtmlTable(
+        ["来源", "单量", "会计价", "会计结算价", "结算率"],
+        sourceRows.slice(0, 12).map((row) => [
+          row.key,
+          formatCount(row.count),
+          formatCurrency(row.total),
+          formatCurrency(row.settlement),
+          formatPercent(row.ratio)
+        ])
+      );
+
+      const platformTable = buildHtmlTable(
+        ["平台", "单量", "会计价", "会计结算价", "结算率"],
+        platformRows.slice(0, 12).map((row) => [
+          row.key,
+          formatCount(row.count),
+          formatCurrency(row.total),
+          formatCurrency(row.settlement),
+          formatPercent(row.ratio)
+        ])
+      );
+
+      const shopTable = buildHtmlTable(
+        ["店铺", "单量", "会计价", "会计结算价", "结算率"],
+        shopRows.slice(0, 12).map((row) => [
+          row.key,
+          formatCount(row.count),
+          formatCurrency(row.total),
+          formatCurrency(row.settlement),
+          formatPercent(row.ratio)
+        ])
+      );
+
+      const monthlySettlementTable = buildHtmlTable(
+        ["结算类型", "单量", "会计价", "会计结算价", "结算率"],
+        monthlySettlementRows.map((row) => [
+          row.label,
+          formatCount(row.count),
+          formatCurrency(row.total),
+          formatCurrency(row.settlement),
+          formatPercent(row.total > 0 ? row.settlement / row.total : 0)
+        ])
+      );
+
+      const ageTable = buildHtmlTable(
+        ["账龄", "待确认", "待完成", "合计"],
+        ageRows.map((row) => [
+          row.label,
+          formatCount(row.pending),
+          formatCount(row.checked),
+          formatCount(row.pending + row.checked)
+        ])
+      );
+
+      const operationTable = buildHtmlTable(
+        ["动作", "次数"],
+        operationRows.slice(0, 12).map((row) => [
+          row.label,
+          formatCount(row.count)
         ])
       );
 
@@ -1595,19 +2805,131 @@
           <div class="analysis-kpi"><div class="analysis-kpi-label">数据异常数</div><div class="analysis-kpi-value">${formatCount(anomalies.length)}</div></div>
         </div>
         <div class="analysis-tags">${tagsHtml || '<span class="analysis-empty">暂无关键结论</span>'}</div>
+        <section class="analysis-chart-board" aria-label="可视化分析">
+          <article class="analysis-chart-panel">
+            <div class="analysis-chart-panel-head">
+              <h3>状态分布</h3>
+              <span>${formatCount(statusRows.length)} 类状态</span>
+            </div>
+            <div id="analysisStatusChart" class="analysis-small-chart" role="img" aria-label="订单状态分布图"></div>
+          </article>
+          <article class="analysis-chart-panel">
+            <div class="analysis-chart-panel-head">
+              <h3>结算链路</h3>
+              <span>${formatCount(funnelRows[funnelRows.length - 1]?.count || 0)} 单已打款</span>
+            </div>
+            <div id="analysisFunnelChart" class="analysis-small-chart" role="img" aria-label="从派单到打款的结算链路图"></div>
+          </article>
+          <article class="analysis-chart-panel">
+            <div class="analysis-chart-panel-head">
+              <h3>来源结构</h3>
+              <span>${formatCount(sourceRows.length)} 个来源</span>
+            </div>
+            <div id="analysisSourceChart" class="analysis-small-chart" role="img" aria-label="订单来源结构图"></div>
+          </article>
+          <article class="analysis-chart-panel">
+            <div class="analysis-chart-panel-head">
+              <h3>会计承接</h3>
+              <span>按结算价排序</span>
+            </div>
+            <div id="analysisAccountantChart" class="analysis-small-chart" role="img" aria-label="会计承接金额排行图"></div>
+          </article>
+          ${showDispatcherSections ? `
+            <article class="analysis-chart-panel">
+              <div class="analysis-chart-panel-head">
+                <h3>接待贡献</h3>
+                <span>按结算价排序</span>
+              </div>
+              <div id="analysisDispatcherChart" class="analysis-small-chart" role="img" aria-label="接待贡献排行图"></div>
+            </article>
+            <article class="analysis-chart-panel analysis-chart-panel-wide">
+              <div class="analysis-chart-panel-head">
+                <h3>接待-会计热力</h3>
+                <span>${formatCount(coopRows.length)} 组协同</span>
+              </div>
+              <div id="analysisCoopHeatmapChart" class="analysis-small-chart" role="img" aria-label="接待与会计协同热力图"></div>
+            </article>
+          ` : ""}
+          <article class="analysis-chart-panel">
+            <div class="analysis-chart-panel-head">
+              <h3>客户集中</h3>
+              <span>Top 客户贡献</span>
+            </div>
+            <div id="analysisCustomerChart" class="analysis-small-chart" role="img" aria-label="客户结算价集中度图"></div>
+          </article>
+          <article class="analysis-chart-panel">
+            <div class="analysis-chart-panel-head">
+              <h3>金额区间</h3>
+              <span>会计价分布</span>
+            </div>
+            <div id="analysisBandChart" class="analysis-small-chart" role="img" aria-label="会计价金额区间分布图"></div>
+          </article>
+          <article class="analysis-chart-panel analysis-chart-panel-wide">
+            <div class="analysis-chart-panel-head">
+              <h3>金额关系</h3>
+              <span>会计价 / 结算价</span>
+            </div>
+            <div id="analysisScatterChart" class="analysis-small-chart" role="img" aria-label="会计价和会计结算价散点图"></div>
+          </article>
+          <article class="analysis-chart-panel">
+            <div class="analysis-chart-panel-head">
+              <h3>关键词贡献</h3>
+              <span>任务简介</span>
+            </div>
+            <div id="analysisKeywordChart" class="analysis-small-chart" role="img" aria-label="任务简介关键词贡献图"></div>
+          </article>
+          <article class="analysis-chart-panel">
+            <div class="analysis-chart-panel-head">
+              <h3>待处理账龄</h3>
+              <span>待确认 / 待完成</span>
+            </div>
+            <div id="analysisAgeChart" class="analysis-small-chart" role="img" aria-label="待处理订单账龄图"></div>
+          </article>
+          <article class="analysis-chart-panel">
+            <div class="analysis-chart-panel-head">
+              <h3>操作动作</h3>
+              <span>${formatCount(operationRows.reduce((sum, row) => sum + row.count, 0))} 次</span>
+            </div>
+            <div id="analysisOperationChart" class="analysis-small-chart" role="img" aria-label="操作历史动作分布图"></div>
+          </article>
+        </section>
         <div class="analysis-grid">
+          <section class="analysis-panel"><h3>状态维度</h3>${statusTable}</section>
+          <section class="analysis-panel"><h3>结算链路维度</h3>${settlementFunnelTable}</section>
           ${showDispatcherSections ? `<section class="analysis-panel"><h3>接待人维度</h3>${dispatcherTable}</section>` : ""}
           <section class="analysis-panel"><h3>会计维度</h3>${accountantTable}</section>
           ${showDispatcherSections ? `<section class="analysis-panel"><h3>接待-会计协同矩阵</h3>${coopTable}</section>` : ""}
           <section class="analysis-panel"><h3>客户复购分析</h3>${repeatTable}</section>
           <section class="analysis-panel"><h3>客户维度</h3>${customerTable}</section>
+          <section class="analysis-panel"><h3>来源维度</h3>${sourceTable}</section>
+          <section class="analysis-panel"><h3>平台维度</h3>${platformTable}</section>
+          <section class="analysis-panel"><h3>店铺维度</h3>${shopTable}</section>
+          <section class="analysis-panel"><h3>结算类型维度</h3>${monthlySettlementTable}</section>
           <section class="analysis-panel"><h3>月度维度</h3>${monthTable}</section>
           <section class="analysis-panel"><h3>月度环比变化</h3>${monthMoMTable}</section>
           <section class="analysis-panel"><h3>星期维度</h3>${weekdayTable}</section>
           <section class="analysis-panel"><h3>任务简介关键词热度</h3>${keywordTable}</section>
           <section class="analysis-panel"><h3>会计价区间分布</h3>${totalBandTable}</section>
+          <section class="analysis-panel"><h3>待处理账龄</h3>${ageTable}</section>
+          <section class="analysis-panel"><h3>操作动作维度</h3>${operationTable}</section>
           <section class="analysis-panel"><h3>数据异常样本</h3>${anomalyTable}</section>
         </div>
       `;
-      scheduleAnalysisTrendChartRender(trendRows);
+      scheduleAnalysisTrendChartRender({
+        scopeRecords,
+        trendRows,
+        statusRows,
+        funnelRows,
+        sourceRows,
+        monthlySettlementRows,
+        accountantRows: byAccountant,
+        dispatcherRows: byDispatcher,
+        coopRows,
+        customerRows: byCustomer,
+        totalBandRows,
+        keywordRows,
+        ageRows,
+        operationRows,
+        showDispatcherSections
+      });
     }
