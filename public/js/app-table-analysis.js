@@ -389,6 +389,7 @@
     }
 
     function updateSortHeaderUI(sourceRecords = []) {
+      const profitBreakdown = getProfitTotalBreakdown(sourceRecords);
       sortableHeaders.forEach((button) => {
         const key = button.dataset.key;
         const label = button.dataset.label || "";
@@ -411,10 +412,26 @@
           const total = toMoney(getColumnTotal(sourceRecords, key));
           const metaNode = document.createElement("span");
           metaNode.className = "sort-btn-meta";
-          metaNode.textContent = `合计 ${total}`;
-          metaNode.title = key === "profitPrice"
-            ? formatProfitTotalTooltip(sourceRecords)
-            : `合计：${total}`;
+          if (key === "totalPrice" && Number.isFinite(profitBreakdown.totalBase)) {
+            metaNode.textContent = `合计 ${total}（${toMoney(profitBreakdown.totalBase)}）`;
+            metaNode.title = [
+              `会计价合计：${total}`,
+              `接待收益基础部分：${toMoney(profitBreakdown.totalBase)}`,
+              formatProfitTotalTooltip(sourceRecords)
+            ].filter(Boolean).join("\n");
+          } else if (key === "premiumPrice" && Number.isFinite(profitBreakdown.premiumProfit)) {
+            metaNode.textContent = `合计 ${total}（${toMoney(profitBreakdown.premiumProfit)}）`;
+            metaNode.title = [
+              `溢价合计：${total}`,
+              `接待收益溢价部分：${toMoney(profitBreakdown.premiumProfit)}`,
+              formatProfitTotalTooltip(sourceRecords)
+            ].filter(Boolean).join("\n");
+          } else {
+            metaNode.textContent = `合计 ${total}`;
+            metaNode.title = key === "profitPrice"
+              ? formatProfitTotalTooltip(sourceRecords)
+              : `合计：${total}`;
+          }
           button.replaceChildren(labelNode, metaNode);
           return;
         }
@@ -993,7 +1010,7 @@
         {
           label: "峰值接单日",
           value: `${formatCount(peak.count)} 单`,
-          meta: `${formatDateDisplay(peak.key)} / ${formatCurrency(peak.settlement)} 结算价`
+          meta: `${formatDateDisplay(peak.key)} / ${formatCurrency(peak.settlement)} 会计结算价`
         },
         {
           label: "日均接单",
@@ -1098,7 +1115,7 @@
                 <strong${dateClass}>${escapeHtml(formatTrendAxisDayLabel(row.key))}</strong>
                 <span>接单量：${escapeHtml(formatCount(row.count))} 单</span>
                 <span>会计价：${escapeHtml(formatCurrency(row.total))}</span>
-                <span>结算价：${escapeHtml(formatCurrency(row.settlement))}</span>
+                <span>会计结算价：${escapeHtml(formatCurrency(row.settlement))}</span>
                 <span>总结：${escapeHtml(row.summaryText || "待积累")}</span>
               </div>
             `;
@@ -1212,7 +1229,7 @@
             data: trendRows.map((row) => Number(row.total.toFixed(2)))
           },
           {
-            name: "结算价走势",
+            name: "会计结算价走势",
             type: "line",
             yAxisIndex: 1,
             smooth: true,
@@ -1365,7 +1382,7 @@
           const settlement = toNumber(item.settlementPrice);
           const ratio = total > 0 ? settlement / total : 0;
           const reasons = [];
-          if (settlement > total) reasons.push("结算价高于会计价");
+          if (settlement > total) reasons.push("会计结算价高于会计价");
           return {
             date: formatDateDisplay(item.date),
             dispatcher: normalizeDispatcherTag(item.dispatcher),
@@ -1395,7 +1412,7 @@
         .join("");
 
       const dispatcherTable = buildHtmlTable(
-        ["接待人", "单量", "会计价", "结算价", "结算率", "均单会计价"],
+        ["接待人", "单量", "会计价", "会计结算价", "结算率", "均单会计价"],
         byDispatcher.slice(0, 10).map((row) => [
           row.key,
           formatCount(row.count),
@@ -1407,7 +1424,7 @@
       );
 
       const accountantTable = buildHtmlTable(
-        ["会计", "单量", "会计价", "结算价", "结算率", "毛利空间"],
+        ["会计", "单量", "会计价", "会计结算价", "结算率", "毛利空间"],
         byAccountant.slice(0, 12).map((row) => [
           row.key,
           formatCount(row.count),
@@ -1419,7 +1436,7 @@
       );
 
       const customerTable = buildHtmlTable(
-        ["客户", "单量", "结算价", "会计价", "结算率"],
+        ["客户", "单量", "会计结算价", "会计价", "结算率"],
         byCustomer.slice(0, 12).map((row) => [
           row.key,
           formatCount(row.count),
@@ -1430,7 +1447,7 @@
       );
 
       const monthTable = buildHtmlTable(
-        ["月份", "单量", "会计价", "结算价", "结算率"],
+        ["月份", "单量", "会计价", "会计结算价", "结算率"],
         monthRows.map((row) => [
           row.key,
           formatCount(row.count),
@@ -1441,7 +1458,7 @@
       );
 
       const weekdayTable = buildHtmlTable(
-        ["星期", "单量", "会计价", "结算价", "结算率"],
+        ["星期", "单量", "会计价", "会计结算价", "结算率"],
         weekdayRows.map((row) => [
           row.key,
           formatCount(row.count),
@@ -1462,7 +1479,7 @@
 
       const anomalyTable = showDispatcherSections
         ? buildHtmlTable(
-          ["日期", "接待人", "会计", "客户", "会计价", "结算价", "结算率", "原因"],
+          ["日期", "接待人", "会计", "客户", "会计价", "会计结算价", "结算率", "原因"],
           anomalies.map((row) => [
             row.date,
             row.dispatcher,
@@ -1475,7 +1492,7 @@
           ])
         )
         : buildHtmlTable(
-          ["日期", "会计", "客户", "会计价", "结算价", "结算率", "原因"],
+          ["日期", "会计", "客户", "会计价", "会计结算价", "结算率", "原因"],
           anomalies.map((row) => [
             row.date,
             row.accountant,
@@ -1488,7 +1505,7 @@
         );
 
       const coopTable = buildHtmlTable(
-        ["接待人", "会计", "单量", "会计价", "结算价", "结算率"],
+        ["接待人", "会计", "单量", "会计价", "会计结算价", "结算率"],
         coopRows.slice(0, 15).map((row) => [
           row.dispatcher,
           row.accountant,
@@ -1500,7 +1517,7 @@
       );
 
       const repeatTable = buildHtmlTable(
-        ["客户", "单量", "结算价", "会计价", "结算率"],
+        ["客户", "单量", "会计结算价", "会计价", "结算率"],
         repeatCustomerRows.slice(0, 15).map((row) => [
           row.key,
           formatCount(row.count),
@@ -1511,7 +1528,7 @@
       );
 
       const monthMoMTable = buildHtmlTable(
-        ["月份", "单量", "会计价", "结算价", "单量环比", "会计价环比", "结算环比"],
+        ["月份", "单量", "会计价", "会计结算价", "单量环比", "会计价环比", "结算环比"],
         monthMoMRows.map((row) => [
           row.key,
           formatCount(row.count),
@@ -1524,7 +1541,7 @@
       );
 
       const keywordTable = buildHtmlTable(
-        ["关键词", "命中数", "结算价贡献", "占比"],
+        ["关键词", "命中数", "会计结算价贡献", "占比"],
         keywordRows.slice(0, 15).map((row) => [
           row.keyword,
           formatCount(row.count),
@@ -1539,7 +1556,7 @@
             <div class="analysis-trend-head">
               <div>
                 <h3>数据走势</h3>
-                <p>按日期汇总接单量、会计价和结算价</p>
+                <p>按日期汇总接单量、会计价和会计结算价</p>
               </div>
               <span class="analysis-trend-badge">${formatCount(trendRows.length)} 个日期</span>
             </div>
@@ -1556,7 +1573,7 @@
         <div class="analysis-kpis">
           <div class="analysis-kpi"><div class="analysis-kpi-label">记录数</div><div class="analysis-kpi-value">${formatCount(scopeRecords.length)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">会计价合计</div><div class="analysis-kpi-value">${formatCurrency(sumTotal)}</div></div>
-          <div class="analysis-kpi"><div class="analysis-kpi-label">结算价合计</div><div class="analysis-kpi-value">${formatCurrency(sumSettlement)}</div></div>
+          <div class="analysis-kpi"><div class="analysis-kpi-label">会计结算价合计</div><div class="analysis-kpi-value">${formatCurrency(sumSettlement)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">毛利空间</div><div class="analysis-kpi-value">${formatCurrency(sumMargin)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">整体结算率</div><div class="analysis-kpi-value">${formatPercent(avgRatio)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">均单会计价</div><div class="analysis-kpi-value">${formatCurrency(avgTotal)}</div></div>
@@ -1570,7 +1587,7 @@
           <div class="analysis-kpi"><div class="analysis-kpi-label">金额相关性</div><div class="analysis-kpi-value">${corrTotalSettlement.toFixed(2)}</div></div>
         </div>
         <div class="analysis-kpis">
-          <div class="analysis-kpi"><div class="analysis-kpi-label">均单结算价</div><div class="analysis-kpi-value">${formatCurrency(avgSettlement)}</div></div>
+          <div class="analysis-kpi"><div class="analysis-kpi-label">均单会计结算价</div><div class="analysis-kpi-value">${formatCurrency(avgSettlement)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">会计价中位数</div><div class="analysis-kpi-value">${formatCurrency(medianTotal)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">结算中位数</div><div class="analysis-kpi-value">${formatCurrency(medianSettlement)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">客户集中度Top1</div><div class="analysis-kpi-value">${formatPercent(topCustomerShare)}</div></div>

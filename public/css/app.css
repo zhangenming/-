@@ -1378,6 +1378,7 @@
     }
 
     .table-wrap {
+      position: relative;
       overflow: auto;
       border-radius: var(--radius-md);
       border: 0;
@@ -1892,48 +1893,66 @@
       gap: 14px;
     }
 
-    .refund-current-price {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 14px 16px;
-      border: 1px solid #d8e6df;
-      border-radius: 12px;
-      background: linear-gradient(180deg, #fbfefd, #f3f8f6);
-      box-shadow: var(--inset-highlight);
-    }
-
-    .refund-current-label {
-      color: #587165;
-      font-size: 13px;
-      font-weight: 800;
-    }
-
-    .refund-current-value {
-      color: #153e33;
-      font-size: 22px;
-      font-weight: 850;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-    }
-
     .refund-form .field {
       gap: 7px;
       padding: 0;
     }
 
-    .refund-form .field > label {
-      color: #3f5a50;
+    .refund-form .refund-price-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .refund-form .refund-price-item {
+      display: grid;
+      grid-template-columns: var(--record-label-width, 78px) minmax(0, 1fr);
+      column-gap: 14px;
+      row-gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .refund-form .field > label,
+    .refund-form .refund-price-item > label {
+      margin: 0;
+      color: #577067;
       font-size: 13px;
-      font-weight: 800;
+      font-weight: 700;
+      text-align: right;
     }
 
     .refund-form input {
-      min-height: 44px;
-      border-radius: 10px;
-      background: #fbfefd;
+      min-height: 50px;
+      min-width: 0;
+      border-color: #d9e7e0;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 1px 1px rgba(22, 74, 58, 0.04);
       font-variant-numeric: tabular-nums;
+    }
+
+    .refund-form .refund-price-item > input {
+      grid-column: 2;
+    }
+
+    .refund-form .refund-price-item-total > .price-hint {
+      grid-column: 2;
+      margin: -2px 0 0;
+      min-height: 20px;
+      color: #0e7c66;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .refund-form .refund-price-item-total > .price-hint.negative {
+      color: #c2512d;
+    }
+
+    .refund-form .refund-price-item.field-validation-group-error > .field-inline-error {
+      grid-column: 2;
     }
 
     .refund-actions {
@@ -3810,7 +3829,7 @@
     }
 
     col.col-payment {
-      width: 116px;
+      width: 156px;
     }
 
     col.col-total {
@@ -3818,11 +3837,11 @@
     }
 
     col.col-premium {
-      width: 108px;
+      width: 156px;
     }
 
     col.col-settlement {
-      width: 116px;
+      width: 148px;
     }
 
     col.col-profit {
@@ -3847,7 +3866,7 @@
     }
 
     #appPage.accountant-view {
-      --table-sticky-action-width: 124px;
+      --table-sticky-action-width: 168px;
     }
 
     #appPage.accountant-view col.col-accountant,
@@ -3857,7 +3876,6 @@
     #appPage.accountant-view col.col-source,
     #appPage.accountant-view col.col-remark,
     #appPage.accountant-view col.col-payment,
-    #appPage.accountant-view col.col-total,
     #appPage.accountant-view col.col-premium,
     #appPage.accountant-view col.col-profit,
     #appPage.accountant-view .data-col-accountant,
@@ -3868,13 +3886,11 @@
     #appPage.accountant-view .data-col-remark,
     #appPage.accountant-view td.remark,
     #appPage.accountant-view .data-col-payment,
-    #appPage.accountant-view .data-col-total,
     #appPage.accountant-view .data-col-premium,
     #appPage.accountant-view .data-col-profit,
     #appPage.accountant-view .recycle-col-accountant,
     #appPage.accountant-view .recycle-col-payment,
     #appPage.accountant-view .recycle-col-premium,
-    #appPage.accountant-view .recycle-col-total,
     #appPage.accountant-view .recycle-col-profit,
     #appPage.accountant-view .recycle-col-action {
       display: none;
@@ -3884,15 +3900,6 @@
     #appPage .data-col-profit,
     #appPage .recycle-col-profit {
       display: none;
-    }
-
-    body.dispatcher-self-view #appPage col.col-profit {
-      display: table-column;
-    }
-
-    body.dispatcher-self-view #appPage .data-col-profit,
-    body.dispatcher-self-view #appPage .recycle-col-profit {
-      display: table-cell;
     }
 
     body.dispatcher-self-view col.col-dispatcher,
@@ -4159,6 +4166,7 @@
     #appPage.accountant-view .row-action-wrap {
       grid-template-columns:
         minmax(0, var(--table-action-history-width))
+        minmax(0, var(--table-action-edit-width))
         minmax(0, var(--table-action-check-width));
       gap: 4px;
     }
@@ -4390,7 +4398,12 @@
     }
 
     #appPage.accountant-view #tableBody .row-check-btn {
-      grid-column: 2;
+      grid-column: 3;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #appPage.accountant-view #tableBody .row-refund-btn {
       opacity: 1;
       pointer-events: auto;
     }
@@ -4548,6 +4561,49 @@
       top: 0;
       z-index: 1;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74), inset 0 -1px 0 rgba(127, 151, 140, 0.38);
+    }
+
+    .table-wrap > table > thead th.data-col-status,
+    .table-wrap > table > tbody td.data-col-status {
+      position: sticky;
+      right: var(--table-sticky-action-width);
+      width: var(--table-sticky-status-width);
+      min-width: var(--table-sticky-status-width);
+      max-width: var(--table-sticky-status-width);
+      box-sizing: border-box;
+    }
+
+    .table-wrap > table > thead th.data-col-action,
+    .table-wrap > table > tbody td.row-action-cell {
+      position: sticky;
+      right: 0;
+      width: var(--table-sticky-action-width);
+      min-width: var(--table-sticky-action-width);
+      max-width: var(--table-sticky-action-width);
+      box-sizing: border-box;
+    }
+
+    .table-wrap > table > thead th.data-col-status,
+    .table-wrap > table > thead th.data-col-action {
+      top: 0;
+      background: linear-gradient(180deg, #cfdfd5 0%, #bccfc1 100%);
+      background-clip: border-box;
+    }
+
+    .table-wrap > table > thead th.data-col-status {
+      z-index: 32;
+    }
+
+    .table-wrap > table > thead th.data-col-action {
+      z-index: 34;
+    }
+
+    .table-wrap > table > tbody td.data-col-status {
+      z-index: 8;
+    }
+
+    .table-wrap > table > tbody td.row-action-cell {
+      z-index: 9;
     }
 
     th, td {
@@ -5338,9 +5394,21 @@
         min-width: 0;
       }
 
-      .refund-current-price {
-        align-items: flex-start;
-        flex-direction: column;
+      .refund-form .refund-price-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .refund-form .refund-price-item > label,
+      .refund-form .field > label {
+        text-align: left;
+      }
+
+      .refund-form .refund-price-item > input,
+      .refund-form .refund-price-item-total > .price-hint,
+      .refund-form .refund-price-item.field-validation-group-error > .field-inline-error,
+      .refund-form input {
+        grid-column: 1;
       }
 
       .refund-actions {

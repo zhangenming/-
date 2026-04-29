@@ -25,10 +25,9 @@
           String(record.customer || ""),
           String(record.summary || ""),
           toMoney(record.paymentPrice),
-          toMoney(record.totalPrice),
           toMoney(getPremiumValue(record)),
-          toMoney(record.settlementPrice),
-          formatProfitDisplay(record)
+          toMoney(record.totalPrice),
+          formatSettlementPriceDisplay(record)
         ];
 
         values.forEach((value, index) => {
@@ -38,10 +37,9 @@
           if (index === 4) td.classList.add("recycle-col-accountant");
           if (index === 10) td.classList.add("summary");
           if (index === 11) td.classList.add("recycle-col-payment");
-          if (index === 12) td.classList.add("recycle-col-total");
-          if (index === 13) td.classList.add("recycle-col-premium");
+          if (index === 12) td.classList.add("recycle-col-premium");
+          if (index === 13) td.classList.add("recycle-col-total");
           if (index === 14) td.classList.add("recycle-col-settlement");
-          if (index === 15) td.classList.add("recycle-col-profit");
           tr.appendChild(td);
         });
 
@@ -72,10 +70,9 @@
       { label: "任务简介", getValue: (item) => String(item?.summary || "").trim() },
       { label: "备注", getValue: (item) => String(item?.remark || "").trim() },
       { label: "付款价", getValue: (item) => toMoney(item?.paymentPrice) },
-      { label: "会计价", getValue: (item) => toMoney(item?.totalPrice) },
       { label: "溢价", getValue: (item) => toMoney(getPremiumValue(item)) },
-      { label: "结算价", getValue: (item) => toMoney(item?.settlementPrice) },
-      { label: "接待收益", getValue: (item) => formatProfitDisplay(item), visible: () => shouldShowProfitColumn() },
+      { label: "会计价", getValue: (item) => toMoney(item?.totalPrice) },
+      { label: "会计结算价", getValue: (item) => formatSettlementPriceDisplay(item) },
       { label: "状态", getValue: (item) => getRecordStatusWithSettlementText(item) }
     ];
 
@@ -138,7 +135,7 @@
       const isAccountantView = Boolean(appPage?.classList.contains("accountant-view"));
       const actionGap = isAccountantView ? 4 : 6;
       const actionTrackWidths = isAccountantView
-        ? [historyWidth, checkWidth]
+        ? [historyWidth, refundWidth, checkWidth]
         : [historyWidth, Math.max(editWidth, refundWidth), deleteWidth, checkWidth];
       const visibleTrackWidths = actionTrackWidths.filter((width) => width > 0);
       const actionPadding = getHorizontalPadding(actionCells[0] || actionHeader);
@@ -831,11 +828,51 @@
       syncModalOpenState();
     }
 
+    function syncRefundPremiumPriceFromPrices() {
+      if (!refundPremiumHint) return;
+      const paymentRaw = String(refundPaymentPriceInput.value || "").trim();
+      const totalRaw = String(refundTotalPriceInput.value || "").trim();
+      const payment = Number(paymentRaw);
+      const total = Number(totalRaw);
+      if (!paymentRaw || !totalRaw || !Number.isFinite(payment) || !Number.isFinite(total)) {
+        refundPremiumHint.hidden = true;
+        refundPremiumHint.textContent = "";
+        refundPremiumHint.classList.remove("active", "negative");
+        return;
+      }
+
+      const premium = payment - total;
+      refundPremiumHint.hidden = false;
+      refundPremiumHint.textContent = `溢价：${premium.toFixed(2)} 元`;
+      refundPremiumHint.classList.toggle("active", premium >= 0);
+      refundPremiumHint.classList.toggle("negative", premium < 0);
+    }
+
     function openRefundModal(record) {
-      if (!record || typeof record !== "object") return;
-      if (!isRecordRefundable(record)) return;
+      if (!record || typeof record !== "object") {
+        showAppStatus("退款数据无效。", "error");
+        return;
+      }
+      if (!isRecordRefundable(record)) {
+        showAppStatus("当前状态支持已确认或已完成订单退款。", "error");
+        return;
+      }
+      const settlementPrice = Number(record.settlementPrice);
+      if (!Number.isFinite(settlementPrice) || settlementPrice < 0) {
+        showAppStatus("当前会计结算价无效。", "error");
+        return;
+      }
       const paymentPrice = Number(record.paymentPrice);
-      if (!Number.isFinite(paymentPrice) || paymentPrice < 0) return;
+      const totalPrice = Number(record.totalPrice);
+      const isAccountantRefund = isAccountantLogin();
+      if (!isAccountantRefund && (!Number.isFinite(paymentPrice) || paymentPrice < 0)) {
+        showAppStatus("当前付款价无效。", "error");
+        return;
+      }
+      if (!Number.isFinite(totalPrice) || totalPrice < 0) {
+        showAppStatus("当前会计价无效。", "error");
+        return;
+      }
       closeAllFilterPopovers();
       closeCreateModal();
       closeCheckModal();
@@ -850,9 +887,17 @@
       closePlatformShopPicker();
       resetInlineFormState(refundForm, setRefundFormHint);
       refundRecordIdInput.value = String(record.id || "").trim();
-      refundPaymentPriceInput.value = toMoney(paymentPrice);
-      refundPaymentPriceInput.dataset.originalPaymentPrice = String(paymentPrice);
-      refundCurrentPaymentText.textContent = toMoney(paymentPrice);
+      refundPaymentPriceInput.value = isAccountantRefund ? "" : toMoney(paymentPrice);
+      refundPaymentPriceInput.dataset.originalPaymentPrice = isAccountantRefund ? "" : String(paymentPrice);
+      refundTotalPriceInput.value = toMoney(totalPrice);
+      refundTotalPriceInput.dataset.originalTotalPrice = String(totalPrice);
+      refundSettlementPriceInput.value = toMoney(settlementPrice);
+      refundSettlementPriceInput.dataset.originalSettlementPrice = String(settlementPrice);
+      refundPaymentPriceInput.disabled = isAccountantRefund;
+      refundTotalPriceInput.disabled = false;
+      refundPaymentPriceInput.closest(".refund-price-item").hidden = isAccountantRefund;
+      refundTotalPriceInput.closest(".refund-price-item").hidden = false;
+      syncRefundPremiumPriceFromPrices();
       const metaParts = [
         formatDateDisplay(record?.date),
         String(record?.customer || "").trim() || "未填客户"
@@ -869,8 +914,9 @@
       refundModal.classList.add("modal-enter");
       refundModalCard.classList.add("modal-enter");
       syncModalOpenState();
-      refundPaymentPriceInput.focus();
-      refundPaymentPriceInput.select();
+      const focusInput = isAccountantRefund ? refundTotalPriceInput : refundPaymentPriceInput;
+      focusInput.focus();
+      focusInput.select();
     }
 
     function closeRefundModal() {
@@ -880,7 +926,15 @@
       refundRecordIdInput.value = "";
       refundPaymentPriceInput.value = "";
       refundPaymentPriceInput.dataset.originalPaymentPrice = "";
-      refundCurrentPaymentText.textContent = "0.00";
+      refundTotalPriceInput.value = "";
+      refundTotalPriceInput.dataset.originalTotalPrice = "";
+      refundSettlementPriceInput.value = "";
+      refundSettlementPriceInput.dataset.originalSettlementPrice = "";
+      refundPaymentPriceInput.disabled = false;
+      refundTotalPriceInput.disabled = false;
+      refundPaymentPriceInput.closest(".refund-price-item").hidden = false;
+      refundTotalPriceInput.closest(".refund-price-item").hidden = false;
+      syncRefundPremiumPriceFromPrices();
       refundModalMeta.textContent = "";
       resetInlineFormState(refundForm, setRefundFormHint);
       syncModalOpenState();
@@ -932,6 +986,7 @@
       "dispatcher",
       "customer",
       "summary",
+      "totalPrice",
       "settlementPrice",
       "checkStatus",
       "isSettled"
@@ -943,7 +998,7 @@
       paymentPrice: "付款价",
       totalPrice: "会计价",
       premiumPrice: "溢价",
-      settlementPrice: "结算价",
+      settlementPrice: "会计结算价",
       isSettled: "结算",
       settledAt: "结算时间",
       settledBy: "结算人",
@@ -2373,18 +2428,18 @@
 
     function updateBossSettlementDetailControls() {
       if (!bossSettlementDetailBtn) return;
-      const canSettleRecords = canCurrentAccountSettleRecords();
+      const canPayoutRecords = canCurrentAccountPayoutSettlementRecords();
       const {
         recordCount,
         accountantCount,
         pendingRecordCount,
         uploadedRecordCount
       } = getBossSettlementDetailSummary();
-      const shouldShow = canSettleRecords && (pendingRecordCount > 0 || uploadedRecordCount > 0);
+      const shouldShow = canPayoutRecords && (pendingRecordCount > 0 || uploadedRecordCount > 0);
 
       bossSettlementDetailBtn.hidden = !shouldShow;
       bossSettlementDetailBtn.disabled = !shouldShow;
-      bossSettlementDetailBtn.textContent = accountantCount > 0 ? `结算详细（${accountantCount}）` : "结算详细";
+      bossSettlementDetailBtn.textContent = accountantCount > 0 ? `打款（${accountantCount}）` : "打款";
       bossSettlementDetailBtn.title = shouldShow
         ? `查看 ${recordCount}单结算明细，待上传 ${pendingRecordCount}单，已上传 ${uploadedRecordCount}单`
         : "";
@@ -2937,7 +2992,7 @@
       const isBoss = isBossLogin();
       const isDispatcher = Boolean(isLoggedIn && !isAccountant && !isBoss);
       const canSettleRecords = Boolean(isLoggedIn && canCurrentAccountSettleRecords());
-      if (!shouldShowProfitColumn() && sortState.key === "profitPrice") {
+      if (sortState.key === "profitPrice") {
         sortState.key = "date";
         sortState.direction = "desc";
       }
@@ -3284,10 +3339,9 @@
           String(item.summary || ""),
           String(item.remark || ""),
           toMoney(item.paymentPrice),
-          toMoney(item.totalPrice),
           toMoney(getPremiumValue(item)),
-          toMoney(item.settlementPrice),
-          formatProfitDisplay(item),
+          toMoney(item.totalPrice),
+          formatSettlementPriceDisplay(item),
           getRecordWorkflowStatusText(item)
         ];
         values.forEach((value, index) => {
@@ -3324,7 +3378,7 @@
             chip.className = "dispatcher-chip";
             chip.textContent = value;
             td.appendChild(chip);
-          } else if (index === 15) {
+          } else if (index === 14) {
             td.classList.add("data-col-status");
             const statusWrap = document.createElement("div");
             statusWrap.className = "row-status-cell";
@@ -3350,10 +3404,9 @@
           if (index === 8) td.classList.add("summary");
           if (index === 9) td.classList.add("remark", "data-col-remark");
           if (index === 10) td.classList.add("data-col-payment");
-          if (index === 11) td.classList.add("data-col-total");
-          if (index === 12) td.classList.add("data-col-premium");
+          if (index === 11) td.classList.add("data-col-premium");
+          if (index === 12) td.classList.add("data-col-total");
           if (index === 13) td.classList.add("data-col-settlement");
-          if (index === 14) td.classList.add("data-col-profit");
           tr.appendChild(td);
         });
 
@@ -3380,21 +3433,29 @@
           historyBtn.title = "查看历史";
           actionWrap.appendChild(historyBtn);
         }
-        if (canEditRecords && recordId) {
+        if (recordId) {
           if (isRecordRefundable(item)) {
             const refundBtn = document.createElement("button");
             refundBtn.type = "button";
             refundBtn.className = "row-refund-btn";
             refundBtn.dataset.recordId = recordId;
             refundBtn.textContent = "退款";
+            refundBtn.addEventListener("click", (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              if (!requireAccount()) return;
+              openRefundModal(item);
+            });
             actionWrap.appendChild(refundBtn);
-          } else {
+          } else if (!hasRecordAccountantConfirmation(item)) {
             const editBtn = document.createElement("button");
             editBtn.type = "button";
             editBtn.className = "row-edit-btn";
             editBtn.dataset.recordId = recordId;
             editBtn.textContent = "修改";
-            actionWrap.appendChild(editBtn);
+            if (canEditRecords) {
+              actionWrap.appendChild(editBtn);
+            }
           }
         }
         if (canDeleteRecords && recordId) {

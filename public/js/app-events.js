@@ -839,70 +839,159 @@
       closeCompleteModal();
     });
 
+    function getRefundMoneyInputValue(input) {
+      const raw = String(input?.value || "").trim();
+      return raw === "" ? Number.NaN : Number(raw);
+    }
+
+    function showRefundMoneyError(target, message) {
+      showInlineFormError({
+        form: refundForm,
+        hintSetter: setRefundFormHint,
+        target,
+        message
+      });
+    }
+
+    function getRefundErrorTarget(message) {
+      const text = String(message || "");
+      if (text.includes("会计价、会计结算价")) return refundTotalPriceInput;
+      if (text.includes("会计结算价") || text.includes("结算价")) return refundSettlementPriceInput;
+      if (text.includes("会计价")) return refundTotalPriceInput;
+      return refundPaymentPriceInput;
+    }
+
     refundForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!requireAccount()) return;
-      if (isAccountantLogin()) return;
       const recordId = String(refundRecordIdInput.value || "").trim();
       if (!recordId) return;
       const originalPaymentPrice = Number(refundPaymentPriceInput.dataset.originalPaymentPrice || Number.NaN);
-      const nextPaymentPriceRaw = String(refundPaymentPriceInput.value || "").trim();
-      const nextPaymentPrice = nextPaymentPriceRaw === "" ? Number.NaN : Number(nextPaymentPriceRaw);
+      const originalTotalPrice = Number(refundTotalPriceInput.dataset.originalTotalPrice || Number.NaN);
+      const originalSettlementPrice = Number(refundSettlementPriceInput.dataset.originalSettlementPrice || Number.NaN);
+      const nextPaymentPrice = getRefundMoneyInputValue(refundPaymentPriceInput);
+      const nextTotalPrice = getRefundMoneyInputValue(refundTotalPriceInput);
+      const nextSettlementPrice = getRefundMoneyInputValue(refundSettlementPriceInput);
+      if (isAccountantLogin()) {
+        if (!Number.isFinite(nextTotalPrice) || nextTotalPrice < 0) {
+          showRefundMoneyError(refundTotalPriceInput, "会计价格式无效。");
+          return;
+        }
+        if (!Number.isFinite(nextSettlementPrice) || nextSettlementPrice < 0) {
+          showRefundMoneyError(refundSettlementPriceInput, "会计结算价格式无效。");
+          return;
+        }
+        if (!Number.isFinite(originalTotalPrice) || originalTotalPrice < 0) {
+          showRefundMoneyError(refundTotalPriceInput, "当前会计价无效。");
+          return;
+        }
+        if (!Number.isFinite(originalSettlementPrice) || originalSettlementPrice < 0) {
+          showRefundMoneyError(refundSettlementPriceInput, "当前会计结算价无效。");
+          return;
+        }
+        const originalTotalCents = Math.round(originalTotalPrice * 100);
+        const originalSettlementCents = Math.round(originalSettlementPrice * 100);
+        const nextTotalCents = Math.round(nextTotalPrice * 100);
+        const nextSettlementCents = Math.round(nextSettlementPrice * 100);
+        if (nextTotalCents > originalTotalCents) {
+          showRefundMoneyError(refundTotalPriceInput, "会计价需要小于或等于当前会计价。");
+          return;
+        }
+        if (nextSettlementCents > originalSettlementCents) {
+          showRefundMoneyError(refundSettlementPriceInput, "会计结算价需要小于或等于当前会计结算价。");
+          return;
+        }
+        if (nextTotalCents >= originalTotalCents && nextSettlementCents >= originalSettlementCents) {
+          showRefundMoneyError(refundTotalPriceInput, "会计价、会计结算价至少一项需要小于原数据。");
+          return;
+        }
+        try {
+          await updateRecordById(recordId, {
+            status: nextSettlementCents === 0 ? "refunded" : "partial_refunded",
+            totalPrice: nextTotalPrice,
+            settlementPrice: nextSettlementPrice
+          });
+        } catch (error) {
+          console.error(error);
+          const message = error.message || "退款失败，请稍后重试。";
+          showRefundMoneyError(getRefundErrorTarget(message), message);
+          return;
+        }
+        closeRefundModal();
+        return;
+      }
       if (!Number.isFinite(nextPaymentPrice) || nextPaymentPrice < 0) {
-        showInlineFormError({
-          form: refundForm,
-          hintSetter: setRefundFormHint,
-          target: refundPaymentPriceInput,
-          message: "退款后付款价格式无效。"
-        });
+        showRefundMoneyError(refundPaymentPriceInput, "付款价格式无效。");
+        return;
+      }
+      if (!Number.isFinite(nextTotalPrice) || nextTotalPrice < 0) {
+        showRefundMoneyError(refundTotalPriceInput, "会计价格式无效。");
+        return;
+      }
+      if (!Number.isFinite(nextSettlementPrice) || nextSettlementPrice < 0) {
+        showRefundMoneyError(refundSettlementPriceInput, "会计结算价格式无效。");
         return;
       }
       if (!Number.isFinite(originalPaymentPrice) || originalPaymentPrice <= 0) {
-        showInlineFormError({
-          form: refundForm,
-          hintSetter: setRefundFormHint,
-          target: refundPaymentPriceInput,
-          message: "当前付款价无效。"
-        });
+        showRefundMoneyError(refundPaymentPriceInput, "当前付款价无效。");
+        return;
+      }
+      if (!Number.isFinite(originalTotalPrice) || originalTotalPrice < 0) {
+        showRefundMoneyError(refundTotalPriceInput, "当前会计价无效。");
+        return;
+      }
+      if (!Number.isFinite(originalSettlementPrice) || originalSettlementPrice < 0) {
+        showRefundMoneyError(refundSettlementPriceInput, "当前会计结算价无效。");
         return;
       }
       const originalPaymentCents = Math.round(originalPaymentPrice * 100);
+      const originalTotalCents = Math.round(originalTotalPrice * 100);
+      const originalSettlementCents = Math.round(originalSettlementPrice * 100);
       const nextPaymentCents = Math.round(nextPaymentPrice * 100);
+      const nextTotalCents = Math.round(nextTotalPrice * 100);
+      const nextSettlementCents = Math.round(nextSettlementPrice * 100);
       if (nextPaymentCents > originalPaymentCents) {
-        showInlineFormError({
-          form: refundForm,
-          hintSetter: setRefundFormHint,
-          target: refundPaymentPriceInput,
-          message: "退款后付款价需要小于或等于当前付款价。"
-        });
+        showRefundMoneyError(refundPaymentPriceInput, "付款价需要小于或等于当前付款价。");
         return;
       }
-      if (nextPaymentCents === originalPaymentCents) {
-        showInlineFormError({
-          form: refundForm,
-          hintSetter: setRefundFormHint,
-          target: refundPaymentPriceInput,
-          message: "退款后付款价需要小于当前付款价。"
-        });
+      if (nextTotalCents > originalTotalCents) {
+        showRefundMoneyError(refundTotalPriceInput, "会计价需要小于或等于当前会计价。");
+        return;
+      }
+      if (nextSettlementCents > originalSettlementCents) {
+        showRefundMoneyError(refundSettlementPriceInput, "会计结算价需要小于或等于当前会计结算价。");
+        return;
+      }
+      if (
+        nextPaymentCents >= originalPaymentCents
+        && nextTotalCents >= originalTotalCents
+        && nextSettlementCents >= originalSettlementCents
+      ) {
+        showRefundMoneyError(refundPaymentPriceInput, "付款价、会计价、会计结算价至少一项需要小于原数据。");
         return;
       }
 
       try {
         await updateRecordById(recordId, {
           status: nextPaymentCents === 0 ? "refunded" : "partial_refunded",
-          paymentPrice: nextPaymentPrice
+          paymentPrice: nextPaymentPrice,
+          totalPrice: nextTotalPrice,
+          settlementPrice: nextSettlementPrice
         });
       } catch (error) {
         console.error(error);
-        showInlineFormError({
-          form: refundForm,
-          hintSetter: setRefundFormHint,
-          target: refundPaymentPriceInput,
-          message: error.message || "退款失败，请稍后重试。"
-        });
+        const message = error.message || "退款失败，请稍后重试。";
+        showRefundMoneyError(getRefundErrorTarget(message), message);
         return;
       }
       closeRefundModal();
+    });
+
+    [refundPaymentPriceInput, refundTotalPriceInput, refundSettlementPriceInput].forEach((input) => {
+      input.addEventListener("input", () => {
+        clearInlineFieldError(input);
+        syncRefundPremiumPriceFromPrices();
+      });
     });
 
     accountantList.addEventListener("click", async (event) => {
@@ -1152,6 +1241,7 @@
         if (!recordId) return;
         const targetRecord = records.find((item) => String(item.id || "").trim() === recordId) || null;
         if (!targetRecord) return;
+        if (hasRecordAccountantConfirmation(targetRecord)) return;
         openEditModal(targetRecord);
         return;
       }
@@ -1159,7 +1249,6 @@
       const refundBtn = event.target.closest(".row-refund-btn");
       if (refundBtn) {
         if (!requireAccount()) return;
-        if (isAccountantLogin()) return;
         const recordId = String(refundBtn.dataset.recordId || "").trim();
         if (!recordId) return;
         const targetRecord = records.find((item) => String(item.id || "").trim() === recordId) || null;
@@ -1554,7 +1643,7 @@
           input: totalPriceInput
         },
         {
-          label: "结算价",
+          label: "会计结算价",
           raw: settlementPriceRaw,
           value: item.settlementPrice,
           input: settlementPriceInput

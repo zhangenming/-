@@ -180,7 +180,7 @@
           <input id="accountantInvoiceImageInput" type="file" accept="image/*" hidden />
           <button id="exportTableBtn" class="btn-secondary table-export-btn" type="button" aria-label="导出当前筛选数据" hidden disabled>导出</button>
           <button id="bossSettlementBtn" class="btn-secondary table-settlement-btn" type="button" hidden disabled>结算</button>
-          <button id="bossSettlementDetailBtn" class="btn-secondary table-settlement-detail-btn" type="button" hidden disabled>结算详细</button>
+          <button id="bossSettlementDetailBtn" class="btn-secondary table-settlement-detail-btn" type="button" hidden disabled>打款</button>
         </div>
       </div>
       <div id="appStatusHint" class="login-request-hint app-status-hint idle" aria-live="polite" hidden></div>
@@ -199,10 +199,9 @@
             <col class="col-summary" />
             <col class="col-remark" />
             <col class="col-payment" />
-            <col class="col-total" />
             <col class="col-premium" />
+            <col class="col-total" />
             <col class="col-settlement" />
-            <col class="col-profit" />
             <col class="col-status" />
             <col class="col-action" />
           </colgroup>
@@ -348,10 +347,9 @@
               <th><button class="sort-btn" type="button" data-key="summary" data-label="任务简介">任务简介</button></th>
               <th class="data-col-remark"><button class="sort-btn" type="button" data-key="remark" data-label="备注">备注</button></th>
               <th class="data-col-payment"><button class="sort-btn" type="button" data-key="paymentPrice" data-label="付款价">付款价</button></th>
-              <th class="data-col-total"><button class="sort-btn" type="button" data-key="totalPrice" data-label="会计价">会计价</button></th>
               <th class="data-col-premium"><button class="sort-btn" type="button" data-key="premiumPrice" data-label="溢价">溢价</button></th>
-              <th class="data-col-settlement"><button class="sort-btn" type="button" data-key="settlementPrice" data-label="结算价">结算价</button></th>
-              <th class="data-col-profit"><button class="sort-btn" type="button" data-key="profitPrice" data-label="接待收益">接待收益</button></th>
+              <th class="data-col-total"><button class="sort-btn" type="button" data-key="totalPrice" data-label="会计价">会计价</button></th>
+              <th class="data-col-settlement"><button class="sort-btn" type="button" data-key="settlementPrice" data-label="会计结算价">会计结算价</button></th>
               <th class="data-col-status">
                 <div class="th-inner status-th-inner">
                   <button class="sort-btn" type="button" data-key="checkStatus" data-label="状态">状态</button>
@@ -534,7 +532,7 @@
             <div id="premiumHint" class="price-hint" hidden></div>
           </div>
           <div class="price-item">
-            <label for="settlementPrice">结算价</label>
+            <label for="settlementPrice">会计结算价</label>
             <input id="settlementPrice" name="settlementPrice" type="number" min="0" step="0.01" required autocomplete="off" />
           </div>
         </div>
@@ -654,21 +652,44 @@
       <p id="refundFormHint" class="login-request-hint form-request-hint idle" aria-live="polite" hidden></p>
       <form id="refundForm" class="refund-form" autocomplete="off" novalidate>
         <input id="refundRecordId" type="hidden" />
-        <div class="refund-current-price">
-          <span class="refund-current-label">当前付款价</span>
-          <strong id="refundCurrentPaymentText" class="refund-current-value">0.00</strong>
-        </div>
-        <div class="field refund-price-field">
-          <label for="refundPaymentPrice">退款后付款价</label>
-          <input
-            id="refundPaymentPrice"
-            name="paymentPrice"
-            type="number"
-            min="0"
-            step="0.01"
-            required
-            autocomplete="off"
-          />
+        <div class="field refund-price-row">
+          <div class="refund-price-item">
+            <label for="refundPaymentPrice">付款价</label>
+            <input
+              id="refundPaymentPrice"
+              name="paymentPrice"
+              type="number"
+              min="0"
+              step="0.01"
+              required
+              autocomplete="off"
+            />
+          </div>
+          <div class="refund-price-item refund-price-item-total">
+            <label for="refundTotalPrice">会计价</label>
+            <input
+              id="refundTotalPrice"
+              name="totalPrice"
+              type="number"
+              min="0"
+              step="0.01"
+              required
+              autocomplete="off"
+            />
+            <div id="refundPremiumHint" class="price-hint" hidden></div>
+          </div>
+          <div class="refund-price-item">
+            <label for="refundSettlementPrice">会计结算价</label>
+            <input
+              id="refundSettlementPrice"
+              name="settlementPrice"
+              type="number"
+              min="0"
+              step="0.01"
+              required
+              autocomplete="off"
+            />
+          </div>
         </div>
         <div class="row form-actions refund-actions">
           <button class="btn-primary" type="submit">提交退款</button>
@@ -712,7 +733,7 @@
         </h2>
       </div>
       <section class="settlement-summary-hero">
-        <span class="settlement-summary-hero-label">结算价合计</span>
+        <span class="settlement-summary-hero-label">会计结算价合计</span>
         <strong id="bossSettlementSummaryAmount" class="settlement-summary-hero-value">0.00 元</strong>
       </section>
       <div class="settlement-summary-meta">
@@ -887,10 +908,9 @@
               <th>客户</th>
               <th>任务简介</th>
               <th class="recycle-col-payment">付款价</th>
-              <th class="recycle-col-total">会计价</th>
               <th class="recycle-col-premium">溢价</th>
-              <th class="recycle-col-settlement">结算价</th>
-              <th class="recycle-col-profit">接待收益</th>
+              <th class="recycle-col-total">会计价</th>
+              <th class="recycle-col-settlement">会计结算价</th>
               <th class="recycle-col-action">操作</th>
             </tr>
           </thead>

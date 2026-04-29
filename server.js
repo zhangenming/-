@@ -1241,6 +1241,7 @@ const ACCOUNTANT_RECORD_HISTORY_VISIBLE_FIELDS = new Set([
   "dispatcher",
   "customer",
   "summary",
+  "totalPrice",
   "settlementPrice",
   "checkStatus",
   "isSettled",
@@ -1286,6 +1287,7 @@ function sanitizeRecordForAccountant(record) {
   const settlementFields = getNormalizedRecordSettlementFields(source);
   const invoiceFields = getNormalizedRecordInvoiceFields(source);
   const paymentFields = getNormalizedRecordSettlementPaymentFields(source);
+  const totalPrice = normalizeMoneyValue(source.totalPrice);
   const settlementPrice = normalizeMoneyValue(source.settlementPrice);
   return {
     id: normalizeText(source.id, 120),
@@ -1295,6 +1297,7 @@ function sanitizeRecordForAccountant(record) {
     accountant: normalizeAccountantDisplayName(source.accountant),
     customer: normalizeText(source.customer, 120),
     summary: normalizeText(source.summary, 500),
+    totalPrice: Number.isFinite(totalPrice) ? totalPrice : "",
     settlementPrice: Number.isFinite(settlementPrice) ? settlementPrice : "",
     checkStatus: normalizeText(source.checkStatus, 24).toLowerCase() || "pending",
     completedAt: normalizeDateTimeValue(source.completedAt),
@@ -1631,7 +1634,7 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
     kind: "money",
     getValue: (record) => getRecordPremiumPrice(record)
   },
-  { field: "settlementPrice", label: "结算价", kind: "money" },
+  { field: "settlementPrice", label: "会计结算价", kind: "money" },
   {
     field: "isSettled",
     label: "结算",
@@ -2110,7 +2113,7 @@ function moneyToCents(value) {
 
 function isRefundableCheckStatus(value) {
   const status = normalizeText(value, 24).toLowerCase();
-  return status === "completed" || status === "partial_refunded";
+  return status === "checked" || status === "completed" || status === "partial_refunded";
 }
 
 function buildRefundRecordUpdate(currentRecord, payload, session) {
@@ -2120,31 +2123,102 @@ function buildRefundRecordUpdate(currentRecord, payload, session) {
   const currentInvoiceFields = getNormalizedRecordInvoiceFields(current);
   const currentStatus = normalizeText(current.checkStatus, 24).toLowerCase();
   if (!isRefundableCheckStatus(currentStatus)) {
-    throw new Error("当前仅支持已完成订单退款。");
+    throw new Error("当前仅支持已确认或已完成订单退款。");
   }
   if (currentSettlementFields.isSettled || currentInvoiceFields.settlementInvoiceImage) {
     throw new Error("已结算订单请先处理结算记录。");
   }
 
   const currentPaymentPrice = normalizeMoneyValue(current.paymentPrice);
+  const currentTotalPrice = normalizeMoneyValue(current.totalPrice);
+  const currentSettlementPrice = normalizeMoneyValue(current.settlementPrice);
+  const isAccountantRefund = session?.role === "accountant";
+  const nextTotalPrice = normalizeMoneyValue(
+    Object.prototype.hasOwnProperty.call(source, "totalPrice") ? source.totalPrice : current.totalPrice
+  );
+  const nextSettlementPrice = normalizeMoneyValue(
+    Object.prototype.hasOwnProperty.call(source, "settlementPrice") ? source.settlementPrice : current.settlementPrice
+  );
+  if (!Number.isFinite(currentSettlementPrice) || currentSettlementPrice < 0) {
+    throw new Error("当前会计结算价无效。");
+  }
+  if (!Number.isFinite(nextSettlementPrice) || nextSettlementPrice < 0) {
+    throw new Error("会计结算价格式无效。");
+  }
+
+  if (isAccountantRefund) {
+    if (!Number.isFinite(currentTotalPrice) || currentTotalPrice < 0) {
+      throw new Error("当前会计价无效。");
+    }
+    if (!Number.isFinite(nextTotalPrice) || nextTotalPrice < 0) {
+      throw new Error("会计价格式无效。");
+    }
+    const currentTotalCents = moneyToCents(currentTotalPrice);
+    const currentSettlementCents = moneyToCents(currentSettlementPrice);
+    const nextTotalCents = moneyToCents(nextTotalPrice);
+    const nextSettlementCents = moneyToCents(nextSettlementPrice);
+    if (nextTotalCents > currentTotalCents) {
+      throw new Error("会计价需要小于或等于当前会计价。");
+    }
+    if (nextSettlementCents > currentSettlementCents) {
+      throw new Error("会计结算价需要小于或等于当前会计结算价。");
+    }
+    if (nextTotalCents >= currentTotalCents && nextSettlementCents >= currentSettlementCents) {
+      throw new Error("会计价、会计结算价至少一项需要小于原数据。");
+    }
+    const nextStatus = nextSettlementCents === 0 ? "refunded" : "partial_refunded";
+    const operatedAt = getCurrentBeijingDateTime();
+    const operatedBy = normalizeText(session?.account, 48);
+    return {
+      ...current,
+      ...currentSettlementFields,
+      ...currentInvoiceFields,
+      totalPrice: nextTotalPrice,
+      settlementPrice: nextSettlementPrice,
+      checkStatus: nextStatus,
+      refundedAt: operatedAt,
+      refundedBy: operatedBy
+    };
+  }
+
   const nextPaymentPrice = normalizeMoneyValue(source.paymentPrice);
   if (!Number.isFinite(currentPaymentPrice) || currentPaymentPrice <= 0) {
     throw new Error("当前付款价无效。");
   }
+  if (!Number.isFinite(currentTotalPrice) || currentTotalPrice < 0) {
+    throw new Error("当前会计价无效。");
+  }
   if (!Number.isFinite(nextPaymentPrice) || nextPaymentPrice < 0) {
-    throw new Error("退款后付款价格式无效。");
+    throw new Error("付款价格式无效。");
+  }
+  if (!Number.isFinite(nextTotalPrice) || nextTotalPrice < 0) {
+    throw new Error("会计价格式无效。");
   }
 
-  const currentCents = moneyToCents(currentPaymentPrice);
-  const nextCents = moneyToCents(nextPaymentPrice);
-  if (nextCents > currentCents) {
-    throw new Error("退款后付款价需要小于或等于当前付款价。");
+  const currentPaymentCents = moneyToCents(currentPaymentPrice);
+  const currentTotalCents = moneyToCents(currentTotalPrice);
+  const currentSettlementCents = moneyToCents(currentSettlementPrice);
+  const nextPaymentCents = moneyToCents(nextPaymentPrice);
+  const nextTotalCents = moneyToCents(nextTotalPrice);
+  const nextSettlementCents = moneyToCents(nextSettlementPrice);
+  if (nextPaymentCents > currentPaymentCents) {
+    throw new Error("付款价需要小于或等于当前付款价。");
   }
-  if (nextCents === currentCents) {
-    throw new Error("退款后付款价需要小于当前付款价。");
+  if (nextTotalCents > currentTotalCents) {
+    throw new Error("会计价需要小于或等于当前会计价。");
+  }
+  if (nextSettlementCents > currentSettlementCents) {
+    throw new Error("会计结算价需要小于或等于当前会计结算价。");
+  }
+  if (
+    nextPaymentCents >= currentPaymentCents
+    && nextTotalCents >= currentTotalCents
+    && nextSettlementCents >= currentSettlementCents
+  ) {
+    throw new Error("付款价、会计价、会计结算价至少一项需要小于原数据。");
   }
 
-  const nextStatus = nextCents === 0 ? "refunded" : "partial_refunded";
+  const nextStatus = nextPaymentCents === 0 ? "refunded" : "partial_refunded";
   const operatedAt = getCurrentBeijingDateTime();
   const operatedBy = normalizeText(session?.account, 48);
   return {
@@ -2152,6 +2226,8 @@ function buildRefundRecordUpdate(currentRecord, payload, session) {
     ...currentSettlementFields,
     ...currentInvoiceFields,
     paymentPrice: nextPaymentPrice,
+    totalPrice: nextTotalPrice,
+    settlementPrice: nextSettlementPrice,
     checkStatus: nextStatus,
     refundedAt: operatedAt,
     refundedBy: operatedBy
@@ -2952,10 +3028,8 @@ async function serveRecordById(req, res, recordIdRaw) {
           const currentServiceFeedbackImages = normalizeStoredFeedbackImages(current.serviceFeedbackImages);
 
           if (shouldRefund) {
-            throw new Error("当前账号无退款权限。");
-          }
-
-          if (shouldComplete) {
+            updatedRecord = buildRefundRecordUpdate(current, body, session);
+          } else if (shouldComplete) {
             const serviceFeedbackImages = Object.prototype.hasOwnProperty.call(body, "serviceFeedbackImages")
               ? await resolveFeedbackImagesForUpdate(currentServiceFeedbackImages, body.serviceFeedbackImages, recordId)
               : currentServiceFeedbackImages;
@@ -3038,16 +3112,15 @@ async function serveRecordById(req, res, recordIdRaw) {
               serviceFeedbackImages: currentServiceFeedbackImages
             };
           }
+          const actionKey = shouldRefund
+            ? normalizeText(updatedRecord.checkStatus, 24).toLowerCase()
+            : (shouldComplete ? "completed" : (shouldReturn ? "returned" : (shouldEditRecord ? "updated" : "checked")));
           updatedRecord = appendRecordHistory(updatedRecord, buildRecordHistoryEntry({
             beforeRecord: current,
             afterRecord: updatedRecord,
             session,
-            actionKey: shouldComplete ? "completed" : (shouldReturn ? "returned" : (shouldEditRecord ? "updated" : "checked")),
-            actionLabel: shouldComplete
-              ? RECORD_HISTORY_ACTION_LABELS.completed
-              : (shouldReturn
-                ? RECORD_HISTORY_ACTION_LABELS.returned
-                : (shouldEditRecord ? RECORD_HISTORY_ACTION_LABELS.updated : RECORD_HISTORY_ACTION_LABELS.checked)),
+            actionKey,
+            actionLabel: RECORD_HISTORY_ACTION_LABELS[actionKey] || RECORD_HISTORY_ACTION_LABELS.updated,
             operatedAt,
             operatedBy
           }));
@@ -3061,8 +3134,8 @@ async function serveRecordById(req, res, recordIdRaw) {
               operatedAt,
               operatedBy,
               operatedByUsername,
-              actionKey: shouldComplete ? "completed" : (shouldReturn ? "returned" : (shouldEditRecord ? "updated" : "checked")),
-              actionLabel: shouldComplete ? "完成" : (shouldReturn ? "退单" : (shouldEditRecord ? "修改" : RECORD_HISTORY_ACTION_LABELS.checked)),
+              actionKey,
+              actionLabel: RECORD_HISTORY_ACTION_LABELS[actionKey] || RECORD_HISTORY_ACTION_LABELS.updated,
               recordId,
               date: normalizeText(updatedRecord.date, 32),
               dispatcher: normalizeText(updatedRecord.dispatcher, 48),
@@ -3516,7 +3589,7 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
         if (!nextPassword) {
           throw new Error("密码不能为空");
         }
-        if (!isAccountantSelfEdit && nextUsername !== accountantUsername) {
+        if (nextUsername !== accountantUsername) {
           ensureAccountantUsernameAvailable(nextUsername, otherAccountants);
         }
         if (nextPhone !== normalizeAccountantPhone(target.phone)) {

@@ -1,19 +1,199 @@
 [
   {
-    "id": "rec_moic81r51flag8",
-    "createdAt": "2026-04-28 16:01:48",
+    "id": "rec_mojul6933zv8jc",
+    "createdAt": "2026-04-29 17:23:39",
+    "date": "2026-04-29",
+    "isMonthlySettlement": false,
+    "dispatcher": "C",
+    "accountant": "Abby",
+    "platform": "淘宝",
+    "shopName": "全账通",
+    "orderNo": "3298657335304013583",
+    "source": "小红书",
+    "customer": "GREEN",
+    "summary": "财务报表",
+    "remark": "",
+    "paymentPrice": 100,
+    "totalPrice": 80,
+    "settlementPrice": 48,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_mojt9xfeo6n5hn",
+    "createdAt": "2026-04-29 16:46:55",
+    "date": "2026-04-29",
+    "isMonthlySettlement": false,
+    "dispatcher": "C",
+    "accountant": "草莓味的风",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "5112717375382000307",
+    "source": "淘宝",
+    "customer": "空巷",
+    "summary": "汽车租赁公司利润表3年",
+    "remark": "",
+    "paymentPrice": 297,
+    "totalPrice": 260,
+    "settlementPrice": 156,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_mojmn4yh9ynh35",
+    "createdAt": "2026-04-29 13:41:14",
+    "date": "2026-04-29",
+    "isMonthlySettlement": false,
+    "dispatcher": "C",
+    "accountant": "Zia茹",
+    "platform": "闲鱼",
+    "shopName": "开心财税",
+    "orderNo": "3299153736971084659",
+    "source": "闲鱼",
+    "customer": "富贵",
+    "summary": "对账",
+    "remark": "",
+    "paymentPrice": 100,
+    "totalPrice": 90,
+    "settlementPrice": 54,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 17:10:52",
+    "completedAt": "2026-04-29 17:10:59",
+    "completedBy": "Zia茹",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moju4sjcxif8xb",
+        "operatedAt": "2026-04-29 17:10:55",
+        "operatedBy": "Zia茹",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 17:10:59"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moju4q0yw8ez3r",
+        "operatedAt": "2026-04-29 17:10:52",
+        "operatedBy": "Zia茹",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "Zia茹"
+  },
+  {
+    "id": "rec_mojd1yi8kt6eaj",
+    "createdAt": "2026-04-29 09:12:49",
     "date": "2026-04-28",
     "isMonthlySettlement": false,
     "dispatcher": "C",
-    "accountant": "杨先森",
+    "accountant": "小顺会计",
     "platform": "淘宝",
     "shopName": "开心财税",
-    "orderNo": "'5112661358825005935",
+    "orderNo": "5112691238932010949",
     "source": "淘宝",
-    "customer": "Lucky",
-    "summary": "收支",
+    "customer": "syt",
+    "summary": "个人账单",
     "remark": "",
-    "paymentPrice": 148,
+    "paymentPrice": 80,
+    "totalPrice": 80,
+    "settlementPrice": 48,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_mojd0qinvpzawz",
+    "createdAt": "2026-04-29 09:11:52",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "C",
+    "accountant": "TT",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "3298921177716016374",
+    "source": "淘宝",
+    "customer": "Tdd",
+    "summary": "固定资产盘点表",
+    "remark": "",
+    "paymentPrice": 138,
     "totalPrice": 128,
     "settlementPrice": 76.8,
     "isSettled": false,
@@ -33,6 +213,4448 @@
     "customerFeedback": "",
     "serviceFeedbackImages": [],
     "operationHistory": []
+  },
+  {
+    "id": "rec_mojcz7nfk85eoa",
+    "createdAt": "2026-04-29 09:10:41",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "C",
+    "accountant": "秦春燕",
+    "platform": "闲鱼",
+    "shopName": "年年有鱼",
+    "orderNo": "'5112495399510096812",
+    "source": "闲鱼",
+    "customer": "捭阖-致远",
+    "summary": "收支",
+    "remark": "",
+    "paymentPrice": 150,
+    "totalPrice": 140,
+    "settlementPrice": 84,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moiw27u183oxu1",
+    "createdAt": "2026-04-29 01:17:08",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "K",
+    "accountant": "小顺",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "无",
+    "source": "淘宝",
+    "customer": "双",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 150,
+    "totalPrice": 150,
+    "settlementPrice": 90,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moiw0llcr8kcvk",
+    "createdAt": "2026-04-29 01:15:53",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "K",
+    "accountant": "Rich4季豆",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "5113042273363000421",
+    "source": "淘宝",
+    "customer": "小糕点",
+    "summary": "数据整理",
+    "remark": "",
+    "paymentPrice": 180,
+    "totalPrice": 150,
+    "settlementPrice": 90,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moitfr3yyb2q27",
+    "createdAt": "2026-04-29 00:03:41",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "K",
+    "accountant": "Rich4季豆",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "5113044073531018144",
+    "source": "淘宝",
+    "customer": "喜鱼🌙",
+    "summary": "课时计算",
+    "remark": "",
+    "paymentPrice": 200,
+    "totalPrice": 200,
+    "settlementPrice": 120,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-29 00:44:56",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiuwtd5pe86i8",
+        "operatedAt": "2026-04-29 00:44:56",
+        "operatedBy": "Rich4季豆",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "Rich4季豆"
+  },
+  {
+    "id": "rec_moitb5ernkfyan",
+    "createdAt": "2026-04-29 00:00:06",
+    "date": "2026-04-25",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "美文嘻嘻",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4500000129202604255076300058",
+    "source": "淘宝",
+    "customer": "派大心",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 268,
+    "totalPrice": 220,
+    "settlementPrice": 132,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moismzlzr0497r",
+    "createdAt": "2026-04-28 23:41:19",
+    "date": "2026-04-26",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "nana",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "3298105203892005980",
+    "source": "淘宝",
+    "customer": "不疯汉子",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 160,
+    "totalPrice": 160,
+    "settlementPrice": 96,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moislb9x2nkjzv",
+    "createdAt": "2026-04-28 23:40:00",
+    "date": "2026-04-26",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "nana",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4500000117202604264524177714",
+    "source": "淘宝",
+    "customer": "不疯汉子",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 120,
+    "totalPrice": 120,
+    "settlementPrice": 72,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moish1k5c45sln",
+    "createdAt": "2026-04-28 23:36:41",
+    "date": "2026-04-26",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "外部人员",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4200003072202604267480441753",
+    "source": "淘宝",
+    "customer": "二手车阿峰",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 20,
+    "totalPrice": 20,
+    "settlementPrice": 12,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "",
+    "completedAt": "2026-04-28 23:36:41",
+    "completedBy": "系统",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moisfyue4czivt",
+    "createdAt": "2026-04-28 23:35:51",
+    "date": "2026-04-26",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "外部人员",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4200003078202604263642384248",
+    "source": "淘宝",
+    "customer": "二手车阿峰",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 20,
+    "totalPrice": 20,
+    "settlementPrice": 12,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "",
+    "completedAt": "2026-04-28 23:35:51",
+    "completedBy": "系统",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moiseaci1hwvph",
+    "createdAt": "2026-04-28 23:34:33",
+    "date": "2026-04-26",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "。。",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4500000159202604261445338935",
+    "source": "闲鱼",
+    "customer": "炜东",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 180,
+    "totalPrice": 180,
+    "settlementPrice": 108,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moisatkcz5yt0m",
+    "createdAt": "2026-04-28 23:31:51",
+    "date": "2026-04-27",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "秦春燕",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4500000132202604278438568448",
+    "source": "小红书",
+    "customer": "世界上最后一个恐龙蛋",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 300,
+    "totalPrice": 300,
+    "settlementPrice": 180,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_mois64i1yav73l",
+    "createdAt": "2026-04-28 23:28:12",
+    "date": "2026-04-27",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "外部人员",
+    "platform": "其他",
+    "shopName": "其他",
+    "orderNo": "4200003056202604277628483469",
+    "source": "其他",
+    "customer": "厚德载物",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 80,
+    "totalPrice": 80,
+    "settlementPrice": 48,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "",
+    "completedAt": "2026-04-28 23:28:12",
+    "completedBy": "系统",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_mois3i2nmgpaa3",
+    "createdAt": "2026-04-28 23:26:09",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "Zia茹",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4500000120202604287114290205",
+    "source": "淘宝",
+    "customer": "雅痞",
+    "summary": "表格数据填写",
+    "remark": "",
+    "paymentPrice": 66,
+    "totalPrice": 66,
+    "settlementPrice": 39.6,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 08:37:43",
+    "completedAt": "2026-04-29 08:37:51",
+    "completedBy": "Zia茹",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojbsv9cwqayrv",
+        "operatedAt": "2026-04-29 08:37:46",
+        "operatedBy": "Zia茹",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 08:37:51"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojbst2tem5a0a",
+        "operatedAt": "2026-04-29 08:37:43",
+        "operatedBy": "Zia茹",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "表格数据填写"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moisbnqu3t42ws",
+        "operatedAt": "2026-04-28 23:32:30",
+        "operatedBy": "开心财税1",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "platform",
+            "label": "平台",
+            "before": "淘宝",
+            "after": "企业微信"
+          },
+          {
+            "field": "shopName",
+            "label": "店铺",
+            "before": "轻松财税",
+            "after": "企业微信"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "Zia茹"
+  },
+  {
+    "id": "rec_moirzf4o4lak2z",
+    "createdAt": "2026-04-28 23:22:59",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "nana",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "3298355438159424497",
+    "source": "淘宝",
+    "customer": "川流不息",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 138,
+    "totalPrice": 100,
+    "settlementPrice": 60,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moisbas3kaojs1",
+        "operatedAt": "2026-04-28 23:32:13",
+        "operatedBy": "开心财税1",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": []
+      }
+    ]
+  },
+  {
+    "id": "rec_moiru0iqd6kopd",
+    "createdAt": "2026-04-28 23:18:47",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "外部人员",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "3298793017956078595",
+    "source": "淘宝",
+    "customer": "贝贝",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 300,
+    "totalPrice": 300,
+    "settlementPrice": 180,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "",
+    "completedAt": "2026-04-28 23:18:47",
+    "completedBy": "系统",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moir59ii5blcc0",
+    "createdAt": "2026-04-28 22:59:32",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "有米U.mi",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "'5062600766702967429",
+    "source": "淘宝",
+    "customer": "唐",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 256,
+    "totalPrice": 256,
+    "settlementPrice": 166.4,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moiqxuwthwtc4i",
+    "createdAt": "2026-04-28 22:53:47",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "小刘",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "4502218753167003309",
+    "source": "闲鱼",
+    "customer": "小十一",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 800,
+    "totalPrice": 700,
+    "settlementPrice": 455,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moiqvf7xs4ansi",
+    "createdAt": "2026-04-28 22:51:53",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "草莓味的风",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4200003061202604102856065739",
+    "source": "淘宝",
+    "customer": "D",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 50,
+    "totalPrice": 0,
+    "settlementPrice": 0,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiqwwk27wobs4",
+        "operatedAt": "2026-04-28 22:53:02",
+        "operatedBy": "开心财税A",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "settlementPrice",
+            "label": "结算价",
+            "before": 5,
+            "after": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rec_moiqtrm4c7jgab",
+    "createdAt": "2026-04-28 22:50:36",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "草莓味的风",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "4502261055231027236",
+    "source": "淘宝",
+    "customer": "D",
+    "summary": "废品站设计表格",
+    "remark": "",
+    "paymentPrice": 100,
+    "totalPrice": 100,
+    "settlementPrice": 65,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 10:34:24",
+    "completedAt": "2026-04-29 10:41:04",
+    "completedBy": "草莓味的风",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojg7klenujt9l",
+        "operatedAt": "2026-04-29 10:41:10",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_mojg7kl7n7mi5c",
+        "operatedAt": "2026-04-29 10:41:10",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 10:41:04"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojfyv72u8zjpn",
+        "operatedAt": "2026-04-29 10:34:24",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "废品站设计表格"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiqwquuona0o2",
+        "operatedAt": "2026-04-28 22:52:55",
+        "operatedBy": "开心财税A",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "settlementPrice",
+            "label": "结算价",
+            "before": 60,
+            "after": 65
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiqu6r2vu5112",
+        "operatedAt": "2026-04-28 22:50:55",
+        "operatedBy": "开心财税A",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "accountant",
+            "label": "会计",
+            "before": "美文嘻嘻",
+            "after": "草莓味的风"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "草莓味的风"
+  },
+  {
+    "id": "rec_moiqr0raugw74u",
+    "createdAt": "2026-04-28 22:48:28",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "美文嘻嘻",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4200003132202604101786966537",
+    "source": "小红书",
+    "customer": "晓云吖🍑",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 600,
+    "totalPrice": 500,
+    "settlementPrice": 325,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moiqqggxg7eokg",
+    "createdAt": "2026-04-28 22:48:01",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "美文嘻嘻",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4200003139202604079286848497",
+    "source": "小红书",
+    "customer": "晓云吖🍑",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 600,
+    "totalPrice": 500,
+    "settlementPrice": 325,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moiqp9a5gpqdhg",
+    "createdAt": "2026-04-28 22:47:05",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "拾柒",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4200003008202603188686587019",
+    "source": "闲鱼",
+    "customer": "S",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 600,
+    "totalPrice": 600,
+    "settlementPrice": 390,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moiqo7s6wtnz9g",
+    "createdAt": "2026-04-28 22:46:17",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "过过过过过",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "4502212095013009919",
+    "source": "淘宝",
+    "customer": "千里",
+    "summary": "店铺账单",
+    "remark": "",
+    "paymentPrice": 200,
+    "totalPrice": 200,
+    "settlementPrice": 130,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 10:01:45",
+    "completedAt": "2026-04-29 10:03:07",
+    "completedBy": "过过过过过",
+    "customerFeedback": "1店完成",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojevz7f1a1anc",
+        "operatedAt": "2026-04-29 10:04:10",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 10:03:07"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "1店完成"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojesvwj1uqonn",
+        "operatedAt": "2026-04-29 10:01:45",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "店铺账单"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "过过过过过"
+  },
+  {
+    "id": "rec_moiqnjzc1qe1wl",
+    "createdAt": "2026-04-28 22:45:46",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "过过过过过",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "4502243307009009919",
+    "source": "淘宝",
+    "customer": "千里",
+    "summary": "店铺账单",
+    "remark": "tb132822539299",
+    "paymentPrice": 200,
+    "totalPrice": 200,
+    "settlementPrice": 130,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 10:01:57",
+    "completedAt": "2026-04-29 10:04:13",
+    "completedBy": "过过过过过",
+    "customerFeedback": "抖音2店完成",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojew6zwmm19k3",
+        "operatedAt": "2026-04-29 10:04:20",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 10:04:13"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "抖音2店完成"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojet57er8rafb",
+        "operatedAt": "2026-04-29 10:01:57",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "店铺账单"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "过过过过过"
+  },
+  {
+    "id": "rec_moiqmu0l8rji8a",
+    "createdAt": "2026-04-28 22:45:12",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "过过过过过",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "4502166732019035235",
+    "source": "淘宝",
+    "customer": "（空白）陪玩",
+    "summary": "利润表模板",
+    "remark": "cleverwi",
+    "paymentPrice": 300,
+    "totalPrice": 300,
+    "settlementPrice": 195,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 10:46:54",
+    "completedAt": "2026-04-29 10:46:56",
+    "completedBy": "过过过过过",
+    "customerFeedback": "已完成",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojgf7uad80yv1",
+        "operatedAt": "2026-04-29 10:47:07",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 10:46:56"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "已完成"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojgexkhjr84rm",
+        "operatedAt": "2026-04-29 10:46:54",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "利润表模板"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "过过过过过"
+  },
+  {
+    "id": "rec_moiqlf5yr0c4ek",
+    "createdAt": "2026-04-28 22:44:06",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "小张小红小琳",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "5097053018835697128",
+    "source": "淘宝",
+    "customer": "许建焕",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 500,
+    "totalPrice": 400,
+    "settlementPrice": 260,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moiqh6smnb054s",
+    "createdAt": "2026-04-28 22:40:49",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "杨先森",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "4502304828051024208",
+    "source": "淘宝",
+    "customer": "小米粥 🎉",
+    "summary": "总账  流水账平账",
+    "remark": "",
+    "paymentPrice": 288,
+    "totalPrice": 248,
+    "settlementPrice": 148.8,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 22:44:37",
+    "completedAt": "2026-04-28 22:44:41",
+    "completedBy": "杨先森",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiqm7i1n6kiae",
+        "operatedAt": "2026-04-28 22:44:43",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 22:44:41"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiqm37p5p55iu",
+        "operatedAt": "2026-04-28 22:44:37",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "总账  流水账平账"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "杨先森"
+  },
+  {
+    "id": "rec_moippsgn5v4d9n",
+    "createdAt": "2026-04-28 22:19:31",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "瑜",
+    "platform": "闲鱼",
+    "shopName": "果果财税",
+    "orderNo": "2701851494186005497",
+    "source": "闲鱼",
+    "customer": "蟹黄堡秘方",
+    "summary": "填表",
+    "remark": "",
+    "paymentPrice": 80,
+    "totalPrice": 80,
+    "settlementPrice": 48,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-29 15:24:28",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojqbvzuhdngzh",
+        "operatedAt": "2026-04-29 15:24:28",
+        "operatedBy": "瑜",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_mojqbvvgt7efdn",
+        "operatedAt": "2026-04-29 15:24:28",
+        "operatedBy": "瑜",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "填表"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "瑜"
+  },
+  {
+    "id": "rec_moipoi4apdbr0g",
+    "createdAt": "2026-04-28 22:18:30",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "悠悠我心",
+    "platform": "淘宝",
+    "shopName": "智算财税",
+    "orderNo": "4502288845052029040",
+    "source": "小红书",
+    "customer": "张意苹",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 700,
+    "totalPrice": 600,
+    "settlementPrice": 360,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moipmynau9hpp9",
+    "createdAt": "2026-04-28 22:17:19",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "杨先森",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4200003074202604277735884791",
+    "source": "闲鱼",
+    "customer": "Obliviate",
+    "summary": "做现金流量表",
+    "remark": "",
+    "paymentPrice": 80,
+    "totalPrice": 80,
+    "settlementPrice": 48,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 22:22:05",
+    "completedAt": "2026-04-28 22:22:08",
+    "completedBy": "杨先森",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moipt85cdncvto",
+        "operatedAt": "2026-04-28 22:22:11",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 22:22:08"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moipt3ynymzv02",
+        "operatedAt": "2026-04-28 22:22:05",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "做现金流量表"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "杨先森"
+  },
+  {
+    "id": "rec_moipmifzi1h1ma",
+    "createdAt": "2026-04-28 22:16:58",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "杨先森",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "3298095192522001378",
+    "source": "淘宝",
+    "customer": "泰瑞保护膜 瞿生",
+    "summary": "对账单长期   4月5月   已结",
+    "remark": "",
+    "paymentPrice": 1000,
+    "totalPrice": 1000,
+    "settlementPrice": 600,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 22:23:55",
+    "completedAt": "2026-04-28 22:23:57",
+    "completedBy": "杨先森",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moipvjywfvk9yq",
+        "operatedAt": "2026-04-28 22:23:59",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 22:23:57"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moipvg7d4tacww",
+        "operatedAt": "2026-04-28 22:23:55",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "对账单长期   4月5月   已结"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "杨先森"
+  },
+  {
+    "id": "rec_moipm2n4lvoknp",
+    "createdAt": "2026-04-28 22:16:37",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "杨先森",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "3296930450943015966",
+    "source": "淘宝",
+    "customer": "小高吖",
+    "summary": "个人信贷明细做表格",
+    "remark": "",
+    "paymentPrice": 500,
+    "totalPrice": 500,
+    "settlementPrice": 300,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 22:26:54",
+    "completedAt": "2026-04-28 22:26:57",
+    "completedBy": "杨先森",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moipzehqtei9rn",
+        "operatedAt": "2026-04-28 22:26:59",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 22:26:57"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moipzaiq948ex0",
+        "operatedAt": "2026-04-28 22:26:54",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "个人信贷明细做表格"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "杨先森"
+  },
+  {
+    "id": "rec_moiplow4a4pzai",
+    "createdAt": "2026-04-28 22:16:19",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "杨先森",
+    "platform": "淘宝",
+    "shopName": "智算财税",
+    "orderNo": "4502308356159005844",
+    "source": "淘宝",
+    "customer": "小米粥 🎉",
+    "summary": "总账  流水账平账   客户加钱",
+    "remark": "",
+    "paymentPrice": 150,
+    "totalPrice": 100,
+    "settlementPrice": 60,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 22:45:13",
+    "completedAt": "2026-04-28 22:45:16",
+    "completedBy": "杨先森",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiqmylkka2nf0",
+        "operatedAt": "2026-04-28 22:45:18",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 22:45:16"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiqmutoa0os1t",
+        "operatedAt": "2026-04-28 22:45:13",
+        "operatedBy": "杨先森",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "总账  流水账平账   客户加钱"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "杨先森"
+  },
+  {
+    "id": "rec_moipkb4wpht6uw",
+    "createdAt": "2026-04-28 22:15:15",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "徐佳",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "5110830290227001545",
+    "source": "淘宝",
+    "customer": "伴风望海",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 2000,
+    "totalPrice": 1800,
+    "settlementPrice": 1080,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moipihch64f3d4",
+    "createdAt": "2026-04-28 22:13:50",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "晓晓",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "2701865606032004654",
+    "source": "淘宝",
+    "customer": "黄佩琪",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 550,
+    "totalPrice": 450,
+    "settlementPrice": 270,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moipgtgqs9yh0t",
+    "createdAt": "2026-04-28 22:12:32",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "小顺",
+    "platform": "闲鱼",
+    "shopName": "天天向上",
+    "orderNo": "5111438223312012910",
+    "source": "闲鱼",
+    "customer": "Sanny",
+    "summary": "",
+    "remark": "月结个体户零申报税",
+    "paymentPrice": 130,
+    "totalPrice": 130,
+    "settlementPrice": 78,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moipg2gu83zelj",
+    "createdAt": "2026-04-28 22:11:57",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "小顺",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "ThisisZYW",
+    "source": "淘宝",
+    "customer": "5111094242881098846",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 1400,
+    "totalPrice": 1180,
+    "settlementPrice": 708,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moipdtyss9pvxo",
+    "createdAt": "2026-04-28 22:10:13",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "小顺",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "2701864310024040686",
+    "source": "淘宝",
+    "customer": "詹皓然",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 270,
+    "totalPrice": 170,
+    "settlementPrice": 102,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moipda3a1wwgyl",
+    "createdAt": "2026-04-28 22:09:47",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "小顺",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "2701870429036004676",
+    "source": "淘宝",
+    "customer": "詹皓然",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 30,
+    "totalPrice": 30,
+    "settlementPrice": 18,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moipc9xqaps9ir",
+    "createdAt": "2026-04-28 22:09:00",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "小张小红小琳",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "4502322074003012033",
+    "source": "淘宝",
+    "customer": "衬",
+    "summary": "核对两个系统数据的差异，一年的数据",
+    "remark": "",
+    "paymentPrice": 300,
+    "totalPrice": 300,
+    "settlementPrice": 180,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 22:18:37",
+    "completedAt": "2026-04-28 22:18:44",
+    "completedBy": "小张小红小琳",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moipoug2i8z1dy",
+        "operatedAt": "2026-04-28 22:18:46",
+        "operatedBy": "小张小红小琳",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 22:18:44"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiponhnbt0vpi",
+        "operatedAt": "2026-04-28 22:18:37",
+        "operatedBy": "小张小红小琳",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "核对两个系统数据的差异，一年的数据"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "小张小红小琳"
+  },
+  {
+    "id": "rec_moipagcngzq9wf",
+    "createdAt": "2026-04-28 22:07:35",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "王冬梅",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4500000135202604289409702170",
+    "source": "淘宝",
+    "customer": "敏~m¡n",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 200,
+    "totalPrice": 200,
+    "settlementPrice": 120,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moip9qlf8ruvgf",
+    "createdAt": "2026-04-28 22:07:02",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "王冬梅",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4200003132202604161848043337",
+    "source": "淘宝",
+    "customer": "敏~m¡n",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 200,
+    "totalPrice": 50,
+    "settlementPrice": 30,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moip8taktir0bh",
+    "createdAt": "2026-04-28 22:06:18",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "王冬梅",
+    "platform": "淘宝",
+    "shopName": "智算财税",
+    "orderNo": "4502294679049005749",
+    "source": "淘宝",
+    "customer": "敏~m¡n",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 250,
+    "totalPrice": 250,
+    "settlementPrice": 150,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moip7isl598t3j",
+    "createdAt": "2026-04-28 22:05:18",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "拾柒",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "4502316996005011740",
+    "source": "淘宝",
+    "customer": "너의보배（借钱拉黑）",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 350,
+    "totalPrice": 300,
+    "settlementPrice": 180,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moip5l56mpirbj",
+    "createdAt": "2026-04-28 22:03:48",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "美文嘻嘻",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "2701868808024007259",
+    "source": "淘宝",
+    "customer": "阳阳",
+    "summary": "做账",
+    "remark": "",
+    "paymentPrice": 700,
+    "totalPrice": 600,
+    "settlementPrice": 360,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-28 22:32:52",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiq6yx8zyx3gt",
+        "operatedAt": "2026-04-28 22:32:52",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_moiq6yufbpb230",
+        "operatedAt": "2026-04-28 22:32:52",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "做账"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "美文嘻嘻"
+  },
+  {
+    "id": "rec_moip3nrvun5iyr",
+    "createdAt": "2026-04-28 22:02:18",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "刘佳",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "4502293597023021519",
+    "source": "淘宝",
+    "customer": "👪🏡🚙💰 一2026快乐🎉",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 594,
+    "totalPrice": 500,
+    "settlementPrice": 300,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moip4lc9uqyhaf",
+        "operatedAt": "2026-04-28 22:03:02",
+        "operatedBy": "开心财税A",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "accountant",
+            "label": "会计",
+            "before": "郡豆豆",
+            "after": "刘佳"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rec_moip20ub2us6vi",
+    "createdAt": "2026-04-28 22:01:02",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "郡豆豆",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "5111127325849064814",
+    "source": "淘宝",
+    "customer": "🔥红火火高企 财税🔥",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 300,
+    "totalPrice": 260,
+    "settlementPrice": 156,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moioyq44jkjkzy",
+    "createdAt": "2026-04-28 21:58:28",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "过过过过过",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4500000120202604289723645756",
+    "source": "淘宝",
+    "customer": "海海",
+    "summary": "10-12、1、2月账单",
+    "remark": "",
+    "paymentPrice": 800,
+    "totalPrice": 700,
+    "settlementPrice": 420,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-29 10:50:16",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojgj9twgdsosm",
+        "operatedAt": "2026-04-29 10:50:16",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "10-12、1、2月账单"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "过过过过过"
+  },
+  {
+    "id": "rec_moioy272p7ylto",
+    "createdAt": "2026-04-28 21:57:57",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "过过过过过",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "5112792685317029416",
+    "source": "淘宝",
+    "customer": "（空白）",
+    "summary": "代教拼多多",
+    "remark": "淘宝：鑫森茶业01",
+    "paymentPrice": 600,
+    "totalPrice": 600,
+    "settlementPrice": 360,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-29 10:48:42",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojgh8y8yodlt8",
+        "operatedAt": "2026-04-29 10:48:42",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "过过过过过"
+  },
+  {
+    "id": "rec_moioun9hs5fl7l",
+    "createdAt": "2026-04-28 21:55:17",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "过过过过过",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4200003092202604270875282956/4200003067202604277553196071",
+    "source": "淘宝",
+    "customer": "海海",
+    "summary": "1月账单",
+    "remark": "",
+    "paymentPrice": 58,
+    "totalPrice": 50,
+    "settlementPrice": 30,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 10:49:46",
+    "completedAt": "2026-04-29 10:49:54",
+    "completedBy": "过过过过过",
+    "customerFeedback": "OK",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojgivcgwqnko8",
+        "operatedAt": "2026-04-29 10:49:57",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 10:49:54"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "OK"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojgimgxj7z9hw",
+        "operatedAt": "2026-04-29 10:49:46",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "1月账单"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "过过过过过"
+  },
+  {
+    "id": "rec_moiottaoouwqoa",
+    "createdAt": "2026-04-28 21:54:39",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "过过过过过",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "5112753193083002540",
+    "source": "淘宝",
+    "customer": "海海",
+    "summary": "1月账单",
+    "remark": "",
+    "paymentPrice": 200,
+    "totalPrice": 150,
+    "settlementPrice": 90,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 10:49:52",
+    "completedAt": "2026-04-29 10:49:59",
+    "completedBy": "过过过过过",
+    "customerFeedback": "OK",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojgiybh82nn2f",
+        "operatedAt": "2026-04-29 10:50:01",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 10:49:59"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "OK"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojgir1z88kb6b",
+        "operatedAt": "2026-04-29 10:49:52",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "1月账单"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "过过过过过"
+  },
+  {
+    "id": "rec_moiooyam9nui3y",
+    "createdAt": "2026-04-28 21:50:52",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "过过过过过",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "4502305947002035235",
+    "source": "淘宝",
+    "customer": "空白（算陪玩）",
+    "summary": "收支汇总表",
+    "remark": "淘宝名：cleverwi",
+    "paymentPrice": 248,
+    "totalPrice": 200,
+    "settlementPrice": 120,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 10:48:19",
+    "completedAt": "2026-04-29 10:48:21",
+    "completedBy": "过过过过过",
+    "customerFeedback": "完成",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojggy5bzkpnsv",
+        "operatedAt": "2026-04-29 10:48:28",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 10:48:21"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "完成"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojggrfjw5zh16",
+        "operatedAt": "2026-04-29 10:48:19",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "收支汇总表"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "过过过过过"
+  },
+  {
+    "id": "rec_moiompl97y20cz",
+    "createdAt": "2026-04-28 21:49:07",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "德丽",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "5112670716671038120",
+    "source": "淘宝",
+    "customer": "萝",
+    "summary": "吉客云单据整理录入",
+    "remark": "",
+    "paymentPrice": 300,
+    "totalPrice": 300,
+    "settlementPrice": 180,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-28 21:56:46",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiowjnb3eadgt",
+        "operatedAt": "2026-04-28 21:56:46",
+        "operatedBy": "德丽",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "吉客云单据整理录入"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "德丽"
+  },
+  {
+    "id": "rec_moiokca20png92",
+    "createdAt": "2026-04-28 21:47:17",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "草莓味的风",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "5112704306379001834/5112890712152001834",
+    "source": "淘宝",
+    "customer": "Destiny",
+    "summary": "利润亏损咨询",
+    "remark": "",
+    "paymentPrice": 30.59,
+    "totalPrice": 30,
+    "settlementPrice": 18,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-29 10:32:38",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojfwloym6di7i",
+        "operatedAt": "2026-04-29 10:32:38",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "利润亏损咨询"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiokksamu7dek",
+        "operatedAt": "2026-04-28 21:47:28",
+        "operatedBy": "开心财税A",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "accountant",
+            "label": "会计",
+            "before": "Zia茹",
+            "after": "草莓味的风"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "草莓味的风"
+  },
+  {
+    "id": "rec_moiohdfao5rvvg",
+    "createdAt": "2026-04-28 21:44:58",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "Zia茹",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "4502304939158038636",
+    "source": "淘宝",
+    "customer": "Cathy",
+    "summary": "整理表格",
+    "remark": "",
+    "paymentPrice": 150,
+    "totalPrice": 100,
+    "settlementPrice": 60,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 21:56:15",
+    "completedAt": "2026-04-28 21:56:17",
+    "completedBy": "Zia茹",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiovyt42xemky",
+        "operatedAt": "2026-04-28 21:56:19",
+        "operatedBy": "Zia茹",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 21:56:17"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiovvgjmeokbx",
+        "operatedAt": "2026-04-28 21:56:15",
+        "operatedBy": "Zia茹",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "整理表格"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "Zia茹"
+  },
+  {
+    "id": "rec_moiogu7xb25i6z",
+    "createdAt": "2026-04-28 21:44:33",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "Zia茹",
+    "platform": "其他",
+    "shopName": "其他",
+    "orderNo": "1000050001202604200724701586614",
+    "source": "其他",
+    "customer": "许小青",
+    "summary": "整理工资",
+    "remark": "杨转给开心个人微信",
+    "paymentPrice": 100,
+    "totalPrice": 100,
+    "settlementPrice": 60,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 21:56:27",
+    "completedAt": "2026-04-28 21:56:29",
+    "completedBy": "Zia茹",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiow7j3a1p0p8",
+        "operatedAt": "2026-04-28 21:56:30",
+        "operatedBy": "Zia茹",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 21:56:29"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiow4z6hspzyx",
+        "operatedAt": "2026-04-28 21:56:27",
+        "operatedBy": "Zia茹",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "整理工资"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "Zia茹"
+  },
+  {
+    "id": "rec_moiodm60ohtr09",
+    "createdAt": "2026-04-28 21:42:03",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "Rich4季豆",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "5112840528159017534",
+    "source": "淘宝",
+    "customer": "大慧慧",
+    "summary": "整理报销单",
+    "remark": "",
+    "paymentPrice": 324,
+    "totalPrice": 200,
+    "settlementPrice": 120,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 00:43:26",
+    "completedAt": "2026-04-29 00:43:28",
+    "completedBy": "Rich4季豆",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiuuyfijw52q2",
+        "operatedAt": "2026-04-29 00:43:30",
+        "operatedBy": "Rich4季豆",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 00:43:28"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiuuvzqepez3y",
+        "operatedAt": "2026-04-29 00:43:26",
+        "operatedBy": "Rich4季豆",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "整理报销单"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "Rich4季豆"
+  },
+  {
+    "id": "rec_moiod7x4mx9936",
+    "createdAt": "2026-04-28 21:41:44",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "Rich4季豆",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "5112399711614014638",
+    "source": "淘宝",
+    "customer": "请叫我陈圆圆",
+    "summary": "详细整理账单",
+    "remark": "",
+    "paymentPrice": 600,
+    "totalPrice": 500,
+    "settlementPrice": 300,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-29 00:44:48",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiuwn1ss1ek6s",
+        "operatedAt": "2026-04-29 00:44:48",
+        "operatedBy": "Rich4季豆",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "详细整理账单"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "Rich4季豆"
+  },
+  {
+    "id": "rec_moiocqi63fl5kr",
+    "createdAt": "2026-04-28 21:41:22",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "Rich4季豆",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "5111376337122008921",
+    "source": "淘宝",
+    "customer": "@",
+    "summary": "财务资料整理",
+    "remark": "",
+    "paymentPrice": 1600,
+    "totalPrice": 1300,
+    "settlementPrice": 780,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-29 00:44:30",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiuw8w4oa5h4d",
+        "operatedAt": "2026-04-29 00:44:30",
+        "operatedBy": "Rich4季豆",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "财务资料整理"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "Rich4季豆"
+  },
+  {
+    "id": "rec_moiob06abu6tck",
+    "createdAt": "2026-04-28 21:40:01",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "Rich4季豆",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "4502323729008160213",
+    "source": "淘宝",
+    "customer": "请叫我陈圆圆",
+    "summary": "初步整理账单",
+    "remark": "",
+    "paymentPrice": 600,
+    "totalPrice": 500,
+    "settlementPrice": 300,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 00:44:01",
+    "completedAt": "2026-04-29 00:44:03",
+    "completedBy": "Rich4季豆",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiuvpzjvhe15s",
+        "operatedAt": "2026-04-29 00:44:05",
+        "operatedBy": "Rich4季豆",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 00:44:03"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiuvmgq081tzz",
+        "operatedAt": "2026-04-29 00:44:01",
+        "operatedBy": "Rich4季豆",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "初步整理账单"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "Rich4季豆"
+  },
+  {
+    "id": "rec_moio86ygh5bgkn",
+    "createdAt": "2026-04-28 21:37:50",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "Hello,现在",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "5111897149321003815",
+    "source": "淘宝",
+    "customer": "虫虫",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 600,
+    "totalPrice": 400,
+    "settlementPrice": 240,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moio7l6nz1w3tc",
+    "createdAt": "2026-04-28 21:37:22",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "Hello,现在",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "4502303391153002042",
+    "source": "淘宝",
+    "customer": "铭心痕，念伊人",
+    "summary": "",
+    "remark": "",
+    "paymentPrice": 300,
+    "totalPrice": 200,
+    "settlementPrice": 120,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "pending",
+    "checkedAt": "",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moio8o57xbluk2",
+        "operatedAt": "2026-04-28 21:38:12",
+        "operatedBy": "开心财税A",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "accountant",
+            "label": "会计",
+            "before": "Abby",
+            "after": "Hello,现在"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rec_moio4pli8rfj3l",
+    "createdAt": "2026-04-28 21:35:07",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "Abby",
+    "platform": "闲鱼",
+    "shopName": "开心财税",
+    "orderNo": "3298859148862014697",
+    "source": "闲鱼",
+    "customer": "人生得玉徐盡歡",
+    "summary": "统计数据，制作申请表",
+    "remark": "",
+    "paymentPrice": 208.27,
+    "totalPrice": 208.27,
+    "settlementPrice": 124.96,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 21:42:17",
+    "completedAt": "2026-04-28 21:42:22",
+    "completedBy": "Abby",
+    "customerFeedback": "好评",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moioe503x16bi6",
+        "operatedAt": "2026-04-28 21:42:27",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 21:42:22"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "好评"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiodx6xjk99qk",
+        "operatedAt": "2026-04-28 21:42:17",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "统计数据，制作申请表"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "Abby"
+  },
+  {
+    "id": "rec_moio4144757dsg",
+    "createdAt": "2026-04-28 21:34:36",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "Abby",
+    "platform": "闲鱼",
+    "shopName": "开心财税",
+    "orderNo": "3298269686874014697",
+    "source": "闲鱼",
+    "customer": "人生得玉徐盡歡",
+    "summary": "统计数据，制作申请表",
+    "remark": "",
+    "paymentPrice": 17.4,
+    "totalPrice": 17.4,
+    "settlementPrice": 10.44,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 21:42:51",
+    "completedAt": "2026-04-28 21:42:51",
+    "completedBy": "Abby",
+    "customerFeedback": "好评",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moioexhn1w25di",
+        "operatedAt": "2026-04-28 21:43:04",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_moioexbspzta8l",
+        "operatedAt": "2026-04-28 21:43:04",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_moioewzdlv4c93",
+        "operatedAt": "2026-04-28 21:43:04",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_moioewqea3xtjc",
+        "operatedAt": "2026-04-28 21:43:03",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_moioeszi9j2u04",
+        "operatedAt": "2026-04-28 21:42:58",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_moioes1i93clq4",
+        "operatedAt": "2026-04-28 21:42:57",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_moioeq7iyrk1id",
+        "operatedAt": "2026-04-28 21:42:55",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 21:42:51"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "好评"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moioenduh1h3di",
+        "operatedAt": "2026-04-28 21:42:51",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_moioelw6gckwpw",
+        "operatedAt": "2026-04-28 21:42:49",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "统计数据，制作申请表"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "Abby"
+  },
+  {
+    "id": "rec_moio391w2ofb0u",
+    "createdAt": "2026-04-28 21:33:59",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "Abby",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4200003051202604242438169886",
+    "source": "淘宝",
+    "customer": "🍅",
+    "summary": "统计数据，制作日报表",
+    "remark": "",
+    "paymentPrice": 100,
+    "totalPrice": 100,
+    "settlementPrice": 60,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 21:43:34",
+    "completedAt": "2026-04-28 21:43:35",
+    "completedBy": "Abby",
+    "customerFeedback": "好评",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiofpshy4cfj9",
+        "operatedAt": "2026-04-28 21:43:41",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_moiofowmbxax2z",
+        "operatedAt": "2026-04-28 21:43:40",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 21:43:35"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "好评"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiofktwrwbziq",
+        "operatedAt": "2026-04-28 21:43:34",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_moiofkcw9awmv8",
+        "operatedAt": "2026-04-28 21:43:34",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "统计数据，制作日报表"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "Abby"
+  },
+  {
+    "id": "rec_moio2tda0ilmlh",
+    "createdAt": "2026-04-28 21:33:39",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "Abby",
+    "platform": "企业微信",
+    "shopName": "企业微信",
+    "orderNo": "4200003136202604211312788185",
+    "source": "淘宝",
+    "customer": "🍅",
+    "summary": "制作日报表",
+    "remark": "",
+    "paymentPrice": 200,
+    "totalPrice": 200,
+    "settlementPrice": 120,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 21:44:05",
+    "completedAt": "2026-04-28 21:44:05",
+    "completedBy": "Abby",
+    "customerFeedback": "好评",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiogb9y163dkn",
+        "operatedAt": "2026-04-28 21:44:09",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 21:44:05"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "好评"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiog833v34gha",
+        "operatedAt": "2026-04-28 21:44:05",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_moiog7g9ib3bjh",
+        "operatedAt": "2026-04-28 21:44:04",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "制作日报表"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "Abby"
+  },
+  {
+    "id": "rec_moio1m85g0pqdv",
+    "createdAt": "2026-04-28 21:32:43",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "朱会计",
+    "platform": "淘宝",
+    "shopName": "智算财税",
+    "orderNo": "5111119117652046133",
+    "source": "淘宝",
+    "customer": "储小浩的Dad",
+    "summary": "利润表及运费核对",
+    "remark": "",
+    "paymentPrice": 300,
+    "totalPrice": 300,
+    "settlementPrice": 180,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 21:38:49",
+    "completedAt": "2026-04-28 21:38:52",
+    "completedBy": "朱会计",
+    "customerFeedback": "完成",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moio9mtmzlroxj",
+        "operatedAt": "2026-04-28 21:38:57",
+        "operatedBy": "朱会计",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 21:38:52"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "完成"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moio9gp1oljqjz",
+        "operatedAt": "2026-04-28 21:38:49",
+        "operatedBy": "朱会计",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "利润表及运费核对"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "朱会计"
+  },
+  {
+    "id": "rec_moio12imhevkx4",
+    "createdAt": "2026-04-28 21:32:18",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "朱会计",
+    "platform": "淘宝",
+    "shopName": "智算财税",
+    "orderNo": "4502274409066025232",
+    "source": "淘宝",
+    "customer": "KE",
+    "summary": "刷单数据整理",
+    "remark": "",
+    "paymentPrice": 1000,
+    "totalPrice": 848,
+    "settlementPrice": 508.8,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 21:39:24",
+    "completedAt": "2026-04-28 21:39:26",
+    "completedBy": "朱会计",
+    "customerFeedback": "完成",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moioad4zcld07t",
+        "operatedAt": "2026-04-28 21:39:31",
+        "operatedBy": "朱会计",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 21:39:26"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "完成"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moioa7fde2maua",
+        "operatedAt": "2026-04-28 21:39:24",
+        "operatedBy": "朱会计",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "刷单数据整理"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "朱会计"
+  },
+  {
+    "id": "rec_moinxbfgwh49lf",
+    "createdAt": "2026-04-28 21:29:22",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "耶汁",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "5112447734639023922",
+    "source": "淘宝",
+    "customer": "衡东联盛定制静静",
+    "summary": "2020-2026年微信个人账单数据整理",
+    "remark": "",
+    "paymentPrice": 1000,
+    "totalPrice": 348,
+    "settlementPrice": 208.8,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 08:58:15",
+    "completedAt": "2026-04-29 08:58:46",
+    "completedBy": "耶汁",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojcjc6qqr6646",
+        "operatedAt": "2026-04-29 08:58:21",
+        "operatedBy": "耶汁",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 08:58:46"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojcj7lxwium1h",
+        "operatedAt": "2026-04-29 08:58:15",
+        "operatedBy": "耶汁",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "2020-2026年微信个人账单数据整理"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "耶汁"
+  },
+  {
+    "id": "rec_moinwl3felhnbd",
+    "createdAt": "2026-04-28 21:28:48",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "耶汁",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "5111524009002015346",
+    "source": "淘宝",
+    "customer": "君",
+    "summary": "学校餐费数据整理与汇总",
+    "remark": "",
+    "paymentPrice": 258,
+    "totalPrice": 258,
+    "settlementPrice": 154.8,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 08:58:40",
+    "completedAt": "2026-04-29 08:59:10",
+    "completedBy": "耶汁",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojcjtx39movwq",
+        "operatedAt": "2026-04-29 08:58:44",
+        "operatedBy": "耶汁",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 08:59:10"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojcjqyn7arhyz",
+        "operatedAt": "2026-04-29 08:58:40",
+        "operatedBy": "耶汁",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "学校餐费数据整理与汇总"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "耶汁"
+  },
+  {
+    "id": "rec_moinvx0dt8wt5x",
+    "createdAt": "2026-04-28 21:28:17",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "A",
+    "accountant": "耶汁",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "4502306666145015346",
+    "source": "淘宝",
+    "customer": "君",
+    "summary": "学校餐费数据整理与汇总",
+    "remark": "陶瓷妹jun",
+    "paymentPrice": 300,
+    "totalPrice": 300,
+    "settlementPrice": 180,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 08:59:03",
+    "completedAt": "2026-04-29 08:59:33",
+    "completedBy": "耶汁",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojckc4h54qdzn",
+        "operatedAt": "2026-04-29 08:59:07",
+        "operatedBy": "耶汁",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 08:59:33"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojck90nykoxyc",
+        "operatedAt": "2026-04-29 08:59:03",
+        "operatedBy": "耶汁",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "学校餐费数据整理与汇总"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "耶汁"
+  },
+  {
+    "id": "rec_moileh88d5uzfx",
+    "createdAt": "2026-04-28 20:18:44",
+    "date": "2026-04-27",
+    "isMonthlySettlement": false,
+    "dispatcher": "E",
+    "accountant": "不结算",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "4200003059202604271610336848",
+    "source": "淘宝",
+    "customer": "HUHA",
+    "summary": "",
+    "remark": "TTWang对接客户补差价",
+    "paymentPrice": 20,
+    "totalPrice": 0,
+    "settlementPrice": 0,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "",
+    "completedAt": "2026-04-28 20:18:44",
+    "completedBy": "系统",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": []
+  },
+  {
+    "id": "rec_moilb4y7wxuhb1",
+    "createdAt": "2026-04-28 20:16:08",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "E",
+    "accountant": "小张小红小琳",
+    "platform": "淘宝",
+    "shopName": "轻松财税",
+    "orderNo": "5112908604628033422",
+    "source": "淘宝",
+    "customer": "Monica🌿",
+    "summary": "核对供应商余额明细",
+    "remark": "",
+    "paymentPrice": 720,
+    "totalPrice": 580,
+    "settlementPrice": 348,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-28 22:19:44",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_moipq2xn3a58sn",
+        "operatedAt": "2026-04-28 22:19:44",
+        "operatedBy": "小张小红小琳",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "对账",
+            "after": "核对供应商余额明细"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "小张小红小琳"
+  },
+  {
+    "id": "rec_moic81r51flag8",
+    "createdAt": "2026-04-28 16:01:48",
+    "date": "2026-04-28",
+    "isMonthlySettlement": false,
+    "dispatcher": "C",
+    "accountant": "草莓味的风",
+    "platform": "淘宝",
+    "shopName": "开心财税",
+    "orderNo": "'5112661358825005935",
+    "source": "淘宝",
+    "customer": "Lucky",
+    "summary": "新老账户收支",
+    "remark": "",
+    "paymentPrice": 148,
+    "totalPrice": 128,
+    "settlementPrice": 76.8,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 10:32:25",
+    "completedAt": "2026-04-29 10:46:32",
+    "completedBy": "草莓味的风",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojgeidxu6x3pa",
+        "operatedAt": "2026-04-29 10:46:34",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 10:46:32"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojfwbq7np8olq",
+        "operatedAt": "2026-04-29 10:32:25",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "收支",
+            "after": "新老账户收支"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojcxmib6mvofc",
+        "operatedAt": "2026-04-29 09:09:27",
+        "operatedBy": "开心财税C",
+        "operatedRole": "dispatcher",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "accountant",
+            "label": "会计",
+            "before": "杨先森",
+            "after": "草莓味的风"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "草莓味的风"
   },
   {
     "id": "rec_moi9agpk2n598d",
@@ -378,7 +5000,7 @@
     "orderNo": "4200003090202604270320415986",
     "source": "其他",
     "customer": "ooakying",
-    "summary": "",
+    "summary": "做帐",
     "remark": "",
     "paymentPrice": 110,
     "totalPrice": 100,
@@ -390,15 +5012,63 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 21:44:32",
     "serviceFeedbackImages": [],
-    "operationHistory": [],
-    "completedAt": "",
+    "operationHistory": [
+      {
+        "historyId": "rhis_moiogxgn12mhgf",
+        "operatedAt": "2026-04-28 21:44:37",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 21:44:34"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiogt9eywsqs2",
+        "operatedAt": "2026-04-28 21:44:32",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "做帐"
+          }
+        ]
+      }
+    ],
+    "completedAt": "2026-04-28 21:44:34",
     "returnedAt": "",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
-    "settlementPaidBy": ""
+    "settlementPaidBy": "",
+    "checkedBy": "Abby",
+    "completedBy": "Abby",
+    "customerFeedback": ""
   },
   {
     "id": "rec_moh0f2wx1sepbv",
@@ -532,58 +5202,6 @@
       }
     ],
     "checkedBy": "有幸",
-    "completedAt": "",
-    "returnedAt": "",
-    "isSettlementPaid": false,
-    "settlementPaidAt": "",
-    "settlementPaidBy": ""
-  },
-  {
-    "id": "rec_mogunttkqvb7r2",
-    "createdAt": "2026-04-27 15:02:25",
-    "date": "2026-04-27",
-    "isMonthlySettlement": false,
-    "dispatcher": "E",
-    "accountant": "小顺会计",
-    "platform": "淘宝",
-    "shopName": "开心财税",
-    "orderNo": "3298704349102000192",
-    "source": "淘宝",
-    "customer": "AC",
-    "summary": "淘宝对账",
-    "remark": "",
-    "paymentPrice": 100,
-    "totalPrice": 100,
-    "settlementPrice": 60,
-    "isSettled": false,
-    "settledAt": "",
-    "settledBy": "",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "checkStatus": "checked",
-    "checkedAt": "2026-04-27 15:41:04",
-    "serviceFeedbackImages": [],
-    "operationHistory": [
-      {
-        "historyId": "rhis_mogw1ji2nncfcx",
-        "operatedAt": "2026-04-27 15:41:04",
-        "operatedBy": "小顺会计",
-        "operatedRole": "accountant",
-        "actionKey": "checked",
-        "actionLabel": "确认",
-        "changes": [
-          {
-            "field": "checkStatus",
-            "label": "状态",
-            "before": "pending",
-            "after": "checked"
-          }
-        ]
-      }
-    ],
-    "checkedBy": "小顺会计",
     "completedAt": "",
     "returnedAt": "",
     "isSettlementPaid": false,
@@ -1133,10 +5751,32 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "checked",
+    "checkStatus": "completed",
     "checkedAt": "2026-04-26 21:11:26",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mojg7a6pjprrui",
+        "operatedAt": "2026-04-29 10:40:57",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 10:40:55"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mofsg2ogf0niue",
         "operatedAt": "2026-04-26 21:12:38",
@@ -1170,11 +5810,13 @@
       }
     ],
     "checkedBy": "草莓味的风",
-    "completedAt": "",
+    "completedAt": "2026-04-29 10:40:55",
     "returnedAt": "",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
-    "settlementPaidBy": ""
+    "settlementPaidBy": "",
+    "completedBy": "草莓味的风",
+    "customerFeedback": ""
   },
   {
     "id": "rec_mofrrn195epy9a",
@@ -1740,7 +6382,7 @@
     "orderNo": "4502275705053003836",
     "source": "闲鱼",
     "customer": "乐在其中🍃",
-    "summary": "周周的双下巴",
+    "summary": "账已做修改近一个月+年报，实际修改1-3月",
     "remark": "",
     "paymentPrice": 280,
     "totalPrice": 258,
@@ -1753,16 +6395,72 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 10:36:37",
     "serviceFeedbackImages": [],
     "customerFeedback": "",
-    "operationHistory": [],
-    "completedAt": "",
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojg71jcohk4dz",
+        "operatedAt": "2026-04-29 10:40:45",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 10:40:44"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojg1pqjvq12yq",
+        "operatedAt": "2026-04-29 10:36:37",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_mojg1o1pbf7tgh",
+        "operatedAt": "2026-04-29 10:36:35",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "周周的双下巴",
+            "after": "账已做修改近一个月+年报，实际修改1-3月"
+          }
+        ]
+      }
+    ],
+    "completedAt": "2026-04-29 10:40:44",
     "returnedAt": "",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
-    "settlementPaidBy": ""
+    "settlementPaidBy": "",
+    "checkedBy": "草莓味的风",
+    "completedBy": "草莓味的风"
   },
   {
     "id": "rec_2e8a22ffc1814d",
@@ -2658,7 +7356,7 @@
     "orderNo": "2701852140171048269",
     "source": "淘宝",
     "customer": "安之若素",
-    "summary": "罗广1997",
+    "summary": "拼多多算利润1个月",
     "remark": "",
     "paymentPrice": 158,
     "totalPrice": 120,
@@ -2671,11 +7369,64 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 10:36:15",
     "serviceFeedbackImages": [],
     "customerFeedback": "",
     "operationHistory": [
+      {
+        "historyId": "rhis_mojg6xqjlfpyqf",
+        "operatedAt": "2026-04-29 10:40:41",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 10:40:39"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojg18of35w1do",
+        "operatedAt": "2026-04-29 10:36:15",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_mojg18o3e5rk88",
+        "operatedAt": "2026-04-29 10:36:15",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "罗广1997",
+            "after": "拼多多算利润1个月"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mogtd4r33vyybk",
         "operatedAt": "2026-04-27 14:26:06",
@@ -2693,11 +7444,13 @@
         ]
       }
     ],
-    "completedAt": "",
+    "completedAt": "2026-04-29 10:40:39",
     "returnedAt": "",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
-    "settlementPaidBy": ""
+    "settlementPaidBy": "",
+    "checkedBy": "草莓味的风",
+    "completedBy": "草莓味的风"
   },
   {
     "id": "rec_cd405979d65648",
@@ -2711,7 +7464,7 @@
     "orderNo": "4502309940124004236",
     "source": "淘宝",
     "customer": "Maggie",
-    "summary": "lijie_xjshz",
+    "summary": "淘宝1个店铺计算利润",
     "remark": "",
     "paymentPrice": 110,
     "totalPrice": 100,
@@ -2724,11 +7477,55 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 10:36:02",
     "serviceFeedbackImages": [],
     "customerFeedback": "",
     "operationHistory": [
+      {
+        "historyId": "rhis_mojg6u45cbcxwc",
+        "operatedAt": "2026-04-29 10:40:36",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 10:40:05"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojg0ysxdyya0z",
+        "operatedAt": "2026-04-29 10:36:02",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "lijie_xjshz",
+            "after": "淘宝1个店铺计算利润"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mohz3renv5sb2o",
         "operatedAt": "2026-04-28 09:54:33",
@@ -2762,11 +7559,13 @@
         ]
       }
     ],
-    "completedAt": "",
+    "completedAt": "2026-04-29 10:40:05",
     "returnedAt": "",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
-    "settlementPaidBy": ""
+    "settlementPaidBy": "",
+    "checkedBy": "草莓味的风",
+    "completedBy": "草莓味的风"
   },
   {
     "id": "rec_df9f442f4aa842",
@@ -2886,7 +7685,7 @@
     "orderNo": "4502304939150035139",
     "source": "淘宝",
     "customer": "琳琳｜嘟嘟",
-    "summary": "偶是碧落",
+    "summary": "做账+结账，2026.01-2026.03",
     "remark": "",
     "paymentPrice": 300,
     "totalPrice": 270,
@@ -2899,11 +7698,33 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-28 22:19:13",
     "serviceFeedbackImages": [],
     "customerFeedback": "",
     "operationHistory": [
+      {
+        "historyId": "rhis_moippezo7rv5kc",
+        "operatedAt": "2026-04-28 22:19:13",
+        "operatedBy": "小张小红小琳",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "偶是碧落",
+            "after": "做账+结账，2026.01-2026.03"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mogu3ldjtaxp6o",
         "operatedAt": "2026-04-27 14:46:41",
@@ -2925,7 +7746,8 @@
     "returnedAt": "",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
-    "settlementPaidBy": ""
+    "settlementPaidBy": "",
+    "checkedBy": "小张小红小琳"
   },
   {
     "id": "rec_4d33ba08c01a4e",
@@ -2939,7 +7761,7 @@
     "orderNo": "2701868919015004497",
     "source": "淘宝",
     "customer": "骑鱼吃小鱼",
-    "summary": "tb397204715",
+    "summary": "算数据",
     "remark": "",
     "paymentPrice": 80,
     "totalPrice": 70,
@@ -2952,11 +7774,79 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 21:45:26",
     "serviceFeedbackImages": [],
-    "customerFeedback": "",
+    "customerFeedback": "好评",
     "operationHistory": [
+      {
+        "historyId": "rhis_moioi56cpse56b",
+        "operatedAt": "2026-04-28 21:45:34",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_moioi4hapmgghj",
+        "operatedAt": "2026-04-28 21:45:33",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 21:45:30"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "好评"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiohz60hzebl7",
+        "operatedAt": "2026-04-28 21:45:26",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_moiohyunhg5dsc",
+        "operatedAt": "2026-04-28 21:45:26",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "tb397204715",
+            "after": "算数据"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mogu2e92h9juho",
         "operatedAt": "2026-04-27 14:45:45",
@@ -2974,11 +7864,13 @@
         ]
       }
     ],
-    "completedAt": "",
+    "completedAt": "2026-04-28 21:45:30",
     "returnedAt": "",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
-    "settlementPaidBy": ""
+    "settlementPaidBy": "",
+    "checkedBy": "Abby",
+    "completedBy": "Abby"
   },
   {
     "id": "rec_b6443d52fdee49",
@@ -3046,7 +7938,7 @@
     "orderNo": "2701869096033009459",
     "source": "闲鱼",
     "customer": "ooakying",
-    "summary": "雾都火辣的北极贝",
+    "summary": "补账，补申报",
     "remark": "",
     "paymentPrice": 268,
     "totalPrice": 258,
@@ -3059,11 +7951,61 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-28 21:47:47",
     "serviceFeedbackImages": [],
-    "customerFeedback": "",
+    "customerFeedback": "好评",
     "operationHistory": [
+      {
+        "historyId": "rhis_moiol4cb59t31x",
+        "operatedAt": "2026-04-28 21:47:53",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-28 21:47:49"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "好评"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_moiokzaxrivj2i",
+        "operatedAt": "2026-04-28 21:47:47",
+        "operatedBy": "Abby",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "雾都火辣的北极贝",
+            "after": "补账，补申报"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mogu2jg8l7x49x",
         "operatedAt": "2026-04-27 14:45:51",
@@ -3081,11 +8023,13 @@
         ]
       }
     ],
-    "completedAt": "",
+    "completedAt": "2026-04-28 21:47:49",
     "returnedAt": "",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
-    "settlementPaidBy": ""
+    "settlementPaidBy": "",
+    "checkedBy": "Abby",
+    "completedBy": "Abby"
   },
   {
     "id": "rec_6def4339945644",
@@ -3364,7 +8308,7 @@
     "orderNo": "5111212609403033119/'5110766391932023937",
     "source": "淘宝",
     "customer": "Zhꕤangೄ೨",
-    "summary": "zhy15364357781",
+    "summary": "查账",
     "remark": "",
     "paymentPrice": 480,
     "totalPrice": 333.33,
@@ -3377,11 +8321,33 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-29 15:24:37",
     "serviceFeedbackImages": [],
     "customerFeedback": "",
     "operationHistory": [
+      {
+        "historyId": "rhis_mojqc2xjeslblb",
+        "operatedAt": "2026-04-29 15:24:37",
+        "operatedBy": "瑜",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "zhy15364357781",
+            "after": "查账"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mohz3x9424xoxs",
         "operatedAt": "2026-04-28 09:54:40",
@@ -3419,7 +8385,8 @@
     "returnedAt": "",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
-    "settlementPaidBy": ""
+    "settlementPaidBy": "",
+    "checkedBy": "瑜"
   },
   {
     "id": "rec_3494b0a2f22446",
@@ -3602,7 +8569,7 @@
     "orderNo": "5111076566943140819",
     "source": "淘宝",
     "customer": "蜜茶物语",
-    "summary": "tb505047238",
+    "summary": "整理2023-2026.4月电子凭证",
     "remark": "",
     "paymentPrice": 1800,
     "totalPrice": 1500,
@@ -3615,16 +8582,58 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-04-29 10:36:51",
     "serviceFeedbackImages": [],
     "customerFeedback": "",
-    "operationHistory": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojg20zjdq6vxg",
+        "operatedAt": "2026-04-29 10:36:51",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_mojg1zrv7x2kap",
+        "operatedAt": "2026-04-29 10:36:50",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": []
+      },
+      {
+        "historyId": "rhis_mojg1zfq0kyfg9",
+        "operatedAt": "2026-04-29 10:36:49",
+        "operatedBy": "草莓味的风",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "tb505047238",
+            "after": "整理2023-2026.4月电子凭证"
+          }
+        ]
+      }
+    ],
     "completedAt": "",
     "returnedAt": "",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
-    "settlementPaidBy": ""
+    "settlementPaidBy": "",
+    "checkedBy": "草莓味的风"
   },
   {
     "id": "rec_1646f5eeadd840",
@@ -4188,7 +9197,7 @@
     "orderNo": "3297794127445021964",
     "source": "闲鱼",
     "customer": "Live",
-    "summary": "请展示你的才艺",
+    "summary": "抖音、京东账单规则讲解",
     "remark": "",
     "paymentPrice": 200,
     "totalPrice": 200,
@@ -4201,16 +9210,69 @@
     "invoiceUploadedAt": "",
     "invoiceUploadedBy": "",
     "invoiceUploadedByUsername": "",
-    "checkStatus": "pending",
-    "checkedAt": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-04-29 10:49:04",
     "serviceFeedbackImages": [],
-    "customerFeedback": "",
-    "operationHistory": [],
-    "completedAt": "",
+    "customerFeedback": "完成",
+    "operationHistory": [
+      {
+        "historyId": "rhis_mojghxgrbzwrpd",
+        "operatedAt": "2026-04-29 10:49:13",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-04-29 10:49:08"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "完成"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_mojghqf9soeqvg",
+        "operatedAt": "2026-04-29 10:49:04",
+        "operatedBy": "过过过过过",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "请展示你的才艺",
+            "after": "抖音、京东账单规则讲解"
+          }
+        ]
+      }
+    ],
+    "completedAt": "2026-04-29 10:49:08",
     "returnedAt": "",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
-    "settlementPaidBy": ""
+    "settlementPaidBy": "",
+    "checkedBy": "过过过过过",
+    "completedBy": "过过过过过"
   },
   {
     "id": "rec_d8253940f08343",

@@ -228,8 +228,10 @@
     const refundFormHint = document.getElementById("refundFormHint");
     const refundForm = document.getElementById("refundForm");
     const refundRecordIdInput = document.getElementById("refundRecordId");
-    const refundCurrentPaymentText = document.getElementById("refundCurrentPaymentText");
     const refundPaymentPriceInput = document.getElementById("refundPaymentPrice");
+    const refundTotalPriceInput = document.getElementById("refundTotalPrice");
+    const refundSettlementPriceInput = document.getElementById("refundSettlementPrice");
+    const refundPremiumHint = document.getElementById("refundPremiumHint");
     const recordHistoryModal = document.getElementById("recordHistoryModal");
     const recordHistoryModalCard = recordHistoryModal.querySelector(".record-history-modal-card");
     const recordHistoryModalMeta = document.getElementById("recordHistoryModalMeta");
@@ -1304,7 +1306,19 @@
 
     function isRecordRefundable(record) {
       const statusKey = getRecordWorkflowStatusKey(record);
-      return statusKey === "completed" || statusKey === "partial_refunded";
+      return statusKey === "checked" || statusKey === "completed" || statusKey === "partial_refunded";
+    }
+
+    function hasRecordAccountantConfirmation(record) {
+      const checkStatus = String(record?.checkStatus || "").trim().toLowerCase();
+      return checkStatus === "checked"
+        || checkStatus === "completed"
+        || checkStatus === "partial_refunded"
+        || checkStatus === "refunded"
+        || checkStatus === "returned"
+        || Boolean(String(record?.checkedAt || "").trim())
+        || Boolean(String(record?.completedAt || "").trim())
+        || Boolean(String(record?.returnedAt || "").trim());
     }
 
     function getRecordWorkflowStatusKey(record) {
@@ -2028,6 +2042,36 @@
       return num.toFixed(2);
     }
 
+    function formatTrimmedPercent(value) {
+      const percent = Number(value);
+      if (!Number.isFinite(percent)) return "";
+      return `${Number(percent.toFixed(2))}%`;
+    }
+
+    function getSettlementPercentValue(source) {
+      if (typeof source?.totalPrice === "string" && source.totalPrice.trim() === "") return Number.NaN;
+      if (typeof source?.settlementPrice === "string" && source.settlementPrice.trim() === "") return Number.NaN;
+      const total = Number(source?.totalPrice);
+      const settlement = Number(source?.settlementPrice);
+      if (!Number.isFinite(total) || !Number.isFinite(settlement) || total <= 0) return Number.NaN;
+      return (settlement / total) * 100;
+    }
+
+    function formatSettlementPercentDisplay(source) {
+      const percent = getSettlementPercentValue(source);
+      if (!Number.isFinite(percent)) return "";
+      const roundedPercent = Math.round(percent * 100) / 100;
+      if (Math.abs(roundedPercent - 60) < 0.005) return "";
+      return formatTrimmedPercent(roundedPercent);
+    }
+
+    function formatSettlementPriceDisplay(source) {
+      const priceText = toMoney(source?.settlementPrice);
+      if (!priceText) return "";
+      const percentText = formatSettlementPercentDisplay(source);
+      return percentText ? `${priceText}（${percentText}）` : priceText;
+    }
+
     function getSettlementTaxAmount(value) {
       const income = Number(value);
       if (!Number.isFinite(income) || income <= 0) return 0;
@@ -2364,7 +2408,7 @@
     function getInlineValidationGroup(target) {
       if (!(target instanceof Element)) return null;
       return target.closest(
-        ".detail-item, .meta-item, .price-item, .field-feedback-time, .field-feedback-text, .field, .accountant-picker"
+        ".detail-item, .meta-item, .price-item, .refund-price-item, .field-feedback-time, .field-feedback-text, .field, .accountant-picker"
       );
     }
 
@@ -2513,7 +2557,7 @@
       if (messageIncludesAnyKeyword(message, ["会计价"])) {
         return { target: totalPriceInput, open: null };
       }
-      if (messageIncludesAnyKeyword(message, ["结算价"])) {
+      if (messageIncludesAnyKeyword(message, ["会计结算价", "结算价"])) {
         return { target: settlementPriceInput, open: null };
       }
       return {
