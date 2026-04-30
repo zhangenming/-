@@ -107,6 +107,7 @@
         || !bossSettlementSummaryModal.hidden
         || (bossSettlementDetailModal && !bossSettlementDetailModal.hidden)
         || !analysisModal.hidden
+        || (operationRecordsModal && !operationRecordsModal.hidden)
         || !dispatcherModal.hidden
         || !accountantModal.hidden
         || (accountantEditModal && !accountantEditModal.hidden)
@@ -1907,6 +1908,7 @@
           dateStart: filterState.dateStart,
           dateEnd: filterState.dateEnd,
           dispatcher: filterState.dispatcher,
+          orderNo: filterState.orderNo,
           accountant: filterState.accountant,
           platform: filterState.platform,
           shopName: filterState.shopName,
@@ -1942,6 +1944,7 @@
         const persistedDateStart = String(parsedFilter.dateStart || "").trim();
         const persistedDateEnd = String(parsedFilter.dateEnd || "").trim();
         const persistedDispatcher = String(parsedFilter.dispatcher || "").trim();
+        const persistedOrderNo = String(parsedFilter.orderNo || "").trim();
         const persistedAccountant = String(parsedFilter.accountant || "").trim();
         const persistedPlatform = String(parsedFilter.platform || "").trim();
         const persistedShopName = String(parsedFilter.shopName || "").trim();
@@ -1964,6 +1967,7 @@
         filterState.dateStart = normalizedDateRange.start;
         filterState.dateEnd = normalizedDateRange.end;
         filterState.dispatcher = persistedDispatcher;
+        filterState.orderNo = persistedOrderNo;
         filterState.accountant = persistedAccountant;
         filterState.platform = persistedPlatform;
         filterState.shopName = persistedShopName;

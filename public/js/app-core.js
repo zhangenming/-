@@ -262,6 +262,18 @@
     const analysisModal = document.getElementById("analysisModal");
     const analysisModalCard = analysisModal.querySelector(".analysis-modal-card");
     const analysisContent = document.getElementById("analysisContent");
+    const openOperationRecordsBtn = document.getElementById("openOperationRecordsBtn");
+    const operationRecordsModal = document.getElementById("operationRecordsModal");
+    const operationRecordsModalCard = operationRecordsModal
+      ? operationRecordsModal.querySelector(".operation-records-modal-card")
+      : null;
+    const operationRecordsMeta = document.getElementById("operationRecordsMeta");
+    const operationRecordsList = document.getElementById("operationRecordsList");
+    const openPriceCompositionBtn = document.getElementById("openPriceCompositionBtn");
+    const priceCompositionModal = document.getElementById("priceCompositionModal");
+    const priceCompositionModalCard = priceCompositionModal
+      ? priceCompositionModal.querySelector(".price-composition-modal-card")
+      : null;
     const dispatcherModal = document.getElementById("dispatcherModal");
     const dispatcherModalCard = dispatcherModal.querySelector(".accountant-modal-card");
     const dispatcherModalHint = document.getElementById("dispatcherModalHint");
@@ -385,6 +397,7 @@
     const sortableHeaders = Array.from(document.querySelectorAll(".sort-btn"));
     const filterMonthBtn = document.getElementById("filterMonthBtn");
     const filterDispatcherBtn = document.getElementById("filterDispatcherBtn");
+    const filterOrderBtn = document.getElementById("filterOrderBtn");
     const filterAccountantBtn = document.getElementById("filterAccountantBtn");
     const filterPlatformBtn = document.getElementById("filterPlatformBtn");
     const filterShopBtn = document.getElementById("filterShopBtn");
@@ -393,6 +406,7 @@
     const filterSettledBtn = document.getElementById("filterSettledBtn");
     const filterMonthIndicator = document.getElementById("filterMonthIndicator");
     const filterDispatcherIndicator = document.getElementById("filterDispatcherIndicator");
+    const filterOrderIndicator = document.getElementById("filterOrderIndicator");
     const filterAccountantIndicator = document.getElementById("filterAccountantIndicator");
     const filterPlatformIndicator = document.getElementById("filterPlatformIndicator");
     const filterShopIndicator = document.getElementById("filterShopIndicator");
@@ -401,6 +415,7 @@
     const filterSettledIndicator = document.getElementById("filterSettledIndicator");
     const filterMonthValue = document.getElementById("filterMonthValue");
     const filterDispatcherValue = document.getElementById("filterDispatcherValue");
+    const filterOrderValue = document.getElementById("filterOrderValue");
     const filterAccountantValue = document.getElementById("filterAccountantValue");
     const filterPlatformValue = document.getElementById("filterPlatformValue");
     const filterShopValue = document.getElementById("filterShopValue");
@@ -409,6 +424,7 @@
     const filterSettledValue = document.getElementById("filterSettledValue");
     const filterMonthPopover = document.getElementById("filterMonthPopover");
     const filterDispatcherPopover = document.getElementById("filterDispatcherPopover");
+    const filterOrderPopover = document.getElementById("filterOrderPopover");
     const filterAccountantPopover = document.getElementById("filterAccountantPopover");
     const filterPlatformPopover = document.getElementById("filterPlatformPopover");
     const filterShopPopover = document.getElementById("filterShopPopover");
@@ -427,6 +443,7 @@
     const filterDateEndInput = document.getElementById("filterDateEndInput");
     const filterDateRangeApplyBtn = document.getElementById("filterDateRangeApplyBtn");
     const filterDateRangeClearBtn = document.getElementById("filterDateRangeClearBtn");
+    const filterOrderInput = document.getElementById("filterOrderInput");
     const tableHoverTooltip = document.createElement("div");
     tableHoverTooltip.id = "tableHoverTooltip";
     tableHoverTooltip.className = "table-hover-tooltip";
@@ -488,6 +505,7 @@
       dateStart: "",
       dateEnd: "",
       dispatcher: "",
+      orderNo: "",
       accountant: "",
       platform: "",
       shopName: "",
@@ -1333,14 +1351,38 @@
       return isRecordCompleted(record) ? getRecordWorkflowStatusLabelByKey("completed") : "未结算";
     }
 
+    function hasRecordRefundOperation(record) {
+      return Boolean(getRecordRefundBadgeText(record));
+    }
+
+    function getRecordRefundBadgeText(record) {
+      const refundStatus = String(record?.refundStatus || "").trim().toLowerCase();
+      const checkStatus = String(record?.checkStatus || "").trim().toLowerCase();
+      const total = Number(record?.totalPrice);
+      const settlement = Number(record?.settlementPrice);
+      const hasRefundMarker = refundStatus === "refunded"
+        || refundStatus === "partial_refunded"
+        || checkStatus === "refunded"
+        || checkStatus === "partial_refunded"
+        || Boolean(String(record?.refundedAt || "").trim());
+      if (hasRefundMarker && Math.round(total * 100) === 0 && Math.round(settlement * 100) === 0) return "退单";
+      if (refundStatus === "refunded" || checkStatus === "refunded") return "退单";
+      if (refundStatus === "partial_refunded" || checkStatus === "partial_refunded") return "部分退款";
+      return String(record?.refundedAt || "").trim() ? "部分退款" : "";
+    }
+
     function isRecordCompleted(record) {
       const checkStatus = String(record?.checkStatus || "").trim().toLowerCase();
       return checkStatus === "completed" || checkStatus === "partial_refunded";
     }
 
+    function isRecordCompletionStatus(record) {
+      return isRecordCompleted(record);
+    }
+
     function isRecordRefundable(record) {
       const statusKey = getRecordWorkflowStatusKey(record);
-      return statusKey === "checked" || statusKey === "completed" || statusKey === "partial_refunded";
+      return statusKey === "checked" || statusKey === "completed";
     }
 
     function hasRecordAccountantConfirmation(record) {
@@ -1357,12 +1399,11 @@
 
     function getRecordWorkflowStatusKey(record) {
       const checkStatus = String(record?.checkStatus || "").trim().toLowerCase();
-      if (checkStatus === "refunded") return "refunded";
-      if (checkStatus === "partial_refunded") {
+      if (checkStatus === "refunded" || checkStatus === "partial_refunded") {
         if (isRecordSettlementPaid(record)) return "paid";
         if (isRecordInvoiceUploaded(record)) return "uploaded";
         if (isRecordSettled(record)) return "settled";
-        return "partial_refunded";
+        return "completed";
       }
       if (checkStatus === "returned") return "returned";
       if (checkStatus === "completed") {
@@ -1397,10 +1438,9 @@
     function getAccountantInvoiceUploadTargetRecords(sourceRecords = records) {
       if (!isAccountantLogin()) return [];
       return (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) => {
-        const checkStatus = String(item?.checkStatus || "").trim().toLowerCase();
         return isRecordSettled(item)
           && !isRecordInvoiceUploaded(item)
-          && (checkStatus === "completed" || checkStatus === "partial_refunded");
+          && isRecordCompletionStatus(item);
       });
     }
 
@@ -1422,8 +1462,7 @@
 
     function isBossSettlementDetailRecord(record) {
       if (!isRecordSettled(record)) return false;
-      const checkStatus = String(record?.checkStatus || "").trim().toLowerCase();
-      return checkStatus === "completed" || checkStatus === "partial_refunded";
+      return isRecordCompletionStatus(record);
     }
 
     function getBossSettlementDetailRecords(sourceRecords = records) {
@@ -1435,7 +1474,7 @@
       const checkStatus = String(record?.checkStatus || "").trim().toLowerCase();
       if (checkStatus === "refunded") return "refunded";
       if (checkStatus === "returned") return "returned";
-      if (checkStatus !== "completed" && checkStatus !== "partial_refunded") return "not_completed";
+      if (!isRecordCompletionStatus(record)) return "not_completed";
       return "ready";
     }
 

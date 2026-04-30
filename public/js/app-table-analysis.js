@@ -314,15 +314,19 @@
         return normalizeDispatcherTag(item.dispatcher);
       }
       if (key === "checkStatus") {
+        const workflowOrder = {
+          pending: 0,
+          checked: 1,
+          completed: 2,
+          settled: 3,
+          uploaded: 4,
+          paid: 5,
+          returned: 6,
+          partial_refunded: 7,
+          refunded: 8
+        };
         const status = getRecordWorkflowStatusKey(item);
-        if (status === "checked") return 1;
-        if (status === "completed") return 2;
-        if (status === "partial_refunded") return 2.5;
-        if (status === "settled") return 3;
-        if (status === "uploaded") return 4;
-        if (status === "returned") return 5;
-        if (status === "refunded") return 6;
-        return 0;
+        return Object.prototype.hasOwnProperty.call(workflowOrder, status) ? workflowOrder[status] : 99;
       }
       if (key === "settled") {
         if (getRecordWorkflowStatusKey(item) === "settled") return 2;
@@ -506,6 +510,23 @@
       return String(item.source || "").trim();
     }
 
+    function getStatusFilterValues(item) {
+      return [
+        getRecordWorkflowStatusFilterLabel(item),
+        getRecordRefundBadgeText(item)
+      ].map((value) => String(value || "").trim()).filter(Boolean);
+    }
+
+    function buildStatusValueCountMap(sourceRecords) {
+      const map = new Map();
+      sourceRecords.forEach((item) => {
+        getStatusFilterValues(item).forEach((value) => {
+          map.set(value, (map.get(value) || 0) + 1);
+        });
+      });
+      return map;
+    }
+
     function sortFilterValuesByCount(values, countMap) {
       return [...values].sort((left, right) => {
         const countGap = (countMap.get(right) || 0) - (countMap.get(left) || 0);
@@ -521,6 +542,9 @@
         const button = document.createElement("button");
         button.type = "button";
         button.className = "filter-option-btn";
+        if (type === "status" && (value === "部分退款" || value === "退单")) {
+          button.classList.add("refund-filter-option", value === "退单" ? "refund-returned" : "refund-partial");
+        }
         button.dataset.filterType = type;
         button.dataset.filterValue = value;
         const count = countMap.get(value) || 0;
@@ -561,9 +585,9 @@
         new Set(scopedRecords.map((item) => getSourceFilterValue(item)).filter(Boolean))
       );
       const rawStatusValues = Array.from(
-        new Set(scopedRecords.map((item) => getRecordWorkflowStatusFilterLabel(item)))
+        new Set(scopedRecords.flatMap((item) => getStatusFilterValues(item)))
       );
-      const statusValues = ["已接待/待确认", "已确认/待完成", "已完成/待结算", "部分退款", "已结算/待上传", "已上传/待打款", "已打款", "退款", "已退单"]
+      const statusValues = ["已接待/待确认", "已确认/待完成", "已完成/待结算", "已结算/待上传", "已上传/待打款", "已打款", "已退单", "部分退款", "退单"]
         .filter((value) => rawStatusValues.includes(value));
       const rawSettledValues = Array.from(
         new Set(scopedRecords.map((item) => getRecordSettlementFilterLabel(item)).filter(Boolean))
@@ -602,7 +626,7 @@
         platform: (item) => !filterState.platform || getPlatformFilterValue(item) === filterState.platform,
         shopName: (item) => !filterState.shopName || getShopNameFilterValue(item) === filterState.shopName,
         source: (item) => !filterState.source || getSourceFilterValue(item) === filterState.source,
-        status: (item) => !filterState.status || getRecordWorkflowStatusFilterLabel(item) === filterState.status,
+        status: (item) => !filterState.status || getStatusFilterValues(item).includes(filterState.status),
         settled: (item) => !filterState.settled || getRecordSettlementFilterLabel(item) === filterState.settled
       };
       const getScopedRecordsByFilter = (excludedKey) => scopedRecords.filter((item) => (
@@ -644,10 +668,7 @@
         sourceScopedRecords,
         (item) => getSourceFilterValue(item)
       );
-      const statusCountMap = buildValueCountMap(
-        statusScopedRecords,
-        (item) => getRecordWorkflowStatusFilterLabel(item)
-      );
+      const statusCountMap = buildStatusValueCountMap(statusScopedRecords);
       const settledCountMap = buildValueCountMap(
         settledScopedRecords,
         (item) => getRecordSettlementFilterLabel(item)
@@ -726,15 +747,19 @@
         const monthMatched = isDateFilterMatched(item.date, filterState.month, filterState.dateStart, filterState.dateEnd);
         const dispatcherMatched = !filterState.dispatcher
           || normalizeDispatcherTag(item.dispatcher) === filterState.dispatcher;
+        const orderNoQuery = String(filterState.orderNo || "").trim().toLowerCase();
+        const orderNoMatched = !orderNoQuery
+          || String(item.orderNo || "").toLowerCase().includes(orderNoQuery);
         const accountantMatched = !filterState.accountant
           || String(item.accountant || "").trim() === filterState.accountant;
         const platformMatched = !filterState.platform || getPlatformFilterValue(item) === filterState.platform;
         const shopMatched = !filterState.shopName || getShopNameFilterValue(item) === filterState.shopName;
         const sourceMatched = !filterState.source || getSourceFilterValue(item) === filterState.source;
-        const statusMatched = !filterState.status || getRecordWorkflowStatusFilterLabel(item) === filterState.status;
+        const statusMatched = !filterState.status || getStatusFilterValues(item).includes(filterState.status);
         const settledMatched = !filterState.settled || getRecordSettlementFilterLabel(item) === filterState.settled;
         return monthMatched
           && dispatcherMatched
+          && orderNoMatched
           && accountantMatched
           && platformMatched
           && shopMatched
@@ -1147,6 +1172,59 @@
           rate: total ? matchedRecords.length / total : 0
         };
       });
+    }
+
+    function buildUnsettledAmountRows(scopeRecords) {
+      const unsettledRecords = (Array.isArray(scopeRecords) ? scopeRecords : [])
+        .filter((item) => getBossSettlementRecordState(item) === "ready");
+
+      const accountantRows = summarizeBy(
+        unsettledRecords,
+        (item) => String(item.accountant || "").trim() || "未填"
+      )
+        .map((row) => ({
+          key: row.key,
+          count: row.count,
+          amount: row.settlement
+        }))
+        .sort((left, right) => right.amount - left.amount || right.count - left.count || String(left.key || "").localeCompare(String(right.key || ""), "zh-CN", {
+          numeric: true,
+          sensitivity: "base"
+        }));
+
+      const dispatcherGroups = new Map();
+      unsettledRecords.forEach((item) => {
+        const key = normalizeDispatcherTag(item.dispatcher) || "未填";
+        const group = dispatcherGroups.get(key) || [];
+        group.push(item);
+        dispatcherGroups.set(key, group);
+      });
+      const dispatcherRows = Array.from(dispatcherGroups.entries())
+        .map(([key, groupRecords]) => {
+          const amount = getProfitTotal(groupRecords);
+          return {
+            key,
+            count: groupRecords.length,
+            amount: Number.isFinite(amount) ? amount : 0
+          };
+        })
+        .sort((left, right) => {
+          const amountGap = right.amount - left.amount;
+          if (amountGap !== 0) return amountGap;
+          const countGap = right.count - left.count;
+          if (countGap !== 0) return countGap;
+          return String(left.key || "").localeCompare(String(right.key || ""), "zh-CN", {
+            numeric: true,
+            sensitivity: "base"
+          });
+        });
+
+      return {
+        records: unsettledRecords,
+        count: unsettledRecords.length,
+        accountantRows,
+        dispatcherRows
+      };
     }
 
     function buildOperationActionRows(scopeRecords) {
@@ -2454,6 +2532,7 @@
       const trendRows = buildAnalysisTrendRows(scopeRecords);
       const statusRows = buildStatusRows(scopeRecords);
       const funnelRows = buildSettlementFunnelRows(scopeRecords);
+      const unsettledAmountRows = buildUnsettledAmountRows(scopeRecords);
       const operationRows = buildOperationActionRows(scopeRecords);
       const ageRows = buildAgeRows(scopeRecords);
       const monthlySettlementRows = buildMonthlySettlementRows(scopeRecords);
@@ -2537,6 +2616,24 @@
       const tagsHtml = buildAnalysisTags(scopeRecords)
         .map((text) => `<span class="analysis-tag">${escapeHtml(text)}</span>`)
         .join("");
+
+      const unsettledAccountantTable = buildHtmlTable(
+        ["会计", "未结算单量", "会计未结算金额"],
+        unsettledAmountRows.accountantRows.map((row) => [
+          row.key,
+          formatCount(row.count),
+          formatCurrency(row.amount)
+        ])
+      );
+
+      const unsettledDispatcherTable = buildHtmlTable(
+        ["接待人", "未结算单量", "接待未结算金额"],
+        unsettledAmountRows.dispatcherRows.map((row) => [
+          row.key,
+          formatCount(row.count),
+          formatCurrency(row.amount)
+        ])
+      );
 
       const dispatcherTable = buildHtmlTable(
         ["接待人", "单量", "会计价", "会计结算价", "结算率", "均单会计价"],
@@ -2779,6 +2876,10 @@
         </section>
         <div class="analysis-scope">
           分析范围：当前筛选 ${formatCount(scopeRecords.length)} 条 / 全部 ${formatCount(allRecords.length)} 条
+        </div>
+        <div class="analysis-grid analysis-unsettled-grid">
+          <section class="analysis-panel"><h3>会计未结算金额</h3>${unsettledAccountantTable}</section>
+          <section class="analysis-panel"><h3>接待未结算金额</h3>${unsettledDispatcherTable}</section>
         </div>
         <div class="analysis-kpis">
           <div class="analysis-kpi"><div class="analysis-kpi-label">记录数</div><div class="analysis-kpi-value">${formatCount(scopeRecords.length)}</div></div>

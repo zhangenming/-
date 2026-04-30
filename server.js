@@ -1360,6 +1360,9 @@ function sanitizeRecordForAccountant(record) {
     totalPrice: Number.isFinite(totalPrice) ? totalPrice : "",
     settlementPrice: Number.isFinite(settlementPrice) ? settlementPrice : "",
     checkStatus: normalizeText(source.checkStatus, 24).toLowerCase() || "pending",
+    refundStatus: normalizeText(source.refundStatus, 24).toLowerCase(),
+    refundedAt: normalizeDateTimeValue(source.refundedAt),
+    refundedBy: normalizeText(source.refundedBy, 48),
     completedAt: normalizeDateTimeValue(source.completedAt),
     customerFeedback: normalizeText(source.customerFeedback, 1000),
     serviceFeedbackImages: normalizeStoredFeedbackImages(source.serviceFeedbackImages),
@@ -1686,6 +1689,7 @@ function normalizeAccountantOperationLogEntry(rawEntry) {
 
 const RECORD_HISTORY_FIELD_DEFINITIONS = [
   { field: "checkStatus", label: "状态", kind: "status" },
+  { field: "refundStatus", label: "退款", kind: "status" },
   { field: "paymentPrice", label: "付款价", kind: "money" },
   { field: "totalPrice", label: "会计价", kind: "money" },
   {
@@ -2176,12 +2180,16 @@ function isRefundableCheckStatus(value) {
   return status === "checked" || status === "completed" || status === "partial_refunded";
 }
 
-function resolveRefundStatusByPaymentPrice(paymentPrice, invalidMessage = "付款价无效。") {
-  const paymentCents = moneyToCents(paymentPrice);
-  if (!Number.isFinite(paymentCents) || paymentCents < 0) {
-    throw new Error(invalidMessage);
-  }
-  return paymentCents === 0 ? "refunded" : "partial_refunded";
+function isCompletedCheckStatus(value) {
+  const status = normalizeText(value, 24).toLowerCase();
+  return status === "completed" || status === "partial_refunded";
+}
+
+function resolveRefundMarkerStatus(values) {
+  const sourceValues = Array.isArray(values) ? values : [];
+  const hasValues = sourceValues.length > 0;
+  const allZero = hasValues && sourceValues.every((value) => moneyToCents(value) === 0);
+  return allZero ? "refunded" : "partial_refunded";
 }
 
 function buildRefundRecordUpdate(currentRecord, payload, session) {
@@ -2215,7 +2223,10 @@ function buildRefundRecordUpdate(currentRecord, payload, session) {
   }
 
   if (isAccountantRefund) {
-    const nextStatus = resolveRefundStatusByPaymentPrice(currentPaymentPrice, "当前付款价无效。");
+    const currentPaymentCents = moneyToCents(currentPaymentPrice);
+    if (!Number.isFinite(currentPaymentCents) || currentPaymentCents < 0) {
+      throw new Error("当前付款价无效。");
+    }
     if (!Number.isFinite(currentTotalPrice) || currentTotalPrice < 0) {
       throw new Error("当前会计价无效。");
     }
@@ -2237,20 +2248,22 @@ function buildRefundRecordUpdate(currentRecord, payload, session) {
     }
     const operatedAt = getCurrentBeijingDateTime();
     const operatedBy = normalizeText(session?.account, 48);
+    const nextRefundStatus = resolveRefundMarkerStatus([nextTotalPrice, nextSettlementPrice]);
     return {
       ...current,
       ...currentSettlementFields,
       ...currentInvoiceFields,
       totalPrice: nextTotalPrice,
       settlementPrice: nextSettlementPrice,
-      checkStatus: nextStatus,
+      checkStatus: currentStatus || "pending",
+      refundStatus: nextRefundStatus,
       refundedAt: operatedAt,
       refundedBy: operatedBy
     };
   }
 
   const nextPaymentPrice = normalizeMoneyValue(source.paymentPrice);
-  if (!Number.isFinite(currentPaymentPrice) || currentPaymentPrice <= 0) {
+  if (!Number.isFinite(currentPaymentPrice) || currentPaymentPrice < 0) {
     throw new Error("当前付款价无效。");
   }
   if (!Number.isFinite(currentTotalPrice) || currentTotalPrice < 0) {
@@ -2286,9 +2299,9 @@ function buildRefundRecordUpdate(currentRecord, payload, session) {
     throw new Error("付款价、会计价、会计结算价至少一项需要小于原数据。");
   }
 
-  const nextStatus = resolveRefundStatusByPaymentPrice(nextPaymentPrice, "付款价格式无效。");
   const operatedAt = getCurrentBeijingDateTime();
   const operatedBy = normalizeText(session?.account, 48);
+  const nextRefundStatus = resolveRefundMarkerStatus([nextPaymentPrice, nextTotalPrice, nextSettlementPrice]);
   return {
     ...current,
     ...currentSettlementFields,
@@ -2296,7 +2309,8 @@ function buildRefundRecordUpdate(currentRecord, payload, session) {
     paymentPrice: nextPaymentPrice,
     totalPrice: nextTotalPrice,
     settlementPrice: nextSettlementPrice,
-    checkStatus: nextStatus,
+    checkStatus: currentStatus || "pending",
+    refundStatus: nextRefundStatus,
     refundedAt: operatedAt,
     refundedBy: operatedBy
   };
@@ -2682,7 +2696,7 @@ async function serveRecordSettlement(req, res) {
           };
         }
         const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
-        if (currentSettlementFields.isSettled || (checkStatus !== "completed" && checkStatus !== "partial_refunded")) {
+        if (currentSettlementFields.isSettled || !isCompletedCheckStatus(checkStatus)) {
           skippedRecordIds.push(recordId);
           return {
             ...current,
@@ -2776,7 +2790,7 @@ async function serveRecordInvoiceUpload(req, res) {
         const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
         if (!settlementFields.isSettled
           || invoiceFields.settlementInvoiceImage
-          || (checkStatus !== "completed" && checkStatus !== "partial_refunded")) return;
+          || !isCompletedCheckStatus(checkStatus)) return;
         targetIndexes.push(index);
       });
 
@@ -2915,7 +2929,7 @@ async function serveRecordSettlementPayout(req, res) {
           || !settlementFields.isSettled
           || !invoiceFields.settlementInvoiceImage
           || paymentFields.isSettlementPaid
-          || (checkStatus !== "completed" && checkStatus !== "partial_refunded")) {
+          || !isCompletedCheckStatus(checkStatus)) {
           skippedRecordIds.push(recordId);
           return {
             ...current,
@@ -3186,7 +3200,7 @@ async function serveRecordById(req, res, recordIdRaw) {
             };
           }
           const actionKey = shouldRefund
-            ? normalizeText(updatedRecord.checkStatus, 24).toLowerCase()
+            ? "partial_refunded"
             : (shouldComplete ? "completed" : (shouldReturn ? "returned" : (shouldEditRecord ? "updated" : "checked")));
           updatedRecord = appendRecordHistory(updatedRecord, buildRecordHistoryEntry({
             beforeRecord: current,
@@ -3228,7 +3242,7 @@ async function serveRecordById(req, res, recordIdRaw) {
             ? buildRefundRecordUpdate(current, body, session)
             : buildEditableRecordUpdate(current, body, session);
           const actionKey = shouldRefund
-            ? normalizeText(updatedRecord.checkStatus, 24).toLowerCase()
+            ? "partial_refunded"
             : (targetStatus === "returned" ? "returned" : "updated");
           updatedRecord = appendRecordHistory(updatedRecord, buildRecordHistoryEntry({
             beforeRecord: current,

@@ -369,7 +369,34 @@
                   </div>
                 </div>
               </th>
-              <th class="data-col-order"><button class="sort-btn" type="button" data-key="orderNo" data-label="订单号">订单号</button></th>
+              <th class="data-col-order">
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="orderNo" data-label="订单号">订单号</button>
+                  <span id="filterOrderIndicator" class="filter-indicator-wrap">
+                    <span id="filterOrderValue" class="filter-value-chip" hidden></span>
+                    <button id="filterOrderBtn" class="filter-icon-btn" type="button" aria-label="查询订单号" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M10.5 4a6.5 6.5 0 0 1 5.18 10.43l4.44 4.45-1.24 1.24-4.45-4.44A6.5 6.5 0 1 1 10.5 4Zm0 1.75a4.75 4.75 0 1 0 0 9.5 4.75 4.75 0 0 0 0-9.5Z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterOrderPopover" class="filter-popover filter-search-popover" hidden>
+                    <div class="filter-popover-section">
+                      <label class="filter-search-field" for="filterOrderInput">
+                        <span class="filter-popover-title">订单号查询</span>
+                        <input
+                          id="filterOrderInput"
+                          class="filter-search-input"
+                          type="search"
+                          autocomplete="off"
+                          data-no-suggest="true"
+                          placeholder="输入订单号"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </th>
               <th class="data-col-accountant">
                 <div class="th-inner">
                   <button class="sort-btn" type="button" data-key="accountant" data-label="会计">会计</button>
@@ -809,10 +836,69 @@
 
   <div id="analysisModal" class="modal-overlay" hidden>
     <section class="card modal-card analysis-modal-card">
-      <div class="row" style="margin-top: 0; margin-bottom: 2px;">
-        <h2 style="margin: 0; font-size: 20px;">数据分析</h2>
+      <div class="analysis-modal-top">
+        <h2 class="analysis-modal-title">数据分析</h2>
+        <div class="analysis-modal-actions">
+          <button id="openOperationRecordsBtn" class="btn-secondary analysis-action-btn" type="button">操作记录</button>
+          <button id="openPriceCompositionBtn" class="btn-secondary analysis-action-btn" type="button">价格组成</button>
+        </div>
       </div>
       <div id="analysisContent" class="analysis-content"></div>
+    </section>
+  </div>
+
+  <div id="operationRecordsModal" class="modal-overlay modal-stacked" hidden>
+    <section class="card modal-card operation-records-modal-card" tabindex="-1">
+      <div class="operation-records-top">
+        <div>
+          <h2 class="operation-records-title">操作记录</h2>
+          <p id="operationRecordsMeta" class="operation-records-meta"></p>
+        </div>
+      </div>
+      <div id="operationRecordsList" class="operation-records-list"></div>
+    </section>
+  </div>
+
+  <div id="priceCompositionModal" class="modal-overlay modal-stacked" hidden>
+    <section class="card modal-card price-composition-modal-card">
+      <div class="price-composition-top">
+        <h2 class="price-composition-title">价格组成</h2>
+      </div>
+      <div class="price-composition-chart" role="img" aria-label="付款价 1000 分为溢价 200 和会计价 800，最终组成平台 356、接待 164、会计 480">
+        <div class="price-bracket price-bracket-left"><span>付款价 1000</span></div>
+        <div class="price-node price-node-premium">溢价<br><strong>200</strong></div>
+        <div class="price-node price-node-total">会计价<br><strong>800</strong></div>
+
+        <div class="price-pipe price-pipe-premium"></div>
+        <div class="price-pipe price-pipe-total"></div>
+
+        <div class="price-split price-split-premium">
+          <span class="price-segment platform">平台50%<br><strong>100</strong></span>
+          <span class="price-segment reception">接待50%<br><strong>100</strong></span>
+        </div>
+        <div class="price-split price-split-total">
+          <span class="price-segment platform">平台32%<br><strong>256</strong></span>
+          <span class="price-segment reception">接待8%<br><strong>64</strong></span>
+          <span class="price-segment accounting">会计60%<br><strong>480</strong></span>
+        </div>
+
+        <svg class="price-flow-map" viewBox="0 0 1000 160" preserveAspectRatio="none" aria-hidden="true">
+          <path class="price-flow-line platform" d="M 82 0 V 64 H 178 V 138"></path>
+          <path class="price-flow-line platform" d="M 533 0 V 64 H 178 V 138"></path>
+          <path class="price-flow-line reception" d="M 250 0 V 88 H 438 V 138"></path>
+          <path class="price-flow-line reception" d="M 679 0 V 88 H 438 V 138"></path>
+          <path class="price-flow-line accounting" d="M 854 0 V 138"></path>
+          <path class="price-flow-arrow platform" d="M 166 136 L 178 158 L 190 136 Z"></path>
+          <path class="price-flow-arrow reception" d="M 426 136 L 438 158 L 450 136 Z"></path>
+          <path class="price-flow-arrow accounting" d="M 842 136 L 854 158 L 866 136 Z"></path>
+        </svg>
+
+        <div class="price-result">
+          <span class="price-segment platform">平台<br><strong>356</strong></span>
+          <span class="price-segment reception">接待<br><strong>164</strong></span>
+          <span class="price-segment accounting">会计<br><strong>480</strong></span>
+        </div>
+      </div>
     </section>
   </div>
 

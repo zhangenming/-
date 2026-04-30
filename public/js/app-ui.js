@@ -1,5 +1,39 @@
 // UI Flow: recycle/accountant/check/create modals, page mode switching, auth flow, table rendering.
+    const RECYCLE_TABLE_COLUMNS = [
+      { label: "删除时间", getValue: (entry) => formatDateTimeDisplay(entry.deletedAt) },
+      { label: "删除人", getValue: (entry) => String(entry.deletedBy || "未知账号") },
+      { label: "日期", getValue: (entry) => formatDateDisplay(entry?.record?.date) },
+      { label: "接待人", className: "recycle-col-dispatcher", getValue: (entry) => normalizeDispatcherTag(entry?.record?.dispatcher) },
+      { label: "会计", className: "recycle-col-accountant", getValue: (entry) => String(entry?.record?.accountant || "") },
+      { label: "平台", getValue: (entry) => String(entry?.record?.platform || "") },
+      { label: "店铺名", getValue: (entry) => String(entry?.record?.shopName || "") },
+      { label: "订单号", getValue: (entry) => String(entry?.record?.orderNo || "") },
+      { label: "来源", getValue: (entry) => String(entry?.record?.source || "") },
+      { label: "客户", getValue: (entry) => String(entry?.record?.customer || "") },
+      { label: "任务简介", className: "summary", getValue: (entry) => String(entry?.record?.summary || "") },
+      { label: "付款价", className: "recycle-col-payment", getValue: (entry) => toMoney(entry?.record?.paymentPrice) },
+      { label: "溢价", className: "recycle-col-premium", getValue: (entry) => toMoney(getPremiumValue(entry?.record || {})) },
+      { label: "会计价", className: "recycle-col-total", getValue: (entry) => toMoney(entry?.record?.totalPrice) },
+      { label: "会计结算价", className: "recycle-col-settlement", getValue: (entry) => formatSettlementPriceDisplay(entry?.record || {}) },
+      { label: "操作", className: "recycle-col-action", kind: "action" }
+    ];
+
+    function renderRecycleBinTableHead() {
+      const headRow = recycleTableBody?.closest("table")?.querySelector("thead tr");
+      if (!headRow) return;
+      headRow.innerHTML = "";
+      RECYCLE_TABLE_COLUMNS.forEach((column) => {
+        const th = document.createElement("th");
+        th.textContent = column.label;
+        if (column.className) {
+          th.className = column.className;
+        }
+        headRow.appendChild(th);
+      });
+    }
+
     function renderRecycleBinTable() {
+      renderRecycleBinTableHead();
       recycleTableBody.innerHTML = "";
       const scopedRecycleRecords = getVisibleRecycleBinRecords();
       const canRestoreRecords = !isAccountantLogin();
@@ -10,50 +44,26 @@
 
       recycleEmptyState.style.display = "none";
       scopedRecycleRecords.forEach((entry) => {
-        const record = entry && typeof entry === "object" ? (entry.record || {}) : {};
         const tr = document.createElement("tr");
-        const values = [
-          formatDateTimeDisplay(entry.deletedAt),
-          String(entry.deletedBy || "未知账号"),
-          formatDateDisplay(record.date),
-          normalizeDispatcherTag(record.dispatcher),
-          String(record.accountant || ""),
-          String(record.platform || ""),
-          String(record.shopName || ""),
-          String(record.orderNo || ""),
-          String(record.source || ""),
-          String(record.customer || ""),
-          String(record.summary || ""),
-          toMoney(record.paymentPrice),
-          toMoney(getPremiumValue(record)),
-          toMoney(record.totalPrice),
-          formatSettlementPriceDisplay(record)
-        ];
-
-        values.forEach((value, index) => {
+        RECYCLE_TABLE_COLUMNS.forEach((column) => {
           const td = document.createElement("td");
-          td.textContent = value;
-          if (index === 3) td.classList.add("recycle-col-dispatcher");
-          if (index === 4) td.classList.add("recycle-col-accountant");
-          if (index === 10) td.classList.add("summary");
-          if (index === 11) td.classList.add("recycle-col-payment");
-          if (index === 12) td.classList.add("recycle-col-premium");
-          if (index === 13) td.classList.add("recycle-col-total");
-          if (index === 14) td.classList.add("recycle-col-settlement");
+          if (column.className) {
+            td.className = column.className;
+          }
+          if (column.kind === "action") {
+            if (canRestoreRecords) {
+              const restoreBtn = document.createElement("button");
+              restoreBtn.type = "button";
+              restoreBtn.className = "btn-secondary recycle-restore-btn";
+              restoreBtn.dataset.recycleRestoreId = String(entry?.recycleId || "").trim();
+              restoreBtn.textContent = "还原";
+              td.appendChild(restoreBtn);
+            }
+          } else {
+            td.textContent = column.getValue(entry);
+          }
           tr.appendChild(td);
         });
-
-        const actionTd = document.createElement("td");
-        actionTd.className = "recycle-col-action";
-        if (canRestoreRecords) {
-          const restoreBtn = document.createElement("button");
-          restoreBtn.type = "button";
-          restoreBtn.className = "btn-secondary recycle-restore-btn";
-          restoreBtn.dataset.recycleRestoreId = String(entry?.recycleId || "").trim();
-          restoreBtn.textContent = "还原";
-          actionTd.appendChild(restoreBtn);
-        }
-        tr.appendChild(actionTd);
         recycleTableBody.appendChild(tr);
       });
     }
@@ -71,6 +81,7 @@
       { label: "备注", getValue: (item) => String(item?.remark || "").trim() },
       { label: "付款价", getValue: (item) => toMoney(item?.paymentPrice) },
       { label: "溢价", getValue: (item) => toMoney(getPremiumValue(item)) },
+      { label: "接待收益", getValue: (item) => formatProfitDisplay(item), visible: () => shouldShowProfitColumn() },
       { label: "会计价", getValue: (item) => toMoney(item?.totalPrice) },
       { label: "会计结算价", getValue: (item) => formatSettlementPriceDisplay(item) },
       { label: "状态", getValue: (item) => getRecordStatusWithSettlementText(item) }
@@ -579,6 +590,141 @@
       syncModalOpenState();
     }
 
+    function openPriceCompositionModal() {
+      if (!priceCompositionModal || !priceCompositionModalCard) return;
+      priceCompositionModal.hidden = false;
+      priceCompositionModal.classList.remove("modal-enter");
+      priceCompositionModalCard.classList.remove("modal-enter");
+      void priceCompositionModal.offsetWidth;
+      priceCompositionModal.classList.add("modal-enter");
+      priceCompositionModalCard.classList.add("modal-enter");
+      syncModalOpenState();
+    }
+
+    function closePriceCompositionModal() {
+      if (!priceCompositionModal || !priceCompositionModalCard) return;
+      priceCompositionModal.classList.remove("modal-enter");
+      priceCompositionModalCard.classList.remove("modal-enter");
+      priceCompositionModal.hidden = true;
+      syncModalOpenState();
+    }
+
+    function getOperationRecordInfoText(record) {
+      const parts = [
+        formatDateDisplay(record?.date),
+        normalizeDispatcherTag(record?.dispatcher),
+        String(record?.accountant || "").trim(),
+        String(record?.customer || "").trim() || "未填客户"
+      ].filter(Boolean);
+      const orderNo = String(record?.orderNo || "").trim();
+      if (orderNo) parts.push(`订单号 ${orderNo}`);
+      return parts.join(" · ");
+    }
+
+    function getOperationRecordChangeSummary(changes) {
+      const source = Array.isArray(changes) ? changes : [];
+      const labels = source
+        .map((change) => getRecordHistoryFieldLabel(change?.field, change?.label))
+        .map((label) => String(label || "").trim())
+        .filter(Boolean);
+      if (!labels.length) return "无字段变更";
+      const shown = labels.slice(0, 4).join("、");
+      return labels.length > 4 ? `${shown} 等 ${labels.length} 项` : shown;
+    }
+
+    function getAllOperationRecordRows() {
+      return (Array.isArray(records) ? records : []).flatMap((record) => {
+        const historyItems = Array.isArray(record?.operationHistory) ? record.operationHistory : [];
+        return historyItems.map((entry) => ({
+          record,
+          entry,
+          timeValue: Date.parse(entry?.operatedAt || "") || 0
+        }));
+      }).sort((left, right) => right.timeValue - left.timeValue);
+    }
+
+    function renderOperationRecordsModalContent() {
+      if (!operationRecordsMeta || !operationRecordsList) return;
+      const rows = getAllOperationRecordRows();
+      const visibleRows = rows.slice(0, 200);
+      operationRecordsMeta.textContent = rows.length
+        ? `最近 ${visibleRows.length} 条 / 全部 ${rows.length} 条`
+        : "暂无操作记录";
+      operationRecordsList.innerHTML = "";
+
+      if (!visibleRows.length) {
+        const empty = document.createElement("div");
+        empty.className = "operation-records-empty";
+        empty.textContent = "暂无操作记录。";
+        operationRecordsList.appendChild(empty);
+        return;
+      }
+
+      visibleRows.forEach(({ record, entry }) => {
+        const item = document.createElement("article");
+        item.className = "operation-record-item";
+
+        const top = document.createElement("div");
+        top.className = "operation-record-item-top";
+
+        const time = document.createElement("span");
+        time.className = "operation-record-time";
+        time.textContent = formatDateTimeDisplay(entry?.operatedAt) || "时间未知";
+        top.appendChild(time);
+
+        const operator = document.createElement("span");
+        operator.className = "operation-record-operator";
+        operator.textContent = [
+          String(entry?.operatedBy || "").trim() || "未记录账号",
+          getRecordHistoryRoleText(entry?.operatedRole)
+        ].filter(Boolean).join(" · ");
+        top.appendChild(operator);
+
+        const action = document.createElement("span");
+        action.className = "operation-record-action";
+        action.textContent = String(entry?.actionLabel || "").trim() || "修改";
+        top.appendChild(action);
+
+        const detail = document.createElement("div");
+        detail.className = "operation-record-detail";
+        detail.textContent = getOperationRecordInfoText(record);
+
+        const changes = document.createElement("div");
+        changes.className = "operation-record-changes";
+        changes.textContent = getOperationRecordChangeSummary(entry?.changes);
+
+        item.appendChild(top);
+        item.appendChild(detail);
+        item.appendChild(changes);
+        operationRecordsList.appendChild(item);
+      });
+    }
+
+    function openOperationRecordsModal() {
+      if (!operationRecordsModal || !operationRecordsModalCard) return;
+      if (!isBossLogin()) {
+        showAppStatus("操作记录仅管理员可用。");
+        return;
+      }
+      renderOperationRecordsModalContent();
+      operationRecordsModal.hidden = false;
+      operationRecordsModal.classList.remove("modal-enter");
+      operationRecordsModalCard.classList.remove("modal-enter");
+      void operationRecordsModal.offsetWidth;
+      operationRecordsModal.classList.add("modal-enter");
+      operationRecordsModalCard.classList.add("modal-enter");
+      syncModalOpenState();
+      operationRecordsModalCard.focus();
+    }
+
+    function closeOperationRecordsModal() {
+      if (!operationRecordsModal || !operationRecordsModalCard) return;
+      operationRecordsModal.classList.remove("modal-enter");
+      operationRecordsModalCard.classList.remove("modal-enter");
+      operationRecordsModal.hidden = true;
+      syncModalOpenState();
+    }
+
     function syncDispatcherSelfViewState() {
       if (!isDispatcherLogin()) return;
       filterState.dispatcher = "";
@@ -590,6 +736,8 @@
     }
 
     function closeAnalysisModal() {
+      closeOperationRecordsModal();
+      closePriceCompositionModal();
       disposeAnalysisTrendChart();
       analysisModal.classList.remove("modal-enter");
       analysisModalCard.classList.remove("modal-enter");
@@ -988,6 +1136,7 @@
 
     const RECORD_HISTORY_FIELD_ORDER = [
       "checkStatus",
+      "refundStatus",
       "paymentPrice",
       "totalPrice",
       "premiumPrice",
@@ -1020,6 +1169,7 @@
       "summary",
       "totalPrice",
       "settlementPrice",
+      "refundStatus",
       "checkStatus",
       "isSettled"
     ];
@@ -1027,6 +1177,7 @@
 
     const RECORD_HISTORY_FIELD_LABELS = {
       checkStatus: "状态",
+      refundStatus: "退款",
       paymentPrice: "付款价",
       totalPrice: "会计价",
       premiumPrice: "溢价",
@@ -1090,6 +1241,9 @@
       if (normalizedField === "checkStatus") {
         return normalizeRecordCheckStatus(item.checkStatus);
       }
+      if (normalizedField === "refundStatus") {
+        return getRecordRefundBadgeText(item);
+      }
       if (normalizedField === "isMonthlySettlement") {
         return getMonthlySettlementLabel(item?.isMonthlySettlement);
       }
@@ -1131,6 +1285,7 @@
       if (!normalizedField || !isRecordHistoryFieldAllowed(normalizedField)) return false;
       if ([
         "checkStatus",
+        "refundStatus",
         "paymentPrice",
         "totalPrice",
         "premiumPrice",
@@ -1223,6 +1378,9 @@
       }
       if (normalizedField === "checkStatus") {
         return getRecordHistoryStatusText(value);
+      }
+      if (normalizedField === "refundStatus") {
+        return String(value || "").trim() || "空";
       }
       if (normalizedField === "isSettled") {
         const text = getSettlementWorkflowStatusText(value);
@@ -2787,11 +2945,27 @@
       syncDateRangeFilterInputs(true);
     }
 
+    const FILTER_ICON_PATH = "M3 5h18l-7 8v5l-4 2v-7z";
+    const SEARCH_ICON_PATH = "M10.5 4a6.5 6.5 0 0 1 5.18 10.43l4.44 4.45-1.24 1.24-4.45-4.44A6.5 6.5 0 1 1 10.5 4Zm0 1.75a4.75 4.75 0 1 0 0 9.5 4.75 4.75 0 0 0 0-9.5Z";
+    const CLOSE_ICON_PATH = "M6.4 5.2 12 10.8l5.6-5.6 1.2 1.2-5.6 5.6 5.6 5.6-1.2 1.2-5.6-5.6-5.6 5.6-1.2-1.2 5.6-5.6-5.6-5.6z";
+
+    function syncFilterIconButton(button, isActive, defaultIconPath, activeLabel, inactiveLabel) {
+      if (!button) return;
+      const iconPath = button.querySelector("svg path");
+      if (iconPath) {
+        iconPath.setAttribute("d", isActive ? CLOSE_ICON_PATH : defaultIconPath);
+      }
+      const label = isActive ? activeLabel : inactiveLabel;
+      button.setAttribute("aria-label", label);
+      button.title = label;
+    }
+
     function updateFilterButtonUI() {
       const hasDateFilter = hasDateFilterSelected();
       const dateFilterChip = getDateFilterChipMeta();
       filterMonthBtn.classList.toggle("active", hasDateFilter);
       filterDispatcherBtn.classList.toggle("active", Boolean(filterState.dispatcher));
+      filterOrderBtn.classList.toggle("active", Boolean(filterState.orderNo));
       filterAccountantBtn.classList.toggle("active", Boolean(filterState.accountant));
       filterPlatformBtn.classList.toggle("active", Boolean(filterState.platform));
       filterShopBtn.classList.toggle("active", Boolean(filterState.shopName));
@@ -2800,6 +2974,7 @@
       filterSettledBtn.classList.toggle("active", Boolean(filterState.settled));
       if (filterMonthIndicator) filterMonthIndicator.classList.toggle("active", hasDateFilter);
       if (filterDispatcherIndicator) filterDispatcherIndicator.classList.toggle("active", Boolean(filterState.dispatcher));
+      if (filterOrderIndicator) filterOrderIndicator.classList.toggle("active", Boolean(filterState.orderNo));
       if (filterAccountantIndicator) filterAccountantIndicator.classList.toggle("active", Boolean(filterState.accountant));
       if (filterPlatformIndicator) filterPlatformIndicator.classList.toggle("active", Boolean(filterState.platform));
       if (filterShopIndicator) filterShopIndicator.classList.toggle("active", Boolean(filterState.shopName));
@@ -2808,12 +2983,22 @@
       if (filterSettledIndicator) filterSettledIndicator.classList.toggle("active", Boolean(filterState.settled));
       filterMonthBtn.setAttribute("aria-expanded", String(!filterMonthPopover.hidden));
       filterDispatcherBtn.setAttribute("aria-expanded", String(!filterDispatcherPopover.hidden));
+      filterOrderBtn.setAttribute("aria-expanded", String(!filterOrderPopover.hidden));
       filterAccountantBtn.setAttribute("aria-expanded", String(!filterAccountantPopover.hidden));
       filterPlatformBtn.setAttribute("aria-expanded", String(!filterPlatformPopover.hidden));
       filterShopBtn.setAttribute("aria-expanded", String(!filterShopPopover.hidden));
       filterSourceBtn.setAttribute("aria-expanded", String(!filterSourcePopover.hidden));
       filterStatusBtn.setAttribute("aria-expanded", String(!filterStatusPopover.hidden));
       filterSettledBtn.setAttribute("aria-expanded", String(!filterSettledPopover.hidden));
+      syncFilterIconButton(filterMonthBtn, hasDateFilter, FILTER_ICON_PATH, "清空日期筛选", "筛选日期");
+      syncFilterIconButton(filterDispatcherBtn, Boolean(filterState.dispatcher), FILTER_ICON_PATH, "清空接待人筛选", "筛选接待人");
+      syncFilterIconButton(filterOrderBtn, Boolean(filterState.orderNo), SEARCH_ICON_PATH, "清空订单号查询", "查询订单号");
+      syncFilterIconButton(filterAccountantBtn, Boolean(filterState.accountant), FILTER_ICON_PATH, "清空会计筛选", "筛选会计");
+      syncFilterIconButton(filterPlatformBtn, Boolean(filterState.platform), FILTER_ICON_PATH, "清空平台筛选", "筛选平台");
+      syncFilterIconButton(filterShopBtn, Boolean(filterState.shopName), FILTER_ICON_PATH, "清空店铺名筛选", "筛选店铺名");
+      syncFilterIconButton(filterSourceBtn, Boolean(filterState.source), FILTER_ICON_PATH, "清空来源筛选", "筛选来源");
+      syncFilterIconButton(filterStatusBtn, Boolean(filterState.status), FILTER_ICON_PATH, "清空状态筛选", "筛选状态");
+      syncFilterIconButton(filterSettledBtn, Boolean(filterState.settled), FILTER_ICON_PATH, "清空结算筛选", "筛选结算状态");
       syncDateRangeFilterInputs();
 
       if (hasDateFilter) {
@@ -2833,6 +3018,19 @@
       } else {
         filterDispatcherValue.hidden = true;
         filterDispatcherValue.textContent = "";
+      }
+
+      if (filterState.orderNo) {
+        filterOrderValue.hidden = false;
+        filterOrderValue.textContent = filterState.orderNo;
+        filterOrderValue.title = filterState.orderNo;
+      } else {
+        filterOrderValue.hidden = true;
+        filterOrderValue.textContent = "";
+        filterOrderValue.title = "";
+      }
+      if (filterOrderInput) {
+        filterOrderInput.value = filterState.orderNo || "";
       }
 
       if (filterState.accountant) {
@@ -2899,6 +3097,7 @@
     function closeAllFilterPopovers() {
       filterMonthPopover.hidden = true;
       filterDispatcherPopover.hidden = true;
+      filterOrderPopover.hidden = true;
       filterAccountantPopover.hidden = true;
       filterPlatformPopover.hidden = true;
       filterShopPopover.hidden = true;
@@ -2947,6 +3146,7 @@
         const open = filterMonthPopover.hidden;
         filterMonthPopover.hidden = !open;
         filterDispatcherPopover.hidden = true;
+        filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
         filterPlatformPopover.hidden = true;
         filterShopPopover.hidden = true;
@@ -2959,6 +3159,7 @@
         const open = filterDispatcherPopover.hidden;
         filterDispatcherPopover.hidden = !open;
         filterMonthPopover.hidden = true;
+        filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
         filterPlatformPopover.hidden = true;
         filterShopPopover.hidden = true;
@@ -2966,12 +3167,31 @@
         filterStatusPopover.hidden = true;
         filterSettledPopover.hidden = true;
       }
+      if (key === "orderNo") {
+        const open = filterOrderPopover.hidden;
+        filterOrderPopover.hidden = !open;
+        filterMonthPopover.hidden = true;
+        filterDispatcherPopover.hidden = true;
+        filterAccountantPopover.hidden = true;
+        filterPlatformPopover.hidden = true;
+        filterShopPopover.hidden = true;
+        filterSourcePopover.hidden = true;
+        filterStatusPopover.hidden = true;
+        filterSettledPopover.hidden = true;
+        if (open && filterOrderInput) {
+          window.setTimeout(() => {
+            filterOrderInput.focus();
+            filterOrderInput.select();
+          }, 0);
+        }
+      }
       if (key === "accountant") {
         updateFilterOptions();
         const open = filterAccountantPopover.hidden;
         filterAccountantPopover.hidden = !open;
         filterMonthPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
+        filterOrderPopover.hidden = true;
         filterPlatformPopover.hidden = true;
         filterShopPopover.hidden = true;
         filterSourcePopover.hidden = true;
@@ -2984,6 +3204,7 @@
         filterPlatformPopover.hidden = !open;
         filterMonthPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
+        filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
         filterShopPopover.hidden = true;
         filterSourcePopover.hidden = true;
@@ -2996,6 +3217,7 @@
         filterShopPopover.hidden = !open;
         filterMonthPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
+        filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
         filterPlatformPopover.hidden = true;
         filterSourcePopover.hidden = true;
@@ -3008,6 +3230,7 @@
         filterSourcePopover.hidden = !open;
         filterMonthPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
+        filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
         filterPlatformPopover.hidden = true;
         filterShopPopover.hidden = true;
@@ -3020,6 +3243,7 @@
         filterStatusPopover.hidden = !open;
         filterMonthPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
+        filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
         filterPlatformPopover.hidden = true;
         filterShopPopover.hidden = true;
@@ -3032,6 +3256,7 @@
         filterSettledPopover.hidden = !open;
         filterMonthPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
+        filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
         filterPlatformPopover.hidden = true;
         filterShopPopover.hidden = true;
@@ -3315,6 +3540,7 @@
       const hasFilter = Boolean(
         hasDateFilterSelected()
         || filterState.dispatcher
+        || filterState.orderNo
         || filterState.accountant
         || filterState.platform
         || filterState.shopName
@@ -3449,6 +3675,15 @@
             statusChip.className = `record-status-chip ${getRecordWorkflowStatusKey(item)}`;
             statusChip.textContent = String(value || "");
             statusWrap.appendChild(statusChip);
+            const refundBadgeText = getRecordRefundBadgeText(item);
+            if (refundBadgeText) {
+              const refundBadge = document.createElement("span");
+              refundBadge.className = `record-status-refund-badge${refundBadgeText === "退单" ? " returned" : ""}`;
+              refundBadge.textContent = refundBadgeText;
+              statusWrap.appendChild(refundBadge);
+              const statusText = String(value || "").trim();
+              td.setAttribute("aria-label", statusText ? `${statusText}，${refundBadgeText}` : refundBadgeText);
+            }
             td.appendChild(statusWrap);
           } else {
             td.textContent = value;
@@ -3532,7 +3767,7 @@
           actionWrap.appendChild(deleteBtn);
         }
         if (canCheckRecords && recordId) {
-          if (checkStatus !== "completed" && checkStatus !== "returned") {
+          if (!isRecordCompletionStatus(item) && checkStatus !== "returned") {
             const checkBtn = document.createElement("button");
             checkBtn.type = "button";
             let checkButtonText = "确认";

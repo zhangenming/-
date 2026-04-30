@@ -1652,8 +1652,8 @@
     }
 
     #appPage.sidebar-collapsed .app-side {
-      opacity: 0;
-      pointer-events: none;
+      opacity: 1;
+      pointer-events: auto;
       padding: 0;
       transform: translateX(-8px);
     }
@@ -2139,6 +2139,22 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+    }
+
+    .operation-records-modal-card {
+      width: min(860px, 96vw);
+      max-height: calc(100vh - 44px);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .price-composition-modal-card {
+      width: min(1120px, 96vw);
+      max-height: calc(100vh - 40px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
     }
 
     .check-modal-card {
@@ -4406,6 +4422,345 @@
       gap: 12px;
     }
 
+    .analysis-modal-top,
+    .operation-records-top,
+    .price-composition-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 0;
+      margin-bottom: 2px;
+    }
+
+    .analysis-modal-title,
+    .operation-records-title,
+    .price-composition-title {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+      color: #1f3f35;
+    }
+
+    .analysis-modal-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .analysis-action-btn {
+      flex: 0 0 auto;
+      min-height: 34px;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.1;
+    }
+
+    .operation-records-meta {
+      margin: 4px 0 0;
+      color: #648075;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .operation-records-list {
+      min-height: 0;
+      max-height: min(680px, calc(100vh - 150px));
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      padding-right: 2px;
+    }
+
+    .operation-records-empty,
+    .operation-record-item {
+      border: 1px solid #d7e6de;
+      background: #fbfdfc;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .operation-records-empty {
+      color: #6a8077;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .operation-record-item {
+      display: grid;
+      gap: 6px;
+    }
+
+    .operation-record-item-top {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 7px;
+      color: #547166;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .operation-record-time {
+      color: #496a5d;
+      font-weight: 700;
+    }
+
+    .operation-record-operator,
+    .operation-record-action {
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.1;
+      padding: 2px 8px;
+    }
+
+    .operation-record-operator {
+      border: 1px solid #c1d9cd;
+      background: #ecf8f2;
+      color: #1f6b56;
+    }
+
+    .operation-record-action {
+      border: 1px solid #d5c487;
+      background: #fff6d6;
+      color: #785d10;
+    }
+
+    .operation-record-detail {
+      color: #24483d;
+      font-size: 13px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .operation-record-changes {
+      color: #6a8077;
+      font-size: 12px;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .price-composition-chart {
+      --platform-color: oklch(58% 0.15 142);
+      --platform-deep: oklch(36% 0.12 142);
+      --reception-color: oklch(65% 0.12 220);
+      --reception-deep: oklch(45% 0.1 220);
+      --accounting-color: oklch(42% 0.18 315);
+      --accounting-deep: oklch(31% 0.15 315);
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(24, minmax(0, 1fr));
+      grid-template-rows: 22px 74px 54px 72px 70px 76px;
+      gap: 10px 12px;
+      min-width: 860px;
+      padding: 18px 20px 20px;
+      overflow: hidden;
+      border: 1px solid #d5e6de;
+      border-radius: 10px;
+      background:
+        linear-gradient(180deg, rgba(237, 248, 255, 0.92), rgba(245, 252, 250, 0.98)),
+        #f3fbff;
+    }
+
+    .price-bracket {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      display: grid;
+      place-items: center;
+      color: #182f28;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1;
+      position: relative;
+    }
+
+    .price-bracket::before,
+    .price-bracket::after {
+      content: "";
+      position: absolute;
+      top: 9px;
+      width: calc(50% - 92px);
+      height: 1px;
+      background: #172d27;
+    }
+
+    .price-bracket::before {
+      left: 0;
+    }
+
+    .price-bracket::after {
+      right: 0;
+    }
+
+    .price-node,
+    .price-segment {
+      display: grid;
+      place-items: center;
+      color: #f8fffb;
+      text-align: center;
+      font-size: 19px;
+      font-weight: 800;
+      line-height: 1.15;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32), inset 0 -1px 0 rgba(0, 0, 0, 0.16), 0 8px 18px rgba(31, 75, 62, 0.12);
+    }
+
+    .price-node strong,
+    .price-segment strong {
+      font-size: 19px;
+      font-weight: 500;
+    }
+
+    .price-node {
+      border-radius: 7px;
+      min-height: 70px;
+    }
+
+    .price-node-premium {
+      grid-column: 1 / 9;
+      grid-row: 2;
+      background: linear-gradient(180deg, var(--platform-deep), oklch(33% 0.1 142));
+    }
+
+    .price-node-total {
+      grid-column: 11 / 25;
+      grid-row: 2;
+      background: linear-gradient(180deg, var(--accounting-color), var(--accounting-deep));
+    }
+
+    .price-pipe {
+      position: relative;
+      min-height: 100%;
+    }
+
+    .price-pipe::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      transform: translateX(-50%);
+      background: currentColor;
+      opacity: 0.64;
+    }
+
+    .price-pipe::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -1px;
+      width: 0;
+      height: 0;
+      transform: translateX(-50%);
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-top: 10px solid currentColor;
+    }
+
+    .price-pipe-premium {
+      grid-column: 4 / 6;
+      grid-row: 3;
+      color: var(--platform-color);
+    }
+
+    .price-pipe-total {
+      grid-column: 17 / 19;
+      grid-row: 3;
+      color: var(--accounting-color);
+    }
+
+    .price-split {
+      display: grid;
+      overflow: hidden;
+      border-radius: 7px;
+      min-height: 72px;
+      box-shadow: 0 8px 18px rgba(31, 75, 62, 0.12);
+    }
+
+    .price-split-premium {
+      grid-column: 1 / 9;
+      grid-row: 4;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .price-split-total {
+      grid-column: 11 / 25;
+      grid-row: 4;
+      grid-template-columns: 4fr 1fr 5fr;
+    }
+
+    .price-segment.platform {
+      background: linear-gradient(180deg, var(--platform-color), oklch(54% 0.14 142));
+    }
+
+    .price-segment.reception {
+      background: linear-gradient(180deg, var(--reception-color), var(--reception-deep));
+    }
+
+    .price-segment.accounting {
+      background: linear-gradient(180deg, var(--accounting-color), var(--accounting-deep));
+    }
+
+    .price-flow-map {
+      grid-column: 1 / 25;
+      grid-row: 5;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .price-flow-line {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0.74;
+    }
+
+    .price-flow-arrow {
+      opacity: 0.9;
+    }
+
+    .price-flow-line.platform {
+      stroke: var(--platform-color);
+    }
+
+    .price-flow-arrow.platform {
+      fill: var(--platform-color);
+    }
+
+    .price-flow-line.reception {
+      stroke: var(--reception-color);
+    }
+
+    .price-flow-arrow.reception {
+      fill: var(--reception-color);
+    }
+
+    .price-flow-line.accounting {
+      stroke: var(--accounting-color);
+    }
+
+    .price-flow-arrow.accounting {
+      fill: var(--accounting-color);
+    }
+
+    .price-result {
+      grid-column: 1 / 25;
+      grid-row: 6;
+      display: grid;
+      grid-template-columns: 356fr 164fr 480fr;
+      overflow: hidden;
+      border-radius: 7px;
+      min-height: 72px;
+      box-shadow: 0 10px 22px rgba(31, 75, 62, 0.14);
+    }
+
     .analysis-scope {
       font-size: 13px;
       color: #476057;
@@ -4750,10 +5105,6 @@
       width: 148px;
     }
 
-    col.col-profit {
-      width: 184px;
-    }
-
     col.col-status {
       width: var(--table-sticky-status-width);
     }
@@ -4783,7 +5134,6 @@
     #appPage.accountant-view col.col-remark,
     #appPage.accountant-view col.col-payment,
     #appPage.accountant-view col.col-premium,
-    #appPage.accountant-view col.col-profit,
     #appPage.accountant-view .data-col-accountant,
     #appPage.accountant-view .data-col-platform,
     #appPage.accountant-view .data-col-shop,
@@ -4793,18 +5143,10 @@
     #appPage.accountant-view td.remark,
     #appPage.accountant-view .data-col-payment,
     #appPage.accountant-view .data-col-premium,
-    #appPage.accountant-view .data-col-profit,
     #appPage.accountant-view .recycle-col-accountant,
     #appPage.accountant-view .recycle-col-payment,
     #appPage.accountant-view .recycle-col-premium,
-    #appPage.accountant-view .recycle-col-profit,
     #appPage.accountant-view .recycle-col-action {
-      display: none;
-    }
-
-    #appPage col.col-profit,
-    #appPage .data-col-profit,
-    #appPage .recycle-col-profit {
       display: none;
     }
 
@@ -4819,7 +5161,6 @@
     }
 
     #tableBody td {
-      transition: background-color 0.16s ease;
       height: 41px;
       line-height: 24px;
       overflow: hidden;
@@ -4894,12 +5235,10 @@
     .data-col-total,
     .data-col-premium,
     .data-col-settlement,
-    .data-col-profit,
     .recycle-col-payment,
     .recycle-col-total,
     .recycle-col-premium,
-    .recycle-col-settlement,
-    .recycle-col-profit {
+    .recycle-col-settlement {
       font-variant-numeric: tabular-nums;
     }
 
@@ -4907,12 +5246,10 @@
     td.data-col-total,
     td.data-col-premium,
     td.data-col-settlement,
-    td.data-col-profit,
     td.recycle-col-payment,
     td.recycle-col-total,
     td.recycle-col-premium,
-    td.recycle-col-settlement,
-    td.recycle-col-profit {
+    td.recycle-col-settlement {
       padding-inline: 12px;
       text-align: center;
     }
@@ -4921,20 +5258,17 @@
     th.data-col-total,
     th.data-col-premium,
     th.data-col-settlement,
-    th.data-col-profit,
     .recycle-table thead th.recycle-col-payment,
     .recycle-table thead th.recycle-col-total,
     .recycle-table thead th.recycle-col-premium,
-    .recycle-table thead th.recycle-col-settlement,
-    .recycle-table thead th.recycle-col-profit {
+    .recycle-table thead th.recycle-col-settlement {
       padding-inline: 12px;
     }
 
     th.data-col-payment .sort-btn,
     th.data-col-total .sort-btn,
     th.data-col-premium .sort-btn,
-    th.data-col-settlement .sort-btn,
-    th.data-col-profit .sort-btn {
+    th.data-col-settlement .sort-btn {
       width: 100%;
       align-items: stretch;
     }
@@ -4946,9 +5280,7 @@
     th.data-col-premium .sort-btn-label,
     th.data-col-premium .sort-btn-meta,
     th.data-col-settlement .sort-btn-label,
-    th.data-col-settlement .sort-btn-meta,
-    th.data-col-profit .sort-btn-label,
-    th.data-col-profit .sort-btn-meta {
+    th.data-col-settlement .sort-btn-meta {
       display: block;
       width: 100%;
       text-align: center;
@@ -4957,8 +5289,7 @@
     th.data-col-payment .sort-btn-meta,
     th.data-col-total .sort-btn-meta,
     th.data-col-premium .sort-btn-meta,
-    th.data-col-settlement .sort-btn-meta,
-    th.data-col-profit .sort-btn-meta {
+    th.data-col-settlement .sort-btn-meta {
       line-height: 1.2;
       font-variant-numeric: tabular-nums;
     }
@@ -5032,12 +5363,42 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
+      position: relative;
       width: 100%;
       min-width: 0;
       max-width: 100%;
+      min-height: 32px;
       flex-wrap: nowrap;
       margin-inline: 0;
       box-sizing: border-box;
+    }
+
+    .record-status-refund-badge {
+      position: absolute;
+      right: 8px;
+      bottom: -3px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 48px;
+      min-height: 16px;
+      border: 1px solid oklch(73% 0.13 75);
+      border-radius: 999px;
+      background: oklch(95% 0.055 82);
+      color: oklch(39% 0.105 63);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.78);
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
+      padding: 2px 6px;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .record-status-refund-badge.returned {
+      border-color: oklch(72% 0.13 28);
+      background: oklch(95% 0.04 28);
+      color: oklch(43% 0.14 28);
     }
 
     #tableBody tr.dispatcher-current-row .dispatcher-chip {
@@ -5132,10 +5493,6 @@
       z-index: 2;
     }
 
-    #tableBody tr:nth-child(even) td.row-action-cell {
-      background: #f7fbf8;
-    }
-
     #tableBody tr:hover td.row-action-cell {
       background: #e7f3ed;
     }
@@ -5196,10 +5553,6 @@
       box-shadow: none;
     }
 
-    #tableBody tr:nth-child(even) td.data-col-status {
-      background: #f7fbf8;
-    }
-
     #tableBody tr:hover td.data-col-status {
       background: #e7f3ed;
     }
@@ -5241,8 +5594,8 @@
       font-weight: 700;
       line-height: 1;
       white-space: nowrap;
-      opacity: 0;
-      pointer-events: none;
+      opacity: 1;
+      pointer-events: auto;
       transition: opacity 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
     }
 
@@ -5298,20 +5651,8 @@
       grid-column: 3;
     }
 
-    .row-history-btn.persistent {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
     #appPage.accountant-view #tableBody .row-check-btn {
       grid-column: 3;
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    #appPage.accountant-view #tableBody .row-refund-btn {
-      opacity: 1;
-      pointer-events: auto;
     }
 
     .row-check-btn.complete {
@@ -5324,24 +5665,6 @@
       border-color: #9ec4dc;
       background: #ecf5fb;
       color: #265f85;
-    }
-
-    #tableBody tr:hover .row-edit-btn,
-    #tableBody tr:hover .row-refund-btn,
-    #tableBody tr:hover .row-delete-btn,
-    #tableBody tr:hover .row-check-btn,
-    #tableBody tr:hover .row-history-btn,
-    #tableBody tr:focus-within .row-edit-btn,
-    #tableBody tr:focus-within .row-refund-btn,
-    #tableBody tr:focus-within .row-delete-btn,
-    #tableBody tr:focus-within .row-history-btn {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    #tableBody tr:focus-within .row-check-btn {
-      opacity: 1;
-      pointer-events: auto;
     }
 
     .row-edit-btn:hover {
@@ -5400,63 +5723,63 @@
     }
 
     .record-status-chip.pending {
-      border-color: #cad3d9;
-      background: #f3f6f8;
-      color: #6c7a84;
+      border-color: oklch(80% 0.018 230);
+      background: oklch(96% 0.008 230);
+      color: oklch(45% 0.025 230);
     }
 
     .record-status-chip.checked {
-      border-color: #d1ad52;
-      background: #fff2cb;
-      color: #76580d;
+      border-color: oklch(70% 0.16 28);
+      background: oklch(95% 0.045 28);
+      color: oklch(42% 0.15 28);
     }
 
     .record-status-chip.completed {
-      border-color: #61ac89;
-      background: #d3eee1;
-      color: #0d6246;
+      border-color: oklch(68% 0.11 175);
+      background: oklch(94% 0.045 175);
+      color: oklch(35% 0.09 175);
     }
 
     .record-status-chip.partial_refunded {
-      border-color: #d0a45a;
-      background: #fff2d8;
-      color: #8a5710;
+      border-color: oklch(73% 0.13 75);
+      background: oklch(95% 0.055 82);
+      color: oklch(39% 0.105 63);
     }
 
     .record-status-chip.refunded {
-      border-color: #e2b2b2;
-      background: #ffe8e8;
-      color: #a43a3a;
+      border-color: oklch(72% 0.13 28);
+      background: oklch(95% 0.04 28);
+      color: oklch(43% 0.14 28);
     }
 
     .record-status-chip.settled {
-      border-color: #1b8f6d;
-      background: #d3eee1;
-      color: #0d6246;
+      border-color: oklch(66% 0.115 230);
+      background: oklch(94% 0.04 230);
+      color: oklch(35% 0.1 230);
     }
 
     .record-status-chip.uploaded {
-      border-color: #c59635;
-      background: #fff2cb;
-      color: #66480a;
+      border-color: oklch(66% 0.12 292);
+      background: oklch(94% 0.04 292);
+      color: oklch(36% 0.105 292);
     }
 
     .record-status-chip.paid {
-      border-color: #16825f;
-      background: #d9f1e6;
-      color: #0f5f45;
+      border-color: oklch(78% 0.018 150);
+      background: oklch(95% 0.01 150);
+      color: oklch(42% 0.03 150);
     }
 
     .record-status-chip.partial {
-      border-color: #d0a45a;
-      background: #fff2d8;
-      color: #8a5710;
+      border-color: oklch(73% 0.13 75);
+      background: oklch(95% 0.055 82);
+      color: oklch(39% 0.105 63);
     }
 
     .record-status-chip.returned {
-      border-color: #e2b2b2;
-      background: #ffe8e8;
-      color: #a43a3a;
+      border-color: oklch(72% 0.13 28);
+      background: oklch(95% 0.04 28);
+      color: oklch(43% 0.14 28);
     }
 
     th {
@@ -5522,27 +5845,6 @@
 
     #tableBody tr:last-child td {
       border-bottom: 0;
-    }
-
-    #tableBody tr:nth-child(even) td {
-      background: rgba(248, 252, 250, 0.5);
-    }
-
-    #tableBody tr:nth-child(even).updated-record-row td {
-      background: #fff2c9;
-      border-bottom-color: #efd89c;
-    }
-
-    #tableBody tr:nth-child(even):hover td {
-      background: #edf8f3;
-    }
-
-    #tableBody tr:nth-child(even).updated-record-row:hover td {
-      background: #ffedbc;
-    }
-
-    #tableBody tr:nth-child(even).boss-selected-row td {
-      background: #e7f5ee;
     }
 
     .sort-btn {
@@ -5733,6 +6035,7 @@
 
     #filterMonthPopover,
     #filterDispatcherPopover,
+    #filterOrderPopover,
     #filterAccountantPopover,
     #filterPlatformPopover,
     #filterShopPopover,
@@ -5741,9 +6044,45 @@
       right: auto;
     }
 
+    #filterOrderValue {
+      max-width: 108px;
+      padding: 2px 8px;
+      font-size: 11px;
+    }
+
+    .filter-search-popover {
+      min-width: 220px;
+    }
+
+    .filter-search-field {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .filter-search-input {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid #cfddd7;
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #f8fbf9;
+      color: #1f4035;
+      font: inherit;
+      line-height: 1.2;
+    }
+
+    .filter-search-input:focus {
+      outline: none;
+      border-color: #0e7c66;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(14, 124, 102, 0.14);
+    }
+
     #filterStatusPopover {
       left: auto;
       right: 0;
+      width: 180px;
     }
 
     #filterSettledPopover {
@@ -5776,6 +6115,10 @@
       max-height: 240px;
       overflow: auto;
       min-width: 0;
+    }
+
+    #filterStatusList {
+      max-height: min(420px, calc(100vh - 180px));
     }
 
     .filter-date-range-section {
@@ -5930,6 +6273,30 @@
       color: #0b6a56;
     }
 
+    .filter-option-btn.refund-filter-option {
+      border-color: #d7b16b;
+      background: #fff6df;
+      color: #76500f;
+    }
+
+    .filter-option-btn.refund-filter-option.refund-returned {
+      border-color: #d99b96;
+      background: #fff0ee;
+      color: #9a3d35;
+    }
+
+    .filter-option-btn.refund-filter-option.active {
+      border-color: #bb7a18;
+      background: #ffe6b0;
+      color: #6f4709;
+    }
+
+    .filter-option-btn.refund-filter-option.refund-returned.active {
+      border-color: #c45b52;
+      background: #ffdcd8;
+      color: #862f28;
+    }
+
     .filter-option-label {
       min-width: 0;
       flex: 1 1 auto;
@@ -5951,6 +6318,16 @@
     .filter-option-btn.active .filter-option-count {
       color: #d9480f;
       background: #ffe7d6;
+    }
+
+    .filter-option-btn.refund-filter-option .filter-option-count {
+      color: #8a5710;
+      background: #ffeac0;
+    }
+
+    .filter-option-btn.refund-filter-option.refund-returned .filter-option-count {
+      color: #9a3d35;
+      background: #ffdeda;
     }
 
     .tag-group {

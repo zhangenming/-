@@ -410,51 +410,67 @@
       });
     });
 
-    filterMonthBtn.addEventListener("click", (event) => {
-      event.stopPropagation();
-      toggleFilterPopover("month");
-    });
+    function clearSingleFilter(key) {
+      if (key === "month") {
+        clearDateFilterState();
+      }
+      if (key === "dispatcher") filterState.dispatcher = "";
+      if (key === "orderNo") {
+        filterState.orderNo = "";
+        if (filterOrderInput) filterOrderInput.value = "";
+      }
+      if (key === "accountant") filterState.accountant = "";
+      if (key === "platform") filterState.platform = "";
+      if (key === "shopName") filterState.shopName = "";
+      if (key === "source") filterState.source = "";
+      if (key === "status") filterState.status = "";
+      if (key === "settled") filterState.settled = "";
+      closeAllFilterPopovers();
+      renderTable();
+    }
 
-    filterDispatcherBtn.addEventListener("click", (event) => {
-      event.stopPropagation();
-      toggleFilterPopover("dispatcher");
-    });
+    function hasSingleFilterValue(key) {
+      if (key === "month") return hasDateFilterSelected();
+      if (key === "dispatcher") return Boolean(filterState.dispatcher);
+      if (key === "orderNo") return Boolean(filterState.orderNo);
+      if (key === "accountant") return Boolean(filterState.accountant);
+      if (key === "platform") return Boolean(filterState.platform);
+      if (key === "shopName") return Boolean(filterState.shopName);
+      if (key === "source") return Boolean(filterState.source);
+      if (key === "status") return Boolean(filterState.status);
+      if (key === "settled") return Boolean(filterState.settled);
+      return false;
+    }
 
-    filterAccountantBtn.addEventListener("click", (event) => {
+    function handleFilterButtonClick(event, key) {
+      event.preventDefault();
       event.stopPropagation();
-      toggleFilterPopover("accountant");
-    });
+      if (hasSingleFilterValue(key)) {
+        clearSingleFilter(key);
+        return;
+      }
+      toggleFilterPopover(key);
+    }
 
-    filterPlatformBtn.addEventListener("click", (event) => {
-      event.stopPropagation();
-      toggleFilterPopover("platform");
-    });
-
-    filterShopBtn.addEventListener("click", (event) => {
-      event.stopPropagation();
-      toggleFilterPopover("shopName");
-    });
-
-    filterSourceBtn.addEventListener("click", (event) => {
-      event.stopPropagation();
-      toggleFilterPopover("source");
-    });
-
-    filterStatusBtn.addEventListener("click", (event) => {
-      event.stopPropagation();
-      toggleFilterPopover("status");
-    });
-
-    filterSettledBtn.addEventListener("click", (event) => {
-      event.stopPropagation();
-      toggleFilterPopover("settled");
-    });
+    filterMonthBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "month"));
+    filterDispatcherBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "dispatcher"));
+    filterOrderBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "orderNo"));
+    filterAccountantBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "accountant"));
+    filterPlatformBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "platform"));
+    filterShopBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "shopName"));
+    filterSourceBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "source"));
+    filterStatusBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "status"));
+    filterSettledBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "settled"));
 
     filterMonthPopover.addEventListener("click", (event) => {
       event.stopPropagation();
     });
 
     filterDispatcherPopover.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    filterOrderPopover.addEventListener("click", (event) => {
       event.stopPropagation();
     });
 
@@ -534,6 +550,32 @@
       renderTable();
     });
 
+    function applyOrderNoFilter(options = {}) {
+      filterState.orderNo = String(filterOrderInput?.value || "").trim();
+      if (options.closePopover) {
+        closeAllFilterPopovers();
+      }
+      renderTable();
+    }
+
+    if (filterOrderInput) {
+      filterOrderInput.addEventListener("input", () => {
+        applyOrderNoFilter({ closePopover: false });
+      });
+      filterOrderInput.addEventListener("search", () => {
+        applyOrderNoFilter({ closePopover: false });
+      });
+      filterOrderInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          closeAllFilterPopovers();
+        }
+        if (event.key === "Escape") {
+          closeAllFilterPopovers();
+        }
+      });
+    }
+
     filterAccountantList.addEventListener("click", (event) => {
       const target = event.target.closest(".filter-option-btn");
       if (!target) return;
@@ -591,6 +633,7 @@
     clearFilterBtn.addEventListener("click", () => {
       clearDateFilterState();
       filterState.dispatcher = "";
+      filterState.orderNo = "";
       filterState.accountant = "";
       filterState.platform = "";
       filterState.shopName = "";
@@ -924,6 +967,9 @@
         }
         try {
           setRefundFormHint("提交退款中...", "pending");
+          const nextRefundStatus = nextTotalCents === 0 && nextSettlementCents === 0
+            ? "refunded"
+            : "partial_refunded";
           await withLoading(
             {
               button: refundFormSubmitBtn,
@@ -931,7 +977,7 @@
               buttonText: "提交中..."
             },
             () => updateRecordById(recordId, {
-              status: "partial_refunded",
+              refundStatus: nextRefundStatus,
               totalPrice: nextTotalPrice,
               settlementPrice: nextSettlementPrice
             })
@@ -957,7 +1003,7 @@
         showRefundMoneyError(refundSettlementPriceInput, "会计结算价格式无效。");
         return;
       }
-      if (!Number.isFinite(originalPaymentPrice) || originalPaymentPrice <= 0) {
+      if (!Number.isFinite(originalPaymentPrice) || originalPaymentPrice < 0) {
         showRefundMoneyError(refundPaymentPriceInput, "当前付款价无效。");
         return;
       }
@@ -998,6 +1044,9 @@
 
       try {
         setRefundFormHint("提交退款中...", "pending");
+        const nextRefundStatus = nextPaymentCents === 0 && nextTotalCents === 0 && nextSettlementCents === 0
+          ? "refunded"
+          : "partial_refunded";
         await withLoading(
           {
             button: refundFormSubmitBtn,
@@ -1005,7 +1054,7 @@
             buttonText: "提交中..."
           },
           () => updateRecordById(recordId, {
-            status: nextPaymentCents === 0 ? "refunded" : "partial_refunded",
+            refundStatus: nextRefundStatus,
             paymentPrice: nextPaymentPrice,
             totalPrice: nextTotalPrice,
             settlementPrice: nextSettlementPrice
@@ -1402,6 +1451,34 @@
       }
     });
 
+    if (openPriceCompositionBtn) {
+      openPriceCompositionBtn.addEventListener("click", () => {
+        openPriceCompositionModal();
+      });
+    }
+
+    if (openOperationRecordsBtn) {
+      openOperationRecordsBtn.addEventListener("click", () => {
+        openOperationRecordsModal();
+      });
+    }
+
+    if (operationRecordsModal) {
+      operationRecordsModal.addEventListener("click", (event) => {
+        if (event.target === operationRecordsModal) {
+          closeOperationRecordsModal();
+        }
+      });
+    }
+
+    if (priceCompositionModal) {
+      priceCompositionModal.addEventListener("click", (event) => {
+        if (event.target === priceCompositionModal) {
+          closePriceCompositionModal();
+        }
+      });
+    }
+
     dispatcherModal.addEventListener("click", (event) => {
       if (event.target === dispatcherModal) {
         closeDispatcherModal();
@@ -1516,6 +1593,7 @@
     document.addEventListener("keydown", (event) => {
       if (!filterMonthPopover.hidden
         || !filterDispatcherPopover.hidden
+        || !filterOrderPopover.hidden
         || !filterAccountantPopover.hidden
         || !filterPlatformPopover.hidden
         || !filterShopPopover.hidden
@@ -1540,6 +1618,14 @@
         return;
       }
       if (event.key === "Escape" && !analysisModal.hidden) {
+        if (operationRecordsModal && !operationRecordsModal.hidden) {
+          closeOperationRecordsModal();
+          return;
+        }
+        if (priceCompositionModal && !priceCompositionModal.hidden) {
+          closePriceCompositionModal();
+          return;
+        }
         closeAnalysisModal();
         return;
       }
