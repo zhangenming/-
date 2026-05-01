@@ -108,6 +108,7 @@
         || (bossSettlementDetailModal && !bossSettlementDetailModal.hidden)
         || !analysisModal.hidden
         || (operationRecordsModal && !operationRecordsModal.hidden)
+        || (reminderModal && !reminderModal.hidden)
         || !dispatcherModal.hidden
         || !accountantModal.hidden
         || (accountantEditModal && !accountantEditModal.hidden)
@@ -313,6 +314,16 @@
       if (!accountantModal.hidden) {
         renderAccountantList();
       }
+      if (canCurrentAccountSettleRecords()) {
+        try {
+          await fetchReminders();
+        } catch (error) {
+          console.error(error);
+        }
+      } else {
+        reminders = [];
+        updateReminderEntryButton();
+      }
     }
 
     async function fetchRecycleBinRecords() {
@@ -349,6 +360,74 @@
       if (!recycleModal.hidden) {
         renderAccountantOperationLogs();
       }
+    }
+
+    async function fetchReminders() {
+      if (!hasAuthenticatedAccount() || !canCurrentAccountSettleRecords()) return;
+      const response = await fetchWithClientLog(
+        API_ENDPOINT_REMINDERS,
+        { cache: "no-store" },
+        { successMessage: "读取提醒" }
+      );
+      if (!response.ok) {
+        throw new Error(`读取提醒失败（${response.status}）`);
+      }
+      const payload = await response.json();
+      reminders = Array.isArray(payload.reminders) ? payload.reminders : [];
+      updateReminderEntryButton();
+      if (reminderModal && !reminderModal.hidden) {
+        renderReminderModalContent();
+      }
+    }
+
+    async function createReminder(payload) {
+      const response = await fetchWithClientLog(
+        API_ENDPOINT_REMINDERS,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload || {})
+        },
+        { successMessage: "新建提醒", errorMessage: "新建提醒" }
+      );
+      if (!response.ok) {
+        let message = `新建提醒失败（${response.status}）`;
+        try {
+          const body = await response.json();
+          if (body.error) message = body.error;
+        } catch (error) {
+          console.error(error);
+        }
+        throw new Error(message);
+      }
+      const body = await response.json();
+      reminders = Array.isArray(body.reminders) ? body.reminders : reminders;
+      updateReminderEntryButton();
+      renderReminderModalContent();
+    }
+
+    async function deleteReminderById(reminderId) {
+      const normalizedId = String(reminderId || "").trim();
+      if (!normalizedId) return;
+      const response = await fetchWithClientLog(
+        `${API_ENDPOINT_REMINDERS}/${encodeURIComponent(normalizedId)}`,
+        { method: "DELETE" },
+        { successMessage: "删除提醒", errorMessage: "删除提醒" }
+      );
+      if (!response.ok) {
+        let message = `删除提醒失败（${response.status}）`;
+        try {
+          const body = await response.json();
+          if (body.error) message = body.error;
+        } catch (error) {
+          console.error(error);
+        }
+        throw new Error(message);
+      }
+      const body = await response.json();
+      reminders = Array.isArray(body.reminders) ? body.reminders : reminders.filter((item) => String(item.id || "").trim() !== normalizedId);
+      updateReminderEntryButton();
+      renderReminderModalContent();
     }
 
     function renderAccountantList() {

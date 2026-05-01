@@ -8,6 +8,7 @@
     const API_ENDPOINT_DISPATCHERS = `${API_BASE}/api/dispatchers`;
     const API_ENDPOINT_RECYCLE_BIN = `${API_BASE}/api/recycle-bin`;
     const API_ENDPOINT_ACCOUNTANT_OPERATION_LOGS = `${API_BASE}/api/accountant-operation-logs`;
+    const API_ENDPOINT_REMINDERS = `${API_BASE}/api/reminders`;
     const API_ENDPOINT_BUILD_INFO = `${API_BASE}/build-info.json`;
     const API_ENDPOINT_AUTH_ACCOUNTANT_REGISTER = `${API_BASE}/api/auth/accountant-register`;
     const API_ENDPOINT_AUTH_LOGIN = `${API_BASE}/api/auth/login`;
@@ -202,6 +203,7 @@
     const openAnalysisModalBtn = document.getElementById("openAnalysisModalBtn");
     const openRecycleModalBtn = document.getElementById("openRecycleModalBtn");
     const openAccountantModalBtn = document.getElementById("openAccountantModalBtn");
+    const openReminderModalBtn = document.getElementById("openReminderModalBtn");
     const accountantSortableHeaders = Array.from(document.querySelectorAll(".accountant-sort-btn"));
     const createModal = document.getElementById("createModal");
     const createModalCard = createModal.querySelector(".modal-card");
@@ -274,6 +276,18 @@
     const priceCompositionModalCard = priceCompositionModal
       ? priceCompositionModal.querySelector(".price-composition-modal-card")
       : null;
+    const reminderModal = document.getElementById("reminderModal");
+    const reminderModalCard = reminderModal
+      ? reminderModal.querySelector(".reminder-modal-card")
+      : null;
+    const reminderModalMeta = document.getElementById("reminderModalMeta");
+    const reminderForm = document.getElementById("reminderForm");
+    const reminderDateInput = document.getElementById("reminderDateInput");
+    const reminderOrderInput = document.getElementById("reminderOrderInput");
+    const reminderWechatInput = document.getElementById("reminderWechatInput");
+    const reminderSubmitBtn = document.getElementById("reminderSubmitBtn");
+    const reminderList = document.getElementById("reminderList");
+    const reminderEmptyState = document.getElementById("reminderEmptyState");
     const dispatcherModal = document.getElementById("dispatcherModal");
     const dispatcherModalCard = dispatcherModal.querySelector(".accountant-modal-card");
     const dispatcherModalHint = document.getElementById("dispatcherModalHint");
@@ -461,6 +475,8 @@
     let dispatchers = [];
     let recycleBinRecords = [];
     let accountantOperationLogs = [];
+    let reminders = [];
+    let isReminderSubmitting = false;
     let hasFetchedRecords = false;
     let settlementPriceAutoFilled = false;
     let accountantPickerOptions = [];

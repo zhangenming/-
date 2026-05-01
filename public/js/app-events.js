@@ -129,6 +129,66 @@
       await openRecycleModal();
     });
 
+    if (openReminderModalBtn) {
+      openReminderModalBtn.addEventListener("click", async () => {
+        await openReminderModal();
+      });
+    }
+
+    if (reminderForm) {
+      reminderForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (isReminderSubmitting) return;
+        const payload = {
+          date: String(reminderDateInput.value || "").trim(),
+          orderNo: String(reminderOrderInput.value || "").trim(),
+          customerWechat: String(reminderWechatInput.value || "").trim()
+        };
+        if (!payload.date || !payload.orderNo || !payload.customerWechat) {
+          showAppStatus("请填写日期、订单号、客户微信。", "error");
+          return;
+        }
+        isReminderSubmitting = true;
+        if (reminderSubmitBtn) reminderSubmitBtn.disabled = true;
+        try {
+          await createReminder(payload);
+          reminderForm.reset();
+          reminderDateInput.value = getTodayDateKey();
+          reminderOrderInput.focus();
+        } catch (error) {
+          console.error(error);
+          showAppStatus(error.message || "新建提醒失败，请稍后重试。", "error");
+        } finally {
+          isReminderSubmitting = false;
+          if (reminderSubmitBtn) reminderSubmitBtn.disabled = false;
+        }
+      });
+    }
+
+    if (reminderList) {
+      reminderList.addEventListener("click", async (event) => {
+        const deleteBtn = event.target.closest(".reminder-delete-btn");
+        if (!deleteBtn) return;
+        const reminderId = String(deleteBtn.dataset.reminderId || "").trim();
+        if (!reminderId) return;
+        deleteBtn.disabled = true;
+        try {
+          await deleteReminderById(reminderId);
+        } catch (error) {
+          console.error(error);
+          showAppStatus(error.message || "删除提醒失败，请稍后重试。", "error");
+          deleteBtn.disabled = false;
+        }
+      });
+    }
+
+    window.setInterval(() => {
+      updateReminderEntryButton();
+      if (reminderModal && !reminderModal.hidden) {
+        renderReminderModalContent();
+      }
+    }, 60000);
+
     if (bossSettlementBtn) {
       bossSettlementBtn.addEventListener("click", () => {
         openBossSettlementSummaryModal();
@@ -1479,6 +1539,14 @@
       });
     }
 
+    if (reminderModal) {
+      reminderModal.addEventListener("click", (event) => {
+        if (event.target === reminderModal) {
+          closeReminderModal();
+        }
+      });
+    }
+
     dispatcherModal.addEventListener("click", (event) => {
       if (event.target === dispatcherModal) {
         closeDispatcherModal();
@@ -1627,6 +1695,10 @@
           return;
         }
         closeAnalysisModal();
+        return;
+      }
+      if (reminderModal && event.key === "Escape" && !reminderModal.hidden) {
+        closeReminderModal();
         return;
       }
       if (event.key === "Escape" && !dispatcherModal.hidden) {

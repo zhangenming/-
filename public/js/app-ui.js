@@ -609,6 +609,144 @@
       syncModalOpenState();
     }
 
+    function getTodayDateKey() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const date = String(now.getDate()).padStart(2, "0");
+      return `${year}-${month}-${date}`;
+    }
+
+    function isReminderDue(reminder) {
+      const date = String(reminder?.date || "").trim();
+      return Boolean(date && date <= getTodayDateKey());
+    }
+
+    function getDueReminderCount() {
+      return (Array.isArray(reminders) ? reminders : []).filter((item) => isReminderDue(item)).length;
+    }
+
+    function updateReminderEntryButton() {
+      if (!openReminderModalBtn) return;
+      const canUseReminders = canCurrentAccountSettleRecords();
+      const dueCount = getDueReminderCount();
+      openReminderModalBtn.hidden = !canUseReminders;
+      openReminderModalBtn.classList.toggle("is-due", dueCount > 0);
+      openReminderModalBtn.textContent = dueCount > 0 ? `提醒（${dueCount}）` : "提醒";
+      openReminderModalBtn.title = dueCount > 0
+        ? `有 ${dueCount} 条提醒已到期，请打开检查具体提醒。`
+        : "查看和新建提醒";
+      openReminderModalBtn.setAttribute("aria-label", openReminderModalBtn.title);
+    }
+
+    function renderReminderModalContent() {
+      if (!reminderModalMeta || !reminderList || !reminderEmptyState) return;
+      const sortedReminders = [...(Array.isArray(reminders) ? reminders : [])].sort((left, right) => {
+        const dateCompare = String(left?.date || "").localeCompare(String(right?.date || ""));
+        if (dateCompare !== 0) return dateCompare;
+        return String(right?.createdAt || "").localeCompare(String(left?.createdAt || ""));
+      });
+      const dueCount = sortedReminders.filter((item) => isReminderDue(item)).length;
+      reminderModalMeta.textContent = dueCount > 0
+        ? `有 ${dueCount} 条提醒已到期`
+        : `共 ${sortedReminders.length} 条提醒`;
+      reminderList.innerHTML = "";
+      reminderEmptyState.hidden = sortedReminders.length > 0;
+
+      sortedReminders.forEach((item) => {
+        const row = document.createElement("article");
+        row.className = "reminder-item";
+        row.classList.toggle("is-due", isReminderDue(item));
+
+        const dateBlock = document.createElement("div");
+        dateBlock.className = "reminder-item-date-block";
+
+        const main = document.createElement("div");
+        main.className = "reminder-item-main";
+
+        const date = document.createElement("span");
+        date.className = "reminder-item-date";
+        date.textContent = formatDateDisplay(item?.date) || String(item?.date || "").trim();
+        dateBlock.appendChild(date);
+
+        const status = document.createElement("span");
+        status.className = "reminder-item-status";
+        status.textContent = isReminderDue(item) ? "已到期" : "待提醒";
+        dateBlock.appendChild(status);
+
+        const order = document.createElement("strong");
+        order.className = "reminder-item-order";
+        order.textContent = `订单 ${String(item?.orderNo || "").trim()}`;
+        main.appendChild(order);
+
+        const wechat = document.createElement("span");
+        wechat.className = "reminder-item-wechat";
+        wechat.textContent = `微信 ${String(item?.customerWechat || "").trim()}`;
+        main.appendChild(wechat);
+
+        const meta = document.createElement("span");
+        meta.className = "reminder-item-meta";
+        meta.textContent = [
+          String(item?.createdBy || "").trim(),
+          formatDateTimeDisplay(item?.createdAt)
+        ].filter(Boolean).join(" · ");
+        main.appendChild(meta);
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "reminder-delete-btn";
+        deleteBtn.dataset.reminderId = String(item?.id || "").trim();
+        deleteBtn.textContent = "删除";
+
+        row.appendChild(dateBlock);
+        row.appendChild(main);
+        row.appendChild(deleteBtn);
+        reminderList.appendChild(row);
+      });
+    }
+
+    async function openReminderModal() {
+      if (!reminderModal || !reminderModalCard) return;
+      if (!canCurrentAccountSettleRecords()) return;
+      closeAllFilterPopovers();
+      closeCreateModal();
+      closeCheckModal();
+      closeCompleteModal();
+      closeRecordHistoryModal();
+      closeBossSettlementSummaryModal();
+      closeBossSettlementDetailModal();
+      closeAnalysisModal();
+      closeDispatcherModal();
+      closeAccountantModal();
+      closeRecycleModal();
+      closeDevTodoModal();
+      reminderForm.reset();
+      reminderDateInput.value = getTodayDateKey();
+      renderReminderModalContent();
+      reminderModal.hidden = false;
+      reminderModal.classList.remove("modal-enter");
+      reminderModalCard.classList.remove("modal-enter");
+      void reminderModal.offsetWidth;
+      reminderModal.classList.add("modal-enter");
+      reminderModalCard.classList.add("modal-enter");
+      syncModalOpenState();
+      try {
+        await fetchReminders();
+      } catch (error) {
+        console.error(error);
+        showAppStatus(error.message || "读取提醒失败，请稍后重试。");
+      }
+      reminderDateInput.focus();
+    }
+
+    function closeReminderModal() {
+      if (!reminderModal || !reminderModalCard) return;
+      reminderModal.classList.remove("modal-enter");
+      reminderModalCard.classList.remove("modal-enter");
+      reminderModal.hidden = true;
+      syncModalOpenState();
+    }
+
     function getOperationRecordInfoText(record) {
       const parts = [
         formatDateDisplay(record?.date),
@@ -3327,6 +3465,7 @@
       openAnalysisModalBtn.hidden = !isBoss;
       openRecycleModalBtn.hidden = isAccountant;
       openAccountantModalBtn.hidden = isAccountant;
+      updateReminderEntryButton();
       if (exportTableBtn) {
         exportTableBtn.hidden = !isBoss;
       }

@@ -28,6 +28,7 @@ const RECYCLE_BIN_FILE = path.join(DATA_DIR, "recycle-bin.json");
 const ACCOUNTANTS_FILE = path.join(DATA_DIR, "accountants.json");
 const DISPATCHER_PASSWORDS_FILE = path.join(DATA_DIR, "dispatcher-passwords.json");
 const ACCOUNTANT_OPERATION_LOG_FILE = path.join(DATA_DIR, "accountant-operation-logs.json");
+const REMINDERS_FILE = path.join(DATA_DIR, "reminders.json");
 const FEEDBACK_IMAGE_DIR = path.join(DATA_DIR, "feedback-images");
 const FEEDBACK_IMAGE_URL_PREFIX = "/feedback-images/";
 const INVOICE_IMAGE_DIR = path.join(DATA_DIR, "invoice-images");
@@ -444,6 +445,11 @@ async function ensureStorage() {
   } catch {
     await fs.writeFile(ACCOUNTANT_OPERATION_LOG_FILE, "[]\n", "utf8");
   }
+  try {
+    await fs.access(REMINDERS_FILE);
+  } catch {
+    await fs.writeFile(REMINDERS_FILE, "[]\n", "utf8");
+  }
 }
 
 async function readRecords() {
@@ -479,6 +485,38 @@ async function readAccountantOperationLogs() {
   const raw = await fs.readFile(ACCOUNTANT_OPERATION_LOG_FILE, "utf8");
   const parsed = JSON.parse(raw || "[]");
   return Array.isArray(parsed) ? parsed.map((entry) => normalizeAccountantOperationLogEntry(entry)).filter(Boolean) : [];
+}
+
+function normalizeReminderDate(value) {
+  const text = normalizeText(value, 24);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return "";
+  const date = new Date(`${text}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return "";
+  return text;
+}
+
+function normalizeReminderEntry(rawEntry) {
+  const source = rawEntry && typeof rawEntry === "object" ? rawEntry : {};
+  const reminderDate = normalizeReminderDate(source.date || source.reminderDate);
+  const orderNo = normalizeText(source.orderNo, 80);
+  const customerWechat = normalizeText(source.customerWechat, 80);
+  if (!reminderDate || !orderNo || !customerWechat) return null;
+  return {
+    id: normalizeText(source.id, 80) || generateId("rem"),
+    date: reminderDate,
+    orderNo,
+    customerWechat,
+    createdAt: normalizeText(source.createdAt, 32) || getCurrentBeijingDateTime(),
+    createdBy: normalizeText(source.createdBy, 48),
+    createdRole: normalizeLoginRole(source.createdRole)
+  };
+}
+
+async function readReminders() {
+  await ensureStorage();
+  const raw = await fs.readFile(REMINDERS_FILE, "utf8");
+  const parsed = JSON.parse(raw || "[]");
+  return Array.isArray(parsed) ? parsed.map((entry) => normalizeReminderEntry(entry)).filter(Boolean) : [];
 }
 
 async function writeRecords(records) {
@@ -519,6 +557,14 @@ async function writeAccountantOperationLogs(logs) {
   const payload = `${JSON.stringify(logs, null, 2)}\n`;
   await fs.writeFile(tempFile, payload, "utf8");
   await fs.rename(tempFile, ACCOUNTANT_OPERATION_LOG_FILE);
+}
+
+async function writeReminders(reminders) {
+  await ensureStorage();
+  const tempFile = `${REMINDERS_FILE}.tmp`;
+  const payload = `${JSON.stringify(reminders, null, 2)}\n`;
+  await fs.writeFile(tempFile, payload, "utf8");
+  await fs.rename(tempFile, REMINDERS_FILE);
 }
 
 function withWriteLock(task) {
@@ -3421,6 +3467,90 @@ async function serveAccountantOperationLogs(req, res) {
   sendJson(res, 405, { error: "方法不支持" });
 }
 
+async function serveReminders(req, res) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const session = await requireAuthSession(req, res, ["dispatcher", "boss"]);
+  if (!session) return;
+
+  if (req.method === "GET") {
+    const reminders = await readReminders();
+    sendJson(res, 200, { reminders });
+    return;
+  }
+
+  if (req.method === "POST") {
+    try {
+      const body = await parseBody(req);
+      const reminder = normalizeReminderEntry({
+        date: body?.date,
+        orderNo: body?.orderNo,
+        customerWechat: body?.customerWechat,
+        createdAt: getCurrentBeijingDateTime(),
+        createdBy: session.account,
+        createdRole: session.role
+      });
+      if (!reminder) {
+        sendJson(res, 400, { error: "请填写日期、订单号、客户微信。" });
+        return;
+      }
+      const reminders = await withWriteLock(async () => {
+        const current = await readReminders();
+        const next = [reminder, ...current];
+        await writeReminders(next);
+        return next;
+      });
+      sendJson(res, 201, { ok: true, reminder, reminders });
+    } catch (error) {
+      sendJson(res, 400, { error: error.message || "新增提醒失败" });
+    }
+    return;
+  }
+
+  sendJson(res, 405, { error: "方法不支持" });
+}
+
+async function serveReminderById(req, res, reminderIdRaw) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const session = await requireAuthSession(req, res, ["dispatcher", "boss"]);
+  if (!session) return;
+  const reminderId = normalizeText(reminderIdRaw, 80);
+  if (!reminderId) {
+    sendJson(res, 400, { error: "提醒编号无效。" });
+    return;
+  }
+
+  if (req.method === "DELETE") {
+    const result = await withWriteLock(async () => {
+      const current = await readReminders();
+      const next = current.filter((item) => String(item.id || "").trim() !== reminderId);
+      if (next.length !== current.length) {
+        await writeReminders(next);
+      }
+      return { found: next.length !== current.length, reminders: next };
+    });
+    if (!result.found) {
+      sendJson(res, 404, { error: "提醒不存在。" });
+      return;
+    }
+    sendJson(res, 200, { ok: true, reminders: result.reminders });
+    return;
+  }
+
+  sendJson(res, 405, { error: "方法不支持" });
+}
+
 async function serveDispatchers(req, res) {
   if (req.method === "OPTIONS") {
     setApiCorsHeaders(res);
@@ -4103,6 +4233,17 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === "/api/accountant-operation-logs") {
       await serveAccountantOperationLogs(req, res);
+      return;
+    }
+
+    if (pathname === "/api/reminders") {
+      await serveReminders(req, res);
+      return;
+    }
+
+    const reminderByIdMatch = pathname.match(/^\/api\/reminders\/([^/]+)$/);
+    if (reminderByIdMatch) {
+      await serveReminderById(req, res, reminderByIdMatch[1]);
       return;
     }
 

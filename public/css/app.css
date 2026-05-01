@@ -2149,6 +2149,19 @@
       gap: 12px;
     }
 
+    .reminder-modal-card {
+      width: min(720px, 96vw);
+      max-height: calc(100vh - 44px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 20px;
+      border-color: #cfe2d8;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #fbfdfc 0%, #f7fbf9 100%);
+      box-shadow: 0 24px 56px rgba(17, 53, 40, 0.18);
+    }
+
     .price-composition-modal-card {
       width: min(1120px, 96vw);
       max-height: calc(100vh - 40px);
@@ -4487,6 +4500,240 @@
       color: #6a8077;
       font-size: 14px;
       text-align: center;
+    }
+
+    .reminder-entry-btn {
+      min-height: 34px;
+      padding: 7px 12px;
+      border-radius: 8px;
+    }
+
+    .reminder-entry-btn.is-due {
+      border-color: #d96565;
+      background: #ffe3e3;
+      color: #a33131;
+      box-shadow: 0 0 0 3px rgba(217, 101, 101, 0.12);
+    }
+
+    .reminder-modal-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 2px;
+    }
+
+    .reminder-modal-title {
+      margin: 0;
+      color: #153a30;
+      font-size: 21px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .reminder-modal-meta {
+      margin: 6px 0 0;
+      color: #5d746b;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .reminder-form {
+      display: grid;
+      grid-template-columns: 164px minmax(0, 1fr) minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: end;
+      border: 1px solid #cfe3da;
+      background: #f7fbf9;
+      border-radius: 10px;
+      padding: 14px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+    }
+
+    .reminder-form .field {
+      min-width: 0;
+      display: grid;
+      gap: 7px;
+    }
+
+    .reminder-form label {
+      color: #446358;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .reminder-form input {
+      min-width: 0;
+      height: 44px;
+      border-color: #cbded5;
+      border-radius: 9px;
+      background: #ffffff;
+      color: #1e2f29;
+    }
+
+    #reminderDateInput {
+      padding-right: 34px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #reminderSubmitBtn {
+      min-width: 96px;
+      height: 44px;
+      border-radius: 9px;
+      padding: 0 16px;
+      white-space: nowrap;
+      box-shadow: 0 8px 18px rgba(14, 124, 102, 0.2);
+    }
+
+    .reminder-list {
+      min-height: 0;
+      max-height: min(520px, calc(100vh - 260px));
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      padding-right: 2px;
+    }
+
+    .reminder-item {
+      border: 1px solid #d4e4dc;
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 8px 18px rgba(17, 53, 40, 0.05);
+    }
+
+    .reminder-item.is-due {
+      border-color: #e2b2b2;
+      background: linear-gradient(90deg, #fff4f4 0%, #ffffff 58%);
+    }
+
+    .reminder-item-date-block {
+      align-self: stretch;
+      min-height: 56px;
+      display: grid;
+      align-content: center;
+      gap: 6px;
+      padding: 10px 8px;
+      border-radius: 9px;
+      background: #f4faf7;
+      text-align: center;
+    }
+
+    .reminder-item-main {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 6px 14px;
+    }
+
+    .reminder-item-date {
+      color: #1f4b3f;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .reminder-item-status {
+      justify-self: center;
+      border-radius: 999px;
+      background: #e6f4ee;
+      color: #1b7560;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .reminder-item.is-due .reminder-item-date-block {
+      background: #ffeaea;
+    }
+
+    .reminder-item.is-due .reminder-item-date,
+    .reminder-item.is-due .reminder-item-status {
+      color: #a33131;
+    }
+
+    .reminder-item.is-due .reminder-item-status {
+      background: #ffdcdc;
+    }
+
+    .reminder-item-order {
+      color: #24483d;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .reminder-item-wechat,
+    .reminder-item-meta {
+      color: #648075;
+      font-size: 12px;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .reminder-item-meta {
+      grid-column: 1 / -1;
+    }
+
+    .reminder-delete-btn {
+      flex: 0 0 auto;
+      border: 1px solid #d7e6de;
+      background: #fbfdfc;
+      color: #46655a;
+      border-radius: 8px;
+      min-width: 44px;
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .reminder-delete-btn:hover,
+    .reminder-delete-btn:focus-visible {
+      border-color: #d96565;
+      color: #a33131;
+    }
+
+    #reminderEmptyState {
+      margin-top: 2px;
+      border: 1px dashed #c9ddd4;
+      border-radius: 10px;
+      background: #fbfdfc;
+      color: #627970;
+      padding: 34px 18px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 760px) {
+      .reminder-modal-card {
+        padding: 18px;
+      }
+
+      .reminder-form {
+        grid-template-columns: 1fr;
+      }
+
+      #reminderSubmitBtn {
+        width: 100%;
+      }
+
+      .reminder-item {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+      }
+
+      .reminder-delete-btn {
+        width: 100%;
+      }
     }
 
     .operation-record-item {
