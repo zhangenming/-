@@ -2,8 +2,8 @@
     const RECYCLE_TABLE_COLUMNS = [
       { label: "删除时间", getValue: (entry) => formatDateTimeDisplay(entry.deletedAt) },
       { label: "删除人", getValue: (entry) => String(entry.deletedBy || "未知账号") },
-      { label: "日期", getValue: (entry) => formatDateDisplay(entry?.record?.date) },
-      { label: "接待人", className: "recycle-col-dispatcher", getValue: (entry) => normalizeDispatcherTag(entry?.record?.dispatcher) },
+      { label: "接单日期", getValue: (entry) => formatDateDisplay(entry?.record?.date) },
+      { label: "接待人", className: "recycle-col-dispatcher", getValue: (entry) => getDispatcherDisplayNameByTag(entry?.record?.dispatcher) },
       { label: "会计", className: "recycle-col-accountant", getValue: (entry) => String(entry?.record?.accountant || "") },
       { label: "平台", getValue: (entry) => String(entry?.record?.platform || "") },
       { label: "店铺名", getValue: (entry) => String(entry?.record?.shopName || "") },
@@ -12,7 +12,7 @@
       { label: "客户", getValue: (entry) => String(entry?.record?.customer || "") },
       { label: "任务简介", className: "summary", getValue: (entry) => String(entry?.record?.summary || "") },
       { label: "付款价", className: "recycle-col-payment", getValue: (entry) => toMoney(entry?.record?.paymentPrice) },
-      { label: "溢价", className: "recycle-col-premium", getValue: (entry) => toMoney(getPremiumValue(entry?.record || {})) },
+      { label: "溢价", className: "recycle-col-premium", getValue: (entry) => formatPremiumWithPercent(entry?.record || {}) },
       { label: "会计价", className: "recycle-col-total", getValue: (entry) => toMoney(entry?.record?.totalPrice) },
       { label: "会计结算价", className: "recycle-col-settlement", getValue: (entry) => formatSettlementPriceDisplay(entry?.record || {}) },
       { label: "操作", className: "recycle-col-action", kind: "action" }
@@ -69,8 +69,9 @@
     }
 
     const TABLE_EXPORT_COLUMNS = [
-      { label: "日期", getValue: (item) => String(item?.date || "").trim() },
-      { label: "接待人", getValue: (item) => normalizeDispatcherTag(item?.dispatcher) },
+      { label: "接单日期", getValue: (item) => String(item?.date || "").trim() },
+      { label: "完工时间", getValue: (item) => formatDateTimeDisplay(item?.completedAt) },
+      { label: "接待人", getValue: (item) => getDispatcherDisplayNameByTag(item?.dispatcher) },
       { label: "来源", getValue: (item) => String(item?.source || "").trim() },
       { label: "平台", getValue: (item) => String(item?.platform || "").trim() },
       { label: "店铺名", getValue: (item) => String(item?.shopName || "").trim() },
@@ -83,11 +84,22 @@
       { label: "溢价", getValue: (item) => toMoney(getPremiumValue(item)) },
       { label: "接待收益", getValue: (item) => formatProfitDisplay(item), visible: () => shouldShowProfitColumn() },
       { label: "会计价", getValue: (item) => toMoney(item?.totalPrice) },
-      { label: "会计结算价", getValue: (item) => formatSettlementPriceDisplay(item) },
+      { label: "会计结算价", getValue: (item) => toMoney(item?.settlementPrice) },
       { label: "状态", getValue: (item) => getRecordStatusWithSettlementText(item) }
     ];
 
     let stickyTableColumnSyncFrame = 0;
+
+    function formatPremiumWithPercent(record) {
+      const item = record && typeof record === "object" ? record : {};
+      const premium = getPremiumValue(item);
+      const payment = Number(item.paymentPrice);
+      if (!Number.isFinite(premium)) return "";
+      if (!Number.isFinite(payment) || payment === 0) return toMoney(premium);
+      const percent = (premium / payment) * 100;
+      if (percent === 0) return toMoney(premium);
+      return `${toMoney(premium)} (${formatTrimmedPercent(percent)})`;
+    }
 
     function getHorizontalPadding(node) {
       if (!node) return 0;
@@ -218,7 +230,15 @@
       const hours = String(now.getHours()).padStart(2, "0");
       const minutes = String(now.getMinutes()).padStart(2, "0");
       const seconds = String(now.getSeconds()).padStart(2, "0");
-      return `数据表导出_${year}${month}${date}_${hours}${minutes}${seconds}.csv`;
+      return `数据表导出_${year}${month}${date}_${hours}${minutes}${seconds}.xlsx`;
+    }
+
+    function getNumericValueForExport(value) {
+      if (value === null || value === undefined) return null;
+      if (typeof value === "string" && value.trim() === "") return null;
+      const num = Number(value);
+      if (!Number.isFinite(num)) return null;
+      return num;
     }
 
     function exportCurrentTableRecords() {
@@ -230,29 +250,125 @@
         return;
       }
 
-      const rows = [
-        exportColumns.map((column) => column.label),
-        ...exportRecords.map((item) => exportColumns.map((column) => column.getValue(item)))
-      ];
-      const csvContent = `\uFEFF${rows.map((row) => row.map((cell) => escapeCsvValue(cell)).join(",")).join("\r\n")}`;
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const downloadUrl = URL.createObjectURL(blob);
-      const downloadLink = document.createElement("a");
-      downloadLink.href = downloadUrl;
-      downloadLink.download = getTableExportFileName();
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      downloadLink.remove();
-      window.setTimeout(() => {
-        URL.revokeObjectURL(downloadUrl);
-      }, 0);
+      const totals = exportRecords.reduce((acc, item) => {
+        const payment = Number(item?.paymentPrice);
+        const premium = getPremiumValue(item);
+        const profit = getProfitValue(item);
+        const total = Number(item?.totalPrice);
+        const settlement = Number(item?.settlementPrice);
+
+        if (Number.isFinite(payment)) acc.totalPayment += payment;
+        if (Number.isFinite(premium)) acc.totalPremium += premium;
+        if (Number.isFinite(profit)) acc.totalProfit += profit;
+        if (Number.isFinite(total)) acc.totalTotal += total;
+        if (Number.isFinite(settlement)) acc.totalSettlement += settlement;
+
+        return acc;
+      }, { totalPayment: 0, totalPremium: 0, totalProfit: 0, totalTotal: 0, totalSettlement: 0 });
+
+      const numericColumnLabels = ["付款价", "溢价", "会计价", "会计结算价"];
+
+      const headerRow = exportColumns.map((column) => column.label);
+      const totalRow = exportColumns.map((column) => {
+        if (column.label === "付款价") return getNumericValueForExport(totals.totalPayment);
+        if (column.label === "溢价") return getNumericValueForExport(totals.totalPremium);
+        if (column.label === "接待收益") return toMoney(totals.totalProfit);
+        if (column.label === "会计价") return getNumericValueForExport(totals.totalTotal);
+        if (column.label === "会计结算价") return getNumericValueForExport(totals.totalSettlement);
+        if (column.label === "接单日期") return "合计";
+        return "";
+      });
+      const dataRows = exportRecords.map((item) => exportColumns.map((column) => {
+        if (numericColumnLabels.includes(column.label)) {
+          let value;
+          if (column.label === "付款价") value = item?.paymentPrice;
+          else if (column.label === "溢价") value = getPremiumValue(item);
+          else if (column.label === "会计价") value = item?.totalPrice;
+          else if (column.label === "会计结算价") value = item?.settlementPrice;
+          return getNumericValueForExport(value);
+        }
+        return column.getValue(item);
+      }));
+
+      const ws = XLSX.utils.aoa_to_sheet([headerRow, totalRow, ...dataRows]);
+
+      const headerStyle = {
+        fill: { patternType: "solid", fgColor: { rgb: "4472C4" } },
+        font: { color: { rgb: "FFFFFF" }, bold: true }
+      };
+      const totalStyle = {
+        fill: { patternType: "solid", fgColor: { rgb: "D9E2F3" } },
+        font: { bold: true }
+      };
+
+      const range = XLSX.utils.decode_range(ws["!ref"]);
+      if (!ws["!cols"]) ws["!cols"] = [];
+
+      const numericColumnIndices = exportColumns
+        .map((col, index) => numericColumnLabels.includes(col.label) ? index : -1)
+        .filter((index) => index >= 0);
+
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const colLetter = XLSX.utils.encode_col(col);
+        const isNumericColumn = numericColumnIndices.includes(col);
+
+        const headerCell = ws[`${colLetter}1`];
+        if (headerCell) {
+          headerCell.s = headerStyle;
+        }
+
+        const totalCell = ws[`${colLetter}2`];
+        if (totalCell) {
+          totalCell.s = totalStyle;
+          if (isNumericColumn && totalCell.t === "n") {
+            totalCell.z = "0.00";
+          }
+        }
+
+        let maxWidth = 10;
+        for (let row = range.s.r; row <= range.e.r; row++) {
+          const cell = ws[`${colLetter}${row + 1}`];
+          if (cell && cell.v !== undefined && cell.v !== null) {
+            const cellWidth = String(cell.v).length;
+            if (cellWidth > maxWidth) maxWidth = cellWidth;
+
+            if (isNumericColumn && cell.t === "n") {
+              cell.z = "0.00";
+            }
+          }
+        }
+        ws["!cols"][col] = { wch: Math.min(maxWidth + 2, 50) };
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "数据表");
+
+      XLSX.writeFile(wb, getTableExportFileName());
+    }
+
+    function getDateCellDisplayParts(rawDateTime, fallbackDateTime = "") {
+      const dateText = formatDateDisplay(rawDateTime);
+      const timeText = formatTimeDisplay(fallbackDateTime || rawDateTime);
+      return {
+        dateText,
+        timeText: timeText && timeText !== String(rawDateTime || "").trim() ? timeText : ""
+      };
+    }
+
+    function getRecordCompletionDurationText(record) {
+      const startTimestamp = parseDateDayLikeValue(record?.date);
+      const endTimestamp = parseDateDayLikeValue(record?.completedAt);
+      if (!Number.isFinite(startTimestamp) || !Number.isFinite(endTimestamp)) return "";
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      const diffDays = Math.max(0, Math.round((endTimestamp - startTimestamp) / oneDayMs));
+      return `(${diffDays}天)`;
     }
 
     function getRecordDateTooltipText(record) {
-      const createdAtTime = formatTimeDisplay(record?.createdAt);
+      const createdAtTime = getDateCellDisplayParts(record?.date, record?.createdAt).timeText;
       if (createdAtTime) return createdAtTime;
       const rawDate = String(record?.date || "").trim();
-      return /[ T]\d{1,2}:\d{2}/.test(rawDate) ? formatTimeDisplay(rawDate) : "";
+      return /[ T]\d{1,2}:\d{2}/.test(rawDate) ? getDateCellDisplayParts(rawDate).timeText : "";
     }
 
     function renderAccountantOperationLogs() {
@@ -269,7 +385,7 @@
         const actionKey = actionKeyRaw === "completed" || actionKeyRaw === "returned" ? actionKeyRaw : "checked";
         const actionLabel = actionKey === "completed" ? "完成" : (actionKey === "returned" ? "退单" : "确认");
         const operator = String(entry?.operatedBy || "").trim() || "未知会计";
-        const dispatcher = normalizeDispatcherTag(entry?.dispatcher);
+        const dispatcher = getDispatcherDisplayNameByTag(entry?.dispatcher);
         const detailParts = [
           formatDateDisplay(entry?.date),
           String(entry?.accountant || "").trim(),
@@ -628,7 +744,7 @@
 
     function updateReminderEntryButton() {
       if (!openReminderModalBtn) return;
-      const canUseReminders = canCurrentAccountSettleRecords();
+      const canUseReminders = canCurrentAccountUseReminders();
       const dueCount = getDueReminderCount();
       openReminderModalBtn.hidden = !canUseReminders;
       openReminderModalBtn.classList.toggle("is-due", dueCount > 0);
@@ -707,7 +823,7 @@
 
     async function openReminderModal() {
       if (!reminderModal || !reminderModalCard) return;
-      if (!canCurrentAccountSettleRecords()) return;
+      if (!canCurrentAccountUseReminders()) return;
       closeAllFilterPopovers();
       closeCreateModal();
       closeCheckModal();
@@ -750,7 +866,7 @@
     function getOperationRecordInfoText(record) {
       const parts = [
         formatDateDisplay(record?.date),
-        normalizeDispatcherTag(record?.dispatcher),
+        getDispatcherDisplayNameByTag(record?.dispatcher),
         String(record?.accountant || "").trim(),
         String(record?.customer || "").trim() || "未填客户"
       ].filter(Boolean);
@@ -1070,6 +1186,108 @@
       syncModalOpenState();
     }
 
+    function normalizeChangeLogItems(payload) {
+      const items = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.changes)
+          ? payload.changes
+          : [];
+      return items
+        .map((item) => ({
+          type: String(item?.type || "").trim(),
+          version: String(item?.version || "").trim(),
+          time: String(item?.time || item?.date || "").trim(),
+          content: String(item?.content || item?.message || item?.change || "").trim()
+        }))
+        .filter((item) => item.time || item.content)
+        .sort((left, right) => {
+          const rightTime = Date.parse(String(right.time || "").replace(" ", "T"));
+          const leftTime = Date.parse(String(left.time || "").replace(" ", "T"));
+          if (Number.isFinite(rightTime) && Number.isFinite(leftTime) && rightTime !== leftTime) {
+            return rightTime - leftTime;
+          }
+          return String(right.time || "").localeCompare(String(left.time || ""));
+        });
+    }
+
+    function renderChangeLogItems(items) {
+      if (!changeLogList || !changeLogEmptyState) return;
+      changeLogList.innerHTML = "";
+      if (!items.length) {
+        changeLogEmptyState.hidden = false;
+        return;
+      }
+      changeLogEmptyState.hidden = true;
+      items.forEach((item) => {
+        const entry = document.createElement("article");
+        entry.className = "change-log-entry";
+        const time = document.createElement("time");
+        time.className = "change-log-time";
+        time.textContent = item.time || "时间未记录";
+        const meta = document.createElement("div");
+        meta.className = "change-log-meta";
+        if (item.type) {
+          const type = document.createElement("span");
+          type.className = "change-log-badge";
+          type.textContent = item.type;
+          meta.appendChild(type);
+        }
+        if (item.version) {
+          const version = document.createElement("span");
+          version.className = "change-log-version";
+          version.textContent = item.version;
+          meta.appendChild(version);
+        }
+        const content = document.createElement("div");
+        content.className = "change-log-content";
+        content.textContent = item.content || "修改内容未记录";
+        entry.append(time);
+        if (meta.childNodes.length) {
+          entry.appendChild(meta);
+        }
+        entry.appendChild(content);
+        changeLogList.appendChild(entry);
+      });
+    }
+
+    async function loadChangeLogItems() {
+      if (!changeLogList || !changeLogEmptyState) return;
+      changeLogList.innerHTML = "";
+      changeLogEmptyState.hidden = false;
+      changeLogEmptyState.textContent = "正在读取更新日志...";
+      try {
+        const response = await fetch(API_ENDPOINT_CHANGE_LOG, { cache: "no-store" });
+        if (!response.ok) throw new Error("读取更新日志失败");
+        renderChangeLogItems(normalizeChangeLogItems(await response.json()));
+        changeLogEmptyState.textContent = "暂无更新日志。";
+      } catch (error) {
+        console.error(error);
+        changeLogList.innerHTML = "";
+        changeLogEmptyState.hidden = false;
+        changeLogEmptyState.textContent = "更新日志读取失败。";
+      }
+    }
+
+    function openChangeLogModal() {
+      if (!changeLogModal || !changeLogModalCard) return;
+      changeLogModal.hidden = false;
+      changeLogModal.classList.remove("modal-enter");
+      changeLogModalCard.classList.remove("modal-enter");
+      void changeLogModal.offsetWidth;
+      changeLogModal.classList.add("modal-enter");
+      changeLogModalCard.classList.add("modal-enter");
+      syncModalOpenState();
+      void loadChangeLogItems();
+    }
+
+    function closeChangeLogModal() {
+      if (!changeLogModal || !changeLogModalCard) return;
+      changeLogModal.classList.remove("modal-enter");
+      changeLogModalCard.classList.remove("modal-enter");
+      changeLogModal.hidden = true;
+      syncModalOpenState();
+    }
+
     function openCheckModal(record) {
       if (!record || typeof record !== "object") return;
       closeAllFilterPopovers();
@@ -1309,9 +1527,14 @@
       "settlementPrice",
       "refundStatus",
       "checkStatus",
-      "isSettled"
+      "isSettled",
+      "completedAt",
+      "customerFeedback"
     ];
     const ACCOUNTANT_RECORD_HISTORY_FIELD_SET = new Set(ACCOUNTANT_RECORD_HISTORY_FIELD_ORDER);
+    const ALWAYS_VISIBLE_RECORD_HISTORY_FIELDS = new Set([
+      "customerFeedback"
+    ]);
 
     const RECORD_HISTORY_FIELD_LABELS = {
       checkStatus: "状态",
@@ -1326,7 +1549,7 @@
       settlementInvoiceImage: "发票",
       invoiceUploadedAt: "发票上传时间",
       invoiceUploadedBy: "发票上传人",
-      date: "日期",
+      date: "接单日期",
       isMonthlySettlement: "月结勾选",
       dispatcher: "接待人",
       accountant: "会计",
@@ -1396,7 +1619,7 @@
         return image ? (image.name || image.url || image.fileName) : "";
       }
       if (normalizedField === "dispatcher") {
-        return normalizeDispatcherTag(item.dispatcher) || String(item.dispatcher || "").trim();
+        return getDispatcherDisplayNameByTag(item.dispatcher) || String(item.dispatcher || "").trim();
       }
       if (normalizedField === "accountant") {
         return String(item.accountant || "").trim();
@@ -1421,6 +1644,7 @@
     function shouldDisplayRecordHistoryBaselineField(field, value) {
       const normalizedField = String(field || "").trim();
       if (!normalizedField || !isRecordHistoryFieldAllowed(normalizedField)) return false;
+      if (ALWAYS_VISIBLE_RECORD_HISTORY_FIELDS.has(normalizedField)) return true;
       if ([
         "checkStatus",
         "refundStatus",
@@ -1437,7 +1661,8 @@
         "orderNo",
         "customer",
         "summary",
-        "remark"
+        "remark",
+        "completedAt"
       ].includes(normalizedField)) {
         return getRecordHistoryValueText(normalizedField, value) !== "空";
       }
@@ -2309,6 +2534,16 @@
         return;
       }
 
+      bossSettlementDetailTitleCount.textContent = "";
+      bossSettlementDetailTitleCount.hidden = true;
+      bossSettlementDetailMeta.textContent = "";
+      bossSettlementDetailList.innerHTML = "";
+
+      if (settlementDetailActiveTab === "dispatcher") {
+        renderDispatcherSettlementDetail();
+        return;
+      }
+
       const {
         groups,
         paidGroups,
@@ -2329,11 +2564,6 @@
       );
       const areAllPayoutRecordsSelected = allPayoutRecordIds.length > 0
         && allPayoutRecordIds.every((recordId) => selectedPayoutRecordIdSet.has(recordId));
-
-      bossSettlementDetailTitleCount.textContent = "";
-      bossSettlementDetailTitleCount.hidden = true;
-      bossSettlementDetailMeta.textContent = "";
-      bossSettlementDetailList.innerHTML = "";
 
       if (!groups.length && !paidGroups.length) {
         const empty = document.createElement("div");
@@ -2754,6 +2984,136 @@
       }
     }
 
+    function renderDispatcherSettlementDetail() {
+      const {
+        groups,
+        recordCount,
+        dispatcherCount,
+        totalPremium,
+        totalDispatcherPrice,
+        totalInvoiceAmount,
+        totalTaxAmount,
+        totalPayableAmount
+      } = getDispatcherSettlementSummary();
+
+      if (!groups.length) {
+        const empty = document.createElement("div");
+        empty.className = "settlement-detail-empty";
+        empty.textContent = "暂无接待结算明细。";
+        bossSettlementDetailList.appendChild(empty);
+        return;
+      }
+
+      const section = document.createElement("section");
+      section.className = "settlement-detail-section";
+
+      const sectionHeading = document.createElement("div");
+      sectionHeading.className = "settlement-detail-section-heading";
+
+      const sectionTitle = document.createElement("h3");
+      sectionTitle.className = "settlement-detail-section-title";
+      sectionTitle.textContent = "接待结算";
+      sectionHeading.appendChild(sectionTitle);
+
+      section.appendChild(sectionHeading);
+
+      const tableWrap = document.createElement("div");
+      tableWrap.className = "settlement-detail-table-wrap";
+
+      const table = document.createElement("table");
+      table.className = "settlement-detail-table";
+
+      const colgroup = document.createElement("colgroup");
+      [
+        "dispatcher",
+        "money",
+        "money",
+        "money",
+        "money",
+        "money"
+      ].forEach((columnClass) => {
+        const col = document.createElement("col");
+        col.className = `settlement-detail-col-${columnClass}`;
+        colgroup.appendChild(col);
+      });
+      table.appendChild(colgroup);
+
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      const headerColumns = [
+        { key: "dispatcher", label: "接待", summary: `${dispatcherCount}位/${recordCount || 0}单`, align: "dispatcher" },
+        { key: "premium", label: "溢价(50%)", summary: `合计 ${toMoney(totalPremium)} 元`, align: "money" },
+        { key: "dispatcherPrice", label: "接待价", summary: `合计 ${toMoney(totalDispatcherPrice)} 元`, align: "money" },
+        { key: "invoiceAmount", label: "开票金额", summary: `合计 ${toMoney(totalInvoiceAmount)} 元`, align: "money" },
+        { key: "taxAmount", label: "个税", summary: `合计 ${toMoney(totalTaxAmount)} 元`, align: "money" },
+        { key: "payableAmount", label: "应打款金额", summary: `合计 ${toMoney(totalPayableAmount)} 元`, align: "money" }
+      ];
+      headerColumns.forEach((column) => {
+        const th = document.createElement("th");
+        th.scope = "col";
+        th.className = `settlement-detail-heading-cell ${column.align}`;
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "settlement-detail-sort-btn";
+
+        const label = document.createElement("span");
+        label.className = "settlement-detail-sort-label";
+        label.textContent = column.label;
+        button.appendChild(label);
+
+        const summary = document.createElement("span");
+        summary.className = "settlement-detail-sort-summary";
+        summary.textContent = column.summary;
+        button.appendChild(summary);
+
+        th.appendChild(button);
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      const createMoneyCell = (value) => {
+        const td = document.createElement("td");
+        td.className = "settlement-detail-money settlement-detail-col-money";
+        td.textContent = `${toMoney(value)} 元`;
+        return td;
+      };
+
+      groups.forEach((group) => {
+        const row = document.createElement("tr");
+        row.className = "settlement-detail-row tone-dispatcher";
+
+        const dispatcherTd = document.createElement("td");
+        dispatcherTd.className = "settlement-detail-dispatcher-cell settlement-detail-col-dispatcher";
+
+        const dispatcherName = document.createElement("strong");
+        dispatcherName.className = "settlement-detail-dispatcher";
+        dispatcherName.textContent = group.dispatcher;
+        dispatcherTd.appendChild(dispatcherName);
+
+        const dispatcherMeta = document.createElement("span");
+        dispatcherMeta.className = "settlement-detail-dispatcher-meta";
+        dispatcherMeta.textContent = `${group.recordCount}单`;
+        dispatcherTd.appendChild(dispatcherMeta);
+        row.appendChild(dispatcherTd);
+
+        row.appendChild(createMoneyCell(group.premium));
+        row.appendChild(createMoneyCell(group.dispatcherPrice));
+        row.appendChild(createMoneyCell(group.invoiceAmount));
+        row.appendChild(createMoneyCell(group.taxAmount));
+        row.appendChild(createMoneyCell(group.payableAmount));
+
+        tbody.appendChild(row);
+      });
+
+      table.appendChild(tbody);
+      tableWrap.appendChild(table);
+      section.appendChild(tableWrap);
+      bossSettlementDetailList.appendChild(section);
+    }
+
     function updateBossSettlementDetailControls() {
       if (!bossSettlementDetailBtn) return;
       const canPayoutRecords = canCurrentAccountPayoutSettlementRecords();
@@ -3052,16 +3412,22 @@
       }
     }
 
-    function formatMonthFilterChipLabel(rawValue) {
-      return getDateFilterChipMeta(rawValue, filterState.dateStart, filterState.dateEnd).label;
+    function formatMonthFilterChipLabel(rawValue, startRaw = filterState.dateStart, endRaw = filterState.dateEnd) {
+      return getDateFilterChipMeta(rawValue, startRaw, endRaw).label;
     }
 
-    function syncDateRangeFilterInputs(force = false) {
-      if (filterDateStartInput && (force || document.activeElement !== filterDateStartInput)) {
-        filterDateStartInput.value = String(filterState.dateStart || "").trim();
+    function syncDateRangeFilterInputs(force = false, options = {}) {
+      const {
+        startInput = filterDateStartInput,
+        endInput = filterDateEndInput,
+        startValue = filterState.dateStart,
+        endValue = filterState.dateEnd
+      } = options;
+      if (startInput && (force || document.activeElement !== startInput)) {
+        startInput.value = String(startValue || "").trim();
       }
-      if (filterDateEndInput && (force || document.activeElement !== filterDateEndInput)) {
-        filterDateEndInput.value = String(filterState.dateEnd || "").trim();
+      if (endInput && (force || document.activeElement !== endInput)) {
+        endInput.value = String(endValue || "").trim();
       }
     }
 
@@ -3070,6 +3436,18 @@
       filterState.dateStart = "";
       filterState.dateEnd = "";
       syncDateRangeFilterInputs(true);
+    }
+
+    function clearCompletedAtFilterState() {
+      filterState.completedAtMonth = "";
+      filterState.completedAtStart = "";
+      filterState.completedAtEnd = "";
+      syncDateRangeFilterInputs(true, {
+        startInput: filterCompletedAtStartInput,
+        endInput: filterCompletedAtEndInput,
+        startValue: filterState.completedAtStart,
+        endValue: filterState.completedAtEnd
+      });
     }
 
     function applyDateRangeFilter() {
@@ -3081,6 +3459,22 @@
       filterState.dateStart = normalizedRange.start;
       filterState.dateEnd = normalizedRange.end;
       syncDateRangeFilterInputs(true);
+    }
+
+    function applyCompletedAtRangeFilter() {
+      const normalizedRange = getNormalizedDateRangeFilter(
+        filterCompletedAtStartInput?.value || "",
+        filterCompletedAtEndInput?.value || ""
+      );
+      filterState.completedAtMonth = "";
+      filterState.completedAtStart = normalizedRange.start;
+      filterState.completedAtEnd = normalizedRange.end;
+      syncDateRangeFilterInputs(true, {
+        startInput: filterCompletedAtStartInput,
+        endInput: filterCompletedAtEndInput,
+        startValue: filterState.completedAtStart,
+        endValue: filterState.completedAtEnd
+      });
     }
 
     const FILTER_ICON_PATH = "M3 5h18l-7 8v5l-4 2v-7z";
@@ -3100,8 +3494,19 @@
 
     function updateFilterButtonUI() {
       const hasDateFilter = hasDateFilterSelected();
+      const hasCompletedAtFilter = hasDateFilterSelected({
+        month: filterState.completedAtMonth,
+        dateStart: filterState.completedAtStart,
+        dateEnd: filterState.completedAtEnd
+      });
       const dateFilterChip = getDateFilterChipMeta();
+      const completedAtFilterChip = getDateFilterChipMeta(
+        filterState.completedAtMonth,
+        filterState.completedAtStart,
+        filterState.completedAtEnd
+      );
       filterMonthBtn.classList.toggle("active", hasDateFilter);
+      filterCompletedAtBtn.classList.toggle("active", hasCompletedAtFilter);
       filterDispatcherBtn.classList.toggle("active", Boolean(filterState.dispatcher));
       filterOrderBtn.classList.toggle("active", Boolean(filterState.orderNo));
       filterAccountantBtn.classList.toggle("active", Boolean(filterState.accountant));
@@ -3111,6 +3516,7 @@
       filterStatusBtn.classList.toggle("active", Boolean(filterState.status));
       filterSettledBtn.classList.toggle("active", Boolean(filterState.settled));
       if (filterMonthIndicator) filterMonthIndicator.classList.toggle("active", hasDateFilter);
+      if (filterCompletedAtIndicator) filterCompletedAtIndicator.classList.toggle("active", hasCompletedAtFilter);
       if (filterDispatcherIndicator) filterDispatcherIndicator.classList.toggle("active", Boolean(filterState.dispatcher));
       if (filterOrderIndicator) filterOrderIndicator.classList.toggle("active", Boolean(filterState.orderNo));
       if (filterAccountantIndicator) filterAccountantIndicator.classList.toggle("active", Boolean(filterState.accountant));
@@ -3120,6 +3526,7 @@
       if (filterStatusIndicator) filterStatusIndicator.classList.toggle("active", Boolean(filterState.status));
       if (filterSettledIndicator) filterSettledIndicator.classList.toggle("active", Boolean(filterState.settled));
       filterMonthBtn.setAttribute("aria-expanded", String(!filterMonthPopover.hidden));
+      filterCompletedAtBtn.setAttribute("aria-expanded", String(!filterCompletedAtPopover.hidden));
       filterDispatcherBtn.setAttribute("aria-expanded", String(!filterDispatcherPopover.hidden));
       filterOrderBtn.setAttribute("aria-expanded", String(!filterOrderPopover.hidden));
       filterAccountantBtn.setAttribute("aria-expanded", String(!filterAccountantPopover.hidden));
@@ -3129,6 +3536,7 @@
       filterStatusBtn.setAttribute("aria-expanded", String(!filterStatusPopover.hidden));
       filterSettledBtn.setAttribute("aria-expanded", String(!filterSettledPopover.hidden));
       syncFilterIconButton(filterMonthBtn, hasDateFilter, FILTER_ICON_PATH, "清空日期筛选", "筛选日期");
+      syncFilterIconButton(filterCompletedAtBtn, hasCompletedAtFilter, FILTER_ICON_PATH, "清空完工日期筛选", "筛选完工日期");
       syncFilterIconButton(filterDispatcherBtn, Boolean(filterState.dispatcher), FILTER_ICON_PATH, "清空接待人筛选", "筛选接待人");
       syncFilterIconButton(filterOrderBtn, Boolean(filterState.orderNo), SEARCH_ICON_PATH, "清空订单号查询", "查询订单号");
       syncFilterIconButton(filterAccountantBtn, Boolean(filterState.accountant), FILTER_ICON_PATH, "清空会计筛选", "筛选会计");
@@ -3138,6 +3546,12 @@
       syncFilterIconButton(filterStatusBtn, Boolean(filterState.status), FILTER_ICON_PATH, "清空状态筛选", "筛选状态");
       syncFilterIconButton(filterSettledBtn, Boolean(filterState.settled), FILTER_ICON_PATH, "清空结算筛选", "筛选结算状态");
       syncDateRangeFilterInputs();
+      syncDateRangeFilterInputs(false, {
+        startInput: filterCompletedAtStartInput,
+        endInput: filterCompletedAtEndInput,
+        startValue: filterState.completedAtStart,
+        endValue: filterState.completedAtEnd
+      });
 
       if (hasDateFilter) {
         const monthLabel = dateFilterChip.label || formatMonthFilterChipLabel(filterState.month);
@@ -3150,25 +3564,44 @@
         filterMonthValue.title = "";
       }
 
+      if (hasCompletedAtFilter) {
+        const monthLabel = completedAtFilterChip.label || formatMonthFilterChipLabel(
+          filterState.completedAtMonth,
+          filterState.completedAtStart,
+          filterState.completedAtEnd
+        );
+        filterCompletedAtValue.hidden = false;
+        filterCompletedAtValue.textContent = monthLabel;
+        filterCompletedAtValue.title = completedAtFilterChip.title || monthLabel;
+      } else {
+        filterCompletedAtValue.hidden = true;
+        filterCompletedAtValue.textContent = "";
+        filterCompletedAtValue.title = "";
+      }
+
       if (filterState.dispatcher) {
         filterDispatcherValue.hidden = false;
-        filterDispatcherValue.textContent = filterState.dispatcher;
+        filterDispatcherValue.textContent = getDispatcherDisplayNameByTag(filterState.dispatcher);
       } else {
         filterDispatcherValue.hidden = true;
         filterDispatcherValue.textContent = "";
       }
 
       if (filterState.orderNo) {
+        const orderNoList = String(filterState.orderNo || "")
+          .split(/[\n\r]+/)
+          .map(s => s.trim())
+          .filter(s => s.length > 0);
+        const displayText = orderNoList.length > 1
+          ? `(${orderNoList.length}) ${orderNoList.join(" ")}`
+          : filterState.orderNo;
         filterOrderValue.hidden = false;
-        filterOrderValue.textContent = filterState.orderNo;
-        filterOrderValue.title = filterState.orderNo;
+        filterOrderValue.textContent = displayText;
+        filterOrderValue.title = displayText;
       } else {
         filterOrderValue.hidden = true;
         filterOrderValue.textContent = "";
         filterOrderValue.title = "";
-      }
-      if (filterOrderInput) {
-        filterOrderInput.value = filterState.orderNo || "";
       }
 
       if (filterState.accountant) {
@@ -3234,6 +3667,7 @@
 
     function closeAllFilterPopovers() {
       filterMonthPopover.hidden = true;
+      filterCompletedAtPopover.hidden = true;
       filterDispatcherPopover.hidden = true;
       filterOrderPopover.hidden = true;
       filterAccountantPopover.hidden = true;
@@ -3283,6 +3717,21 @@
         updateFilterOptions();
         const open = filterMonthPopover.hidden;
         filterMonthPopover.hidden = !open;
+        filterCompletedAtPopover.hidden = true;
+        filterDispatcherPopover.hidden = true;
+        filterOrderPopover.hidden = true;
+        filterAccountantPopover.hidden = true;
+        filterPlatformPopover.hidden = true;
+        filterShopPopover.hidden = true;
+        filterSourcePopover.hidden = true;
+        filterStatusPopover.hidden = true;
+        filterSettledPopover.hidden = true;
+      }
+      if (key === "completedAt") {
+        updateFilterOptions();
+        const open = filterCompletedAtPopover.hidden;
+        filterCompletedAtPopover.hidden = !open;
+        filterMonthPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
         filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
@@ -3297,6 +3746,7 @@
         const open = filterDispatcherPopover.hidden;
         filterDispatcherPopover.hidden = !open;
         filterMonthPopover.hidden = true;
+        filterCompletedAtPopover.hidden = true;
         filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
         filterPlatformPopover.hidden = true;
@@ -3309,6 +3759,7 @@
         const open = filterOrderPopover.hidden;
         filterOrderPopover.hidden = !open;
         filterMonthPopover.hidden = true;
+        filterCompletedAtPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
         filterAccountantPopover.hidden = true;
         filterPlatformPopover.hidden = true;
@@ -3328,6 +3779,7 @@
         const open = filterAccountantPopover.hidden;
         filterAccountantPopover.hidden = !open;
         filterMonthPopover.hidden = true;
+        filterCompletedAtPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
         filterOrderPopover.hidden = true;
         filterPlatformPopover.hidden = true;
@@ -3341,6 +3793,7 @@
         const open = filterPlatformPopover.hidden;
         filterPlatformPopover.hidden = !open;
         filterMonthPopover.hidden = true;
+        filterCompletedAtPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
         filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
@@ -3354,6 +3807,7 @@
         const open = filterShopPopover.hidden;
         filterShopPopover.hidden = !open;
         filterMonthPopover.hidden = true;
+        filterCompletedAtPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
         filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
@@ -3367,6 +3821,7 @@
         const open = filterSourcePopover.hidden;
         filterSourcePopover.hidden = !open;
         filterMonthPopover.hidden = true;
+        filterCompletedAtPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
         filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
@@ -3380,6 +3835,7 @@
         const open = filterStatusPopover.hidden;
         filterStatusPopover.hidden = !open;
         filterMonthPopover.hidden = true;
+        filterCompletedAtPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
         filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
@@ -3393,6 +3849,7 @@
         const open = filterSettledPopover.hidden;
         filterSettledPopover.hidden = !open;
         filterMonthPopover.hidden = true;
+        filterCompletedAtPopover.hidden = true;
         filterDispatcherPopover.hidden = true;
         filterOrderPopover.hidden = true;
         filterAccountantPopover.hidden = true;
@@ -3468,6 +3925,9 @@
       updateReminderEntryButton();
       if (exportTableBtn) {
         exportTableBtn.hidden = !isBoss;
+      }
+      if (bossSettlementSummaryBtn) {
+        bossSettlementSummaryBtn.hidden = !isBoss;
       }
       changePasswordBtn.hidden = !(isLoggedIn && isDispatcher);
       if (editProfileBtn) {
@@ -3676,8 +4136,34 @@
       const currentDispatcherTag = getCurrentDispatcherTag();
       const filteredRecords = getFilteredRecords();
       const sortedRecords = getSortedRecords(filteredRecords);
+
+      if (filterState.orderNo) {
+        const orderNoList = String(filterState.orderNo || "")
+          .split(/[\n\r]+/)
+          .map(s => s.trim())
+          .filter(s => s.length > 0);
+        if (orderNoList.length > 1) {
+          const scopedOrderNoSet = new Set(
+            scopedRecords.map(item => String(item.orderNo || "").toLowerCase().trim())
+          );
+          const notFoundOrderNos = orderNoList.filter(query => !scopedOrderNoSet.has(query.toLowerCase()));
+          if (notFoundOrderNos.length > 0) {
+            const notFoundText = notFoundOrderNos.length > 1
+              ? `以下订单号未找到：${notFoundOrderNos.join("、")}`
+              : `订单号“${notFoundOrderNos[0]}”未找到`;
+            showAppStatus(notFoundText, "error");
+          }
+        }
+      } else {
+        setAppStatusHint("", "idle");
+      }
       const hasFilter = Boolean(
         hasDateFilterSelected()
+        || hasDateFilterSelected({
+          month: filterState.completedAtMonth,
+          dateStart: filterState.completedAtStart,
+          dateEnd: filterState.completedAtEnd
+        })
         || filterState.dispatcher
         || filterState.orderNo
         || filterState.accountant
@@ -3756,8 +4242,9 @@
           tr.appendChild(selectTd);
         }
         const values = [
-          formatDateDisplay(item.date),
-          dispatcherTag,
+          getDateCellDisplayParts(item.date).dateText,
+          [getDateCellDisplayParts(item.completedAt).dateText, getRecordCompletionDurationText(item)].filter(Boolean).join(""),
+          getDispatcherDisplayNameByTag(dispatcherTag),
           String(item.source || ""),
           String(item.platform || ""),
           String(item.shopName || ""),
@@ -3767,7 +4254,7 @@
           String(item.summary || ""),
           String(item.remark || ""),
           toMoney(item.paymentPrice),
-          toMoney(getPremiumValue(item)),
+          formatPremiumWithPercent(item),
           toMoney(item.totalPrice),
           formatSettlementPriceDisplay(item),
           getRecordWorkflowStatusText(item)
@@ -3801,12 +4288,21 @@
               td.setAttribute("aria-label", `${String(value || "").trim()}，${dateTooltipText}`);
             }
           } else if (index === 1) {
+            td.classList.add("data-col-completed-at");
+            td.textContent = value;
+            const completedAtTooltip = getDateCellDisplayParts(item.completedAt).timeText;
+            if (completedAtTooltip) {
+              tooltipText = completedAtTooltip;
+              tooltipMode = "always";
+              td.setAttribute("aria-label", `${String(value || "").trim()}，${completedAtTooltip}`);
+            }
+          } else if (index === 2) {
             td.classList.add("data-col-dispatcher");
             const chip = document.createElement("span");
             chip.className = "dispatcher-chip";
             chip.textContent = value;
             td.appendChild(chip);
-          } else if (index === 14) {
+          } else if (index === 15) {
             td.classList.add("data-col-status");
             const statusWrap = document.createElement("div");
             statusWrap.className = "row-status-cell";
@@ -3833,17 +4329,17 @@
           if (tooltipMode) {
             td.dataset.tableTooltipMode = tooltipMode;
           }
-          if (index === 2) td.classList.add("data-col-source");
-          if (index === 3) td.classList.add("data-col-platform");
-          if (index === 4) td.classList.add("data-col-shop");
-          if (index === 5) td.classList.add("data-col-order");
-          if (index === 6) td.classList.add("data-col-accountant");
-          if (index === 8) td.classList.add("summary");
-          if (index === 9) td.classList.add("remark", "data-col-remark");
-          if (index === 10) td.classList.add("data-col-payment");
-          if (index === 11) td.classList.add("data-col-premium");
-          if (index === 12) td.classList.add("data-col-total");
-          if (index === 13) td.classList.add("data-col-settlement");
+          if (index === 3) td.classList.add("data-col-source");
+          if (index === 4) td.classList.add("data-col-platform");
+          if (index === 5) td.classList.add("data-col-shop");
+          if (index === 6) td.classList.add("data-col-order");
+          if (index === 7) td.classList.add("data-col-accountant");
+          if (index === 9) td.classList.add("summary");
+          if (index === 10) td.classList.add("remark", "data-col-remark");
+          if (index === 11) td.classList.add("data-col-payment");
+          if (index === 12) td.classList.add("data-col-premium");
+          if (index === 13) td.classList.add("data-col-total");
+          if (index === 14) td.classList.add("data-col-settlement");
           tr.appendChild(td);
         });
 

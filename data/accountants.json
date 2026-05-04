@@ -153,6 +153,15 @@
     "loginPassword": "123456"
   },
   {
+    "username": "15310722595",
+    "displayName": "路",
+    "name": "路",
+    "alias": "路",
+    "realName": "路",
+    "phone": "15310722595",
+    "loginPassword": "123456"
+  },
+  {
     "username": "MeiWenXiXi",
     "displayName": "美文嘻嘻",
     "name": "美文嘻嘻",
@@ -231,15 +240,6 @@
     "alias": "山的靠背",
     "realName": "",
     "phone": "13599855181",
-    "loginPassword": "123456"
-  },
-  {
-    "username": "18883059737",
-    "displayName": "时光静好",
-    "name": "时光静好",
-    "alias": "时光静好",
-    "realName": "",
-    "phone": "18883059737",
     "loginPassword": "123456"
   },
   {
@@ -331,15 +331,6 @@
     "realName": "七七",
     "phone": "15282052359",
     "loginPassword": "pyl382791"
-  },
-  {
-    "username": "小顺",
-    "displayName": "小顺",
-    "name": "小顺",
-    "alias": "",
-    "realName": "",
-    "phone": "",
-    "loginPassword": "123456"
   },
   {
     "username": "小顺会计",
@@ -492,7 +483,7 @@
     "alias": "瑜",
     "realName": "张瑜",
     "phone": "13437180362",
-    "loginPassword": "123456"
+    "loginPassword": "yuyu0813"
   },
   {
     "username": "ChunShuYiWaizoey",

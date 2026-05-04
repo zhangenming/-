@@ -10,6 +10,7 @@
     const API_ENDPOINT_ACCOUNTANT_OPERATION_LOGS = `${API_BASE}/api/accountant-operation-logs`;
     const API_ENDPOINT_REMINDERS = `${API_BASE}/api/reminders`;
     const API_ENDPOINT_BUILD_INFO = `${API_BASE}/build-info.json`;
+    const API_ENDPOINT_CHANGE_LOG = `${API_BASE}/CHANGELOG.json`;
     const API_ENDPOINT_AUTH_ACCOUNTANT_REGISTER = `${API_BASE}/api/auth/accountant-register`;
     const API_ENDPOINT_AUTH_LOGIN = `${API_BASE}/api/auth/login`;
     const API_ENDPOINT_AUTH_PASSWORD = `${API_BASE}/api/auth/password`;
@@ -137,10 +138,10 @@
     };
     const DISPATCHER_ACCOUNT_DISPLAY_NAME = {
       "1": "开心财税1",
-      "a": "开心财税A",
-      "c": "开心财税C",
-      "e": "开心财税E",
-      "k": "开心财税K",
+      "a": "开心财税a",
+      "c": "开心财税c",
+      "e": "开心财税e",
+      "k": "开心财税k",
       "开心财税": "开心财税"
     };
     const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
@@ -156,6 +157,12 @@
       "开心财税e": "e",
       "开心财税k": "k"
     };
+
+    function getDispatcherDisplayNameByTag(dispatcherTagRaw) {
+      const dispatcherTag = normalizeDispatcherTag(dispatcherTagRaw);
+      if (dispatcherTag === "开心财税") return "开心财税";
+      return dispatcherTag ? `开心财税${dispatcherTag.toLowerCase()}` : "";
+    }
 
     const loginPage = document.getElementById("loginPage");
     const loginForm = document.getElementById("loginForm");
@@ -195,6 +202,7 @@
     const buildInfoPanel = document.getElementById("buildInfoPanel");
     const buildVersionText = document.getElementById("buildVersionText");
     const buildTimeText = document.getElementById("buildTimeText");
+    const openChangeLogBtn = document.getElementById("openChangeLogBtn");
     const headerAccountText = document.getElementById("headerAccountText");
     const headerAccountSubText = document.getElementById("headerAccountSubText");
     const accountRoleBadge = document.getElementById("accountRoleBadge");
@@ -261,6 +269,8 @@
     const bossSettlementDetailTitleCount = document.getElementById("bossSettlementDetailTitleCount");
     const bossSettlementDetailMeta = document.getElementById("bossSettlementDetailMeta");
     const bossSettlementDetailList = document.getElementById("bossSettlementDetailList");
+    const settlementDetailTabAccountant = document.getElementById("settlementDetailTabAccountant");
+    const settlementDetailTabDispatcher = document.getElementById("settlementDetailTabDispatcher");
     const analysisModal = document.getElementById("analysisModal");
     const analysisModalCard = analysisModal.querySelector(".analysis-modal-card");
     const analysisContent = document.getElementById("analysisContent");
@@ -323,6 +333,13 @@
     const recycleEmptyState = document.getElementById("recycleEmptyState");
     const accountantLogList = document.getElementById("accountantLogList");
     const accountantLogEmptyState = document.getElementById("accountantLogEmptyState");
+    const changeLogModal = document.getElementById("changeLogModal");
+    const changeLogModalCard = changeLogModal
+      ? changeLogModal.querySelector(".change-log-modal-card")
+      : null;
+    const closeChangeLogModalBtn = document.getElementById("closeChangeLogModalBtn");
+    const changeLogList = document.getElementById("changeLogList");
+    const changeLogEmptyState = document.getElementById("changeLogEmptyState");
     const changePasswordModal = document.getElementById("changePasswordModal");
     const changePasswordModalCard = changePasswordModal
       ? changePasswordModal.querySelector(".accountant-register-modal-card")
@@ -402,6 +419,7 @@
     const clearFilterBtn = document.getElementById("clearFilterBtn");
     const exportTableBtn = document.getElementById("exportTableBtn");
     const bossSettlementBtn = document.getElementById("bossSettlementBtn");
+    const bossSettlementSummaryBtn = document.getElementById("bossSettlementSummaryBtn");
     const bossSettlementDetailBtn = document.getElementById("bossSettlementDetailBtn");
     const accountantInvoiceUploadBtn = document.getElementById("accountantInvoiceUploadBtn");
     const accountantInvoiceImageInput = document.getElementById("accountantInvoiceImageInput");
@@ -410,6 +428,7 @@
     const tableSelectAllCheckbox = document.getElementById("tableSelectAllCheckbox");
     const sortableHeaders = Array.from(document.querySelectorAll(".sort-btn"));
     const filterMonthBtn = document.getElementById("filterMonthBtn");
+    const filterCompletedAtBtn = document.getElementById("filterCompletedAtBtn");
     const filterDispatcherBtn = document.getElementById("filterDispatcherBtn");
     const filterOrderBtn = document.getElementById("filterOrderBtn");
     const filterAccountantBtn = document.getElementById("filterAccountantBtn");
@@ -419,6 +438,7 @@
     const filterStatusBtn = document.getElementById("filterStatusBtn");
     const filterSettledBtn = document.getElementById("filterSettledBtn");
     const filterMonthIndicator = document.getElementById("filterMonthIndicator");
+    const filterCompletedAtIndicator = document.getElementById("filterCompletedAtIndicator");
     const filterDispatcherIndicator = document.getElementById("filterDispatcherIndicator");
     const filterOrderIndicator = document.getElementById("filterOrderIndicator");
     const filterAccountantIndicator = document.getElementById("filterAccountantIndicator");
@@ -428,6 +448,7 @@
     const filterStatusIndicator = document.getElementById("filterStatusIndicator");
     const filterSettledIndicator = document.getElementById("filterSettledIndicator");
     const filterMonthValue = document.getElementById("filterMonthValue");
+    const filterCompletedAtValue = document.getElementById("filterCompletedAtValue");
     const filterDispatcherValue = document.getElementById("filterDispatcherValue");
     const filterOrderValue = document.getElementById("filterOrderValue");
     const filterAccountantValue = document.getElementById("filterAccountantValue");
@@ -437,6 +458,7 @@
     const filterStatusValue = document.getElementById("filterStatusValue");
     const filterSettledValue = document.getElementById("filterSettledValue");
     const filterMonthPopover = document.getElementById("filterMonthPopover");
+    const filterCompletedAtPopover = document.getElementById("filterCompletedAtPopover");
     const filterDispatcherPopover = document.getElementById("filterDispatcherPopover");
     const filterOrderPopover = document.getElementById("filterOrderPopover");
     const filterAccountantPopover = document.getElementById("filterAccountantPopover");
@@ -446,6 +468,7 @@
     const filterStatusPopover = document.getElementById("filterStatusPopover");
     const filterSettledPopover = document.getElementById("filterSettledPopover");
     const filterMonthList = document.getElementById("filterMonthList");
+    const filterCompletedAtList = document.getElementById("filterCompletedAtList");
     const filterDispatcherList = document.getElementById("filterDispatcherList");
     const filterAccountantList = document.getElementById("filterAccountantList");
     const filterPlatformList = document.getElementById("filterPlatformList");
@@ -457,6 +480,10 @@
     const filterDateEndInput = document.getElementById("filterDateEndInput");
     const filterDateRangeApplyBtn = document.getElementById("filterDateRangeApplyBtn");
     const filterDateRangeClearBtn = document.getElementById("filterDateRangeClearBtn");
+    const filterCompletedAtStartInput = document.getElementById("filterCompletedAtStartInput");
+    const filterCompletedAtEndInput = document.getElementById("filterCompletedAtEndInput");
+    const filterCompletedAtRangeApplyBtn = document.getElementById("filterCompletedAtRangeApplyBtn");
+    const filterCompletedAtRangeClearBtn = document.getElementById("filterCompletedAtRangeClearBtn");
     const filterOrderInput = document.getElementById("filterOrderInput");
     const tableHoverTooltip = document.createElement("div");
     tableHoverTooltip.id = "tableHoverTooltip";
@@ -508,9 +535,11 @@
       key: "accountant",
       direction: "asc"
     };
+    let settlementDetailActiveTab = "accountant";
     const sortState = {
       key: "date",
-      direction: "desc"
+      direction: "desc",
+      premiumMode: "amount"
     };
     const accountantSortState = {
       key: "orderCount",
@@ -520,6 +549,9 @@
       month: "",
       dateStart: "",
       dateEnd: "",
+      completedAtMonth: "",
+      completedAtStart: "",
+      completedAtEnd: "",
       dispatcher: "",
       orderNo: "",
       accountant: "",
@@ -630,6 +662,20 @@
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, maxLength);
+    }
+
+    function sanitizeOrderNoInput(value, allowMultiLine = false) {
+      const text = String(value || "");
+      if (allowMultiLine) {
+        return text
+          .split(/(\r\n|\n|\r)/)
+          .map((part, index) => {
+            if (index % 2 === 1) return part;
+            return part.replace(/[^0-9/]/g, "");
+          })
+          .join("");
+      }
+      return text.replace(/[^0-9/]/g, "");
     }
 
     function createDevTodoId() {
@@ -978,8 +1024,7 @@
         return DISPATCHER_ACCOUNT_DISPLAY_NAME[normalizedAccount];
       }
       const dispatcherTag = getDispatcherTagForAccount(accountNameRaw);
-      if (dispatcherTag === "开心财税") return "开心财税";
-      return dispatcherTag ? `开心财税${dispatcherTag}` : accountName;
+      return getDispatcherDisplayNameByTag(dispatcherTag) || accountName;
     }
 
     function getSavedLoginDisplayName(accountNameRaw, roleRaw) {
@@ -1115,6 +1160,10 @@
     }
 
     function canCurrentAccountSettleRecords() {
+      return isBossLogin();
+    }
+
+    function canCurrentAccountUseReminders() {
       return isBossLogin() || isDispatcherLogin();
     }
 
@@ -1485,6 +1534,90 @@
       return (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) => isBossSettlementDetailRecord(item));
     }
 
+    function getDispatcherSettlementSummary(sourceRecords = records) {
+      const detailRecords = getBossSettlementDetailRecords(sourceRecords);
+      const groupMap = new Map();
+
+      detailRecords.forEach((record) => {
+        const dispatcher = String(record?.dispatcher || "").trim() || "未分配接待";
+        const current = groupMap.get(dispatcher) || {
+          dispatcher,
+          recordIds: [],
+          recordCount: 0,
+          premiumList: [],
+          dispatcherPriceList: []
+        };
+
+        const recordId = String(record?.id || "").trim();
+        if (recordId && !current.recordIds.includes(recordId)) {
+          current.recordIds.push(recordId);
+        }
+        current.recordCount += 1;
+
+        const premium = getPremiumValue(record);
+        if (Number.isFinite(premium)) {
+          current.premiumList.push(premium);
+        }
+
+        const totalPrice = Number(record?.totalPrice);
+        const baseRate = getDispatcherBaseProfitRate(record);
+        const dispatcherPrice = Number.isFinite(totalPrice) ? totalPrice * baseRate : 0;
+        if (Number.isFinite(dispatcherPrice)) {
+          current.dispatcherPriceList.push(dispatcherPrice);
+        }
+
+        groupMap.set(dispatcher, current);
+      });
+
+      const groups = Array.from(groupMap.values()).map((group) => {
+        const totalRawPremium = group.premiumList.reduce((sum, value) => sum + value, 0);
+        const premium = getTieredPremiumProfit(totalRawPremium);
+        const dispatcherPrice = group.dispatcherPriceList.reduce((sum, value) => sum + value, 0);
+        const invoiceAmount = Number.isFinite(premium) && Number.isFinite(dispatcherPrice)
+          ? premium + dispatcherPrice
+          : Number.NaN;
+        const taxAmount = Number.isFinite(invoiceAmount) ? getSettlementTaxAmount(invoiceAmount) : 0;
+        const payableAmount = Number.isFinite(invoiceAmount) && Number.isFinite(taxAmount)
+          ? invoiceAmount - taxAmount
+          : Number.NaN;
+
+        return {
+          dispatcher: group.dispatcher,
+          recordIds: group.recordIds,
+          recordCount: group.recordCount,
+          premium: Number.isFinite(premium) ? premium : 0,
+          dispatcherPrice: Number.isFinite(dispatcherPrice) ? dispatcherPrice : 0,
+          invoiceAmount: Number.isFinite(invoiceAmount) ? invoiceAmount : 0,
+          taxAmount: Number.isFinite(taxAmount) ? taxAmount : 0,
+          payableAmount: Number.isFinite(payableAmount) ? payableAmount : 0
+        };
+      }).sort((left, right) => {
+        const nameCompare = String(left.dispatcher || "").localeCompare(String(right.dispatcher || ""), "zh-CN", {
+          numeric: true,
+          sensitivity: "base"
+        });
+        if (nameCompare !== 0) return nameCompare;
+        return right.recordCount - left.recordCount;
+      });
+
+      const totalPremium = groups.reduce((sum, g) => sum + (g.premium || 0), 0);
+      const totalDispatcherPrice = groups.reduce((sum, g) => sum + (g.dispatcherPrice || 0), 0);
+      const totalInvoiceAmount = groups.reduce((sum, g) => sum + (g.invoiceAmount || 0), 0);
+      const totalTaxAmount = groups.reduce((sum, g) => sum + (g.taxAmount || 0), 0);
+      const totalPayableAmount = groups.reduce((sum, g) => sum + (g.payableAmount || 0), 0);
+
+      return {
+        groups,
+        recordCount: detailRecords.length,
+        dispatcherCount: groups.length,
+        totalPremium,
+        totalDispatcherPrice,
+        totalInvoiceAmount,
+        totalTaxAmount,
+        totalPayableAmount
+      };
+    }
+
     function getBossSettlementRecordState(record) {
       if (isRecordSettled(record)) return "settled";
       const checkStatus = String(record?.checkStatus || "").trim().toLowerCase();
@@ -1767,7 +1900,7 @@
       } else if (role === "dispatcher") {
         const dispatcherTag = getDispatcherTagForAccount(accountName);
         if (dispatcherTag) {
-          addCandidate(dispatcherTag === "开心财税" ? "开心财税" : `开心财税${dispatcherTag}`);
+          addCandidate(getDispatcherDisplayNameByTag(dispatcherTag));
         }
       } else if (role === "boss") {
         BOSS_LOGIN_ACCOUNTS.forEach((value) => addCandidate(value));

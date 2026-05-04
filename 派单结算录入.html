@@ -15,7 +15,6 @@
         <div class="login-brand">
           <span class="login-brand-mark" aria-hidden="true">结</span>
           <div class="login-brand-text">
-            <span class="login-brand-kicker">Dispatch Settlement Console</span>
             <h1>派单结算录入</h1>
           </div>
         </div>
@@ -23,14 +22,14 @@
           <p class="login-brief-title">统一处理派单录入、会计核对、完工结算与回收审计。</p>
           <div class="login-role-grid" aria-label="角色工作边界">
             <section class="login-role-card">
-              <span class="login-role-label">接待</span>
-              <strong>录入与追踪</strong>
-              <span>订单、客户、金额与状态持续同步</span>
-            </section>
-            <section class="login-role-card">
               <span class="login-role-label">会计</span>
               <strong>核对与完工</strong>
               <span>确认任务、反馈结果、上传结算凭证</span>
+            </section>
+            <section class="login-role-card">
+              <span class="login-role-label">接待</span>
+              <strong>录入与追踪</strong>
+              <span>订单、客户、金额与状态持续同步</span>
             </section>
             <section class="login-role-card">
               <span class="login-role-label">负责人</span>
@@ -193,7 +192,10 @@
           </button>
         </div>
         <div id="buildInfoPanel" class="build-info-panel" aria-live="polite">
-          <div id="buildVersionText" class="build-info-line">版本 v--</div>
+          <div class="build-info-version-row">
+            <div id="buildVersionText" class="build-info-line">版本 v--</div>
+            <button id="openChangeLogBtn" class="change-log-btn" type="button">更新日志</button>
+          </div>
           <div id="buildTimeText" class="build-info-line">Build --</div>
         </div>
       </div>
@@ -224,6 +226,7 @@
           <input id="accountantInvoiceImageInput" type="file" accept="image/*" hidden />
           <button id="exportTableBtn" class="btn-secondary table-export-btn" type="button" aria-label="导出当前筛选数据" hidden disabled>导出</button>
           <button id="bossSettlementBtn" class="btn-secondary table-settlement-btn" type="button" hidden disabled>结算</button>
+          <button id="bossSettlementSummaryBtn" class="btn-secondary table-settlement-summary-btn" type="button" hidden>结算详细</button>
           <button id="bossSettlementDetailBtn" class="btn-secondary table-settlement-detail-btn" type="button" hidden disabled>打款</button>
         </div>
       </div>
@@ -233,6 +236,7 @@
           <colgroup>
             <col id="tableSelectCol" class="col-select" hidden />
             <col class="col-date" />
+            <col class="col-completed-at" />
             <col class="col-dispatcher" />
             <col class="col-source" />
             <col class="col-platform" />
@@ -259,7 +263,7 @@
               </th>
               <th>
                 <div class="th-inner">
-                  <button class="sort-btn" type="button" data-key="date" data-label="日期">日期</button>
+                  <button class="sort-btn" type="button" data-key="date" data-label="接单日期">接单日期</button>
                   <span id="filterMonthIndicator" class="filter-indicator-wrap">
                     <span id="filterMonthValue" class="filter-value-chip" hidden></span>
                     <button id="filterMonthBtn" class="filter-icon-btn" type="button" aria-label="筛选日期" aria-expanded="false">
@@ -301,6 +305,55 @@
                       <div class="filter-date-range-actions">
                         <button id="filterDateRangeApplyBtn" class="filter-range-btn primary" type="button">应用范围</button>
                         <button id="filterDateRangeClearBtn" class="filter-range-btn" type="button">清空日期</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </th>
+              <th class="data-col-completed-at">
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="completedAt" data-label="完工日期">完工日期</button>
+                  <span id="filterCompletedAtIndicator" class="filter-indicator-wrap">
+                    <span id="filterCompletedAtValue" class="filter-value-chip" hidden></span>
+                    <button id="filterCompletedAtBtn" class="filter-icon-btn" type="button" aria-label="筛选完工日期" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterCompletedAtPopover" class="filter-popover" hidden>
+                    <div class="filter-popover-section">
+                      <div class="filter-popover-title">快捷日期</div>
+                      <div id="filterCompletedAtList" class="filter-options"></div>
+                    </div>
+                    <div class="filter-popover-divider"></div>
+                    <div class="filter-popover-section filter-date-range-section">
+                      <div class="filter-popover-title">自定义范围</div>
+                      <div class="filter-date-range-grid">
+                        <label class="filter-date-field" for="filterCompletedAtStartInput">
+                          <span class="filter-date-field-label">开始</span>
+                          <input
+                            id="filterCompletedAtStartInput"
+                            class="filter-date-input"
+                            type="date"
+                            autocomplete="off"
+                            data-no-suggest="true"
+                          />
+                        </label>
+                        <label class="filter-date-field" for="filterCompletedAtEndInput">
+                          <span class="filter-date-field-label">结束</span>
+                          <input
+                            id="filterCompletedAtEndInput"
+                            class="filter-date-input"
+                            type="date"
+                            autocomplete="off"
+                            data-no-suggest="true"
+                          />
+                        </label>
+                      </div>
+                      <div class="filter-date-range-actions">
+                        <button id="filterCompletedAtRangeApplyBtn" class="filter-range-btn primary" type="button">应用范围</button>
+                        <button id="filterCompletedAtRangeClearBtn" class="filter-range-btn" type="button">清空日期</button>
                       </div>
                     </div>
                   </div>
@@ -385,14 +438,13 @@
                     <div class="filter-popover-section">
                       <label class="filter-search-field" for="filterOrderInput">
                         <span class="filter-popover-title">订单号查询</span>
-                        <input
+                        <textarea
                           id="filterOrderInput"
-                          class="filter-search-input"
-                          type="search"
+                          class="filter-search-input filter-order-textarea"
                           autocomplete="off"
-                          data-no-suggest="true"
-                          placeholder="输入订单号"
-                        />
+                          placeholder="输入订单号，多个订单号可换行输入"
+                          rows="4"
+                        ></textarea>
                       </label>
                     </div>
                   </div>
@@ -467,7 +519,7 @@
       <form id="recordForm" class="grid" autocomplete="off" novalidate>
         <input id="recordEditingId" type="hidden" />
         <div class="field field-date">
-          <label for="date">日期</label>
+          <label for="date">接单日期</label>
           <div class="date-field-controls">
             <input id="date" name="date" type="date" autocomplete="off" />
             <label for="monthlySettlement" class="checkbox-toggle checkbox-toggle-inline">
@@ -480,11 +532,11 @@
           <label>接待人</label>
           <div class="tag-group">
             <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="开心财税">开心财税</button>
-            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="1">1</button>
-            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="A">A</button>
-            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="C">C</button>
-            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="E">E</button>
-            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="K">K</button>
+            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="1">开心财税1</button>
+            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="A">开心财税a</button>
+            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="C">开心财税c</button>
+            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="E">开心财税e</button>
+            <button class="tag-btn dispatcher-tag-btn" type="button" data-dispatcher-tag="K">开心财税k</button>
           </div>
           <input id="dispatcher" name="dispatcher" type="hidden" required />
         </div>
@@ -617,6 +669,7 @@
             autocapitalize="off"
             autocorrect="off"
             spellcheck="false"
+            required
           ></textarea>
         </div>
         <div class="field field-note">
@@ -672,6 +725,7 @@
             autocapitalize="off"
             autocorrect="off"
             spellcheck="false"
+            required
           ></textarea>
         </div>
         <div class="field field-wide row form-actions">
@@ -703,6 +757,7 @@
             autocapitalize="off"
             autocorrect="off"
             spellcheck="false"
+            required
           ></textarea>
         </div>
         <div class="field field-wide row form-actions">
@@ -829,6 +884,10 @@
             <span id="bossSettlementDetailTitleCount" class="settlement-detail-title-count" hidden></span>
           </h2>
           <p id="bossSettlementDetailMeta" class="settlement-detail-meta"></p>
+        </div>
+        <div id="bossSettlementDetailTabs" class="settlement-detail-tabs">
+          <button id="settlementDetailTabAccountant" class="settlement-detail-tab-btn active" type="button" data-tab-key="accountant">会计结算</button>
+          <button id="settlementDetailTabDispatcher" class="settlement-detail-tab-btn" type="button" data-tab-key="dispatcher">接待结算</button>
         </div>
       </div>
       <div id="bossSettlementDetailList" class="settlement-detail-list"></div>
@@ -1063,7 +1122,7 @@
             <tr>
               <th>删除时间</th>
               <th>删除人</th>
-              <th>日期</th>
+              <th>接单日期</th>
               <th class="recycle-col-dispatcher">接待人</th>
               <th class="recycle-col-accountant">会计</th>
               <th>平台</th>
@@ -1117,6 +1176,21 @@
     </section>
   </div>
 
+  <div id="changeLogModal" class="modal-overlay" hidden>
+    <section class="card modal-card change-log-modal-card" tabindex="-1">
+      <div class="change-log-modal-top">
+        <h2 class="change-log-modal-title">更新日志</h2>
+        <button id="closeChangeLogModalBtn" class="modal-icon-btn" type="button" aria-label="关闭更新日志">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+      <div id="changeLogList" class="change-log-list"></div>
+      <p id="changeLogEmptyState" class="change-log-empty" hidden>暂无更新日志。</p>
+    </section>
+  </div>
+
   <div id="changePasswordModal" class="modal-overlay" hidden>
     <section class="card modal-card accountant-register-modal-card">
       <div class="accountant-register-modal-top">
@@ -1156,6 +1230,7 @@
     </section>
   </div>
 
+  <script src="https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <script src="./public/js/app-core.js"></script>
   <script src="./public/js/app-data.js"></script>
   <script src="./public/js/app-table-analysis.js"></script>

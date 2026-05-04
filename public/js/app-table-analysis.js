@@ -85,6 +85,31 @@
       return toDayLabel(timestamp);
     }
 
+    function parseDateDayLikeValue(rawValue) {
+      const source = String(rawValue || "").trim();
+      if (!source) return Number.NaN;
+      const dateTimestamp = parseDateValue(source);
+      if (!Number.isNaN(dateTimestamp)) return dateTimestamp;
+      const dateTimeTimestamp = typeof parseDateTimeValue === "function"
+        ? parseDateTimeValue(source)
+        : Date.parse(source);
+      if (Number.isNaN(dateTimeTimestamp)) return Number.NaN;
+      const date = new Date(dateTimeTimestamp);
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    }
+
+    function getDateLikeMonthKey(rawValue) {
+      const timestamp = parseDateDayLikeValue(rawValue);
+      if (Number.isNaN(timestamp)) return "";
+      return toMonthLabel(timestamp);
+    }
+
+    function getDateLikeDayKey(rawValue) {
+      const timestamp = parseDateDayLikeValue(rawValue);
+      if (Number.isNaN(timestamp)) return "";
+      return toDayLabel(timestamp);
+    }
+
     function getTodayFilterValue() {
       return "__today__";
     }
@@ -184,16 +209,16 @@
       const filterValue = String(filterValueRaw || "").trim();
       if (filterValue) {
         if (isTodayFilterValue(filterValue)) {
-          return getDateDayKey(rawDate) === toDayLabel(Date.now());
+          return getDateLikeDayKey(rawDate) === toDayLabel(Date.now());
         }
-        return getDateMonthKey(rawDate) === filterValue;
+        return getDateLikeMonthKey(rawDate) === filterValue;
       }
 
       const normalizedRange = getNormalizedDateRangeFilter(startRaw, endRaw);
       if (!normalizedRange.start && !normalizedRange.end) {
         return true;
       }
-      const dayKey = getDateDayKey(rawDate);
+      const dayKey = getDateLikeDayKey(rawDate);
       if (!dayKey) return false;
       if (normalizedRange.start && dayKey < normalizedRange.start) return false;
       if (normalizedRange.end && dayKey > normalizedRange.end) return false;
@@ -299,6 +324,9 @@
 
     function getSortValue(item, key) {
       if (key === "premiumPrice") {
+        if (sortState.premiumMode === "percent") {
+          return getPremiumPercentValue(item);
+        }
         return getPremiumValue(item);
       }
       if (key === "profitPrice") {
@@ -309,6 +337,9 @@
       }
       if (key === "date") {
         return parseDateValue(item.date);
+      }
+      if (key === "completedAt") {
+        return parseDateTimeValue(item.completedAt);
       }
       if (key === "dispatcher") {
         return normalizeDispatcherTag(item.dispatcher);
@@ -337,6 +368,13 @@
         return 1;
       }
       return String(item[key] || "").trim();
+    }
+
+    function getPremiumPercentValue(item) {
+      const premium = getPremiumValue(item);
+      const payment = Number(item?.paymentPrice);
+      if (!Number.isFinite(premium) || !Number.isFinite(payment) || payment === 0) return Number.NaN;
+      return (premium / payment) * 100;
     }
 
     function compareSortValue(a, b) {
@@ -384,6 +422,19 @@
         }
         return Number.isFinite(value) ? sum + value : sum;
       }, 0);
+    }
+
+    function getPremiumTotalPercent(sourceRecords) {
+      const totals = (Array.isArray(sourceRecords) ? sourceRecords : []).reduce((current, item) => {
+        const premium = getPremiumValue(item);
+        const payment = Number(item?.paymentPrice);
+        if (Number.isFinite(premium)) current.premium += premium;
+        if (Number.isFinite(payment)) current.payment += payment;
+        return current;
+      }, { premium: 0, payment: 0 });
+      if (totals.payment === 0) return "";
+      const percent = (totals.premium / totals.payment) * 100;
+      return percent === 0 ? "" : formatTrimmedPercent(percent);
     }
 
     function getSortedRecords(sourceRecords) {
@@ -437,7 +488,8 @@
         button.classList.toggle("active", active);
         const labelNode = document.createElement("span");
         labelNode.className = "sort-btn-label";
-        labelNode.textContent = `${label}${arrow}`;
+        const modeLabel = key === "premiumPrice" && sortState.premiumMode === "percent" ? "(%)" : "";
+        labelNode.textContent = `${label}${modeLabel}${arrow}`;
         if (
           key === "paymentPrice"
           || key === "totalPrice"
@@ -456,10 +508,11 @@
               formatProfitTotalTooltip(sourceRecords)
             ].filter(Boolean).join("\n");
           } else if (key === "premiumPrice" && Number.isFinite(profitBreakdown.premiumProfit)) {
-            metaNode.textContent = `合计 ${total}（${toMoney(profitBreakdown.premiumProfit)}）`;
+            const premiumTotalPercent = getPremiumTotalPercent(sourceRecords);
+            metaNode.textContent = premiumTotalPercent ? `合计 ${total}（${premiumTotalPercent}）` : `合计 ${total}`;
             metaNode.title = [
               `溢价合计：${total}`,
-              `接待收益溢价部分：${toMoney(profitBreakdown.premiumProfit)}`,
+              premiumTotalPercent ? `总溢价 / 总付款价：${premiumTotalPercent}` : "",
               formatProfitTotalTooltip(sourceRecords)
             ].filter(Boolean).join("\n");
           } else {
@@ -478,7 +531,21 @@
     function toggleSort(key) {
       if (!key) return;
       if (key === "profitPrice" && !shouldShowProfitColumn()) return;
-      if (sortState.key === key) {
+      if (key === "premiumPrice") {
+        if (sortState.key === key && sortState.direction === "asc") {
+          sortState.direction = "desc";
+        } else if (sortState.key === key && sortState.direction === "desc" && sortState.premiumMode === "amount") {
+          sortState.premiumMode = "percent";
+          sortState.direction = "asc";
+        } else if (sortState.key === key && sortState.direction === "desc" && sortState.premiumMode === "percent") {
+          sortState.premiumMode = "amount";
+          sortState.direction = "asc";
+        } else {
+          sortState.key = key;
+          sortState.premiumMode = "amount";
+          sortState.direction = "asc";
+        }
+      } else if (sortState.key === key) {
         sortState.direction = sortState.direction === "asc" ? "desc" : "asc";
       } else {
         sortState.key = key;
@@ -550,7 +617,9 @@
         const count = countMap.get(value) || 0;
         const label = document.createElement("span");
         label.className = "filter-option-label";
-        label.textContent = type === "month" ? formatDateFilterOptionLabel(value) : value;
+        label.textContent = type === "month"
+          ? formatDateFilterOptionLabel(value)
+          : (type === "dispatcher" ? getDispatcherDisplayNameByTag(value) : value);
         const countBadge = document.createElement("span");
         countBadge.className = "filter-option-count";
         countBadge.textContent = String(count);
@@ -567,6 +636,10 @@
         new Set(scopedRecords.map((item) => getDateMonthKey(item.date)).filter(Boolean))
       ).sort((left, right) => right.localeCompare(left, "zh-CN", { numeric: true, sensitivity: "base" }));
       const monthValues = [getTodayFilterValue(), ...rawMonthValues];
+      const rawCompletedAtMonthValues = Array.from(
+        new Set(scopedRecords.map((item) => getDateLikeMonthKey(item.completedAt)).filter(Boolean))
+      ).sort((left, right) => right.localeCompare(left, "zh-CN", { numeric: true, sensitivity: "base" }));
+      const completedAtMonthValues = [getTodayFilterValue(), ...rawCompletedAtMonthValues];
 
       const dispatcherValues = Array.from(
         new Set(scopedRecords.map((item) => normalizeDispatcherTag(item.dispatcher)))
@@ -598,6 +671,9 @@
       if (filterState.month && !monthValues.includes(filterState.month)) {
         filterState.month = "";
       }
+      if (filterState.completedAtMonth && !completedAtMonthValues.includes(filterState.completedAtMonth)) {
+        filterState.completedAtMonth = "";
+      }
       if (filterState.dispatcher && !dispatcherValues.includes(filterState.dispatcher)) {
         filterState.dispatcher = "";
       }
@@ -617,8 +693,14 @@
         filterState.settled = "";
       }
 
+      const orderNoQuery = String(filterState.orderNo || "").trim().toLowerCase();
+      const orderNoList = orderNoQuery
+        .split(/[\n\r]+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
       const filterMatchers = {
         month: (item) => isDateFilterMatched(item.date, filterState.month, filterState.dateStart, filterState.dateEnd),
+        completedAt: (item) => isDateFilterMatched(item.completedAt, filterState.completedAtMonth, filterState.completedAtStart, filterState.completedAtEnd),
         dispatcher: (item) => !filterState.dispatcher
           || normalizeDispatcherTag(item.dispatcher) === filterState.dispatcher,
         accountant: (item) => !filterState.accountant
@@ -627,12 +709,15 @@
         shopName: (item) => !filterState.shopName || getShopNameFilterValue(item) === filterState.shopName,
         source: (item) => !filterState.source || getSourceFilterValue(item) === filterState.source,
         status: (item) => !filterState.status || getStatusFilterValues(item).includes(filterState.status),
-        settled: (item) => !filterState.settled || getRecordSettlementFilterLabel(item) === filterState.settled
+        settled: (item) => !filterState.settled || getRecordSettlementFilterLabel(item) === filterState.settled,
+        orderNo: (item) => orderNoList.length === 0
+          || orderNoList.some(query => String(item.orderNo || "").toLowerCase().trim() === query)
       };
       const getScopedRecordsByFilter = (excludedKey) => scopedRecords.filter((item) => (
         Object.entries(filterMatchers).every(([key, matcher]) => key === excludedKey || matcher(item))
       ));
       const monthScopedRecords = getScopedRecordsByFilter("month");
+      const completedAtScopedRecords = getScopedRecordsByFilter("completedAt");
       const dispatcherScopedRecords = getScopedRecordsByFilter("dispatcher");
       const accountantScopedRecords = getScopedRecordsByFilter("accountant");
       const platformScopedRecords = getScopedRecordsByFilter("platform");
@@ -647,6 +732,14 @@
       monthCountMap.set(
         getTodayFilterValue(),
         monthScopedRecords.filter((item) => getDateDayKey(item.date) === toDayLabel(Date.now())).length
+      );
+      const completedAtCountMap = buildValueCountMap(
+        completedAtScopedRecords,
+        (item) => getDateLikeMonthKey(item.completedAt)
+      );
+      completedAtCountMap.set(
+        getTodayFilterValue(),
+        completedAtScopedRecords.filter((item) => getDateLikeDayKey(item.completedAt) === toDayLabel(Date.now())).length
       );
       const dispatcherCountMap = buildValueCountMap(
         dispatcherScopedRecords,
@@ -688,6 +781,13 @@
         "month",
         filterState.month,
         monthCountMap
+      );
+      buildFilterOptionList(
+        filterCompletedAtList,
+        completedAtMonthValues,
+        "month",
+        filterState.completedAtMonth,
+        completedAtCountMap
       );
       buildFilterOptionList(
         filterDispatcherList,
@@ -745,11 +845,16 @@
       const scopedRecords = getVisibleRecords();
       return scopedRecords.filter((item) => {
         const monthMatched = isDateFilterMatched(item.date, filterState.month, filterState.dateStart, filterState.dateEnd);
+        const completedAtMatched = isDateFilterMatched(item.completedAt, filterState.completedAtMonth, filterState.completedAtStart, filterState.completedAtEnd);
         const dispatcherMatched = !filterState.dispatcher
           || normalizeDispatcherTag(item.dispatcher) === filterState.dispatcher;
         const orderNoQuery = String(filterState.orderNo || "").trim().toLowerCase();
-        const orderNoMatched = !orderNoQuery
-          || String(item.orderNo || "").toLowerCase().includes(orderNoQuery);
+        const orderNoList = orderNoQuery
+          .split(/[\n\r]+/)
+          .map(s => s.trim())
+          .filter(s => s.length > 0);
+        const orderNoMatched = orderNoList.length === 0
+          || orderNoList.some(query => String(item.orderNo || "").toLowerCase().trim() === query);
         const accountantMatched = !filterState.accountant
           || String(item.accountant || "").trim() === filterState.accountant;
         const platformMatched = !filterState.platform || getPlatformFilterValue(item) === filterState.platform;
@@ -758,6 +863,7 @@
         const statusMatched = !filterState.status || getStatusFilterValues(item).includes(filterState.status);
         const settledMatched = !filterState.settled || getRecordSettlementFilterLabel(item) === filterState.settled;
         return monthMatched
+          && completedAtMatched
           && dispatcherMatched
           && orderNoMatched
           && accountantMatched
@@ -913,7 +1019,7 @@
     function buildCoopRows(scopeRecords) {
       const map = new Map();
       scopeRecords.forEach((item) => {
-        const dispatcher = normalizeDispatcherTag(item.dispatcher);
+        const dispatcher = getDispatcherDisplayNameByTag(item.dispatcher);
         const accountant = String(item.accountant || "").trim() || "未填";
         const key = `${dispatcher}|${accountant}`;
         const bucket = map.get(key) || {
@@ -1194,7 +1300,7 @@
 
       const dispatcherGroups = new Map();
       unsettledRecords.forEach((item) => {
-        const key = normalizeDispatcherTag(item.dispatcher) || "未填";
+        const key = getDispatcherDisplayNameByTag(item.dispatcher) || "未填";
         const group = dispatcherGroups.get(key) || [];
         group.push(item);
         dispatcherGroups.set(key, group);
@@ -1884,7 +1990,7 @@
             premium: Number.isFinite(getPremiumValue(item)) ? getPremiumValue(item) : 0,
             customer: String(item.customer || "").trim() || "未填",
             accountant: String(item.accountant || "").trim() || "未填",
-            dispatcher: normalizeDispatcherTag(item.dispatcher),
+            dispatcher: getDispatcherDisplayNameByTag(item.dispatcher),
             summary: getTrendSummaryLabel(item.summary)
           };
         })
@@ -2457,7 +2563,17 @@
       if (!rows.length) {
         return '<div class="analysis-empty">暂无可展示数据</div>';
       }
-      const head = columns.map((col) => `<th>${escapeHtml(col)}</th>`).join("");
+      const head = columns.map((col) => {
+        if (typeof col === "object" && col !== null) {
+          const label = col.label || "";
+          const total = col.total || "";
+          if (total) {
+            return `<th><div class="analysis-th-content"><span class="analysis-th-label">${escapeHtml(label)}</span><span class="analysis-th-total">${escapeHtml(total)}</span></div></th>`;
+          }
+          return `<th>${escapeHtml(label)}</th>`;
+        }
+        return `<th>${escapeHtml(col)}</th>`;
+      }).join("");
       const body = rows
         .map((row) => {
           const tds = row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("");
@@ -2474,7 +2590,7 @@
       const sumSettlement = scopeRecords.reduce((sum, item) => sum + toNumber(item.settlementPrice), 0);
       const ratio = sumTotal > 0 ? sumSettlement / sumTotal : 0;
 
-      const byDispatcher = summarizeBy(scopeRecords, (item) => normalizeDispatcherTag(item.dispatcher))
+      const byDispatcher = summarizeBy(scopeRecords, (item) => getDispatcherDisplayNameByTag(item.dispatcher))
         .sort((a, b) => b.settlement - a.settlement);
       const byAccountant = summarizeBy(scopeRecords, (item) => String(item.accountant || "").trim() || "未填")
         .sort(compareSummaryRowsByCount);
@@ -2521,7 +2637,7 @@
       const medianTotal = median(totalValues);
       const medianSettlement = median(settlementValues);
 
-      const byDispatcher = summarizeBy(scopeRecords, (item) => normalizeDispatcherTag(item.dispatcher))
+      const byDispatcher = summarizeBy(scopeRecords, (item) => getDispatcherDisplayNameByTag(item.dispatcher))
         .sort((a, b) => b.settlement - a.settlement);
       const byAccountant = summarizeBy(scopeRecords, (item) => String(item.accountant || "").trim() || "未填")
         .sort(compareSummaryRowsByCount);
@@ -2591,7 +2707,7 @@
           if (settlement > total) reasons.push("会计结算价高于会计价");
           return {
             date: formatDateDisplay(item.date),
-            dispatcher: normalizeDispatcherTag(item.dispatcher),
+            dispatcher: getDispatcherDisplayNameByTag(item.dispatcher),
             accountant: String(item.accountant || "").trim() || "未填",
             customer: String(item.customer || "").trim() || "未填",
             total,
@@ -2617,8 +2733,28 @@
         .map((text) => `<span class="analysis-tag">${escapeHtml(text)}</span>`)
         .join("");
 
+      const accountantTotal = unsettledAmountRows.accountantRows.reduce(
+        (acc, row) => ({
+          count: acc.count + row.count,
+          amount: acc.amount + row.amount
+        }),
+        { count: 0, amount: 0 }
+      );
+
+      const unsettledAccountantColumns = [
+        "会计",
+        {
+          label: "未结算单量",
+          total: `合计 ${formatCount(accountantTotal.count)}`
+        },
+        {
+          label: "会计未结算金额",
+          total: `合计 ${formatCurrency(accountantTotal.amount)}`
+        }
+      ];
+
       const unsettledAccountantTable = buildHtmlTable(
-        ["会计", "未结算单量", "会计未结算金额"],
+        unsettledAccountantColumns,
         unsettledAmountRows.accountantRows.map((row) => [
           row.key,
           formatCount(row.count),
@@ -2626,8 +2762,28 @@
         ])
       );
 
+      const dispatcherTotal = unsettledAmountRows.dispatcherRows.reduce(
+        (acc, row) => ({
+          count: acc.count + row.count,
+          amount: acc.amount + row.amount
+        }),
+        { count: 0, amount: 0 }
+      );
+
+      const unsettledDispatcherColumns = [
+        "接待人",
+        {
+          label: "未结算单量",
+          total: `合计 ${formatCount(dispatcherTotal.count)}`
+        },
+        {
+          label: "接待未结算金额",
+          total: `合计 ${formatCurrency(dispatcherTotal.amount)}`
+        }
+      ];
+
       const unsettledDispatcherTable = buildHtmlTable(
-        ["接待人", "未结算单量", "接待未结算金额"],
+        unsettledDispatcherColumns,
         unsettledAmountRows.dispatcherRows.map((row) => [
           row.key,
           formatCount(row.count),
@@ -2786,7 +2942,7 @@
 
       const anomalyTable = showDispatcherSections
         ? buildHtmlTable(
-          ["日期", "接待人", "会计", "客户", "会计价", "会计结算价", "结算率", "原因"],
+          ["接单日期", "接待人", "会计", "客户", "会计价", "会计结算价", "结算率", "原因"],
           anomalies.map((row) => [
             row.date,
             row.dispatcher,
@@ -2799,7 +2955,7 @@
           ])
         )
         : buildHtmlTable(
-          ["日期", "会计", "客户", "会计价", "会计结算价", "结算率", "原因"],
+          ["接单日期", "会计", "客户", "会计价", "会计结算价", "结算率", "原因"],
           anomalies.map((row) => [
             row.date,
             row.accountant,

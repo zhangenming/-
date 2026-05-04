@@ -17,11 +17,13 @@ const ROOT_DIR = __dirname;
 const SOURCE_HTML_FILE = path.join(ROOT_DIR, "派单结算录入.html");
 const SOURCE_PUBLIC_DIR = path.join(ROOT_DIR, "public");
 const SOURCE_BUILD_INFO_FILE = path.join(ROOT_DIR, "build-info.json");
+const SOURCE_CHANGE_LOG_FILE = path.join(ROOT_DIR, "CHANGELOG.json");
 const DIST_DIR = path.join(ROOT_DIR, "dist");
 const HTML_DIR = IS_DEVELOPMENT ? ROOT_DIR : DIST_DIR;
 const HTML_FILE = IS_DEVELOPMENT ? SOURCE_HTML_FILE : path.join(DIST_DIR, "派单结算录入.html");
 const PUBLIC_DIR = IS_DEVELOPMENT ? SOURCE_PUBLIC_DIR : path.join(DIST_DIR, "public");
 const BUILD_INFO_FILE = IS_DEVELOPMENT ? SOURCE_BUILD_INFO_FILE : path.join(DIST_DIR, "build-info.json");
+const CHANGE_LOG_FILE = IS_DEVELOPMENT ? SOURCE_CHANGE_LOG_FILE : path.join(DIST_DIR, "CHANGELOG.json");
 const DATA_DIR = path.join(ROOT_DIR, IS_DEVELOPMENT ? "data-dev" : "data");
 const DATA_FILE = path.join(DATA_DIR, "records.json");
 const RECYCLE_BIN_FILE = path.join(DATA_DIR, "recycle-bin.json");
@@ -1208,7 +1210,7 @@ function getDispatcherTagForAccount(accountNameRaw) {
 function getDispatcherDisplayNameByTag(dispatcherTagRaw) {
   const dispatcherTag = normalizeDispatcherTag(dispatcherTagRaw);
   if (dispatcherTag === "开心财税") return "开心财税";
-  return dispatcherTag ? `开心财税${dispatcherTag}` : "";
+  return dispatcherTag ? `开心财税${dispatcherTag.toLowerCase()}` : "";
 }
 
 function buildDispatcherManagementRows(records, dispatcherPasswords) {
@@ -1351,7 +1353,9 @@ const ACCOUNTANT_RECORD_HISTORY_VISIBLE_FIELDS = new Set([
   "settlementPrice",
   "checkStatus",
   "isSettled",
-  "isSettlementPaid"
+  "isSettlementPaid",
+  "completedAt",
+  "customerFeedback"
 ]);
 
 function sanitizeRecordHistoryEntryForAccountant(rawEntry) {
@@ -1772,7 +1776,7 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
   },
   { field: "settlementPaidAt", label: "打款时间", kind: "datetime" },
   { field: "settlementPaidBy", label: "打款人", kind: "text" },
-  { field: "date", label: "日期", kind: "text" },
+  { field: "date", label: "接单日期", kind: "text" },
   {
     field: "isMonthlySettlement",
     label: "月结勾选",
@@ -1783,7 +1787,7 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
     field: "dispatcher",
     label: "派单人",
     kind: "text",
-    getValue: (record) => normalizeDispatcherTag(record?.dispatcher) || normalizeText(record?.dispatcher, 48)
+    getValue: (record) => getDispatcherDisplayNameByTag(record?.dispatcher) || normalizeText(record?.dispatcher, 48)
   },
   {
     field: "accountant",
@@ -2451,9 +2455,10 @@ async function serveRootHtmlAsset(res, pathname, options = {}) {
 
 function getDefaultBuildInfo() {
   const baseVersion = String(APP_PACKAGE?.version || "1.0.0").trim() || "1.0.0";
+  const betaBaseVersion = baseVersion.replace(/\.0$/, "");
   const buildNumber = 0;
   return {
-    version: buildNumber > 0 ? `${baseVersion}.${buildNumber}` : baseVersion,
+    version: buildNumber > 0 ? `${betaBaseVersion}.${buildNumber}.beta` : baseVersion,
     baseVersion,
     buildNumber,
     builtAt: "",
@@ -2497,6 +2502,30 @@ async function serveBuildInfo(res, options = {}) {
         return;
       }
       sendJson(res, 200, getDefaultBuildInfo());
+      return;
+    }
+    throw error;
+  }
+}
+
+async function serveChangeLog(res, options = {}) {
+  const { headOnly = false } = options;
+  try {
+    const content = await fs.readFile(CHANGE_LOG_FILE, "utf8");
+    setApiCorsHeaders(res);
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store"
+    });
+    res.end(headOnly ? undefined : content);
+  } catch (error) {
+    if (error && error.code === "ENOENT") {
+      setApiCorsHeaders(res);
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store"
+      });
+      res.end(headOnly ? undefined : "[]");
       return;
     }
     throw error;
@@ -4311,6 +4340,11 @@ const server = http.createServer(async (req, res) => {
 
     if ((req.method === "GET" || req.method === "HEAD") && pathname === "/build-info.json") {
       await serveBuildInfo(res, { headOnly: req.method === "HEAD" });
+      return;
+    }
+
+    if ((req.method === "GET" || req.method === "HEAD") && pathname === "/CHANGELOG.json") {
+      await serveChangeLog(res, { headOnly: req.method === "HEAD" });
       return;
     }
 

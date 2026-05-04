@@ -45,6 +45,7 @@
       closeChangePasswordModal();
       closeRecycleModal();
       closeDevTodoModal();
+      closeChangeLogModal();
       closeConfirmDialog(false);
       setPageMode(false);
       loginCodeInput.value = "";
@@ -116,7 +117,8 @@
         || (changePasswordModal && !changePasswordModal.hidden)
         || (confirmModal && !confirmModal.hidden)
         || !recycleModal.hidden
-        || (devTodoModal && !devTodoModal.hidden);
+        || (devTodoModal && !devTodoModal.hidden)
+        || (changeLogModal && !changeLogModal.hidden);
       document.body.classList.toggle("modal-open", hasOpenModal);
     }
 
@@ -247,6 +249,14 @@
       return sourceRecords.map((item) => getRecordComparisonSignature(item)).join("\u0002");
     }
 
+    function parseVersionXY(versionStr) {
+      const version = String(versionStr || "").trim();
+      const parts = version.split(".");
+      const x = parseInt(parts[0]) || 1;
+      const y = parseInt(parts[1]) || 0;
+      return { x, y, baseVersion: `${x}.${y}` };
+    }
+
     async function fetchBuildInfo() {
       if (buildInfoPanel) {
         setRegionLoading(buildInfoPanel, true, "正在读取版本...");
@@ -254,14 +264,46 @@
         if (buildTimeText) buildTimeText.textContent = "Build 读取中...";
       }
       try {
-        const response = await fetch(API_ENDPOINT_BUILD_INFO, { cache: "no-store" });
-        if (!response.ok) {
+        const [buildInfoResponse, changeLogResponse] = await Promise.all([
+          fetch(API_ENDPOINT_BUILD_INFO, { cache: "no-store" }),
+          fetch(API_ENDPOINT_CHANGE_LOG, { cache: "no-store" })
+        ]);
+
+        if (!buildInfoResponse.ok) {
           renderBuildInfo();
           return null;
         }
-        const payload = await response.json();
-        renderBuildInfo(payload);
-        return payload;
+
+        const buildInfo = await buildInfoResponse.json();
+
+        let baseVersion = "1.0";
+        if (changeLogResponse.ok) {
+          const changeLog = await changeLogResponse.json();
+          const items = Array.isArray(changeLog)
+            ? changeLog
+            : Array.isArray(changeLog?.changes)
+              ? changeLog.changes
+              : [];
+          if (items.length > 0) {
+            const latestVersion = String(items[0]?.version || "").trim();
+            if (latestVersion) {
+              baseVersion = parseVersionXY(latestVersion).baseVersion;
+            }
+          }
+        }
+
+        const buildNumber = Number(buildInfo?.buildNumber);
+        const fullVersion = Number.isInteger(buildNumber) && buildNumber >= 0
+          ? `${baseVersion}.${buildNumber}`
+          : baseVersion;
+
+        const buildInfoWithVersion = {
+          ...buildInfo,
+          version: fullVersion
+        };
+
+        renderBuildInfo(buildInfoWithVersion);
+        return buildInfoWithVersion;
       } catch (error) {
         console.error(error);
         renderBuildInfo();
@@ -314,7 +356,7 @@
       if (!accountantModal.hidden) {
         renderAccountantList();
       }
-      if (canCurrentAccountSettleRecords()) {
+      if (canCurrentAccountUseReminders()) {
         try {
           await fetchReminders();
         } catch (error) {
@@ -363,7 +405,7 @@
     }
 
     async function fetchReminders() {
-      if (!hasAuthenticatedAccount() || !canCurrentAccountSettleRecords()) return;
+      if (!hasAuthenticatedAccount() || !canCurrentAccountUseReminders()) return;
       const response = await fetchWithClientLog(
         API_ENDPOINT_REMINDERS,
         { cache: "no-store" },
@@ -1986,6 +2028,9 @@
           month: filterState.month,
           dateStart: filterState.dateStart,
           dateEnd: filterState.dateEnd,
+          completedAtMonth: filterState.completedAtMonth,
+          completedAtStart: filterState.completedAtStart,
+          completedAtEnd: filterState.completedAtEnd,
           dispatcher: filterState.dispatcher,
           orderNo: filterState.orderNo,
           accountant: filterState.accountant,
@@ -2022,6 +2067,9 @@
         const persistedMonth = String(parsedFilter.month || "").trim();
         const persistedDateStart = String(parsedFilter.dateStart || "").trim();
         const persistedDateEnd = String(parsedFilter.dateEnd || "").trim();
+        const persistedCompletedAtMonth = String(parsedFilter.completedAtMonth || "").trim();
+        const persistedCompletedAtStart = String(parsedFilter.completedAtStart || "").trim();
+        const persistedCompletedAtEnd = String(parsedFilter.completedAtEnd || "").trim();
         const persistedDispatcher = String(parsedFilter.dispatcher || "").trim();
         const persistedOrderNo = String(parsedFilter.orderNo || "").trim();
         const persistedAccountant = String(parsedFilter.accountant || "").trim();
@@ -2045,8 +2093,15 @@
         filterState.month = persistedMonth;
         filterState.dateStart = normalizedDateRange.start;
         filterState.dateEnd = normalizedDateRange.end;
+        const normalizedCompletedAtRange = typeof getNormalizedDateRangeFilter === "function"
+          ? getNormalizedDateRangeFilter(persistedCompletedAtStart, persistedCompletedAtEnd)
+          : { start: persistedCompletedAtStart, end: persistedCompletedAtEnd };
+        filterState.completedAtMonth = persistedCompletedAtMonth;
+        filterState.completedAtStart = normalizedCompletedAtRange.start;
+        filterState.completedAtEnd = normalizedCompletedAtRange.end;
         filterState.dispatcher = persistedDispatcher;
         filterState.orderNo = persistedOrderNo;
+        if (filterOrderInput) filterOrderInput.value = persistedOrderNo || "";
         filterState.accountant = persistedAccountant;
         filterState.platform = persistedPlatform;
         filterState.shopName = persistedShopName;

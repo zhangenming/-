@@ -195,6 +195,14 @@
       });
     }
 
+    if (bossSettlementSummaryBtn) {
+      bossSettlementSummaryBtn.addEventListener("click", () => {
+        if (!requireAccount()) return;
+        if (!isBossLogin()) return;
+        openBossSettlementDetailModal();
+      });
+    }
+
     if (bossSettlementDetailBtn) {
       bossSettlementDetailBtn.addEventListener("click", () => {
         openBossSettlementDetailModal();
@@ -474,6 +482,9 @@
       if (key === "month") {
         clearDateFilterState();
       }
+      if (key === "completedAt") {
+        clearCompletedAtFilterState();
+      }
       if (key === "dispatcher") filterState.dispatcher = "";
       if (key === "orderNo") {
         filterState.orderNo = "";
@@ -491,6 +502,11 @@
 
     function hasSingleFilterValue(key) {
       if (key === "month") return hasDateFilterSelected();
+      if (key === "completedAt") return hasDateFilterSelected({
+        month: filterState.completedAtMonth,
+        dateStart: filterState.completedAtStart,
+        dateEnd: filterState.completedAtEnd
+      });
       if (key === "dispatcher") return Boolean(filterState.dispatcher);
       if (key === "orderNo") return Boolean(filterState.orderNo);
       if (key === "accountant") return Boolean(filterState.accountant);
@@ -513,6 +529,7 @@
     }
 
     filterMonthBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "month"));
+    filterCompletedAtBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "completedAt"));
     filterDispatcherBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "dispatcher"));
     filterOrderBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "orderNo"));
     filterAccountantBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "accountant"));
@@ -522,7 +539,62 @@
     filterStatusBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "status"));
     filterSettledBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "settled"));
 
+    filterMonthValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("month");
+    });
+    filterCompletedAtValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("completedAt");
+    });
+    filterDispatcherValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("dispatcher");
+    });
+    filterOrderValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("orderNo");
+    });
+    filterAccountantValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("accountant");
+    });
+    filterPlatformValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("platform");
+    });
+    filterShopValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("shopName");
+    });
+    filterSourceValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("source");
+    });
+    filterStatusValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("status");
+    });
+    filterSettledValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("settled");
+    });
+
     filterMonthPopover.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    filterCompletedAtPopover.addEventListener("click", (event) => {
       event.stopPropagation();
     });
 
@@ -569,6 +641,17 @@
       renderTable();
     });
 
+    filterCompletedAtList.addEventListener("click", (event) => {
+      const target = event.target.closest(".filter-option-btn");
+      if (!target) return;
+      const selected = target.dataset.filterValue || "";
+      const nextMonth = filterState.completedAtMonth === selected ? "" : selected;
+      clearCompletedAtFilterState();
+      filterState.completedAtMonth = nextMonth;
+      closeAllFilterPopovers();
+      renderTable();
+    });
+
     if (filterDateRangeApplyBtn) {
       filterDateRangeApplyBtn.addEventListener("click", () => {
         applyDateRangeFilter();
@@ -580,6 +663,22 @@
     if (filterDateRangeClearBtn) {
       filterDateRangeClearBtn.addEventListener("click", () => {
         clearDateFilterState();
+        closeAllFilterPopovers();
+        renderTable();
+      });
+    }
+
+    if (filterCompletedAtRangeApplyBtn) {
+      filterCompletedAtRangeApplyBtn.addEventListener("click", () => {
+        applyCompletedAtRangeFilter();
+        closeAllFilterPopovers();
+        renderTable();
+      });
+    }
+
+    if (filterCompletedAtRangeClearBtn) {
+      filterCompletedAtRangeClearBtn.addEventListener("click", () => {
+        clearCompletedAtFilterState();
         closeAllFilterPopovers();
         renderTable();
       });
@@ -601,6 +700,22 @@
       filterDateEndInput.addEventListener("keydown", handleDateRangeInputKeydown);
     }
 
+    const handleCompletedAtRangeInputKeydown = (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      applyCompletedAtRangeFilter();
+      closeAllFilterPopovers();
+      renderTable();
+    };
+
+    if (filterCompletedAtStartInput) {
+      filterCompletedAtStartInput.addEventListener("keydown", handleCompletedAtRangeInputKeydown);
+    }
+
+    if (filterCompletedAtEndInput) {
+      filterCompletedAtEndInput.addEventListener("keydown", handleCompletedAtRangeInputKeydown);
+    }
+
     filterDispatcherList.addEventListener("click", (event) => {
       const target = event.target.closest(".filter-option-btn");
       if (!target) return;
@@ -620,13 +735,21 @@
 
     if (filterOrderInput) {
       filterOrderInput.addEventListener("input", () => {
-        applyOrderNoFilter({ closePopover: false });
-      });
-      filterOrderInput.addEventListener("search", () => {
+        const selectionStart = filterOrderInput.selectionStart;
+        const selectionEnd = filterOrderInput.selectionEnd;
+        const sanitized = sanitizeOrderNoInput(filterOrderInput.value, true);
+        if (sanitized !== filterOrderInput.value) {
+          const diff = filterOrderInput.value.length - sanitized.length;
+          filterOrderInput.value = sanitized;
+          filterOrderInput.setSelectionRange(
+            Math.max(0, selectionStart - diff),
+            Math.max(0, selectionEnd - diff)
+          );
+        }
         applyOrderNoFilter({ closePopover: false });
       });
       filterOrderInput.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
+        if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
           closeAllFilterPopovers();
         }
@@ -692,6 +815,7 @@
 
     clearFilterBtn.addEventListener("click", () => {
       clearDateFilterState();
+      clearCompletedAtFilterState();
       filterState.dispatcher = "";
       filterState.orderNo = "";
       filterState.accountant = "";
@@ -700,9 +824,42 @@
       filterState.source = "";
       filterState.status = "";
       filterState.settled = "";
+      if (filterOrderInput) filterOrderInput.value = "";
       closeAllFilterPopovers();
       renderTable();
     });
+
+    if (orderNoInput) {
+      orderNoInput.addEventListener("input", () => {
+        const selectionStart = orderNoInput.selectionStart;
+        const selectionEnd = orderNoInput.selectionEnd;
+        const sanitized = sanitizeOrderNoInput(orderNoInput.value, false);
+        if (sanitized !== orderNoInput.value) {
+          const diff = orderNoInput.value.length - sanitized.length;
+          orderNoInput.value = sanitized;
+          orderNoInput.setSelectionRange(
+            Math.max(0, selectionStart - diff),
+            Math.max(0, selectionEnd - diff)
+          );
+        }
+      });
+    }
+
+    if (reminderOrderInput) {
+      reminderOrderInput.addEventListener("input", () => {
+        const selectionStart = reminderOrderInput.selectionStart;
+        const selectionEnd = reminderOrderInput.selectionEnd;
+        const sanitized = sanitizeOrderNoInput(reminderOrderInput.value, false);
+        if (sanitized !== reminderOrderInput.value) {
+          const diff = reminderOrderInput.value.length - sanitized.length;
+          reminderOrderInput.value = sanitized;
+          reminderOrderInput.setSelectionRange(
+            Math.max(0, selectionStart - diff),
+            Math.max(0, selectionEnd - diff)
+          );
+        }
+      });
+    }
 
     if (accountantRegisterForm) {
       accountantRegisterForm.addEventListener("submit", async (event) => {
@@ -912,6 +1069,15 @@
       if (!recordId) return;
       const completedAtRaw = String(completeTimeInput.value || "").trim();
       const customerFeedback = String(completeCustomerFeedbackInput.value || "").trim();
+      if (!customerFeedback) {
+        showInlineFormError({
+          form: completeForm,
+          hintSetter: setCompleteFormHint,
+          target: completeCustomerFeedbackInput,
+          message: "客户反馈为必填项。"
+        });
+        return;
+      }
       if (!completedAtRaw) {
         showInlineFormError({
           form: completeForm,
@@ -1362,6 +1528,24 @@
       });
     }
 
+    if (settlementDetailTabAccountant && settlementDetailTabDispatcher) {
+      settlementDetailTabAccountant.addEventListener("click", () => {
+        if (settlementDetailActiveTab === "accountant") return;
+        settlementDetailActiveTab = "accountant";
+        settlementDetailTabAccountant.classList.add("active");
+        settlementDetailTabDispatcher.classList.remove("active");
+        renderBossSettlementDetailModalContent();
+      });
+
+      settlementDetailTabDispatcher.addEventListener("click", () => {
+        if (settlementDetailActiveTab === "dispatcher") return;
+        settlementDetailActiveTab = "dispatcher";
+        settlementDetailTabDispatcher.classList.add("active");
+        settlementDetailTabAccountant.classList.remove("active");
+        renderBossSettlementDetailModalContent();
+      });
+    }
+
     tableBody.addEventListener("click", async (event) => {
       const checkBtn = event.target.closest(".row-check-btn");
       if (checkBtn) {
@@ -1610,6 +1794,26 @@
       });
     }
 
+    if (openChangeLogBtn) {
+      openChangeLogBtn.addEventListener("click", () => {
+        openChangeLogModal();
+      });
+    }
+
+    if (closeChangeLogModalBtn) {
+      closeChangeLogModalBtn.addEventListener("click", () => {
+        closeChangeLogModal();
+      });
+    }
+
+    if (changeLogModal) {
+      changeLogModal.addEventListener("click", (event) => {
+        if (event.target === changeLogModal) {
+          closeChangeLogModal();
+        }
+      });
+    }
+
     if (changePasswordModal) {
       changePasswordModal.addEventListener("click", (event) => {
         if (event.target === changePasswordModal) {
@@ -1660,6 +1864,7 @@
 
     document.addEventListener("keydown", (event) => {
       if (!filterMonthPopover.hidden
+        || !filterCompletedAtPopover.hidden
         || !filterDispatcherPopover.hidden
         || !filterOrderPopover.hidden
         || !filterAccountantPopover.hidden
@@ -1733,6 +1938,10 @@
         closeDevTodoModal();
         return;
       }
+      if (changeLogModal && event.key === "Escape" && !changeLogModal.hidden) {
+        closeChangeLogModal();
+        return;
+      }
       if (event.key === "Escape" && !recordHistoryModal.hidden) {
         closeRecordHistoryModal();
         return;
@@ -1797,7 +2006,7 @@
 
       if (isCreateMode && !allowEmptyCreateFields) {
         const requiredFields = [
-          { key: "date", label: "日期", value: item.date },
+          { key: "date", label: "接单日期", value: item.date },
           { key: "source", label: "来源", value: item.source },
           { key: "platform", label: "平台", value: item.platform },
           { key: "shopName", label: "店铺名", value: item.shopName },

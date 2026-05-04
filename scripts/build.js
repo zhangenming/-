@@ -6,13 +6,14 @@ const { promisify } = require("util");
 
 const ROOT_DIR = path.resolve(__dirname, "..");
 const DIST_DIR = path.join(ROOT_DIR, "dist");
-const PACKAGE_FILE = path.join(ROOT_DIR, "package.json");
 const SOURCE_HTML_FILE = path.join(ROOT_DIR, "派单结算录入.html");
 const SOURCE_PUBLIC_DIR = path.join(ROOT_DIR, "public");
 const SOURCE_BUILD_INFO_FILE = path.join(ROOT_DIR, "build-info.json");
+const SOURCE_CHANGE_LOG_FILE = path.join(ROOT_DIR, "CHANGELOG.json");
 const TARGET_HTML_FILE = path.join(DIST_DIR, "派单结算录入.html");
 const TARGET_PUBLIC_DIR = path.join(DIST_DIR, "public");
 const TARGET_BUILD_INFO_FILE = path.join(DIST_DIR, "build-info.json");
+const TARGET_CHANGE_LOG_FILE = path.join(DIST_DIR, "CHANGELOG.json");
 const APP_ENV = String(process.env.APP_ENV || "production").trim().toLowerCase() === "development"
   ? "development"
   : "production";
@@ -207,31 +208,42 @@ async function readJsonFile(filePath) {
   }
 }
 
-function formatBuildVersion(baseVersion, buildNumber) {
-  const normalizedBaseVersion = String(baseVersion || "1.0.0").trim() || "1.0.0";
-  return Number.isInteger(buildNumber) && buildNumber > 0
-    ? `${normalizedBaseVersion}.${buildNumber}`
-    : normalizedBaseVersion;
+function parseVersionXY(versionStr) {
+  const version = String(versionStr || "").trim();
+  const parts = version.split(".");
+  const x = parseInt(parts[0]) || 1;
+  const y = parseInt(parts[1]) || 0;
+  return { x, y, baseVersion: `${x}.${y}` };
+}
+
+async function getBaseVersionFromChangeLog() {
+  const changeLog = await readJsonFile(SOURCE_CHANGE_LOG_FILE);
+  let baseVersion = "1.0";
+  if (Array.isArray(changeLog) && changeLog.length > 0) {
+    const latestVersion = String(changeLog[0]?.version || "").trim();
+    if (latestVersion) {
+      baseVersion = parseVersionXY(latestVersion).baseVersion;
+    }
+  }
+  return baseVersion;
 }
 
 async function createBuildInfo() {
-  const packageJson = await readJsonFile(PACKAGE_FILE);
   const previousBuildInfo = await readJsonFile(SOURCE_BUILD_INFO_FILE);
-  const baseVersion = String(packageJson?.version || "1.0.0").trim() || "1.0.0";
-  const previousBaseVersion = String(previousBuildInfo?.baseVersion || "").trim();
   const previousBuildNumber = Number(previousBuildInfo?.buildNumber);
-  const buildNumber = previousBaseVersion === baseVersion && Number.isInteger(previousBuildNumber)
+  const newBuildNumber = Number.isInteger(previousBuildNumber) && previousBuildNumber >= 0
     ? previousBuildNumber + 1
-    : 1;
+    : 0;
+
+  const baseVersion = await getBaseVersionFromChangeLog();
+  const fullVersion = `${baseVersion}.${newBuildNumber}`;
+  const builtAt = formatBeijingDateTime(new Date());
 
   return {
-    version: formatBuildVersion(baseVersion, buildNumber),
-    baseVersion,
-    buildNumber,
-    builtAt: formatBeijingDateTime(new Date()),
+    buildNumber: newBuildNumber,
+    builtAt: builtAt,
     appEnv: APP_ENV,
-    html: path.basename(SOURCE_HTML_FILE),
-    publicDir: path.basename(SOURCE_PUBLIC_DIR)
+    version: fullVersion
   };
 }
 
@@ -253,12 +265,15 @@ async function main() {
   await fs.copyFile(SOURCE_HTML_FILE, TARGET_HTML_FILE);
   await copyAdditionalHtmlFiles();
   await fs.cp(SOURCE_PUBLIC_DIR, TARGET_PUBLIC_DIR, { recursive: true });
+  await fs.copyFile(SOURCE_CHANGE_LOG_FILE, TARGET_CHANGE_LOG_FILE);
   const buildInfoJson = `${JSON.stringify(buildInfo, null, 2)}\n`;
   await fs.writeFile(SOURCE_BUILD_INFO_FILE, buildInfoJson, "utf8");
   await fs.writeFile(TARGET_BUILD_INFO_FILE, buildInfoJson, "utf8");
   await restartBackendServer();
 
-  console.log(`Build completed: ${DIST_DIR} (${buildInfo.version})`);
+  console.log(`Build completed: ${DIST_DIR}`);
+  console.log(`Build time: ${buildInfo.builtAt}`);
+  console.log(`Build version: ${buildInfo.version}`);
 }
 
 main().catch((error) => {

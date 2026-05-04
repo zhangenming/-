@@ -1,5 +1,250 @@
 [
   {
+    "id": "rec_monz3kbwvarpb1",
+    "createdAt": "2026-05-02 14:41:01",
+    "date": "2026-05-02",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "SSE5222",
+    "platform": "",
+    "shopName": "",
+    "orderNo": "",
+    "source": "",
+    "customer": "3",
+    "summary": "4",
+    "remark": "",
+    "paymentPrice": 333,
+    "totalPrice": 123,
+    "settlementPrice": 73.8,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "checked",
+    "checkedAt": "2026-05-02 14:41:06",
+    "completedAt": "",
+    "completedBy": "",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_monz3oiihl3rtl",
+        "operatedAt": "2026-05-02 14:41:06",
+        "operatedBy": "SSE5222",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "customer",
+            "label": "客户",
+            "before": "",
+            "after": "3"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "4"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "SSE5222"
+  },
+  {
+    "id": "rec_monz1kjcxf9y27",
+    "createdAt": "2026-05-02 14:39:28",
+    "date": "2026-05-02",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "SSE5222",
+    "platform": "",
+    "shopName": "",
+    "orderNo": "",
+    "source": "",
+    "customer": "1",
+    "summary": "2",
+    "remark": "",
+    "paymentPrice": 2433,
+    "totalPrice": 2343,
+    "settlementPrice": 1405.8,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-05-02 14:39:32",
+    "completedAt": "2026-05-02 14:39:35",
+    "completedBy": "SSE5222",
+    "customerFeedback": "",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_monz1qsbw4hm9d",
+        "operatedAt": "2026-05-02 14:39:36",
+        "operatedBy": "SSE5222",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-05-02 14:39:35"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_monz1o2mdekgqs",
+        "operatedAt": "2026-05-02 14:39:32",
+        "operatedBy": "SSE5222",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "customer",
+            "label": "客户",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "2"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "SSE5222"
+  },
+  {
+    "id": "rec_monvct41s9qe12",
+    "createdAt": "2026-05-02 12:56:13",
+    "date": "2026-05-02",
+    "isMonthlySettlement": false,
+    "dispatcher": "1",
+    "accountant": "SSE5222",
+    "platform": "",
+    "shopName": "",
+    "orderNo": "",
+    "source": "",
+    "customer": "43",
+    "summary": "355",
+    "remark": "",
+    "paymentPrice": 444,
+    "totalPrice": 233,
+    "settlementPrice": 139.8,
+    "isSettled": false,
+    "settledAt": "",
+    "settledBy": "",
+    "settlementInvoiceImage": null,
+    "invoiceUploadedAt": "",
+    "invoiceUploadedBy": "",
+    "invoiceUploadedByUsername": "",
+    "isSettlementPaid": false,
+    "settlementPaidAt": "",
+    "settlementPaidBy": "",
+    "checkStatus": "completed",
+    "checkedAt": "2026-05-02 12:56:31",
+    "completedAt": "2026-05-02 12:56:32",
+    "completedBy": "SSE5222",
+    "customerFeedback": "5555",
+    "serviceFeedbackImages": [],
+    "operationHistory": [
+      {
+        "historyId": "rhis_monvd8nm3eqjp2",
+        "operatedAt": "2026-05-02 12:56:34",
+        "operatedBy": "SSE5222",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-05-02 12:56:32"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "5555"
+          }
+        ]
+      },
+      {
+        "historyId": "rhis_monvd6ur6yr0ou",
+        "operatedAt": "2026-05-02 12:56:31",
+        "operatedBy": "SSE5222",
+        "operatedRole": "accountant",
+        "actionKey": "checked",
+        "actionLabel": "确认",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "checked"
+          },
+          {
+            "field": "customer",
+            "label": "客户",
+            "before": "",
+            "after": "43"
+          },
+          {
+            "field": "summary",
+            "label": "任务简介",
+            "before": "",
+            "after": "355"
+          }
+        ]
+      }
+    ],
+    "checkedBy": "SSE5222"
+  },
+  {
     "id": "rec_mokvpu4n8lzd65",
     "createdAt": "2026-04-30 10:43:03",
     "date": "2026-04-30",

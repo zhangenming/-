@@ -1,9 +1,6 @@
 {
-  "version": "1.0.0.149",
-  "baseVersion": "1.0.0",
-  "buildNumber": 149,
-  "builtAt": "2026-04-30 23:03:26",
+  "buildNumber": 194,
+  "builtAt": "2026-05-04 00:30:24",
   "appEnv": "production",
-  "html": "派单结算录入.html",
-  "publicDir": "public"
+  "version": "8.1.194"
 }
