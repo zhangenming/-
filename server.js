@@ -37,14 +37,13 @@ const INVOICE_IMAGE_DIR = path.join(DATA_DIR, "invoice-images");
 const INVOICE_IMAGE_URL_PREFIX = "/invoice-images/";
 const SERVER_LOG_FILE = path.join(ROOT_DIR, "server.log");
 const DEV_LIVE_RELOAD_PATHNAME = "/__dev/events";
-const DISPATCHER_ACCOUNT_LIST = ["1", "a", "c", "e", "k", "开心财税"];
+const DISPATCHER_ACCOUNT_LIST = ["1", "a", "c", "e", "k", "开心财税", "开心财税1旧", "开心财税k旧"];
 const DISPATCHER_ACCOUNTS = new Set(DISPATCHER_ACCOUNT_LIST);
 const DISPATCHER_LOGIN_PASSWORD = "11";
 const BOSS_LOGIN_ACCOUNT = "开心";
 const BOSS_LOGIN_LEGACY_ACCOUNT = "boss";
 const BOSS_LOGIN_ACCOUNTS = [
-  { account: BOSS_LOGIN_ACCOUNT, password: "boss123", aliases: [BOSS_LOGIN_ACCOUNT, BOSS_LOGIN_LEGACY_ACCOUNT] },
-  { account: "管理员", password: "11", aliases: ["管理员"] }
+  { account: BOSS_LOGIN_ACCOUNT, password: "boss123", aliases: [BOSS_LOGIN_ACCOUNT, BOSS_LOGIN_LEGACY_ACCOUNT] }
 ];
 const BOSS_LOGIN_ACCOUNT_SET = new Set(BOSS_LOGIN_ACCOUNTS.map((item) => item.account.toLowerCase()));
 const BOSS_LOGIN_CODE_TO_ACCOUNT = BOSS_LOGIN_ACCOUNTS.reduce((result, item) => {
@@ -73,11 +72,15 @@ const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
   e: "e",
   k: "k",
   "开心财税": "开心财税",
+  "开心财税1旧": "开心财税1旧",
+  "开心财税k旧": "开心财税k旧",
   "开心财税1": "1",
   "开心财税a": "a",
   "开心财税c": "c",
   "开心财税e": "e",
-  "开心财税k": "k"
+  "开心财税k": "k",
+  "1旧": "开心财税1旧",
+  "k旧": "开心财税k旧"
 };
 
 let writeQueue = Promise.resolve();
@@ -482,6 +485,54 @@ async function readDispatcherPasswords() {
   return normalizeDispatcherPasswords(parsed);
 }
 
+async function readDispatcherAccountantMappings() {
+  await ensureStorage();
+  const raw = await fs.readFile(DISPATCHER_PASSWORDS_FILE, "utf8");
+  const parsed = JSON.parse(raw || "{}");
+  return normalizeDispatcherAccountantMappings(parsed);
+}
+
+function normalizeDispatcherFullConfig(rawConfig) {
+  if (!rawConfig) {
+    return null;
+  }
+  if (typeof rawConfig === "string") {
+    return {
+      password: normalizeDispatcherPassword(rawConfig),
+      linkedAccountantPhone: null
+    };
+  }
+  if (typeof rawConfig === "object") {
+    const password = normalizeDispatcherPassword(rawConfig.password);
+    const linkedAccountantPhone = normalizeDispatcherAccountantPhone(rawConfig);
+    return {
+      password: password || DISPATCHER_LOGIN_PASSWORD,
+      linkedAccountantPhone
+    };
+  }
+  return null;
+}
+
+function normalizeDispatcherFullConfigs(rawConfigs) {
+  const normalized = {};
+  const source = rawConfigs && typeof rawConfigs === "object" ? rawConfigs : {};
+  DISPATCHER_ACCOUNT_LIST.forEach((account) => {
+    const rawConfig = source[account];
+    const config = normalizeDispatcherFullConfig(rawConfig);
+    if (config) {
+      normalized[account] = config;
+    }
+  });
+  return normalized;
+}
+
+async function readDispatcherFullConfigs() {
+  await ensureStorage();
+  const raw = await fs.readFile(DISPATCHER_PASSWORDS_FILE, "utf8");
+  const parsed = JSON.parse(raw || "{}");
+  return normalizeDispatcherFullConfigs(parsed);
+}
+
 async function readAccountantOperationLogs() {
   await ensureStorage();
   const raw = await fs.readFile(ACCOUNTANT_OPERATION_LOG_FILE, "utf8");
@@ -547,8 +598,36 @@ async function writeAccountants(accountants) {
 
 async function writeDispatcherPasswords(passwords) {
   await ensureStorage();
+  const existingFullConfigs = await readDispatcherFullConfigs();
+  const mergedConfigs = {};
+  DISPATCHER_ACCOUNT_LIST.forEach((account) => {
+    const existingConfig = existingFullConfigs[account];
+    const newPassword = passwords?.[account];
+    if (newPassword && typeof newPassword === "object") {
+      const normalized = normalizeDispatcherFullConfig(newPassword);
+      if (normalized) {
+        mergedConfigs[account] = normalized;
+        return;
+      }
+    }
+    if (typeof newPassword === "string" && newPassword) {
+      mergedConfigs[account] = {
+        password: normalizeDispatcherPassword(newPassword),
+        linkedAccountantPhone: existingConfig?.linkedAccountantPhone || null
+      };
+      return;
+    }
+    if (existingConfig) {
+      mergedConfigs[account] = existingConfig;
+    } else {
+      mergedConfigs[account] = {
+        password: DISPATCHER_LOGIN_PASSWORD,
+        linkedAccountantPhone: null
+      };
+    }
+  });
   const tempFile = `${DISPATCHER_PASSWORDS_FILE}.tmp`;
-  const payload = `${JSON.stringify(normalizeDispatcherPasswords(passwords), null, 2)}\n`;
+  const payload = `${JSON.stringify(mergedConfigs, null, 2)}\n`;
   await fs.writeFile(tempFile, payload, "utf8");
   await fs.rename(tempFile, DISPATCHER_PASSWORDS_FILE);
 }
@@ -605,12 +684,29 @@ function normalizeText(value, maxLength = 200) {
 }
 
 function normalizeDispatcherPassword(value) {
+  if (value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "password")) {
+    return normalizeText(value.password, 200);
+  }
   return normalizeText(value, 200);
+}
+
+function normalizeDispatcherAccountantPhone(value) {
+  if (value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "linkedAccountantPhone")) {
+    return normalizeText(value.linkedAccountantPhone, 48) || null;
+  }
+  return null;
 }
 
 function getDefaultDispatcherPasswords() {
   return DISPATCHER_ACCOUNT_LIST.reduce((result, account) => {
     result[account] = DISPATCHER_LOGIN_PASSWORD;
+    return result;
+  }, {});
+}
+
+function getDefaultDispatcherAccountantMappings() {
+  return DISPATCHER_ACCOUNT_LIST.reduce((result, account) => {
+    result[account] = null;
     return result;
   }, {});
 }
@@ -624,6 +720,20 @@ function normalizeDispatcherPasswords(rawPasswords) {
     const password = normalizeDispatcherPassword(rawPassword);
     if (!password) return;
     normalized[account] = password;
+  });
+  return normalized;
+}
+
+function normalizeDispatcherAccountantMappings(rawPasswords) {
+  const normalized = getDefaultDispatcherAccountantMappings();
+  const source = rawPasswords && typeof rawPasswords === "object" ? rawPasswords : {};
+  Object.entries(source).forEach(([rawAccount, rawConfig]) => {
+    const account = normalizeText(rawAccount, 16).toLowerCase();
+    if (!DISPATCHER_ACCOUNTS.has(account)) return;
+    const linkedAccountantPhone = normalizeDispatcherAccountantPhone(rawConfig);
+    if (linkedAccountantPhone) {
+      normalized[account] = linkedAccountantPhone;
+    }
   });
   return normalized;
 }
@@ -1009,14 +1119,43 @@ function normalizeStoredInvoiceImage(rawImage) {
 function getNormalizedRecordInvoiceFields(record) {
   const source = record && typeof record === "object" ? record : {};
   const image = normalizeStoredInvoiceImage(source.settlementInvoiceImage || source.invoiceImage);
+  const info = normalizeInvoiceRecipientInfo(source.invoiceRecipientInfo || source);
   return {
     settlementInvoiceImage: image,
     invoiceUploadedAt: image ? normalizeDateTimeValue(source.invoiceUploadedAt || source.settlementInvoiceUploadedAt) : "",
     invoiceUploadedBy: image ? normalizeText(source.invoiceUploadedBy || source.settlementInvoiceUploadedBy, 48) : "",
     invoiceUploadedByUsername: image
       ? normalizeAccountantUsername(source.invoiceUploadedByUsername || source.settlementInvoiceUploadedByUsername)
-      : ""
+      : "",
+    invoiceRecipientInfo: image ? info : null,
+    invoiceRecipientName: image ? info.name : "",
+    invoiceRecipientBankName: image ? info.bankName : "",
+    invoiceRecipientBankCardNo: image ? info.bankCardNo : "",
+    invoiceRecipientIdCardNo: image ? info.idCardNo : "",
+    invoiceRecipientDeclarationPhone: image ? info.declarationPhone : ""
   };
+}
+
+function normalizeInvoiceRecipientInfo(input) {
+  const source = input && typeof input === "object" ? input : {};
+  const info = {
+    name: normalizeText(source.name || source.invoiceRecipientName, 48),
+    bankName: normalizeText(source.bankName || source.bank || source.invoiceRecipientBankName, 120),
+    bankCardNo: normalizeText(source.bankCardNo || source.bankCard || source.cardNo || source.invoiceRecipientBankCardNo, 40),
+    idCardNo: normalizeText(source.idCardNo || source.idCard || source.identityNo || source.invoiceRecipientIdCardNo, 24),
+    declarationPhone: normalizeText(source.declarationPhone || source.phone || source.invoiceRecipientDeclarationPhone, 24)
+  };
+  return info;
+}
+
+function validateInvoiceRecipientInfo(input) {
+  const info = normalizeInvoiceRecipientInfo(input);
+  if (!info.name) throw new Error("请输入姓名。");
+  if (!info.bankName) throw new Error("请输入开户行。");
+  if (!info.bankCardNo) throw new Error("请输入银行卡号。");
+  if (!info.idCardNo) throw new Error("请输入身份证号。");
+  if (!info.declarationPhone) throw new Error("请输入申报手机号。");
+  return info;
 }
 
 async function saveSettlementInvoiceImage(rawImage, accountantUsername) {
@@ -1187,6 +1326,8 @@ function normalizeDispatcherTag(rawValue) {
   if (!source) return "";
   const lower = source.toLowerCase();
   if (lower === "开心财税") return "开心财税";
+  if (lower === "1旧" || lower.includes("财税1旧")) return "1旧";
+  if (lower === "k旧" || lower.includes("财税k旧")) return "K旧";
   if (lower === "1" || lower.includes("财税1")) return "1";
   if (lower === "a" || lower.includes("财税a")) return "A";
   if (lower === "c" || lower.includes("财税c")) return "C";
@@ -1199,12 +1340,19 @@ function getDispatcherTagForAccount(accountNameRaw) {
   const account = resolveLoginAccountInput(accountNameRaw);
   const lower = normalizeText(account, 16).toLowerCase();
   if (lower === "开心财税") return "开心财税";
+  if (lower === "开心财税1旧" || lower === "1旧") return "1旧";
+  if (lower === "开心财税k旧" || lower === "k旧") return "K旧";
   if (lower === "1") return "1";
   if (lower === "a") return "A";
   if (lower === "c") return "C";
   if (lower === "e") return "E";
   if (lower === "k") return "K";
   return "";
+}
+
+function getDispatcherAccountByTag(dispatcherTagRaw) {
+  const dispatcherTag = normalizeDispatcherTag(dispatcherTagRaw);
+  return DISPATCHER_ACCOUNT_LIST.find((account) => getDispatcherTagForAccount(account) === dispatcherTag) || "";
 }
 
 function getDispatcherDisplayNameByTag(dispatcherTagRaw) {
@@ -1222,7 +1370,7 @@ function buildDispatcherManagementRows(records, dispatcherPasswords) {
       return map;
     }, new Map())
     : new Map();
-  const tagOrder = ["开心财税", "1", "A", "C", "E", "K"];
+  const tagOrder = ["开心财税", "1", "A", "C", "E", "K", "1旧", "K旧"];
   const rows = tagOrder.map((dispatcherTag) => {
     const accounts = DISPATCHER_ACCOUNT_LIST.filter((account) => getDispatcherTagForAccount(account) === dispatcherTag);
     const accountPasswordPairs = accounts.map((account) => ({
@@ -1248,6 +1396,73 @@ function buildDispatcherManagementRows(records, dispatcherPasswords) {
     if (countDiff !== 0) return countDiff;
     return tagOrder.indexOf(left.dispatcherTag) - tagOrder.indexOf(right.dispatcherTag);
   });
+}
+
+async function buildDebugQuickLoginEntries() {
+  const [dispatcherPasswords, dispatcherAccountantMappings, accountantResult] = await Promise.all([
+    readDispatcherPasswords(),
+    readDispatcherAccountantMappings(),
+    withWriteLock(async () => loadAccountantsWithMigration())
+  ]);
+  const entries = [];
+  const addEntry = (entry) => {
+    const account = normalizeText(entry?.account, 64);
+    const password = normalizeText(entry?.password, 200);
+    const role = normalizeLoginRole(entry?.role);
+    if (!account || !password || !role) return;
+    entries.push({
+      account,
+      password,
+      role,
+      displayName: normalizeText(entry?.displayName, 64),
+      alias: normalizeText(entry?.alias, 64)
+    });
+  };
+
+  BOSS_LOGIN_ACCOUNTS.forEach((item) => {
+    addEntry({
+      account: item.account,
+      password: item.password,
+      role: "boss"
+    });
+  });
+
+  DISPATCHER_ACCOUNT_LIST.forEach((account) => {
+    addEntry({
+      account,
+      password: normalizeDispatcherPassword(dispatcherPasswords?.[account]) || DISPATCHER_LOGIN_PASSWORD,
+      role: "dispatcher"
+    });
+  });
+
+  const linkedAccountantPhoneOrder = new Map();
+  DISPATCHER_ACCOUNT_LIST.forEach((account) => {
+    const phone = normalizeAccountantPhone(dispatcherAccountantMappings?.[account]);
+    if (phone && !linkedAccountantPhoneOrder.has(phone)) {
+      linkedAccountantPhoneOrder.set(phone, linkedAccountantPhoneOrder.size);
+    }
+  });
+
+  const sortedAccountants = [...accountantResult.accountants].sort((left, right) => {
+    const leftPhone = normalizeAccountantPhone(left?.phone);
+    const rightPhone = normalizeAccountantPhone(right?.phone);
+    const leftOrder = linkedAccountantPhoneOrder.has(leftPhone) ? linkedAccountantPhoneOrder.get(leftPhone) : Number.POSITIVE_INFINITY;
+    const rightOrder = linkedAccountantPhoneOrder.has(rightPhone) ? linkedAccountantPhoneOrder.get(rightPhone) : Number.POSITIVE_INFINITY;
+    if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+    return 0;
+  });
+
+  sortedAccountants.forEach((profile) => {
+    addEntry({
+      account: profile.phone || profile.username,
+      password: normalizeAccountantLoginPassword(profile.loginPassword) || DEFAULT_ACCOUNTANT_LOGIN_PASSWORD,
+      role: "accountant",
+      displayName: profile.displayName || profile.name || profile.username,
+      alias: profile.alias || ""
+    });
+  });
+
+  return entries;
 }
 
 function buildScopedAccountantProfile(profile) {
@@ -1317,6 +1532,57 @@ function getSessionAccountantDisplayName(session) {
   return normalizeAccountantDisplayName(session?.displayName || session?.account);
 }
 
+function getSessionAccountantPhone(session) {
+  return normalizeAccountantPhone(session?.profile?.phone);
+}
+
+function getDispatcherTagsLinkedToSessionAccountant(session, dispatcherAccountantMappings) {
+  if (session?.role !== "accountant") return [];
+  const phone = getSessionAccountantPhone(session);
+  if (!phone) return [];
+  return Object.entries(dispatcherAccountantMappings || {})
+    .filter(([, mappedPhone]) => normalizeAccountantPhone(mappedPhone) === phone)
+    .map(([account]) => getDispatcherTagForAccount(account))
+    .filter(Boolean);
+}
+
+function getAccountantDisplayNameByPhone(accountants, phone) {
+  const normalizedPhone = normalizeAccountantPhone(phone);
+  if (!normalizedPhone) return "";
+  const profile = (Array.isArray(accountants) ? accountants : []).find(
+    (item) => normalizeAccountantPhone(item?.phone) === normalizedPhone
+  );
+  return normalizeAccountantDisplayName(profile?.displayName || profile?.name || profile?.username);
+}
+
+function getLinkedAccountantDisplayNameByDispatcherTag(dispatcherTag, dispatcherAccountantMappings, accountants) {
+  const account = normalizeText(getDispatcherAccountByTag(dispatcherTag), 16).toLowerCase();
+  if (!account) return "";
+  const phone = normalizeAccountantPhone(dispatcherAccountantMappings?.[account]);
+  return getAccountantDisplayNameByPhone(accountants, phone);
+}
+
+function scopeDispatcherAccountantMappingsBySession(session, dispatcherAccountantMappings) {
+  const mappings = dispatcherAccountantMappings && typeof dispatcherAccountantMappings === "object"
+    ? dispatcherAccountantMappings
+    : {};
+  if (session?.role === "boss") return mappings;
+  if (session?.role === "accountant") {
+    const phone = getSessionAccountantPhone(session);
+    if (!phone) return {};
+    return Object.fromEntries(
+      Object.entries(mappings).filter(([, mappedPhone]) => normalizeAccountantPhone(mappedPhone) === phone)
+    );
+  }
+  if (session?.role === "dispatcher") {
+    const account = normalizeText(session.account, 16).toLowerCase();
+    return Object.prototype.hasOwnProperty.call(mappings, account)
+      ? { [account]: mappings[account] }
+      : {};
+  }
+  return {};
+}
+
 async function requireAuthSession(req, res, allowedRoles = []) {
   const session = await getAuthSessionFromRequest(req);
   if (!session) {
@@ -1330,16 +1596,30 @@ async function requireAuthSession(req, res, allowedRoles = []) {
   return session;
 }
 
-function canAccessRecord(session, record) {
+function canAccessRecord(session, record, options = {}) {
   if (!session || !record || typeof record !== "object") return false;
   if (session.role === "boss") return true;
+  const includeLinkedSettlementPeers = Boolean(options.includeLinkedSettlementPeers);
+  const dispatcherAccountantMappings = options.dispatcherAccountantMappings || {};
+  const accountants = Array.isArray(options.accountants) ? options.accountants : [];
   if (session.role === "dispatcher") {
     const accountTag = getDispatcherTagForAccount(session.account);
     const recordTag = normalizeDispatcherTag(record.dispatcher);
-    return Boolean(accountTag && recordTag && accountTag === recordTag);
+    if (accountTag && recordTag && accountTag === recordTag) return true;
+    if (!includeLinkedSettlementPeers || !accountTag) return false;
+    const linkedAccountantName = getLinkedAccountantDisplayNameByDispatcherTag(
+      accountTag,
+      dispatcherAccountantMappings,
+      accountants
+    );
+    return Boolean(linkedAccountantName && normalizeAccountantDisplayName(record.accountant) === linkedAccountantName);
   }
   if (session.role === "accountant") {
-    return normalizeAccountantDisplayName(record.accountant) === getSessionAccountantDisplayName(session);
+    if (normalizeAccountantDisplayName(record.accountant) === getSessionAccountantDisplayName(session)) return true;
+    if (!includeLinkedSettlementPeers) return false;
+    const linkedTags = getDispatcherTagsLinkedToSessionAccountant(session, dispatcherAccountantMappings);
+    const recordTag = normalizeDispatcherTag(record.dispatcher);
+    return Boolean(recordTag && linkedTags.includes(recordTag));
   }
   return false;
 }
@@ -1397,8 +1677,10 @@ function sanitizeRecordForAccountant(record) {
   const settlementFields = getNormalizedRecordSettlementFields(source);
   const invoiceFields = getNormalizedRecordInvoiceFields(source);
   const paymentFields = getNormalizedRecordSettlementPaymentFields(source);
+  const paymentPrice = normalizeMoneyValue(source.paymentPrice);
   const totalPrice = normalizeMoneyValue(source.totalPrice);
   const settlementPrice = normalizeMoneyValue(source.settlementPrice);
+  const premiumPrice = getRecordPremiumPrice(source);
   return {
     id: normalizeText(source.id, 120),
     createdAt: normalizeDateTimeValue(source.createdAt),
@@ -1407,8 +1689,11 @@ function sanitizeRecordForAccountant(record) {
     accountant: normalizeAccountantDisplayName(source.accountant),
     customer: normalizeText(source.customer, 120),
     summary: normalizeText(source.summary, 500),
+    paymentPrice: Number.isFinite(paymentPrice) ? paymentPrice : "",
     totalPrice: Number.isFinite(totalPrice) ? totalPrice : "",
+    premiumPrice: Number.isFinite(premiumPrice) ? premiumPrice : "",
     settlementPrice: Number.isFinite(settlementPrice) ? settlementPrice : "",
+    isMonthlySettlement: normalizeMonthlySettlementState(source.isMonthlySettlement),
     checkStatus: normalizeText(source.checkStatus, 24).toLowerCase() || "pending",
     refundStatus: normalizeText(source.refundStatus, 24).toLowerCase(),
     refundedAt: normalizeDateTimeValue(source.refundedAt),
@@ -1422,6 +1707,12 @@ function sanitizeRecordForAccountant(record) {
     invoiceUploadedAt: invoiceFields.invoiceUploadedAt,
     invoiceUploadedBy: invoiceFields.invoiceUploadedBy,
     invoiceUploadedByUsername: invoiceFields.invoiceUploadedByUsername,
+    invoiceRecipientInfo: invoiceFields.invoiceRecipientInfo,
+    invoiceRecipientName: invoiceFields.invoiceRecipientName,
+    invoiceRecipientBankName: invoiceFields.invoiceRecipientBankName,
+    invoiceRecipientBankCardNo: invoiceFields.invoiceRecipientBankCardNo,
+    invoiceRecipientIdCardNo: invoiceFields.invoiceRecipientIdCardNo,
+    invoiceRecipientDeclarationPhone: invoiceFields.invoiceRecipientDeclarationPhone,
     isSettlementPaid: paymentFields.isSettlementPaid,
     settlementPaidAt: paymentFields.settlementPaidAt,
     settlementPaidBy: paymentFields.settlementPaidBy,
@@ -1429,17 +1720,28 @@ function sanitizeRecordForAccountant(record) {
   };
 }
 
-function scopeRecordBySession(session, record) {
+function scopeRecordBySession(session, record, options = {}) {
+  const source = options.hiddenFromMainTable
+    ? { ...record, hiddenFromMainTable: true }
+    : record;
   if (session?.role === "accountant") {
-    return sanitizeRecordForAccountant(record);
+    const scoped = sanitizeRecordForAccountant(source);
+    return options.hiddenFromMainTable
+      ? { ...scoped, hiddenFromMainTable: true }
+      : scoped;
   }
-  return record;
+  return source;
 }
 
-function scopeRecordsBySession(session, sourceRecords) {
+function scopeRecordsBySession(session, sourceRecords, options = {}) {
   return sourceRecords
-    .filter((item) => canAccessRecord(session, item))
-    .map((item) => scopeRecordBySession(session, item));
+    .filter((item) => canAccessRecord(session, item, options))
+    .map((item) => {
+      const isDirectRecord = canAccessRecord(session, item);
+      return scopeRecordBySession(session, item, {
+        hiddenFromMainTable: Boolean(options.includeLinkedSettlementPeers && !isDirectRecord)
+      });
+    });
 }
 
 function scopeRecycleBinBySession(session, sourceEntries) {
@@ -1768,6 +2070,11 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
   },
   { field: "invoiceUploadedAt", label: "发票上传时间", kind: "datetime" },
   { field: "invoiceUploadedBy", label: "发票上传人", kind: "text" },
+  { field: "invoiceRecipientName", label: "发票姓名", kind: "text" },
+  { field: "invoiceRecipientBankName", label: "开户行", kind: "text" },
+  { field: "invoiceRecipientBankCardNo", label: "银行卡号", kind: "text" },
+  { field: "invoiceRecipientIdCardNo", label: "身份证号", kind: "text" },
+  { field: "invoiceRecipientDeclarationPhone", label: "申报手机号", kind: "text" },
   {
     field: "isSettlementPaid",
     label: "打款",
@@ -1990,7 +2297,8 @@ function ensureRecordIds(sourceRecords) {
       === JSON.stringify(normalizedInvoiceFields.settlementInvoiceImage)
       && normalizeDateTimeValue(current.invoiceUploadedAt || current.settlementInvoiceUploadedAt) === normalizedInvoiceFields.invoiceUploadedAt
       && normalizeText(current.invoiceUploadedBy || current.settlementInvoiceUploadedBy, 48) === normalizedInvoiceFields.invoiceUploadedBy
-      && normalizeAccountantUsername(current.invoiceUploadedByUsername || current.settlementInvoiceUploadedByUsername) === normalizedInvoiceFields.invoiceUploadedByUsername;
+      && normalizeAccountantUsername(current.invoiceUploadedByUsername || current.settlementInvoiceUploadedByUsername) === normalizedInvoiceFields.invoiceUploadedByUsername
+      && JSON.stringify(normalizeInvoiceRecipientInfo(current.invoiceRecipientInfo || current)) === JSON.stringify(normalizedInvoiceFields.invoiceRecipientInfo || normalizeInvoiceRecipientInfo({}));
     const hasNormalizedSettlementPayment = current.isSettlementPaid === normalizedSettlementPaymentFields.isSettlementPaid
       && normalizeDateTimeValue(current.settlementPaidAt) === normalizedSettlementPaymentFields.settlementPaidAt
       && normalizeText(current.settlementPaidBy, 48) === normalizedSettlementPaymentFields.settlementPaidBy;
@@ -2086,6 +2394,12 @@ function normalizeRecord(input) {
     invoiceUploadedAt: "",
     invoiceUploadedBy: "",
     invoiceUploadedByUsername: "",
+    invoiceRecipientInfo: null,
+    invoiceRecipientName: "",
+    invoiceRecipientBankName: "",
+    invoiceRecipientBankCardNo: "",
+    invoiceRecipientIdCardNo: "",
+    invoiceRecipientDeclarationPhone: "",
     isSettlementPaid: false,
     settlementPaidAt: "",
     settlementPaidBy: "",
@@ -2211,6 +2525,12 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
       invoiceUploadedAt: "",
       invoiceUploadedBy: "",
       invoiceUploadedByUsername: "",
+      invoiceRecipientInfo: null,
+      invoiceRecipientName: "",
+      invoiceRecipientBankName: "",
+      invoiceRecipientBankCardNo: "",
+      invoiceRecipientIdCardNo: "",
+      invoiceRecipientDeclarationPhone: "",
       isSettlementPaid: false,
       settlementPaidAt: "",
       settlementPaidBy: ""
@@ -2673,10 +2993,24 @@ async function serveRecords(req, res) {
     const records = await withWriteLock(async () => {
       const all = await readRecords();
       const migration = ensureRecordIds(all);
+      const [dispatcherAccountantMappings, savedAccountants] = await Promise.all([
+        readDispatcherAccountantMappings(),
+        readAccountants()
+      ]);
+      const accountantsFromRecords = migration.records.map((item) => normalizeAccountantDisplayName(item.accountant));
+      const accountants = buildAccountantProfiles(savedAccountants, accountantsFromRecords);
+      const shouldUpdateAccountants = JSON.stringify(savedAccountants) !== JSON.stringify(accountants);
+      if (shouldUpdateAccountants) {
+        await writeAccountants(accountants);
+      }
       if (migration.changed) {
         await writeRecords(migration.records);
       }
-      return scopeRecordsBySession(session, migration.records);
+      return scopeRecordsBySession(session, migration.records, {
+        includeLinkedSettlementPeers: true,
+        dispatcherAccountantMappings,
+        accountants
+      });
     });
     sendJson(res, 200, { records });
     return;
@@ -2837,7 +3171,7 @@ async function serveRecordInvoiceUpload(req, res) {
     return;
   }
 
-  const session = await requireAuthSession(req, res, ["accountant"]);
+  const session = await requireAuthSession(req, res, ["dispatcher", "accountant"]);
   if (!session) return;
 
   if (req.method !== "PATCH") {
@@ -2848,18 +3182,35 @@ async function serveRecordInvoiceUpload(req, res) {
   try {
     const body = await parseBody(req);
     const rawImage = body?.image || body?.invoiceImage || body?.settlementInvoiceImage;
+    const invoiceRecipientInfo = validateInvoiceRecipientInfo(body?.invoiceRecipientInfo || body?.recipientInfo || body);
     const uploadedAt = getCurrentBeijingDateTime();
-    const uploadedByUsername = normalizeAccountantUsername(session.account);
-    const uploadedBy = getSessionAccountantDisplayName(session) || uploadedByUsername;
+    const uploadedByUsername = session.role === "accountant"
+      ? normalizeAccountantUsername(session.account)
+      : normalizeText(session.account, 48);
+    const uploadedBy = session.role === "accountant"
+      ? (getSessionAccountantDisplayName(session) || uploadedByUsername)
+      : (getDispatcherDisplayNameByTag(getDispatcherTagForAccount(session.account)) || uploadedByUsername);
 
     const result = await withWriteLock(async () => {
       const all = await readRecords();
       const migration = ensureRecordIds(all);
+      const [dispatcherAccountantMappings, savedAccountants] = await Promise.all([
+        readDispatcherAccountantMappings(),
+        readAccountants()
+      ]);
+      const accountantsFromRecords = migration.records.map((item) => normalizeAccountantDisplayName(item.accountant));
+      const accountants = buildAccountantProfiles(savedAccountants, accountantsFromRecords);
+      const shouldUpdateAccountants = JSON.stringify(savedAccountants) !== JSON.stringify(accountants);
+      const accessOptions = {
+        includeLinkedSettlementPeers: true,
+        dispatcherAccountantMappings,
+        accountants
+      };
       const targetIndexes = [];
 
       migration.records.forEach((item, index) => {
         const current = item && typeof item === "object" ? item : {};
-        if (!canAccessRecord(session, current)) return;
+        if (!canAccessRecord(session, current, accessOptions)) return;
         const settlementFields = getNormalizedRecordSettlementFields(current);
         const invoiceFields = getNormalizedRecordInvoiceFields(current);
         const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
@@ -2870,6 +3221,9 @@ async function serveRecordInvoiceUpload(req, res) {
       });
 
       if (!targetIndexes.length) {
+        if (shouldUpdateAccountants) {
+          await writeAccountants(accountants);
+        }
         if (migration.changed) {
           await writeRecords(migration.records);
         }
@@ -2901,7 +3255,13 @@ async function serveRecordInvoiceUpload(req, res) {
           settlementInvoiceImage: invoiceImage,
           invoiceUploadedAt: uploadedAt,
           invoiceUploadedBy: uploadedBy,
-          invoiceUploadedByUsername: uploadedByUsername
+          invoiceUploadedByUsername: uploadedByUsername,
+          invoiceRecipientInfo,
+          invoiceRecipientName: invoiceRecipientInfo.name,
+          invoiceRecipientBankName: invoiceRecipientInfo.bankName,
+          invoiceRecipientBankCardNo: invoiceRecipientInfo.bankCardNo,
+          invoiceRecipientIdCardNo: invoiceRecipientInfo.idCardNo,
+          invoiceRecipientDeclarationPhone: invoiceRecipientInfo.declarationPhone
         };
         const recordId = normalizeText(nextRecord.id, 120);
         if (recordId) {
@@ -2918,6 +3278,9 @@ async function serveRecordInvoiceUpload(req, res) {
         }));
       });
 
+      if (shouldUpdateAccountants) {
+        await writeAccountants(accountants);
+      }
       await writeRecords(nextRecords);
       return {
         records: scopeRecordsBySession(session, nextRecords),
@@ -3241,6 +3604,12 @@ async function serveRecordById(req, res, recordIdRaw) {
               invoiceUploadedAt: "",
               invoiceUploadedBy: "",
               invoiceUploadedByUsername: "",
+              invoiceRecipientInfo: null,
+              invoiceRecipientName: "",
+              invoiceRecipientBankName: "",
+              invoiceRecipientBankCardNo: "",
+              invoiceRecipientIdCardNo: "",
+              invoiceRecipientDeclarationPhone: "",
               isSettlementPaid: false,
               settlementPaidAt: "",
               settlementPaidBy: ""
@@ -3588,16 +3957,36 @@ async function serveDispatchers(req, res) {
     return;
   }
 
-  const session = await requireAuthSession(req, res, ["boss"]);
+  const session = await requireAuthSession(req, res, ["dispatcher", "accountant", "boss"]);
   if (!session) return;
 
   if (req.method === "GET") {
-    const [records, dispatcherPasswords] = await Promise.all([
+    const [records, dispatcherPasswords, dispatcherAccountantMappings, savedAccountants] = await Promise.all([
       readRecords(),
-      readDispatcherPasswords()
+      readDispatcherPasswords(),
+      readDispatcherAccountantMappings(),
+      readAccountants()
     ]);
+    const accountantsFromRecords = Array.isArray(records)
+      ? records.map((item) => normalizeAccountantDisplayName(item.accountant))
+      : [];
+    const accountants = buildAccountantProfiles(savedAccountants, accountantsFromRecords);
+    let linkedDispatcherAccountants = {};
+    if (session.role === "dispatcher") {
+      const dispatcherTag = getDispatcherTagForAccount(session.account);
+      const linkedName = getLinkedAccountantDisplayNameByDispatcherTag(
+        dispatcherTag,
+        dispatcherAccountantMappings,
+        accountants
+      );
+      if (dispatcherTag && linkedName) {
+        linkedDispatcherAccountants = { [dispatcherTag]: linkedName };
+      }
+    }
     sendJson(res, 200, {
-      dispatchers: buildDispatcherManagementRows(records, dispatcherPasswords)
+      dispatchers: session.role === "boss" ? buildDispatcherManagementRows(records, dispatcherPasswords) : [],
+      dispatcherAccountantMappings: scopeDispatcherAccountantMappingsBySession(session, dispatcherAccountantMappings),
+      linkedDispatcherAccountants
     });
     return;
   }
@@ -4211,6 +4600,27 @@ async function serveAuthLogin(req, res) {
   }
 }
 
+async function serveAuthQuickLogins(req, res) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method !== "GET") {
+    sendJson(res, 405, { error: "方法不支持" });
+    return;
+  }
+
+  try {
+    const quickLogins = await buildDebugQuickLoginEntries();
+    sendJson(res, 200, { quickLogins });
+  } catch (error) {
+    sendJson(res, 500, { error: error.message || "读取快捷登录列表失败" });
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   attachRequestLogger(req, res);
   try {
@@ -4315,6 +4725,11 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === "/api/auth/login") {
       await serveAuthLogin(req, res);
+      return;
+    }
+
+    if (pathname === "/api/auth/quick-logins") {
+      await serveAuthQuickLogins(req, res);
       return;
     }
 

@@ -521,6 +521,10 @@
         grid-template-columns: 1fr;
       }
 
+      .invoice-upload-info-grid {
+        grid-template-columns: 1fr;
+      }
+
       .analysis-chart-board {
         grid-template-columns: 1fr;
       }
@@ -592,6 +596,54 @@
       max-height: 250px;
       overflow: auto;
       padding-right: 2px;
+    }
+
+    body.quick-login-debug .login-shell {
+      place-items: start center;
+    }
+
+    body.quick-login-debug .login-workbench {
+      width: min(1480px, 100%);
+      grid-template-columns: minmax(280px, 0.72fr) minmax(720px, 1.55fr);
+      min-height: auto;
+      overflow: visible;
+    }
+
+    body.quick-login-debug .login-card {
+      min-width: 0;
+    }
+
+    body.quick-login-debug .saved-login-list {
+      grid-template-columns: minmax(160px, 0.7fr) minmax(220px, 0.9fr) minmax(360px, 1.6fr);
+      align-items: stretch;
+      height: min(62dvh, 680px);
+      max-height: min(62dvh, 680px);
+      overflow: hidden;
+      padding-right: 0;
+    }
+
+    body.quick-login-debug .saved-login-group {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto minmax(0, 1fr);
+      align-content: start;
+      height: 100%;
+      min-height: 0;
+    }
+
+    body.quick-login-debug .saved-login-group-header {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding-left: 8px;
+    }
+
+    body.quick-login-debug .saved-login-group-list {
+      grid-template-columns: 1fr;
+      min-height: 0;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      padding-right: 6px;
+      scrollbar-gutter: stable;
     }
 
     .saved-login-group {
@@ -818,6 +870,16 @@
         grid-template-columns: 1fr;
       }
 
+      body.quick-login-debug .login-workbench {
+        grid-template-columns: 1fr;
+      }
+
+      body.quick-login-debug .saved-login-list {
+        grid-template-columns: 1fr;
+        height: min(58dvh, 620px);
+        max-height: min(58dvh, 620px);
+      }
+
       .dev-todo-launcher {
         top: 10px;
         left: 10px;
@@ -878,6 +940,11 @@
 
       .saved-login-list {
         max-height: 230px;
+      }
+
+      body.quick-login-debug .saved-login-list {
+        height: min(56dvh, 560px);
+        max-height: min(56dvh, 560px);
       }
     }
 
@@ -1545,6 +1612,10 @@
       grid-column: 2;
     }
 
+    .invoice-upload-form .field-validation-group-error > .field-inline-error {
+      margin-top: 2px;
+    }
+
     #recordForm .accountant-picker.field-validation-group-error > .field-inline-error {
       margin-top: 10px;
     }
@@ -1992,8 +2063,8 @@
     }
 
     .table-wrap::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+      width: 4px;
+      height: 4px;
     }
 
     .table-wrap::-webkit-scrollbar-track {
@@ -2001,10 +2072,8 @@
     }
 
     .table-wrap::-webkit-scrollbar-thumb {
-      border: 2px solid transparent;
       border-radius: 999px;
       background: oklch(72% 0.035 165);
-      background-clip: padding-box;
     }
 
 
@@ -2023,18 +2092,7 @@
       box-shadow: none;
     }
 
-    .table-card::after {
-      content: "";
-      position: absolute;
-      right: 0;
-      bottom: 0;
-      width: var(--table-scrollbar-mask-width);
-      height: 8px;
-      background: #f7fbf8;
-      pointer-events: none;
-      z-index: 10;
-      border-bottom-right-radius: var(--radius-md);
-    }
+
 
     .table-card-head {
       display: flex;
@@ -2047,7 +2105,7 @@
     .table-card-actions {
       margin-left: auto;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       gap: 10px;
       flex: 0 0 auto;
     }
@@ -2103,11 +2161,22 @@
     }
 
     .invoice-upload-btn-stat {
+      position: relative;
       min-width: 0;
       display: grid;
       grid-template-columns: minmax(70px, max-content) minmax(0, 1fr);
       align-items: baseline;
       gap: 12px;
+    }
+
+    .invoice-upload-btn-stat-popover-host {
+      cursor: help;
+      border-radius: 8px;
+    }
+
+    .invoice-upload-btn-stat-popover-host:focus-visible {
+      outline: 2px solid #86d2b2;
+      outline-offset: 2px;
     }
 
     .invoice-upload-btn-label {
@@ -2129,13 +2198,80 @@
       text-overflow: ellipsis;
     }
 
+    .invoice-upload-amount-popover {
+      position: absolute;
+      right: calc(100% + 10px);
+      top: -10px;
+      z-index: 120;
+      display: grid;
+      gap: 3px;
+      min-width: 308px;
+      width: max-content;
+      max-width: calc(100vw - 28px);
+      padding: 9px 11px;
+      border: 1px solid #94d6b7;
+      border-radius: 10px;
+      background: #effaf5;
+      color: #173f34;
+      box-shadow: 0 14px 30px rgba(28, 85, 65, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.3;
+      text-align: left;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateX(6px);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+      white-space: nowrap;
+    }
+
+    .invoice-upload-btn-stat-popover-host:hover .invoice-upload-amount-popover,
+    .invoice-upload-btn-stat-popover-host:focus-visible .invoice-upload-amount-popover {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .invoice-upload-amount-popover-row {
+      display: grid;
+      grid-template-columns: max-content max-content;
+      align-items: baseline;
+      column-gap: 4px;
+    }
+
+    .invoice-upload-amount-popover-label {
+      color: #425c52;
+      font-weight: 700;
+    }
+
+    .invoice-upload-amount-popover-value {
+      color: #173f34;
+      font-variant-numeric: tabular-nums;
+      text-align: left;
+      white-space: nowrap;
+    }
+
     .table-invoice-upload-btn[disabled],
+    .table-uploaded-detail-btn[disabled],
     .table-export-btn[disabled],
     .table-settlement-btn[disabled],
     .table-settlement-summary-btn[disabled],
     .table-settlement-detail-btn[disabled] {
       opacity: 0.56;
       cursor: not-allowed;
+    }
+
+    .table-uploaded-detail-btn {
+      border-color: #b8b1ff;
+      background: #f3f1ff;
+      color: #4338ca;
+      font-weight: 800;
+    }
+
+    .table-uploaded-detail-btn:hover,
+    .table-uploaded-detail-btn:focus-visible {
+      border-color: #8f85ff;
+      background: #ece9ff;
+      color: #3730a3;
     }
 
     #appPage {
@@ -2208,6 +2344,105 @@
       overflow-y: auto;
       overflow-x: hidden;
       transform-origin: center top;
+    }
+
+    .invoice-upload-modal-card {
+      width: min(680px, 94vw);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 20px;
+      border-color: #cfe2d8;
+      background: linear-gradient(180deg, #fbfdfc 0%, #f7fbf9 100%);
+      box-shadow: 0 24px 56px rgba(17, 53, 40, 0.18);
+    }
+
+    .invoice-upload-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .invoice-upload-image-field {
+      display: grid;
+      gap: 7px;
+      padding: 16px;
+      border: 1px dashed #9dc9bc;
+      border-radius: 12px;
+      background: #f6fbf8;
+      color: #24483d;
+      cursor: pointer;
+      transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+    }
+
+    .invoice-upload-image-field:hover,
+    .invoice-upload-image-field:focus-within {
+      border-color: #2f9d83;
+      background: #f1faf6;
+      box-shadow: 0 0 0 3px rgba(47, 157, 131, 0.12);
+    }
+
+    .invoice-upload-image-field input {
+      width: 100%;
+      max-width: 100%;
+      color: #31584c;
+      font-size: 13px;
+    }
+
+    .invoice-upload-image-label,
+    .invoice-upload-info-grid label {
+      color: #4c675e;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .invoice-upload-image-name {
+      color: #123f34;
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .invoice-upload-image-tip {
+      color: #6b837a;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .invoice-upload-info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .invoice-upload-info-grid .field {
+      padding: 12px 14px;
+      border: 1px solid #e2ede8;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    .invoice-upload-info-grid input {
+      width: 100%;
+      min-width: 0;
+      border-color: #dbe7e1;
+      background: #ffffff;
+      box-shadow: none;
+    }
+
+    .invoice-upload-info-grid input:focus {
+      border-color: #7cbca9;
+      box-shadow: 0 0 0 2px rgba(31, 159, 134, 0.12);
+    }
+
+    .invoice-upload-actions {
+      justify-content: flex-end;
+      margin-top: 2px;
+    }
+
+    .invoice-upload-actions .btn-secondary,
+    .invoice-upload-actions .btn-primary {
+      min-width: 118px;
     }
 
     @media (min-width: 861px) {
@@ -2332,7 +2567,7 @@
     }
 
     .settlement-detail-modal-card {
-      width: min(1120px, 96vw);
+      width: min(1280px, 96vw);
       max-height: calc(100vh - 30px);
       display: grid;
       gap: 18px;
@@ -3327,7 +3562,8 @@
 
     .settlement-detail-table {
       width: 100%;
-      min-width: 980px;
+      min-width: 1140px;
+      table-layout: fixed;
       border-collapse: separate;
       border-spacing: 0;
       color: #24473d;
@@ -3336,19 +3572,23 @@
     }
 
     .settlement-detail-table col.settlement-detail-col-accountant {
-      width: 18%;
+      width: 16%;
+    }
+
+    .settlement-detail-table col.settlement-detail-col-name {
+      width: 9%;
     }
 
     .settlement-detail-table col.settlement-detail-col-money {
-      width: 15%;
+      width: 16%;
     }
 
     .settlement-detail-table col.settlement-detail-col-invoice {
-      width: 21%;
+      width: 168px;
     }
 
     .settlement-detail-table col.settlement-detail-col-payout {
-      width: 16%;
+      width: 136px;
     }
 
     .settlement-detail-table th,
@@ -3559,10 +3799,25 @@
     .settlement-detail-accountant-cell {
       min-width: 150px;
       text-align: left;
+      position: relative;
+      padding-right: 40px;
     }
 
     .settlement-detail-accountant-cell {
       display: table-cell;
+    }
+
+    .settlement-detail-dispatcher-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 2px 6px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 4px;
+      white-space: nowrap;
     }
 
     .settlement-detail-accountant-meta {
@@ -3575,6 +3830,7 @@
     }
 
     .settlement-detail-money {
+      position: relative;
       color: #173f34;
       font-weight: 800;
       font-variant-numeric: tabular-nums;
@@ -3582,14 +3838,91 @@
       white-space: nowrap;
     }
 
+    .settlement-detail-money-formula {
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .settlement-detail-money-dispatcher-part {
+      color: #2e7d32;
+    }
+
+    .settlement-detail-money:focus-visible {
+      outline: 2px solid #86d2b2;
+      outline-offset: -3px;
+    }
+
+    .settlement-detail-money-popover {
+      position: absolute;
+      left: 50%;
+      top: calc(100% - 8px);
+      z-index: 30;
+      display: grid;
+      gap: 2px;
+      min-width: 220px;
+      width: max-content;
+      max-width: calc(100vw - 28px);
+      padding: 7px 10px;
+      border: 1px solid #94d6b7;
+      border-radius: 10px;
+      background: #effaf5;
+      color: #173f34;
+      box-shadow: 0 10px 24px rgba(28, 85, 65, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.25;
+      text-align: left;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, 4px);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+      white-space: nowrap;
+      overflow-wrap: normal;
+    }
+
+    .settlement-detail-money:hover .settlement-detail-money-popover,
+    .settlement-detail-money:focus-visible .settlement-detail-money-popover {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .settlement-detail-money-popover-row {
+      display: grid;
+      grid-template-columns: max-content max-content;
+      column-gap: 4px;
+      align-items: baseline;
+    }
+
+    .settlement-detail-money-popover-label {
+      color: #425c52;
+      font-weight: 700;
+    }
+
+    .settlement-detail-money-popover-value {
+      color: #173f34;
+      font-variant-numeric: tabular-nums;
+      text-align: left;
+      white-space: nowrap;
+    }
+
     .settlement-detail-invoice-cell {
+      width: 168px;
       min-width: 168px;
+      max-width: 168px;
       text-align: center;
     }
 
     .settlement-detail-payout-cell {
-      min-width: 150px;
+      width: 136px;
+      min-width: 136px;
+      max-width: 136px;
       text-align: center;
+    }
+
+    .settlement-detail-name-cell {
+      text-align: left;
+      white-space: nowrap;
     }
 
     .settlement-detail-payout-actions {
@@ -3649,14 +3982,18 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-wrap: wrap;
-      gap: 8px;
+      flex-wrap: nowrap;
+      gap: 6px;
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .settlement-detail-invoice-thumb {
+      flex: 0 0 54px;
       position: relative;
-      width: 64px;
-      height: 48px;
+      width: 54px;
+      height: 42px;
       padding: 2px;
       border: 1px solid #d7c490;
       border-radius: var(--radius-md);
@@ -3700,6 +4037,13 @@
       white-space: nowrap;
     }
 
+    .settlement-detail-invoice-more {
+      flex: 0 0 auto;
+      min-height: 26px;
+      padding: 3px 7px;
+      font-size: 11px;
+    }
+
     .settlement-detail-row.tone-pending .settlement-detail-invoice-pending {
       border-color: #d9e4de;
       background: #fcfefd;
@@ -3715,6 +4059,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      padding-right: 55px;
     }
 
     .dev-todo-form-actions {
@@ -3839,8 +4184,8 @@
     }
 
     .accountant-list-wrap::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+      width: 4px;
+      height: 4px;
     }
 
     .accountant-list-wrap::-webkit-scrollbar-track {
@@ -3848,10 +4193,8 @@
     }
 
     .accountant-list-wrap::-webkit-scrollbar-thumb {
-      border: 2px solid transparent;
       border-radius: 999px;
       background: oklch(72% 0.035 165);
-      background-clip: padding-box;
     }
 
     .accountant-list-wrap:focus {
@@ -4029,21 +4372,30 @@
     }
 
     .dispatcher-table .dispatcher-col-display {
-      width: 30%;
+      width: 16%;
     }
 
     .dispatcher-table .dispatcher-col-account {
-      width: 22%;
+      width: 10%;
       font-variant-numeric: tabular-nums;
     }
 
     .dispatcher-table .dispatcher-col-password {
-      width: 24%;
+      width: 10%;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dispatcher-table .dispatcher-col-linked-accountant-alias {
+      width: 18%;
+    }
+
+    .dispatcher-table .dispatcher-col-linked-accountant-phone {
+      width: 16%;
       font-variant-numeric: tabular-nums;
     }
 
     .dispatcher-table .dispatcher-col-count {
-      width: 18%;
+      width: 14%;
       text-align: center;
     }
 
@@ -5755,17 +6107,6 @@
       isolation: isolate;
     }
 
-    .data-col-status::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 1px;
-      background: var(--table-status-divider-color);
-      pointer-events: none;
-    }
-
     .data-col-payment,
     .data-col-total,
     .data-col-premium,
@@ -6812,10 +7153,25 @@
       min-width: 0;
     }
 
+    .filter-option-btn.filter-option-multi::before {
+      content: "";
+      width: 6px;
+      height: 10px;
+      flex: 0 0 auto;
+      border-right: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      opacity: 0;
+      transform: translateY(-1px) rotate(40deg);
+    }
+
     .filter-option-btn.active {
       border-color: #0e7c66;
       background: #dff5ed;
       color: #0b6a56;
+    }
+
+    .filter-option-btn.filter-option-multi.active::before {
+      opacity: 1;
     }
 
     .filter-option-btn.refund-filter-option {
@@ -7484,4 +7840,100 @@
       .accountant-list-item:hover td.accountant-col-action {
         background: oklch(97.3% 0.01 165);
       }
+    }
+
+    .settlement-detail-paid-btn,
+    .settlement-detail-uploaded-btn {
+      min-height: 32px;
+      padding: 0 14px;
+      border: 1px solid #8bc4a8;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #2e9b75, #1a8a66);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(26, 138, 102, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .settlement-detail-paid-btn:hover,
+    .settlement-detail-paid-btn:focus-visible,
+    .settlement-detail-uploaded-btn:hover,
+    .settlement-detail-uploaded-btn:focus-visible {
+      border-color: #238565;
+      background: linear-gradient(135deg, #288d6a, #167d5c);
+      outline: none;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(26, 138, 102, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    .settlement-detail-uploaded-btn {
+      margin-left: auto;
+      background: linear-gradient(135deg, #4f46e5, #6d5dfc);
+      border-color: #b8b1ff;
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .settlement-detail-uploaded-btn:hover,
+    .settlement-detail-uploaded-btn:focus-visible {
+      border-color: #7c73f7;
+      background: linear-gradient(135deg, #4338ca, #5b4ae6);
+      box-shadow: 0 4px 10px rgba(79, 70, 229, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    .paid-settlement-detail-modal-card {
+      width: min(1280px, 96vw);
+      max-height: calc(100vh - 30px);
+      display: grid;
+      gap: 16px;
+      padding: 20px;
+      border-radius: var(--radius-2xl);
+      border-color: #dfeae4;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 248, 0.98));
+      box-shadow: var(--shadow-lg);
+    }
+
+    .paid-settlement-detail-modal-card:focus {
+      outline: none;
+    }
+
+    .paid-settlement-detail-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 0;
+      margin-bottom: 2px;
+    }
+
+    .paid-settlement-detail-title {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+      color: #1f3f35;
+    }
+
+    .paid-settlement-detail-meta {
+      margin: 4px 0 0;
+      color: #648075;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .paid-settlement-detail-list {
+      min-height: 0;
+      max-height: min(680px, calc(100vh - 130px));
+      overflow: auto;
+    }
+
+    .paid-settlement-detail-empty {
+      border: 1px solid #d7e6de;
+      background: #fbfdfc;
+      border-radius: 8px;
+      padding: 16px 12px;
+      color: #6a8077;
+      font-size: 14px;
+      text-align: center;
     }

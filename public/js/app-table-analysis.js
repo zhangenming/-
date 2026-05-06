@@ -232,6 +232,8 @@
       if (lower === "开心财税") return "开心财税";
       const upper = lower.toUpperCase();
       if (DISPATCHER_TAGS.includes(upper)) return upper;
+      if (lower.includes("财税1旧")) return "1旧";
+      if (lower.includes("财税k旧")) return "K旧";
       if (lower.includes("财税a")) return "A";
       if (lower.includes("财税c")) return "C";
       if (lower.includes("财税e")) return "E";
@@ -500,7 +502,7 @@
           const total = toMoney(getColumnTotal(sourceRecords, key));
           const metaNode = document.createElement("span");
           metaNode.className = "sort-btn-meta";
-          if (key === "totalPrice" && Number.isFinite(profitBreakdown.totalBase)) {
+          if (key === "totalPrice" && Number.isFinite(profitBreakdown.totalBase) && !isAccountantLogin()) {
             metaNode.textContent = `合计 ${total}（${toMoney(profitBreakdown.totalBase)}）`;
             metaNode.title = [
               `会计价合计：${total}`,
@@ -509,9 +511,13 @@
             ].filter(Boolean).join("\n");
           } else if (key === "premiumPrice" && Number.isFinite(profitBreakdown.premiumProfit)) {
             const premiumTotalPercent = getPremiumTotalPercent(sourceRecords);
-            metaNode.textContent = premiumTotalPercent ? `合计 ${total}（${premiumTotalPercent}）` : `合计 ${total}`;
+            const premiumProfitText = toMoney(profitBreakdown.premiumProfit);
+            metaNode.textContent = premiumTotalPercent
+              ? `合计 ${total}（${premiumProfitText}）[${premiumTotalPercent}]`
+              : `合计 ${total}（${premiumProfitText}）`;
             metaNode.title = [
               `溢价合计：${total}`,
+              `溢价绝对收益：${premiumProfitText}`,
               premiumTotalPercent ? `总溢价 / 总付款价：${premiumTotalPercent}` : "",
               formatProfitTotalTooltip(sourceRecords)
             ].filter(Boolean).join("\n");
@@ -604,11 +610,17 @@
 
     function buildFilterOptionList(listElement, values, type, selectedValue, countMap) {
       listElement.innerHTML = "";
+      const selectedValues = type === "status"
+        ? getSelectedStatusFilters()
+        : normalizeStatusFilterValues(selectedValue);
 
       values.forEach((value) => {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "filter-option-btn";
+        if (type === "status") {
+          button.classList.add("filter-option-multi");
+        }
         if (type === "status" && (value === "部分退款" || value === "退单")) {
           button.classList.add("refund-filter-option", value === "退单" ? "refund-returned" : "refund-partial");
         }
@@ -625,7 +637,9 @@
         countBadge.textContent = String(count);
         button.appendChild(label);
         button.appendChild(countBadge);
-        button.classList.toggle("active", selectedValue === value);
+        const isSelected = selectedValues.includes(value);
+        button.classList.toggle("active", isSelected);
+        button.setAttribute("aria-pressed", String(isSelected));
         listElement.appendChild(button);
       });
     }
@@ -641,9 +655,7 @@
       ).sort((left, right) => right.localeCompare(left, "zh-CN", { numeric: true, sensitivity: "base" }));
       const completedAtMonthValues = [getTodayFilterValue(), ...rawCompletedAtMonthValues];
 
-      const dispatcherValues = Array.from(
-        new Set(scopedRecords.map((item) => normalizeDispatcherTag(item.dispatcher)))
-      ).sort((left, right) => DISPATCHER_TAGS.indexOf(left) - DISPATCHER_TAGS.indexOf(right));
+      const dispatcherValues = ["开心财税", ...DISPATCHER_TAGS];
 
       const rawAccountantValues = Array.from(
         new Set(scopedRecords.map((item) => String(item.accountant || "").trim()).filter(Boolean))
@@ -686,9 +698,7 @@
       if (filterState.source && !rawSourceValues.includes(filterState.source)) {
         filterState.source = "";
       }
-      if (filterState.status && !statusValues.includes(filterState.status)) {
-        filterState.status = "";
-      }
+      setStatusFilterValues(getSelectedStatusFilters().filter((value) => statusValues.includes(value)));
       if (filterState.settled && !settledValues.includes(filterState.settled)) {
         filterState.settled = "";
       }
@@ -708,7 +718,11 @@
         platform: (item) => !filterState.platform || getPlatformFilterValue(item) === filterState.platform,
         shopName: (item) => !filterState.shopName || getShopNameFilterValue(item) === filterState.shopName,
         source: (item) => !filterState.source || getSourceFilterValue(item) === filterState.source,
-        status: (item) => !filterState.status || getStatusFilterValues(item).includes(filterState.status),
+        status: (item) => {
+          const selectedStatusFilters = getSelectedStatusFilters();
+          return selectedStatusFilters.length === 0
+            || selectedStatusFilters.some((value) => getStatusFilterValues(item).includes(value));
+        },
         settled: (item) => !filterState.settled || getRecordSettlementFilterLabel(item) === filterState.settled,
         orderNo: (item) => orderNoList.length === 0
           || orderNoList.some(query => String(item.orderNo || "").toLowerCase().trim() === query)
@@ -828,7 +842,7 @@
         filterStatusList,
         statusValues,
         "status",
-        filterState.status,
+        getSelectedStatusFilters(),
         statusCountMap
       );
       buildFilterOptionList(
@@ -860,7 +874,9 @@
         const platformMatched = !filterState.platform || getPlatformFilterValue(item) === filterState.platform;
         const shopMatched = !filterState.shopName || getShopNameFilterValue(item) === filterState.shopName;
         const sourceMatched = !filterState.source || getSourceFilterValue(item) === filterState.source;
-        const statusMatched = !filterState.status || getStatusFilterValues(item).includes(filterState.status);
+        const selectedStatusFilters = getSelectedStatusFilters();
+        const statusMatched = selectedStatusFilters.length === 0
+          || selectedStatusFilters.some((value) => getStatusFilterValues(item).includes(value));
         const settledMatched = !filterState.settled || getRecordSettlementFilterLabel(item) === filterState.settled;
         return monthMatched
           && completedAtMatched

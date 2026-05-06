@@ -209,6 +209,14 @@
       });
     }
 
+    if (accountantUploadedSettlementDetailBtn) {
+      accountantUploadedSettlementDetailBtn.addEventListener("click", () => {
+        if (!requireAccount()) return;
+        if (!isAccountantLogin()) return;
+        openUploadedSettlementDetailModal();
+      });
+    }
+
     if (devTodoForm) {
       devTodoForm.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -494,7 +502,7 @@
       if (key === "platform") filterState.platform = "";
       if (key === "shopName") filterState.shopName = "";
       if (key === "source") filterState.source = "";
-      if (key === "status") filterState.status = "";
+      if (key === "status") setStatusFilterValues([]);
       if (key === "settled") filterState.settled = "";
       closeAllFilterPopovers();
       renderTable();
@@ -513,7 +521,7 @@
       if (key === "platform") return Boolean(filterState.platform);
       if (key === "shopName") return Boolean(filterState.shopName);
       if (key === "source") return Boolean(filterState.source);
-      if (key === "status") return Boolean(filterState.status);
+      if (key === "status") return hasStatusFilterSelected();
       if (key === "settled") return Boolean(filterState.settled);
       return false;
     }
@@ -799,8 +807,8 @@
       const target = event.target.closest(".filter-option-btn");
       if (!target) return;
       const selected = target.dataset.filterValue || "";
-      filterState.status = filterState.status === selected ? "" : selected;
-      closeAllFilterPopovers();
+      toggleStatusFilterValue(selected);
+      updateFilterOptions();
       renderTable();
     });
 
@@ -822,7 +830,7 @@
       filterState.platform = "";
       filterState.shopName = "";
       filterState.source = "";
-      filterState.status = "";
+      setStatusFilterValues([]);
       filterState.settled = "";
       if (filterOrderInput) filterOrderInput.value = "";
       closeAllFilterPopovers();
@@ -1358,47 +1366,108 @@
     if (exportTableBtn) {
       exportTableBtn.addEventListener("click", () => {
         if (!requireAccount()) return;
-        if (!isBossLogin()) return;
+        if (!canCurrentAccountExportTableRecords()) return;
         exportCurrentTableRecords();
       });
     }
 
-    if (accountantInvoiceUploadBtn && accountantInvoiceImageInput) {
+    if (accountantInvoiceUploadBtn && invoiceUploadForm && accountantInvoiceImageInput) {
       accountantInvoiceUploadBtn.addEventListener("click", () => {
         if (!requireAccount()) return;
-        if (!isAccountantLogin()) return;
+        if (!canCurrentAccountUploadSettlementInvoice()) return;
         const targetRecords = getAccountantInvoiceUploadTargetRecords(records);
         if (!targetRecords.length) {
           updateAccountantInvoiceUploadControls();
           return;
         }
-        accountantInvoiceImageInput.click();
+        openInvoiceUploadModal();
       });
 
-      accountantInvoiceImageInput.addEventListener("change", async () => {
+      accountantInvoiceImageInput.addEventListener("change", () => {
+        resetInvoiceUploadImageName();
+        clearInlineFieldError(accountantInvoiceImageInput);
+        setInvoiceUploadFormHint("", "idle");
+      });
+
+      if (invoiceUploadCancelBtn) {
+        invoiceUploadCancelBtn.addEventListener("click", () => {
+          closeInvoiceUploadModal();
+        });
+      }
+
+      invoiceUploadForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!requireAccount()) return;
+        if (!canCurrentAccountUploadSettlementInvoice()) return;
         const file = accountantInvoiceImageInput.files && accountantInvoiceImageInput.files[0]
           ? accountantInvoiceImageInput.files[0]
           : null;
-        accountantInvoiceImageInput.value = "";
-        if (!file) return;
+        const info = {
+          name: String(invoiceUploadNameInput?.value || "").trim(),
+          bankName: String(invoiceUploadBankInput?.value || "").trim(),
+          bankCardNo: String(invoiceUploadBankCardInput?.value || "").trim(),
+          idCardNo: String(invoiceUploadIdCardInput?.value || "").trim(),
+          declarationPhone: String(invoiceUploadPhoneInput?.value || "").trim()
+        };
+        const showInvoiceUploadError = (target, message) => {
+          showInlineFormError({
+            form: invoiceUploadForm,
+            hintSetter: setInvoiceUploadFormHint,
+            target,
+            message
+          });
+        };
+        if (!file) {
+          showInvoiceUploadError(accountantInvoiceImageInput, "请选择发票图片。");
+          return;
+        }
         if (!String(file.type || "").toLowerCase().startsWith("image/")) {
-          showAppStatus("只支持图片文件。");
+          showInvoiceUploadError(accountantInvoiceImageInput, "只支持图片文件。");
           return;
         }
         if (Number(file.size || 0) > SETTLEMENT_INVOICE_IMAGE_MAX_SIZE_BYTES) {
-          showAppStatus(`发票图片“${file.name || "未命名图片"}”超过 5MB。`);
+          showInvoiceUploadError(accountantInvoiceImageInput, `发票图片“${file.name || "未命名图片"}”超过 5MB。`);
+          return;
+        }
+        if (!info.name) {
+          showInvoiceUploadError(invoiceUploadNameInput, "请输入姓名。");
+          return;
+        }
+        if (!info.bankName) {
+          showInvoiceUploadError(invoiceUploadBankInput, "请输入开户行。");
+          return;
+        }
+        if (!info.bankCardNo) {
+          showInvoiceUploadError(invoiceUploadBankCardInput, "请输入银行卡号。");
+          return;
+        }
+        if (!info.idCardNo) {
+          showInvoiceUploadError(invoiceUploadIdCardInput, "请输入身份证号。");
+          return;
+        }
+        if (!info.declarationPhone) {
+          showInvoiceUploadError(invoiceUploadPhoneInput, "请输入申报手机号。");
           return;
         }
 
         isInvoiceUploadSubmitting = true;
         updateAccountantInvoiceUploadControls();
         try {
+          setInvoiceUploadFormHint("发票上传中...", "pending");
           const dataUrl = await readFileAsDataUrl(file);
-          const result = await uploadSettlementInvoice({
-            name: String(file.name || "").trim(),
-            dataUrl
-          });
+          const result = await withLoading({
+            button: invoiceUploadSubmitBtn,
+            form: invoiceUploadForm,
+            buttonText: "上传中..."
+          }, () => uploadSettlementInvoice({
+            image: {
+              name: String(file.name || "").trim(),
+              dataUrl
+            },
+            invoiceRecipientInfo: info
+          }));
           const count = result.uploadedRecordIds.length;
+          closeInvoiceUploadModal();
           showAppStatus(
             count
               ? `发票已上传，已更新 ${count} 条状态为${getRecordWorkflowStatusLabelByKey("uploaded")}的数据。`
@@ -1407,7 +1476,7 @@
           );
         } catch (error) {
           console.error(error);
-          showAppStatus(error.message || "发票上传失败，请稍后重试。");
+          showInvoiceUploadError(accountantInvoiceImageInput, error.message || "发票上传失败，请稍后重试。");
         } finally {
           isInvoiceUploadSubmitting = false;
           updateAccountantInvoiceUploadControls();
@@ -1491,6 +1560,18 @@
           const shouldSelectAll = payoutRecordIds.some((recordId) => !isBossSettlementPayoutRecordSelected(recordId));
           setBossSettlementPayoutRecordSelected(payoutRecordIds, shouldSelectAll);
           renderBossSettlementDetailModalContent();
+          return;
+        }
+
+        const paidRecordsBtn = event.target.closest("[data-settlement-paid-records]");
+        if (paidRecordsBtn) {
+          openPaidSettlementDetailModal();
+          return;
+        }
+
+        const uploadedRecordsBtn = event.target.closest("[data-settlement-uploaded-records]");
+        if (uploadedRecordsBtn) {
+          openUploadedSettlementDetailModal();
           return;
         }
 
@@ -1673,6 +1754,14 @@
       });
     }
 
+    if (invoiceUploadModal) {
+      invoiceUploadModal.addEventListener("click", (event) => {
+        if (event.target === invoiceUploadModal) {
+          closeInvoiceUploadModal();
+        }
+      });
+    }
+
     if (bossSettlementSummaryModal) {
       bossSettlementSummaryModal.addEventListener("click", (event) => {
         if (event.target === bossSettlementSummaryModal) {
@@ -1685,6 +1774,22 @@
       bossSettlementDetailModal.addEventListener("click", (event) => {
         if (event.target === bossSettlementDetailModal) {
           closeBossSettlementDetailModal();
+        }
+      });
+    }
+
+    if (paidSettlementDetailModal) {
+      paidSettlementDetailModal.addEventListener("click", (event) => {
+        if (event.target === paidSettlementDetailModal) {
+          closePaidSettlementDetailModal();
+        }
+      });
+    }
+
+    if (uploadedSettlementDetailModal) {
+      uploadedSettlementDetailModal.addEventListener("click", (event) => {
+        if (event.target === uploadedSettlementDetailModal) {
+          closeUploadedSettlementDetailModal();
         }
       });
     }
@@ -1950,6 +2055,10 @@
         closeInvoicePreviewModal();
         return;
       }
+      if (invoiceUploadModal && event.key === "Escape" && !invoiceUploadModal.hidden) {
+        closeInvoiceUploadModal();
+        return;
+      }
       if (event.key === "Escape" && !refundModal.hidden) {
         closeRefundModal();
         return;
@@ -1959,6 +2068,14 @@
         return;
       }
       if (bossSettlementDetailModal && event.key === "Escape" && !bossSettlementDetailModal.hidden) {
+        if (uploadedSettlementDetailModal && !uploadedSettlementDetailModal.hidden) {
+          closeUploadedSettlementDetailModal();
+          return;
+        }
+        if (paidSettlementDetailModal && !paidSettlementDetailModal.hidden) {
+          closePaidSettlementDetailModal();
+          return;
+        }
         closeBossSettlementDetailModal();
         return;
       }
@@ -2145,6 +2262,7 @@
         bindInlineValidation(recordForm, setRecordFormHint);
         bindInlineValidation(checkForm, setCheckFormHint);
         bindInlineValidation(completeForm, setCompleteFormHint);
+        bindInlineValidation(invoiceUploadForm, setInvoiceUploadFormHint);
         bindInlineValidation(accountantRegisterForm, setAccountantRegisterHint);
         bindInlineValidation(accountantEditForm, setAccountantEditHint);
         bindInlineValidation(changePasswordForm, setChangePasswordHint);
@@ -2161,7 +2279,7 @@
         closeChangePasswordModal();
         closeRecycleModal();
         closeDevTodoModal();
-        loadSavedLoginEntries();
+        await loadSavedLoginEntries();
         loadFromStorage();
         loadViewState();
 

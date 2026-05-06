@@ -229,7 +229,7 @@
 
       const premium = payment - total;
       premiumHint.hidden = false;
-      premiumHint.textContent = `溢价：${premium.toFixed(2)} 元`;
+      premiumHint.textContent = `溢价：${premium.toFixed(2)}`;
       premiumHint.classList.toggle("active", premium >= 0);
       premiumHint.classList.toggle("negative", premium < 0);
     }
@@ -711,6 +711,27 @@
         passwordSpan.title = passwordText;
         passwordCell.appendChild(passwordSpan);
 
+        const linkedAccountant = getLinkedAccountantByTag(dispatcherTag);
+        const linkedAccountantAlias = linkedAccountant
+          ? (linkedAccountant.displayName || linkedAccountant.alias || linkedAccountant.name || "")
+          : "";
+        const linkedAccountantPhone = linkedAccountant ? (linkedAccountant.phone || "") : "";
+
+        const linkedAccountantAliasCell = document.createElement("td");
+        linkedAccountantAliasCell.className = "dispatcher-col-linked-accountant-alias";
+        linkedAccountantAliasCell.dataset.label = "关联会计别名";
+        linkedAccountantAliasCell.textContent = linkedAccountantAlias || "—";
+        linkedAccountantAliasCell.title = linkedAccountantAlias;
+
+        const linkedAccountantPhoneCell = document.createElement("td");
+        linkedAccountantPhoneCell.className = "dispatcher-col-linked-accountant-phone";
+        linkedAccountantPhoneCell.dataset.label = "关联会计手机号";
+        const linkedAccountantPhoneSpan = document.createElement("span");
+        linkedAccountantPhoneSpan.className = "accountant-item-password";
+        linkedAccountantPhoneSpan.textContent = linkedAccountantPhone || "—";
+        linkedAccountantPhoneSpan.title = linkedAccountantPhone;
+        linkedAccountantPhoneCell.appendChild(linkedAccountantPhoneSpan);
+
         const countCell = document.createElement("td");
         countCell.className = "dispatcher-col-count";
         countCell.dataset.label = "接单数";
@@ -722,6 +743,8 @@
         row.appendChild(displayCell);
         row.appendChild(accountCell);
         row.appendChild(passwordCell);
+        row.appendChild(linkedAccountantAliasCell);
+        row.appendChild(linkedAccountantPhoneCell);
         row.appendChild(countCell);
         dispatcherList.appendChild(row);
       });
@@ -1299,9 +1322,18 @@
       }
       const payload = await response.json();
       dispatchers = Array.isArray(payload.dispatchers) ? payload.dispatchers : [];
+      dispatcherAccountantMappings =
+        payload.dispatcherAccountantMappings && typeof payload.dispatcherAccountantMappings === "object"
+          ? payload.dispatcherAccountantMappings
+          : {};
+      linkedDispatcherAccountants =
+        payload.linkedDispatcherAccountants && typeof payload.linkedDispatcherAccountants === "object"
+          ? payload.linkedDispatcherAccountants
+          : {};
       if (!dispatcherModal.hidden) {
         renderDispatcherList();
       }
+      renderTable();
     }
 
     async function fetchAccountants() {
@@ -1657,11 +1689,15 @@
       };
     }
 
-    async function uploadSettlementInvoice(image) {
+    async function uploadSettlementInvoice(payload) {
+      const source = payload && typeof payload === "object" ? payload : {};
       const response = await fetchWithClientLog(API_ENDPOINT_RECORDS_INVOICE, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image })
+        body: JSON.stringify({
+          image: source.image || source.invoiceImage || source.settlementInvoiceImage || source,
+          invoiceRecipientInfo: source.invoiceRecipientInfo || source.recipientInfo || {}
+        })
       }, {
         successMessage: "上传发票",
         errorMessage: "上传发票"
@@ -1917,10 +1953,36 @@
       renderSavedLoginList();
     }
 
-    function loadSavedLoginEntries() {
+    async function fetchDebugQuickLoginEntries() {
+      const response = await fetchWithClientLog(
+        API_ENDPOINT_AUTH_QUICK_LOGINS,
+        { cache: "no-store" },
+        { skipAuth: true }
+      );
+      if (!response.ok) {
+        throw new Error(`读取快捷登录列表失败（${response.status}）`);
+      }
+      const payload = await response.json();
+      const source = Array.isArray(payload.quickLogins) ? payload.quickLogins : [];
+      savedLoginEntries = source.map((entry) => normalizeSavedLoginEntry(entry)).filter(Boolean);
+      renderSavedLoginList();
+    }
+
+    async function loadSavedLoginEntries() {
       if (!isQuickLoginEnabled) {
         savedLoginEntries = [];
         renderSavedLoginList();
+        return;
+      }
+      if (isQuickLoginDebugEnabled) {
+        try {
+          await fetchDebugQuickLoginEntries();
+        } catch (error) {
+          console.error(error);
+          savedLoginEntries = [];
+          renderSavedLoginList();
+          setLoginRequestHint(error.message || "读取快捷登录列表失败。", "error");
+        }
         return;
       }
       const raw = String(getPersistentStateItem(STORAGE_KEY_SAVED_LOGINS) || "").trim();
@@ -2037,7 +2099,7 @@
           platform: filterState.platform,
           shopName: filterState.shopName,
           source: filterState.source,
-          status: filterState.status,
+          status: getSelectedStatusFilters(),
           settled: ""
         },
         layout: {
@@ -2076,7 +2138,7 @@
         const persistedPlatform = String(parsedFilter.platform || "").trim();
         const persistedShopName = String(parsedFilter.shopName || "").trim();
         const persistedSource = String(parsedFilter.source || "").trim();
-        const persistedStatus = String(parsedFilter.status || "").trim();
+        const persistedStatus = normalizeStatusFilterValues(parsedFilter.status);
         const persistedSettled = "";
         const persistedSidebarCollapsed = Boolean(parsed?.layout?.sidebarCollapsed);
 
@@ -2106,7 +2168,7 @@
         filterState.platform = persistedPlatform;
         filterState.shopName = persistedShopName;
         filterState.source = persistedSource;
-        filterState.status = persistedStatus;
+        setStatusFilterValues(persistedStatus);
         filterState.settled = persistedSettled;
         setSidebarCollapsed(persistedSidebarCollapsed);
       } catch (error) {

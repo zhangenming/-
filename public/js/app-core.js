@@ -14,6 +14,7 @@
     const API_ENDPOINT_AUTH_ACCOUNTANT_REGISTER = `${API_BASE}/api/auth/accountant-register`;
     const API_ENDPOINT_AUTH_LOGIN = `${API_BASE}/api/auth/login`;
     const API_ENDPOINT_AUTH_PASSWORD = `${API_BASE}/api/auth/password`;
+    const API_ENDPOINT_AUTH_QUICK_LOGINS = `${API_BASE}/api/auth/quick-logins`;
     const STATIC_ASSET_VERSION = String(window.__STATIC_ASSET_VERSION__ || "").trim();
     const ECHARTS_ASSET_URL = "./public/vendor/echarts.min.js";
     const STORAGE_KEY_ACCOUNT = "dispatch_current_account_v1";
@@ -71,6 +72,19 @@
     let legacyPersistentStateStorage = window.sessionStorage;
     let isDevTodoEnabled = false;
     let isQuickLoginEnabled = false;
+    let isQuickLoginDebugEnabled = false;
+
+    function hasDebugQueryFlag() {
+      try {
+        const params = new URLSearchParams(window.location.search || "");
+        return params.has("dbg");
+      } catch {
+        return false;
+      }
+    }
+
+    isQuickLoginDebugEnabled = hasDebugQueryFlag();
+    document.body?.classList.toggle("quick-login-debug", isQuickLoginDebugEnabled);
 
     function isDevelopmentEnvironment() {
       return runtimeAppEnvironment === "development";
@@ -86,7 +100,7 @@
       persistentStateStorage = isTabScopedPersistenceEnabled ? window.sessionStorage : window.localStorage;
       legacyPersistentStateStorage = isTabScopedPersistenceEnabled ? window.localStorage : window.sessionStorage;
       isDevTodoEnabled = isDevelopmentEnvironment();
-      isQuickLoginEnabled = isDevelopmentEnvironment();
+      isQuickLoginEnabled = isDevelopmentEnvironment() || isQuickLoginDebugEnabled;
     }
 
     applyRuntimeEnvironment(runtimeAppEnvironment);
@@ -127,14 +141,28 @@
       persistentStateStorage.removeItem(key);
       legacyPersistentStateStorage.removeItem(key);
     }
-    const DISPATCHER_TAGS = ["1", "A", "C", "E", "K"];
+    const DISPATCHER_TAGS = ["1", "A", "C", "E", "K", "1旧", "K旧"];
     const ACCOUNT_TO_DISPATCHER_TAG = {
       "1": "1",
       "a": "A",
       "c": "C",
       "e": "E",
       "k": "K",
-      "开心财税": "开心财税"
+      "开心财税": "开心财税",
+      "开心财税1旧": "1旧",
+      "开心财税k旧": "K旧",
+      "1旧": "1旧",
+      "k旧": "K旧"
+    };
+    const DISPATCHER_TAG_TO_ACCOUNT = {
+      "1": "1",
+      "A": "a",
+      "C": "c",
+      "E": "e",
+      "K": "k",
+      "开心财税": "开心财税",
+      "1旧": "开心财税1旧",
+      "K旧": "开心财税k旧"
     };
     const DISPATCHER_ACCOUNT_DISPLAY_NAME = {
       "1": "开心财税1",
@@ -142,7 +170,11 @@
       "c": "开心财税c",
       "e": "开心财税e",
       "k": "开心财税k",
-      "开心财税": "开心财税"
+      "开心财税": "开心财税",
+      "开心财税1旧": "开心财税1旧",
+      "开心财税k旧": "开心财税k旧",
+      "1旧": "开心财税1旧",
+      "k旧": "开心财税k旧"
     };
     const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
       "1": "1",
@@ -151,17 +183,250 @@
       "e": "e",
       "k": "k",
       "开心财税": "开心财税",
+      "开心财税1旧": "开心财税1旧",
+      "开心财税k旧": "开心财税k旧",
       "开心财税1": "1",
       "开心财税a": "a",
       "开心财税c": "c",
       "开心财税e": "e",
-      "开心财税k": "k"
+      "开心财税k": "k",
+      "1旧": "开心财税1旧",
+      "k旧": "开心财税k旧"
     };
 
     function getDispatcherDisplayNameByTag(dispatcherTagRaw) {
       const dispatcherTag = normalizeDispatcherTag(dispatcherTagRaw);
       if (dispatcherTag === "开心财税") return "开心财税";
       return dispatcherTag ? `开心财税${dispatcherTag.toLowerCase()}` : "";
+    }
+
+    function getDispatcherAccountByTag(dispatcherTag) {
+      const tag = String(dispatcherTag || "").trim();
+      return DISPATCHER_TAG_TO_ACCOUNT[tag] || null;
+    }
+
+    function getLinkedAccountantPhoneByAccount(dispatcherAccount) {
+      const account = String(dispatcherAccount || "").trim().toLowerCase();
+      const phone = dispatcherAccountantMappings[account];
+      return phone ? String(phone).trim() : null;
+    }
+
+    function getAccountantByPhone(phone) {
+      const phoneValue = String(phone || "").trim();
+      if (!phoneValue) return null;
+      return (Array.isArray(accountants) ? accountants : []).find(
+        (item) => String(item?.phone || "").trim() === phoneValue
+      ) || null;
+    }
+
+    function getLinkedAccountantByTag(dispatcherTag) {
+      const account = getDispatcherAccountByTag(dispatcherTag);
+      if (!account) return null;
+      const phone = getLinkedAccountantPhoneByAccount(account);
+      if (!phone) return null;
+      return getAccountantByPhone(phone);
+    }
+
+    function getLinkedAccountantDisplayNameByTag(dispatcherTag) {
+      const normalizedTag = normalizeDispatcherTag(dispatcherTag);
+      const mappedDisplayName = String(linkedDispatcherAccountants?.[normalizedTag] || "").trim();
+      if (mappedDisplayName) return mappedDisplayName;
+      const accountant = getLinkedAccountantByTag(dispatcherTag);
+      return accountant ? String(accountant?.displayName || "").trim() : null;
+    }
+
+    function isAccountantLinkedToDispatcher(accountantName) {
+      const normalizedName = String(accountantName || "").trim();
+      if (!normalizedName) return false;
+
+      const profile = (Array.isArray(accountants) ? accountants : []).find((item) => {
+        const displayName = String(item?.displayName || "").trim();
+        const name = String(item?.name || "").trim();
+        const username = String(item?.username || "").trim();
+        const phone = String(item?.phone || "").trim();
+        return (
+          displayName === normalizedName
+          || name === normalizedName
+          || username === normalizedName
+          || phone === normalizedName
+        );
+      }) || null;
+
+      if (!profile) return false;
+      const phone = String(profile.phone || "").trim();
+      if (!phone) return false;
+      const mappingValues = Object.values(dispatcherAccountantMappings || {});
+      return mappingValues.some((value) => value && String(value).trim() === phone);
+    }
+
+    function getDispatcherTagsLinkedToAccountant(accountantName) {
+      const normalizedName = String(accountantName || "").trim();
+      if (!normalizedName) return [];
+
+      const mappedTags = Object.entries(linkedDispatcherAccountants || {})
+        .filter(([, displayName]) => String(displayName || "").trim() === normalizedName)
+        .map(([tag]) => normalizeDispatcherTag(tag))
+        .filter(Boolean);
+      if (mappedTags.length) {
+        return Array.from(new Set(mappedTags));
+      }
+
+      const profile = (Array.isArray(accountants) ? accountants : []).find((item) => {
+        const displayName = String(item?.displayName || "").trim();
+        const name = String(item?.name || "").trim();
+        const username = String(item?.username || "").trim();
+        const phone = String(item?.phone || "").trim();
+        return (
+          displayName === normalizedName
+          || name === normalizedName
+          || username === normalizedName
+          || phone === normalizedName
+        );
+      }) || null;
+
+      if (!profile) return [];
+      const phone = String(profile.phone || "").trim();
+      if (!phone) return [];
+
+      const linkedTags = [];
+      const mappings = dispatcherAccountantMappings || {};
+      Object.keys(mappings).forEach((tag) => {
+        const mappedPhone = String(mappings[tag] || "").trim();
+        if (mappedPhone === phone) {
+          const normalizedTag = normalizeDispatcherTag(tag);
+          if (normalizedTag) {
+            linkedTags.push(normalizedTag);
+          }
+        }
+      });
+      return linkedTags;
+    }
+
+    function getLinkedDispatcherSettlementAmount(accountantName, sourceRecords = records, options = {}) {
+      const dispatcherTags = getDispatcherTagsLinkedToAccountant(accountantName);
+      if (!dispatcherTags.length) return null;
+
+      const hasPaidFilter = options
+        && typeof options === "object"
+        && Object.prototype.hasOwnProperty.call(options, "paid");
+      const paidFilter = Boolean(options?.paid);
+      const detailRecords = getBossSettlementDetailRecords(sourceRecords);
+      let totalRawPremium = 0;
+      let totalDispatcherPrice = 0;
+      const dispatcherCommissionMap = new Map();
+      let recordCount = 0;
+      const recordIds = [];
+
+      let pendingCount = 0;
+      let uploadedCount = 0;
+      let paidCount = 0;
+      const payoutRecordIds = [];
+      const invoiceMap = new Map();
+      let latestUploadedAt = "";
+      let latestUploadedBy = "";
+
+      detailRecords.forEach((record) => {
+        const dispatcher = normalizeDispatcherTag(record?.dispatcher);
+        if (!dispatcherTags.includes(dispatcher)) return;
+        if (hasPaidFilter && isRecordSettlementPaid(record) !== paidFilter) return;
+
+        const recordId = String(record?.id || "").trim();
+        if (recordId && !recordIds.includes(recordId)) {
+          recordIds.push(recordId);
+        }
+        recordCount += 1;
+
+        const isUploaded = isRecordInvoiceUploaded(record);
+        const uploadedAt = String(record?.invoiceUploadedAt || "").trim();
+        const uploadedBy = String(record?.invoiceUploadedBy || record?.invoiceUploadedByUsername || "").trim();
+        const uploadedAtTime = parseDateTimeValue(uploadedAt);
+        const invoiceImage = getSettlementInvoiceImage(record);
+        const isPaid = isRecordSettlementPaid(record);
+
+        if (isUploaded) {
+          uploadedCount += 1;
+          const currentUploadedAtTime = parseDateTimeValue(latestUploadedAt);
+          if (!latestUploadedAt || uploadedAtTime >= currentUploadedAtTime) {
+            latestUploadedAt = uploadedAt;
+            latestUploadedBy = uploadedBy;
+          }
+          if (invoiceImage && isInvoiceUploadedByAccountant(record, accountantName)) {
+            const invoiceKey = [
+              String(invoiceImage.fileName || invoiceImage.url || "").trim(),
+              uploadedAt,
+              uploadedBy
+            ].join("\u0001");
+            const invoiceItem = invoiceMap.get(invoiceKey) || {
+              key: invoiceKey,
+              image: invoiceImage,
+              firstRecord: record,
+              recordIds: [],
+              totalSettlement: 0,
+              uploadedAt,
+              uploadedBy
+            };
+            if (recordId) {
+              invoiceItem.recordIds.push(recordId);
+            }
+            invoiceMap.set(invoiceKey, invoiceItem);
+          }
+          if (isPaid) {
+            paidCount += 1;
+          } else if (recordId) {
+            payoutRecordIds.push(recordId);
+          }
+        } else {
+          pendingCount += 1;
+        }
+
+        const premium = getPremiumValue(record);
+        if (Number.isFinite(premium)) {
+          totalRawPremium += premium;
+        }
+
+        const totalPrice = Number(record?.totalPrice);
+        const baseRate = getDispatcherBaseProfitRate(record);
+        const dispatcherPrice = Number.isFinite(totalPrice) ? totalPrice * baseRate : 0;
+        if (Number.isFinite(dispatcherPrice)) {
+          totalDispatcherPrice += dispatcherPrice;
+        }
+        if (Number.isFinite(totalPrice) && Number.isFinite(baseRate)) {
+          dispatcherCommissionMap.set(baseRate, (dispatcherCommissionMap.get(baseRate) || 0) + totalPrice);
+        }
+      });
+
+      if (recordCount === 0) return null;
+
+      const premiumBreakdown = getTieredPremiumProfitBreakdown(totalRawPremium);
+      const premiumProfit = premiumBreakdown ? premiumBreakdown.profit : Number.NaN;
+      const invoiceAmount = Number.isFinite(premiumProfit) && Number.isFinite(totalDispatcherPrice)
+        ? premiumProfit + totalDispatcherPrice
+        : 0;
+      const taxAmount = Number.isFinite(invoiceAmount) ? getSettlementTaxAmount(invoiceAmount) : 0;
+      const payableAmount = Number.isFinite(invoiceAmount) && Number.isFinite(taxAmount)
+        ? invoiceAmount - taxAmount
+        : 0;
+
+      return {
+        dispatcherTags,
+        recordIds,
+        recordCount,
+        pendingCount,
+        uploadedCount,
+        paidCount,
+        payoutRecordIds,
+        latestUploadedAt,
+        latestUploadedBy,
+        invoiceMap,
+        rawPremium: totalRawPremium,
+        premium: Number.isFinite(premiumProfit) ? premiumProfit : 0,
+        premiumBreakdown,
+        dispatcherPrice: totalDispatcherPrice,
+        dispatcherCommissionTerms: Array.from(dispatcherCommissionMap.entries()).map(([rate, amount]) => ({ rate, amount })),
+        invoiceAmount,
+        taxAmount,
+        payableAmount
+      };
     }
 
     const loginPage = document.getElementById("loginPage");
@@ -281,6 +546,18 @@
       : null;
     const operationRecordsMeta = document.getElementById("operationRecordsMeta");
     const operationRecordsList = document.getElementById("operationRecordsList");
+    const paidSettlementDetailModal = document.getElementById("paidSettlementDetailModal");
+    const paidSettlementDetailModalCard = paidSettlementDetailModal
+      ? paidSettlementDetailModal.querySelector(".paid-settlement-detail-modal-card")
+      : null;
+    const paidSettlementDetailMeta = document.getElementById("paidSettlementDetailMeta");
+    const paidSettlementDetailList = document.getElementById("paidSettlementDetailList");
+    const uploadedSettlementDetailModal = document.getElementById("uploadedSettlementDetailModal");
+    const uploadedSettlementDetailModalCard = uploadedSettlementDetailModal
+      ? uploadedSettlementDetailModal.querySelector(".uploaded-settlement-detail-modal-card")
+      : null;
+    const uploadedSettlementDetailMeta = document.getElementById("uploadedSettlementDetailMeta");
+    const uploadedSettlementDetailList = document.getElementById("uploadedSettlementDetailList");
     const openPriceCompositionBtn = document.getElementById("openPriceCompositionBtn");
     const priceCompositionModal = document.getElementById("priceCompositionModal");
     const priceCompositionModalCard = priceCompositionModal
@@ -422,7 +699,23 @@
     const bossSettlementSummaryBtn = document.getElementById("bossSettlementSummaryBtn");
     const bossSettlementDetailBtn = document.getElementById("bossSettlementDetailBtn");
     const accountantInvoiceUploadBtn = document.getElementById("accountantInvoiceUploadBtn");
+    const accountantUploadedSettlementDetailBtn = document.getElementById("accountantUploadedSettlementDetailBtn");
+    const invoiceUploadModal = document.getElementById("invoiceUploadModal");
+    const invoiceUploadModalCard = invoiceUploadModal
+      ? invoiceUploadModal.querySelector(".invoice-upload-modal-card")
+      : null;
+    const invoiceUploadModalMeta = document.getElementById("invoiceUploadModalMeta");
+    const invoiceUploadFormHint = document.getElementById("invoiceUploadFormHint");
+    const invoiceUploadForm = document.getElementById("invoiceUploadForm");
+    const invoiceUploadImageName = document.getElementById("invoiceUploadImageName");
     const accountantInvoiceImageInput = document.getElementById("accountantInvoiceImageInput");
+    const invoiceUploadNameInput = document.getElementById("invoiceUploadNameInput");
+    const invoiceUploadBankInput = document.getElementById("invoiceUploadBankInput");
+    const invoiceUploadBankCardInput = document.getElementById("invoiceUploadBankCardInput");
+    const invoiceUploadIdCardInput = document.getElementById("invoiceUploadIdCardInput");
+    const invoiceUploadPhoneInput = document.getElementById("invoiceUploadPhoneInput");
+    const invoiceUploadCancelBtn = document.getElementById("invoiceUploadCancelBtn");
+    const invoiceUploadSubmitBtn = document.getElementById("invoiceUploadSubmitBtn");
     const tableSelectCol = document.getElementById("tableSelectCol");
     const tableSelectHead = document.getElementById("tableSelectHead");
     const tableSelectAllCheckbox = document.getElementById("tableSelectAllCheckbox");
@@ -500,6 +793,8 @@
     let records = [];
     let accountants = [];
     let dispatchers = [];
+    let dispatcherAccountantMappings = {};
+    let linkedDispatcherAccountants = {};
     let recycleBinRecords = [];
     let accountantOperationLogs = [];
     let reminders = [];
@@ -558,9 +853,54 @@
       platform: "",
       shopName: "",
       source: "",
-      status: "",
+      status: [],
       settled: ""
     };
+
+    function normalizeStatusFilterValues(rawValue) {
+      const values = Array.isArray(rawValue)
+        ? rawValue
+        : (rawValue ? [rawValue] : []);
+      const seen = new Set();
+      return values
+        .map((value) => String(value || "").trim())
+        .filter((value) => {
+          if (!value || seen.has(value)) return false;
+          seen.add(value);
+          return true;
+        });
+    }
+
+    function setStatusFilterValues(values) {
+      filterState.status = normalizeStatusFilterValues(values);
+    }
+
+    function getSelectedStatusFilters() {
+      const normalizedValues = normalizeStatusFilterValues(filterState.status);
+      if (!Array.isArray(filterState.status) || normalizedValues.length !== filterState.status.length) {
+        filterState.status = normalizedValues;
+      }
+      return normalizedValues;
+    }
+
+    function hasStatusFilterSelected() {
+      return getSelectedStatusFilters().length > 0;
+    }
+
+    function isStatusFilterValueSelected(value) {
+      return getSelectedStatusFilters().includes(String(value || "").trim());
+    }
+
+    function toggleStatusFilterValue(value) {
+      const selectedValue = String(value || "").trim();
+      if (!selectedValue) return;
+      const selectedValues = getSelectedStatusFilters();
+      setStatusFilterValues(
+        selectedValues.includes(selectedValue)
+          ? selectedValues.filter((item) => item !== selectedValue)
+          : [...selectedValues, selectedValue]
+      );
+    }
 
     function getAutocompleteDisabledFields() {
       return Array.from(document.querySelectorAll(AUTOCOMPLETE_DISABLED_FIELD_SELECTOR)).filter((field) => {
@@ -854,10 +1194,18 @@
     function getAccountantProfileByLoginName(loginNameRaw) {
       const loginName = String(loginNameRaw || "").trim();
       if (!loginName) return null;
-      return accountants.find((item) => (
-        String(item.username || item.name || "").trim() === loginName
-        || String(item.phone || "").trim() === loginName
-      )) || null;
+      return accountants.find((item) => {
+        const displayName = String(item?.displayName || "").trim();
+        const name = String(item?.name || "").trim();
+        const username = String(item?.username || "").trim();
+        const phone = String(item?.phone || "").trim();
+        return (
+          displayName === loginName
+          || name === loginName
+          || username === loginName
+          || phone === loginName
+        );
+      }) || null;
     }
 
     function getAccountantLoginIdentifier(loginNameRaw) {
@@ -893,6 +1241,39 @@
         return displayName;
       }
       return String(currentAccountDisplayName || currentAccount || "").trim();
+    }
+
+    function getAccountantUploadIdentitySet(accountantName) {
+      const normalizedName = String(accountantName || "").trim();
+      const identities = new Set();
+      const addIdentity = (value) => {
+        const text = String(value || "").trim();
+        if (text) {
+          identities.add(text);
+        }
+      };
+
+      addIdentity(normalizedName);
+
+      const profile = getAccountantProfileByLoginName(normalizedName);
+      if (profile) {
+        addIdentity(profile.displayName);
+        addIdentity(profile.name);
+        addIdentity(profile.alias);
+        addIdentity(profile.username);
+        addIdentity(profile.phone);
+      }
+
+      return identities;
+    }
+
+    function isInvoiceUploadedByAccountant(record, accountantName) {
+      const identities = getAccountantUploadIdentitySet(accountantName);
+      if (!identities.size) return false;
+
+      const uploadedBy = String(record?.invoiceUploadedBy || "").trim();
+      const uploadedByUsername = String(record?.invoiceUploadedByUsername || "").trim();
+      return identities.has(uploadedBy) || identities.has(uploadedByUsername);
     }
 
     function getAccountantRealNameByLoginName(loginNameRaw) {
@@ -945,6 +1326,8 @@
 
       const source = String(accountNameRaw || "").trim().toLowerCase();
       if (!source) return "";
+      if (source.includes("财税1旧")) return "1旧";
+      if (source.includes("财税k旧")) return "K旧";
       if (source.includes("财税a")) return "A";
       if (source.includes("财税c")) return "C";
       if (source.includes("财税e")) return "E";
@@ -970,12 +1353,16 @@
       const normalizedRole = normalizeLoginRole(rawEntry.role) || inferRoleByAccountName(account);
       const resolvedAccount = String(resolveLoginAccountInput(account) || account).trim();
       const updatedAt = Number(rawEntry.updatedAt);
+      const displayName = String(rawEntry.displayName || rawEntry.name || "").trim();
+      const alias = String(rawEntry.alias || rawEntry.nickname || "").trim();
       return {
         account: normalizedRole === "accountant"
           ? getAccountantLoginIdentifier(resolvedAccount)
           : resolvedAccount,
         password,
         role: normalizedRole,
+        displayName,
+        alias,
         updatedAt: Number.isFinite(updatedAt) && updatedAt > 0 ? updatedAt : Date.now()
       };
     }
@@ -1003,7 +1390,7 @@
       return "会计";
     }
 
-    function getSavedLoginMetaText(accountNameRaw, roleRaw) {
+    function getSavedLoginMetaText(accountNameRaw, roleRaw, entryRaw = null) {
       const accountName = String(accountNameRaw || "").trim();
       const roleKey = getSavedLoginRoleKey(accountNameRaw, roleRaw);
       if (roleKey === "dispatcher") {
@@ -1027,7 +1414,7 @@
       return getDispatcherDisplayNameByTag(dispatcherTag) || accountName;
     }
 
-    function getSavedLoginDisplayName(accountNameRaw, roleRaw) {
+    function getSavedLoginDisplayName(accountNameRaw, roleRaw, entryRaw = null) {
       const accountName = String(accountNameRaw || "").trim();
       const roleKey = getSavedLoginRoleKey(accountNameRaw, roleRaw);
       if (roleKey === "dispatcher") {
@@ -1036,6 +1423,10 @@
       if (roleKey === "boss") {
         return String(resolveLoginAccountInput(accountNameRaw) || accountName || BOSS_LOGIN_ACCOUNT).trim();
       }
+      const entryAlias = String(entryRaw?.alias || "").trim();
+      const entryDisplayName = String(entryRaw?.displayName || "").trim();
+      if (entryAlias) return entryAlias;
+      if (entryDisplayName) return entryDisplayName;
       return getAccountantDisplayNameByLoginName(accountName) || accountName;
     }
 
@@ -1099,11 +1490,11 @@
 
           const name = document.createElement("span");
           name.className = "saved-login-item-name";
-          name.textContent = getSavedLoginDisplayName(normalized.account, normalized.role);
+          name.textContent = getSavedLoginDisplayName(normalized.account, normalized.role, normalized);
 
           const meta = document.createElement("span");
           meta.className = "saved-login-item-meta";
-          meta.textContent = getSavedLoginMetaText(normalized.account, normalized.role);
+          meta.textContent = getSavedLoginMetaText(normalized.account, normalized.role, normalized);
 
           const role = document.createElement("span");
           role.className = `saved-login-item-role ${roleKey}`;
@@ -1165,6 +1556,15 @@
 
     function canCurrentAccountUseReminders() {
       return isBossLogin() || isDispatcherLogin();
+    }
+
+    function canCurrentAccountExportTableRecords() {
+      return hasAuthenticatedAccount()
+        && (isBossLogin() || isDispatcherLogin() || isAccountantLogin());
+    }
+
+    function canCurrentAccountUploadSettlementInvoice() {
+      return isAccountantLogin() || isDispatcherLogin();
     }
 
     function canCurrentAccountPayoutSettlementRecords() {
@@ -1500,28 +1900,148 @@
       return getRecordWorkflowStatusText(record);
     }
 
+    function isLinkedDispatcherRecordForCurrentAccount(record) {
+      if (!record || typeof record !== "object") return false;
+      if (isDispatcherLogin()) {
+        const currentDispatcherTag = getCurrentDispatcherTag();
+        if (!currentDispatcherTag) return false;
+        const linkedAccountant = getLinkedAccountantDisplayNameByTag(currentDispatcherTag);
+        return Boolean(linkedAccountant && String(record?.accountant || "").trim() === linkedAccountant);
+      }
+      if (isAccountantLogin()) {
+        const currentAccountant = getCurrentAccountantDisplayName();
+        const dispatcherTags = getDispatcherTagsLinkedToAccountant(currentAccountant);
+        const recordDispatcherTag = normalizeDispatcherTag(record?.dispatcher);
+        return Boolean(recordDispatcherTag && dispatcherTags.includes(recordDispatcherTag));
+      }
+      return false;
+    }
+
     function getAccountantInvoiceUploadTargetRecords(sourceRecords = records) {
-      if (!isAccountantLogin()) return [];
+      if (!canCurrentAccountUploadSettlementInvoice()) return [];
+      const currentDispatcherTag = isDispatcherLogin() ? getCurrentDispatcherTag() : "";
+      const currentAccountant = isAccountantLogin() ? getCurrentAccountantDisplayName() : "";
       return (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) => {
+        const recordDispatcherTag = normalizeDispatcherTag(item?.dispatcher);
+        const matchesDirectAccount = isAccountantLogin()
+          ? String(item?.accountant || "").trim() === currentAccountant
+          : Boolean(currentDispatcherTag && recordDispatcherTag === currentDispatcherTag);
+        const matchesLinkedAccount = isLinkedDispatcherRecordForCurrentAccount(item);
         return isRecordSettled(item)
           && !isRecordInvoiceUploaded(item)
-          && isRecordCompletionStatus(item);
+          && isRecordCompletionStatus(item)
+          && (matchesDirectAccount || matchesLinkedAccount);
       });
+    }
+
+    function getCurrentInvoiceUploadAccountantName() {
+      if (isAccountantLogin()) {
+        return getCurrentAccountantDisplayName();
+      }
+      if (isDispatcherLogin()) {
+        const currentDispatcherTag = getCurrentDispatcherTag();
+        return getLinkedAccountantDisplayNameByTag(currentDispatcherTag) || "";
+      }
+      return "";
+    }
+
+    function getCurrentInvoiceUploadSettlementGroup(sourceRecords = records) {
+      if (typeof getBossSettlementDetailSummary !== "function") return null;
+      const accountantName = getCurrentInvoiceUploadAccountantName();
+      if (!accountantName) return null;
+      const { groups } = getBossSettlementDetailSummary(sourceRecords);
+      return (Array.isArray(groups) ? groups : []).find(
+        (group) => String(group?.accountant || "").trim() === accountantName
+      ) || null;
     }
 
     function getAccountantInvoiceUploadSummary(sourceRecords = records) {
       const targetRecords = getAccountantInvoiceUploadTargetRecords(sourceRecords);
-      const invoiceAmount = targetRecords.reduce((sum, item) => {
-        const settlement = Number(item?.settlementPrice);
-        return Number.isFinite(settlement) ? sum + settlement : sum;
-      }, 0);
+      const settlementGroup = getCurrentInvoiceUploadSettlementGroup(sourceRecords);
+      if (settlementGroup) {
+        const invoiceAmount = Number(settlementGroup.invoiceAmount) || 0;
+        const taxAmount = Number(settlementGroup.taxAmount) || getSettlementTaxAmount(invoiceAmount);
+        const payableAmount = Number(settlementGroup.payableAmount) || (invoiceAmount - taxAmount);
+        return {
+          targetRecords,
+          count: Number(settlementGroup.recordCount) || targetRecords.length,
+          uploadableCount: targetRecords.length,
+          invoiceAmount,
+          taxAmount,
+          payableAmount,
+          accountantInvoiceAmount: Number(settlementGroup.accountantInvoiceAmount) || 0,
+          dispatcherInvoiceAmount: Number(settlementGroup.dispatcherInvoiceAmount) || 0,
+          dispatcherPremiumSegments: Array.isArray(settlementGroup.dispatcherPremiumSegments)
+            ? settlementGroup.dispatcherPremiumSegments
+            : [],
+          dispatcherCommissionTerms: Array.isArray(settlementGroup.dispatcherCommissionTerms)
+            ? settlementGroup.dispatcherCommissionTerms
+            : [],
+          dispatcherPremiumAmount: Number(settlementGroup.dispatcherPremiumAmount) || 0,
+          dispatcherCommissionAmount: Number(settlementGroup.dispatcherCommissionAmount) || 0,
+          hasIncomeBreakdown: true,
+          hasLinkedDispatcher: Boolean(settlementGroup.hasLinkedDispatcher)
+        };
+      }
+
+      let invoiceAmount = 0;
+      let accountantInvoiceAmount = 0;
+      let dispatcherInvoiceAmount = 0;
+
+      if (isDispatcherLogin()) {
+        const currentDispatcherTag = getCurrentDispatcherTag();
+        const linkedAccountantName = getLinkedAccountantDisplayNameByTag(currentDispatcherTag);
+        const dispatcherRecords = targetRecords.filter(
+          (item) => normalizeDispatcherTag(item?.dispatcher) === currentDispatcherTag
+        );
+        accountantInvoiceAmount = linkedAccountantName
+          ? targetRecords.reduce((sum, item) => {
+            if (String(item?.accountant || "").trim() !== linkedAccountantName) return sum;
+            const settlement = Number(item?.settlementPrice);
+            return Number.isFinite(settlement) ? sum + settlement : sum;
+          }, 0)
+          : 0;
+        const totalRawPremium = dispatcherRecords.reduce((sum, item) => {
+          const premium = getPremiumValue(item);
+          return Number.isFinite(premium) ? sum + premium : sum;
+        }, 0);
+        const premiumProfit = getTieredPremiumProfit(totalRawPremium);
+        const dispatcherPrice = dispatcherRecords.reduce((sum, item) => {
+          const totalPrice = Number(item?.totalPrice);
+          const baseRate = getDispatcherBaseProfitRate(item);
+          const price = Number.isFinite(totalPrice) ? totalPrice * baseRate : 0;
+          return Number.isFinite(price) ? sum + price : sum;
+        }, 0);
+        dispatcherInvoiceAmount = (Number.isFinite(premiumProfit) ? premiumProfit : 0)
+          + (Number.isFinite(dispatcherPrice) ? dispatcherPrice : 0);
+        invoiceAmount = accountantInvoiceAmount
+          + dispatcherInvoiceAmount;
+      } else if (isAccountantLogin()) {
+        const currentAccountant = getCurrentAccountantDisplayName();
+        accountantInvoiceAmount = targetRecords.reduce((sum, item) => {
+          if (String(item?.accountant || "").trim() !== currentAccountant) return sum;
+          const settlement = Number(item?.settlementPrice);
+          return Number.isFinite(settlement) ? sum + settlement : sum;
+        }, 0);
+        const linkedDispatcherAmount = getLinkedDispatcherSettlementAmount(currentAccountant, targetRecords, {
+          paid: false
+        });
+        dispatcherInvoiceAmount = Number(linkedDispatcherAmount?.invoiceAmount) || 0;
+        invoiceAmount = accountantInvoiceAmount + dispatcherInvoiceAmount;
+      }
+
       const taxAmount = getSettlementTaxAmount(invoiceAmount);
       return {
         targetRecords,
         count: targetRecords.length,
+        uploadableCount: targetRecords.length,
         invoiceAmount,
         taxAmount,
-        payableAmount: invoiceAmount - taxAmount
+        payableAmount: invoiceAmount - taxAmount,
+        accountantInvoiceAmount,
+        dispatcherInvoiceAmount,
+        hasIncomeBreakdown: true,
+        hasLinkedDispatcher: dispatcherInvoiceAmount > 0
       };
     }
 
@@ -1540,6 +2060,10 @@
 
       detailRecords.forEach((record) => {
         const dispatcher = String(record?.dispatcher || "").trim() || "未分配接待";
+        const linkedAccountantDisplayName = getLinkedAccountantDisplayNameByTag(dispatcher);
+        if (linkedAccountantDisplayName) {
+          return;
+        }
         const current = groupMap.get(dispatcher) || {
           dispatcher,
           recordIds: [],
@@ -2090,11 +2614,12 @@
     function getVisibleRecords() {
       const dispatcherTag = isDispatcherLogin() ? getCurrentDispatcherTag() : "";
       const accountantName = isAccountantLogin() ? getCurrentAccountantDisplayName() : "";
+      const mainTableRecords = records.filter((item) => !item?.hiddenFromMainTable);
       if (dispatcherTag) {
-        return records.filter((item) => normalizeDispatcherTag(item.dispatcher) === dispatcherTag);
+        return mainTableRecords.filter((item) => normalizeDispatcherTag(item.dispatcher) === dispatcherTag);
       }
-      if (!accountantName) return records;
-      return records.filter((item) => String(item.accountant || "").trim() === accountantName);
+      if (!accountantName) return mainTableRecords;
+      return mainTableRecords.filter((item) => String(item.accountant || "").trim() === accountantName);
     }
 
     function getVisibleRecycleBinRecords() {
@@ -2770,6 +3295,10 @@
 
     function setRefundFormHint(text, state = "idle") {
       setHintState(refundFormHint, "login-request-hint form-request-hint", text, state);
+    }
+
+    function setInvoiceUploadFormHint(text, state = "idle") {
+      setHintState(invoiceUploadFormHint, "login-request-hint form-request-hint", text, state);
     }
 
     function setAccountantModalHint(text, state = "idle") {
