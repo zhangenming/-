@@ -36,6 +36,7 @@
       closeCompleteModal();
       closeRecordHistoryModal();
       closeInvoicePreviewModal();
+      closeInvoiceUploadReminderModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
       closeDispatcherModal();
@@ -105,6 +106,7 @@
         || !refundModal.hidden
         || !recordHistoryModal.hidden
         || (invoicePreviewModal && !invoicePreviewModal.hidden)
+        || (invoiceUploadReminderModal && !invoiceUploadReminderModal.hidden)
         || !bossSettlementSummaryModal.hidden
         || (bossSettlementDetailModal && !bossSettlementDetailModal.hidden)
         || !analysisModal.hidden
@@ -330,6 +332,7 @@
       const shouldSkipRender = hasFetchedRecords && isSameRecords;
       hasFetchedRecords = true;
       if (shouldSkipRender) {
+        maybeShowInvoiceUploadReminder();
         return;
       }
       syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: shouldTrackRowChanges });
@@ -338,6 +341,7 @@
       syncAccountantsFromRecords();
       renderAccountantSelectOptions();
       renderTable();
+      maybeShowInvoiceUploadReminder();
       if (recordHistoryModal && !recordHistoryModal.hidden) {
         const openRecordId = String(recordHistoryModal.dataset.recordId || "").trim();
         const activeRecord = nextRecords.find((item) => String(item?.id || "").trim() === openRecordId) || null;
@@ -1732,21 +1736,21 @@
     }
 
     async function payoutSettlementRecordsByIds(recordIds) {
-      const normalizedRecordIds = Array.from(
+      const normalizedPayoutTargets = Array.from(
         new Set(
           (Array.isArray(recordIds) ? recordIds : [])
             .map((item) => String(item || "").trim())
             .filter(Boolean)
         )
       );
-      if (!normalizedRecordIds.length) {
+      if (!normalizedPayoutTargets.length) {
         throw new Error("请选择要打款的数据。");
       }
 
       const response = await fetchWithClientLog(API_ENDPOINT_RECORDS_PAYOUT, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recordIds: normalizedRecordIds })
+        body: JSON.stringify({ recordIds: normalizedPayoutTargets, payoutTargets: normalizedPayoutTargets })
       }, {
         successMessage: "打款",
         errorMessage: "打款"
@@ -1964,7 +1968,11 @@
       }
       const payload = await response.json();
       const source = Array.isArray(payload.quickLogins) ? payload.quickLogins : [];
-      savedLoginEntries = source.map((entry) => normalizeSavedLoginEntry(entry)).filter(Boolean);
+      savedLoginEntries = source.map((entry) => {
+        const normalized = normalizeSavedLoginEntry(entry);
+        const role = normalizeLoginRole(entry?.role);
+        return normalized && role ? { ...normalized, role } : normalized;
+      }).filter(Boolean);
       renderSavedLoginList();
     }
 

@@ -1236,7 +1236,8 @@
             thumb.type = "button";
             thumb.className = "settlement-detail-invoice-thumb";
             thumb.dataset.recordId = String(item.firstRecord?.id || "").trim();
-            thumb.title = `${group.accountant} 发票 ${index + 1}`;
+            thumb.title = `${group.accountant} 发票 ${index + 1}，双击放大`;
+            thumb.setAttribute("aria-label", `${group.accountant} 发票 ${index + 1}，双击放大`);
 
             const image = document.createElement("img");
             image.src = item.image.url;
@@ -1307,10 +1308,13 @@
     }
 
     function getUploadedPendingSettlementDetailGroups(sourceRecords = records) {
-      const uploadedPendingRecords = getBossSettlementDetailRecords(sourceRecords)
-        .filter((record) => isRecordInvoiceUploaded(record) && !isRecordSettlementPaid(record));
-      const { groups } = getBossSettlementDetailSummary(uploadedPendingRecords);
-      return getSortedBossSettlementDetailGroups(groups);
+      const { groups } = getBossSettlementDetailSummary(sourceRecords);
+      return getSortedBossSettlementDetailGroups(
+        groups.filter((group) => {
+          const targets = Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds;
+          return Array.isArray(targets) && targets.length > 0;
+        })
+      );
     }
 
     function renderUploadedSettlementDetailModalContent() {
@@ -1458,7 +1462,8 @@
             thumb.type = "button";
             thumb.className = "settlement-detail-invoice-thumb";
             thumb.dataset.recordId = String(item.firstRecord?.id || "").trim();
-            thumb.title = `${group.accountant} 发票 ${index + 1}`;
+            thumb.title = `${group.accountant} 发票 ${index + 1}，双击放大`;
+            thumb.setAttribute("aria-label", `${group.accountant} 发票 ${index + 1}，双击放大`);
 
             const image = document.createElement("img");
             image.src = item.image.url;
@@ -2636,15 +2641,17 @@
       if (!invoicePreviewModal || !invoicePreviewModalCard || !invoicePreviewImage || !invoicePreviewMeta) return;
       const image = getSettlementInvoiceImage(record);
       if (!image) return;
-      const shouldKeepBossSettlementDetailOpen = Boolean(
-        bossSettlementDetailModal && !bossSettlementDetailModal.hidden
+      const shouldStackOverSettlementDetail = Boolean(
+        (bossSettlementDetailModal && !bossSettlementDetailModal.hidden)
+          || (paidSettlementDetailModal && !paidSettlementDetailModal.hidden)
+          || (uploadedSettlementDetailModal && !uploadedSettlementDetailModal.hidden)
       );
       closeAllFilterPopovers();
       closeCreateModal();
       closeCheckModal();
       closeCompleteModal();
       closeRecordHistoryModal();
-      if (shouldKeepBossSettlementDetailOpen) {
+      if (shouldStackOverSettlementDetail) {
         if (bossSettlementSummaryModal && !bossSettlementSummaryModal.hidden) {
           bossSettlementSummaryModal.classList.remove("modal-enter");
           bossSettlementSummaryModalCard.classList.remove("modal-enter");
@@ -2673,7 +2680,7 @@
       invoicePreviewModal.classList.remove("modal-enter");
       invoicePreviewModalCard.classList.remove("modal-enter");
       void invoicePreviewModal.offsetWidth;
-      invoicePreviewModal.classList.toggle("invoice-preview-stacked", shouldKeepBossSettlementDetailOpen);
+      invoicePreviewModal.classList.toggle("invoice-preview-stacked", shouldStackOverSettlementDetail);
       invoicePreviewModal.classList.add("modal-enter");
       invoicePreviewModalCard.classList.add("modal-enter");
       syncModalOpenState();
@@ -2696,6 +2703,14 @@
       syncModalOpenState();
       if (bossSettlementDetailModal && !bossSettlementDetailModal.hidden && bossSettlementDetailModalCard) {
         bossSettlementDetailModalCard.focus();
+        return;
+      }
+      if (paidSettlementDetailModal && !paidSettlementDetailModal.hidden && paidSettlementDetailModalCard) {
+        paidSettlementDetailModalCard.focus();
+        return;
+      }
+      if (uploadedSettlementDetailModal && !uploadedSettlementDetailModal.hidden && uploadedSettlementDetailModalCard) {
+        uploadedSettlementDetailModalCard.focus();
       }
     }
 
@@ -2705,6 +2720,162 @@
         ? accountantInvoiceImageInput.files[0]
         : null;
       invoiceUploadImageName.textContent = file ? (file.name || "已选择图片") : "选择图片上传发票";
+    }
+
+    let invoiceUploadImagePreviewUrl = "";
+
+    function clearInvoiceUploadImagePreview() {
+      if (invoiceUploadImagePreviewUrl) {
+        URL.revokeObjectURL(invoiceUploadImagePreviewUrl);
+        invoiceUploadImagePreviewUrl = "";
+      }
+      if (invoiceUploadImagePreview) {
+        invoiceUploadImagePreview.removeAttribute("src");
+        invoiceUploadImagePreview.alt = "已选择的发票图片";
+      }
+      if (invoiceUploadImagePreviewWrap) {
+        invoiceUploadImagePreviewWrap.hidden = true;
+      }
+    }
+
+    function updateInvoiceUploadImagePreview() {
+      clearInvoiceUploadImagePreview();
+      const file = accountantInvoiceImageInput?.files && accountantInvoiceImageInput.files[0]
+        ? accountantInvoiceImageInput.files[0]
+        : null;
+      if (!file || !String(file.type || "").toLowerCase().startsWith("image/")) return;
+      invoiceUploadImagePreviewUrl = URL.createObjectURL(file);
+      if (invoiceUploadImagePreview) {
+        invoiceUploadImagePreview.src = invoiceUploadImagePreviewUrl;
+        invoiceUploadImagePreview.alt = file.name || "已选择的发票图片";
+      }
+      if (invoiceUploadImagePreviewWrap) {
+        invoiceUploadImagePreviewWrap.hidden = false;
+      }
+    }
+
+    function getLockedInvoiceRecipientInfoForCurrentAccount() {
+      const profile = isAccountantLogin()
+        ? getCurrentAccountantLoginProfile()
+        : getLinkedAccountantByTag(getCurrentDispatcherTag());
+      const info = normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo);
+      return Object.values(info).every(Boolean) ? info : null;
+    }
+
+    function getInvoiceRecipientProfileForCurrentAccount() {
+      return isAccountantLogin()
+        ? getCurrentAccountantLoginProfile()
+        : getLinkedAccountantByTag(getCurrentDispatcherTag());
+    }
+
+    function getDefaultInvoiceRecipientInfoForCurrentAccount() {
+      const profile = getInvoiceRecipientProfileForCurrentAccount();
+      const info = normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo);
+      const realName = String(profile?.realName || "").trim();
+      return {
+        ...info,
+        name: realName || info.name
+      };
+    }
+
+    function syncInvoiceRecipientInfoFields(info) {
+      const fields = [
+        { element: invoiceRecipientNameInput, value: info?.name || "" },
+        { element: invoiceRecipientIdCardInput, value: info?.idCardNo || "" },
+        { element: invoiceRecipientBankInput, value: info?.bankName || "" },
+        { element: invoiceRecipientBankCardInput, value: info?.bankCardNo || "" },
+        { element: invoiceRecipientPhoneInput, value: info?.declarationPhone || "" }
+      ];
+      fields.forEach(({ element, value }) => {
+        if (!element) return;
+        element.value = value;
+      });
+    }
+
+    function setInvoiceRecipientInfoReadonly(isReadonly) {
+      const fields = [
+        invoiceRecipientNameInput,
+        invoiceRecipientIdCardInput,
+        invoiceRecipientBankInput,
+        invoiceRecipientBankCardInput,
+        invoiceRecipientPhoneInput
+      ];
+      fields.forEach((input) => {
+        if (!input) return;
+        input.readOnly = Boolean(isReadonly);
+        input.disabled = Boolean(isReadonly);
+        input.toggleAttribute("readonly", Boolean(isReadonly));
+        input.toggleAttribute("disabled", Boolean(isReadonly));
+        input.setAttribute("aria-readonly", String(Boolean(isReadonly)));
+      });
+      if (invoiceRecipientInfoSubmitBtn) {
+        invoiceRecipientInfoSubmitBtn.hidden = Boolean(isReadonly);
+      }
+      if (invoiceRecipientInfoCancelBtn) {
+        invoiceRecipientInfoCancelBtn.textContent = isReadonly ? "关闭" : "取消";
+      }
+      invoiceRecipientInfoForm?.classList.toggle("readonly", Boolean(isReadonly));
+    }
+
+    function openInvoiceRecipientInfoModal() {
+      if (!invoiceRecipientInfoModal || !invoiceRecipientInfoModalCard || !invoiceRecipientInfoForm) return;
+      if (!canCurrentAccountManageInvoiceRecipientInfo()) return;
+      const lockedInfo = getLockedInvoiceRecipientInfoForCurrentAccount();
+      const profileInfo = getDefaultInvoiceRecipientInfoForCurrentAccount();
+      closeAllFilterPopovers();
+      closeCreateModal();
+      closeCheckModal();
+      closeCompleteModal();
+      closeRefundModal();
+      closeRecordHistoryModal();
+      closeBossSettlementSummaryModal();
+      closeAnalysisModal();
+      closeAccountantModal();
+      closeRecycleModal();
+      closeDevTodoModal();
+      closeAccountantPicker();
+      closeSourcePicker();
+      closePlatformShopPicker();
+      invoiceRecipientInfoForm.reset();
+      syncInvoiceRecipientInfoFields(lockedInfo || profileInfo);
+      setInvoiceRecipientInfoReadonly(Boolean(lockedInfo));
+      resetInlineFormState(invoiceRecipientInfoForm, setInvoiceRecipientInfoHint);
+      invoiceRecipientInfoModal.hidden = false;
+      invoiceRecipientInfoModal.classList.remove("modal-enter");
+      invoiceRecipientInfoModalCard.classList.remove("modal-enter");
+      void invoiceRecipientInfoModal.offsetWidth;
+      invoiceRecipientInfoModal.classList.add("modal-enter");
+      invoiceRecipientInfoModalCard.classList.add("modal-enter");
+      syncModalOpenState();
+      if (lockedInfo) {
+        invoiceRecipientInfoCancelBtn?.focus();
+      } else {
+        invoiceRecipientNameInput?.focus();
+      }
+    }
+
+    function closeInvoiceRecipientInfoModal() {
+      if (!invoiceRecipientInfoModal || !invoiceRecipientInfoForm) return;
+      invoiceRecipientInfoModal.classList.remove("modal-enter");
+      if (invoiceRecipientInfoModalCard) invoiceRecipientInfoModalCard.classList.remove("modal-enter");
+      invoiceRecipientInfoModal.hidden = true;
+      invoiceRecipientInfoForm.reset();
+      setInvoiceRecipientInfoReadonly(false);
+      resetInlineFormState(invoiceRecipientInfoForm, setInvoiceRecipientInfoHint);
+      syncModalOpenState();
+    }
+
+    function maybeShowMissingInvoiceRecipientInfoModal() {
+      if (!canCurrentAccountManageInvoiceRecipientInfo()) return false;
+      if (getLockedInvoiceRecipientInfoForCurrentAccount()) return false;
+      if (invoiceRecipientInfoModal && !invoiceRecipientInfoModal.hidden) return true;
+      if (invoiceUploadModal && !invoiceUploadModal.hidden) return false;
+      if (invoicePreviewModal && !invoicePreviewModal.hidden) return false;
+      if (bossSettlementDetailModal && !bossSettlementDetailModal.hidden) return false;
+      if (paidSettlementDetailModal && !paidSettlementDetailModal.hidden) return false;
+      if (uploadedSettlementDetailModal && !uploadedSettlementDetailModal.hidden) return false;
+      openInvoiceRecipientInfoModal();
+      return true;
     }
 
     function openInvoiceUploadModal() {
@@ -2725,20 +2896,31 @@
       closeAnalysisModal();
       closeAccountantModal();
       closeRecycleModal();
+      closeInvoiceRecipientInfoModal();
       closeDevTodoModal();
       closeAccountantPicker();
       closeSourcePicker();
       closePlatformShopPicker();
       invoiceUploadForm.reset();
       resetInvoiceUploadImageName();
+      clearInvoiceUploadImagePreview();
       resetInlineFormState(invoiceUploadForm, setInvoiceUploadFormHint);
       if (invoiceUploadModalMeta) {
-        invoiceUploadModalMeta.textContent = [
-          `${summary.count || summary.uploadableCount || 0} 条待上传`,
-          `开票金额 ${toMoney(summary.invoiceAmount)}`,
-          `个税 ${toMoney(summary.taxAmount)}`,
-          `应打款 ${toMoney(summary.payableAmount)}`
-        ].join(" · ");
+        invoiceUploadModalMeta.innerHTML = "";
+        [
+          { text: `${summary.count || summary.uploadableCount || 0} 条待上传` },
+          { text: `开票金额 ${toMoney(summary.invoiceAmount)}`, highlight: true },
+          { text: `个税 ${toMoney(summary.taxAmount)}`, highlight: true },
+          { text: `应打款 ${toMoney(summary.payableAmount)}`, highlight: true }
+        ].forEach((item, index) => {
+          if (index > 0) {
+            invoiceUploadModalMeta.appendChild(document.createTextNode(" · "));
+          }
+          const itemNode = document.createElement("span");
+          itemNode.className = item.highlight ? "invoice-upload-meta-highlight" : "invoice-upload-meta-muted";
+          itemNode.textContent = item.text;
+          invoiceUploadModalMeta.appendChild(itemNode);
+        });
       }
       invoiceUploadModal.hidden = false;
       invoiceUploadModal.classList.remove("modal-enter");
@@ -2757,9 +2939,66 @@
       invoiceUploadModal.hidden = true;
       invoiceUploadForm.reset();
       resetInvoiceUploadImageName();
+      clearInvoiceUploadImagePreview();
       if (invoiceUploadModalMeta) invoiceUploadModalMeta.textContent = "";
       resetInlineFormState(invoiceUploadForm, setInvoiceUploadFormHint);
       syncModalOpenState();
+    }
+
+    function openInvoiceUploadReminderModal(summary) {
+      if (!invoiceUploadReminderModal || !invoiceUploadReminderModalCard) return;
+      const uploadSummary = summary || getAccountantInvoiceUploadSummary(records);
+      if (!Number(uploadSummary?.uploadableCount || 0)) return;
+      closeAllFilterPopovers();
+      if (invoiceUploadReminderAmount) {
+        invoiceUploadReminderAmount.textContent = toMoney(uploadSummary.invoiceAmount);
+      }
+      if (invoiceUploadReminderMeta) {
+        invoiceUploadReminderMeta.innerHTML = "";
+        [
+          `${uploadSummary.count || uploadSummary.uploadableCount || 0} 条订单待上传发票`,
+          `个税 ${toMoney(uploadSummary.taxAmount)}`,
+          `应打款 ${toMoney(uploadSummary.payableAmount)}`
+        ].forEach((text) => {
+          const item = document.createElement("span");
+          item.textContent = text;
+          invoiceUploadReminderMeta.appendChild(item);
+        });
+      }
+      invoiceUploadReminderModal.hidden = false;
+      invoiceUploadReminderModal.classList.remove("modal-enter");
+      invoiceUploadReminderModalCard.classList.remove("modal-enter");
+      void invoiceUploadReminderModal.offsetWidth;
+      invoiceUploadReminderModal.classList.add("modal-enter");
+      invoiceUploadReminderModalCard.classList.add("modal-enter");
+      syncModalOpenState();
+      invoiceUploadReminderUploadBtn?.focus();
+    }
+
+    function closeInvoiceUploadReminderModal() {
+      if (!invoiceUploadReminderModal) return;
+      invoiceUploadReminderModal.classList.remove("modal-enter");
+      if (invoiceUploadReminderModalCard) invoiceUploadReminderModalCard.classList.remove("modal-enter");
+      invoiceUploadReminderModal.hidden = true;
+      syncModalOpenState();
+    }
+
+    function maybeShowInvoiceUploadReminder() {
+      if (!canCurrentAccountUploadSettlementInvoice()) {
+        closeInvoiceUploadReminderModal();
+        return;
+      }
+      if (maybeShowMissingInvoiceRecipientInfoModal()) {
+        closeInvoiceUploadReminderModal();
+        return;
+      }
+      if (invoiceUploadModal && !invoiceUploadModal.hidden) return;
+      const summary = getAccountantInvoiceUploadSummary(records);
+      if (!Number(summary.uploadableCount || 0)) {
+        closeInvoiceUploadReminderModal();
+        return;
+      }
+      openInvoiceUploadReminderModal(summary);
     }
 
     function renderBossSettlementSummaryContent() {
@@ -2882,6 +3121,7 @@
       if (recordCount > 0 && paidCount >= recordCount) return "paid";
       if (pendingCount > 0) return "pending";
       if (uploadedCount > 0 && paidCount >= uploadedCount) return "paid";
+      if (Array.isArray(group.payoutTargets) && group.payoutTargets.length > 0) return "payable";
       if (Array.isArray(group.payoutRecordIds) && group.payoutRecordIds.length > 0) return "payable";
       return "payable";
     }
@@ -2895,6 +3135,7 @@
       if (key === "payout") {
         const paidAtTime = parseDateTimeValue(group.latestPaidAt);
         if (!Number.isNaN(paidAtTime)) return paidAtTime;
+        if (Array.isArray(group.payoutTargets)) return group.payoutTargets.length;
         if (Array.isArray(group.payoutRecordIds)) return group.payoutRecordIds.length;
         return Number(group.paidCount) || 0;
       }
@@ -2952,10 +3193,10 @@
         pendingAccountantCount: source.filter((item) => Number(item.uploadedCount) <= 0).length,
         uploadedRecordCount: source.reduce((sum, item) => sum + (Number(item.uploadedCount) || 0), 0),
         paidRecordCount: source.reduce((sum, item) => sum + (Number(item.paidCount) || 0), 0),
-        payoutRecordCount: source.reduce(
-          (sum, item) => sum + (Array.isArray(item.payoutRecordIds) ? item.payoutRecordIds.length : 0),
-          0
-        )
+        payoutRecordCount: source.reduce((sum, item) => {
+          const targets = Array.isArray(item.payoutTargets) ? item.payoutTargets : item.payoutRecordIds;
+          return sum + (Array.isArray(targets) ? targets.length : 0);
+        }, 0)
       };
     }
 
@@ -2998,13 +3239,25 @@
       return identities;
     }
 
+    function isInvoiceUploadedByLinkedDispatcher(record, accountantName) {
+      const normalizedAccountant = String(accountantName || "").trim();
+      if (!normalizedAccountant || !record || typeof record !== "object") return false;
+      const uploadedByUsername = String(record?.invoiceUploadedByUsername || "").trim();
+      const uploadedDispatcherTag = normalizeDispatcherTag(uploadedByUsername);
+      if (!uploadedDispatcherTag) return false;
+      const linkedAccountant = getLinkedAccountantDisplayNameByTag(uploadedDispatcherTag);
+      return Boolean(linkedAccountant && linkedAccountant === normalizedAccountant);
+    }
+
     function isInvoiceUploadedByAccountant(record, accountantName) {
       const identities = getAccountantUploadIdentitySet(accountantName);
       if (!identities.size) return false;
 
       const uploadedBy = String(record?.invoiceUploadedBy || "").trim();
       const uploadedByUsername = String(record?.invoiceUploadedByUsername || "").trim();
-      return identities.has(uploadedBy) || identities.has(uploadedByUsername);
+      return identities.has(uploadedBy)
+        || identities.has(uploadedByUsername)
+        || isInvoiceUploadedByLinkedDispatcher(record, accountantName);
     }
 
     function getBossSettlementDetailSummary(sourceRecords = records) {
@@ -3023,7 +3276,7 @@
         const uploadedAt = String(record?.invoiceUploadedAt || "").trim();
         const uploadedAtTime = parseDateTimeValue(uploadedAt);
         const uploadedBy = String(record?.invoiceUploadedBy || record?.invoiceUploadedByUsername || "").trim();
-        const isUploaded = isRecordInvoiceUploaded(record);
+        const isUploaded = isRecordInvoiceUploaded(record) && isInvoiceUploadedByAccountant(record, accountant);
         const invoiceImage = getSettlementInvoiceImage(record);
         const isPaid = isRecordSettlementPaid(record);
         const paidAt = String(record?.settlementPaidAt || "").trim();
@@ -3142,6 +3395,7 @@
                 uploadedCount: linkedDispatcherAmount.uploadedCount,
                 paidCount: linkedDispatcherAmount.paidCount,
                 payoutRecordIds: linkedDispatcherAmount.payoutRecordIds,
+                payoutTargets: linkedDispatcherAmount.payoutTargets,
                 paidAtValues: [],
                 latestPaidAt: "",
                 latestPaidAtTime: 0,
@@ -3206,6 +3460,10 @@
             ...group.payoutRecordIds,
             ...(linkedDispatcherAmount?.payoutRecordIds || [])
           ]));
+          const combinedPayoutTargets = Array.from(new Set([
+            ...(Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds),
+            ...(linkedDispatcherAmount?.payoutTargets || linkedDispatcherAmount?.payoutRecordIds || [])
+          ]));
           const combinedInvoiceMap = new Map(group.invoiceMap);
           if (linkedDispatcherAmount?.invoiceMap) {
             linkedDispatcherAmount.invoiceMap.forEach((item, key) => {
@@ -3237,6 +3495,7 @@
             uploadedCount: combinedUploadedCount,
             paidCount: combinedPaidCount,
             payoutRecordIds: combinedPayoutRecordIds,
+            payoutTargets: combinedPayoutTargets,
             paidAtValues: group.paidAtValues,
             latestPaidAt: group.latestPaidAt,
 
@@ -3276,7 +3535,10 @@
       const pendingAccountantCount = allGroups.filter((item) => item.uploadedCount <= 0).length;
       const uploadedRecordCount = allGroups.reduce((sum, item) => sum + item.uploadedCount, 0);
       const pendingRecordCount = allGroups.reduce((sum, item) => sum + item.pendingCount, 0);
-      const payoutRecordCount = groups.reduce((sum, item) => sum + item.payoutRecordIds.length, 0);
+      const payoutRecordCount = groups.reduce((sum, item) => {
+        const targets = Array.isArray(item.payoutTargets) ? item.payoutTargets : item.payoutRecordIds;
+        return sum + (Array.isArray(targets) ? targets.length : 0);
+      }, 0);
       const totalTaxAmount = allGroups.reduce((sum, item) => sum + item.taxAmount, 0);
       const totalPayableAmount = allGroups.reduce((sum, item) => sum + item.payableAmount, 0);
 
@@ -3331,21 +3593,24 @@
       const activeTableTotals = getBossSettlementDetailGroupTotals(sortedGroups);
       const paidTableTotals = getBossSettlementDetailGroupTotals(sortedPaidGroups);
       const canPayoutSettlementRecords = canCurrentAccountPayoutSettlementRecords();
-      const allPayoutRecordIds = Array.from(
+      const allPayoutTargets = Array.from(
         new Set(groups.flatMap((group) => {
-          if (Number(group.pendingCount) > 0) return [];
+          if (Array.isArray(group.payoutTargets)) return group.payoutTargets;
           return Array.isArray(group.payoutRecordIds) ? group.payoutRecordIds : [];
         }))
       );
+      const allPayoutRecordIds = allPayoutTargets;
       getSelectedBossSettlementPayoutRecordIds()
-        .filter((recordId) => !allPayoutRecordIds.includes(recordId))
-        .forEach((recordId) => setBossSettlementPayoutRecordSelected(recordId, false));
-      const selectedPayoutRecordIds = getSelectedBossSettlementPayoutRecordIds()
-        .filter((recordId) => allPayoutRecordIds.includes(recordId));
-      const selectedPayoutRecordIdSet = new Set(selectedPayoutRecordIds);
-      const payoutRecordCount = allPayoutRecordIds.length;
-      const areAllPayoutRecordsSelected = allPayoutRecordIds.length > 0
-        && allPayoutRecordIds.every((recordId) => selectedPayoutRecordIdSet.has(recordId));
+        .filter((target) => !allPayoutTargets.includes(target))
+        .forEach((target) => setBossSettlementPayoutRecordSelected(target, false));
+      const selectedPayoutTargets = getSelectedBossSettlementPayoutRecordIds()
+        .filter((target) => allPayoutTargets.includes(target));
+      const selectedPayoutRecordIds = selectedPayoutTargets;
+      const selectedPayoutTargetSet = new Set(selectedPayoutTargets);
+      const selectedPayoutRecordIdSet = selectedPayoutTargetSet;
+      const payoutRecordCount = allPayoutTargets.length;
+      const areAllPayoutRecordsSelected = allPayoutTargets.length > 0
+        && allPayoutTargets.every((target) => selectedPayoutTargetSet.has(target));
 
       if (!groups.length && !paidGroups.length) {
         const empty = document.createElement("div");
@@ -3406,8 +3671,8 @@
         payoutSelectAllBtn.type = "button";
         payoutSelectAllBtn.className = "settlement-detail-payout-select-all-btn";
         payoutSelectAllBtn.dataset.settlementPayoutSelectAll = "true";
-        payoutSelectAllBtn.dataset.recordIds = allPayoutRecordIds.join(",");
-        payoutSelectAllBtn.disabled = isBossSettlementPayoutSubmitting || allPayoutRecordIds.length === 0;
+        payoutSelectAllBtn.dataset.recordIds = allPayoutTargets.join(",");
+        payoutSelectAllBtn.disabled = isBossSettlementPayoutSubmitting || allPayoutTargets.length === 0;
         payoutSelectAllBtn.setAttribute("aria-pressed", areAllPayoutRecordsSelected ? "true" : "false");
         payoutSelectAllBtn.textContent = areAllPayoutRecordsSelected ? "取消全选" : "全选";
         payoutToolbar.appendChild(payoutSelectAllBtn);
@@ -3571,7 +3836,8 @@
             thumb.type = "button";
             thumb.className = "settlement-detail-invoice-thumb";
             thumb.dataset.recordId = String(item.firstRecord?.id || "").trim();
-            thumb.title = `${group.accountant} 发票 ${index + 1}`;
+            thumb.title = `${group.accountant} 发票 ${index + 1}，双击放大`;
+            thumb.setAttribute("aria-label", `${group.accountant} 发票 ${index + 1}，双击放大`);
 
             const image = document.createElement("img");
             image.src = item.image.url;
@@ -3599,8 +3865,7 @@
         const payoutTd = document.createElement("td");
         payoutTd.className = "settlement-detail-payout-cell settlement-detail-col-payout";
 
-        const groupPendingCount = Number(group.pendingCount) || 0;
-        const groupPayoutRecordIds = groupPendingCount > 0 ? [] : group.payoutRecordIds;
+        const groupPayoutRecordIds = Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds;
 
         if (canPayoutSettlementRecords && groupPayoutRecordIds.length > 0) {
           const payoutWrap = document.createElement("div");
@@ -3846,6 +4111,18 @@
       } = getAccountantInvoiceUploadSummary(sourceRecords);
       const activeUploadableCount = Number(uploadableCount) || 0;
       const shouldShow = canCurrentAccountUploadSettlementInvoice() && activeUploadableCount > 0;
+      const shouldShowRecipientInfoEntry = canCurrentAccountManageInvoiceRecipientInfo();
+      const hasRecipientInfo = Boolean(getLockedInvoiceRecipientInfoForCurrentAccount());
+      if (invoiceRecipientInfoBtn) {
+        invoiceRecipientInfoBtn.hidden = !shouldShowRecipientInfoEntry;
+        invoiceRecipientInfoBtn.classList.toggle("needs-info", !hasRecipientInfo);
+        invoiceRecipientInfoBtn.textContent = hasRecipientInfo
+          ? "结算申报信息查看"
+          : "结算申报信息录入";
+      }
+      if (appSideNotice) {
+        appSideNotice.hidden = !shouldShowRecipientInfoEntry || hasRecipientInfo;
+      }
       accountantInvoiceUploadBtn.hidden = !shouldShow;
       accountantInvoiceUploadBtn.disabled = !shouldShow || isInvoiceUploadSubmitting;
       accountantInvoiceUploadBtn.replaceChildren();
@@ -5032,8 +5309,22 @@
             const statusWrap = document.createElement("div");
             statusWrap.className = "row-status-cell";
             const statusChip = document.createElement("span");
-            statusChip.className = `record-status-chip ${getRecordWorkflowStatusKey(item)}`;
+            const statusKey = getRecordWorkflowStatusKey(item);
+            const invoiceImage = statusKey === "uploaded" ? getSettlementInvoiceImage(item) : null;
+            statusChip.className = `record-status-chip ${statusKey}`;
             statusChip.textContent = String(value || "");
+            if (invoiceImage) {
+              tooltipText = "双击查看发票图片";
+              tooltipMode = "always";
+              td.dataset.recordId = recordId;
+              td.dataset.tableTooltipImage = invoiceImage.url;
+              td.dataset.tableTooltipImageAlt = invoiceImage.name || "发票图片";
+              td.setAttribute("aria-label", `${String(value || "").trim()}，双击查看发票图片`);
+              statusChip.classList.add("has-invoice-preview");
+              statusChip.tabIndex = 0;
+              statusChip.setAttribute("role", "button");
+              statusChip.setAttribute("aria-label", `${String(value || "").trim()}，双击查看发票图片`);
+            }
             statusWrap.appendChild(statusChip);
             const refundBadgeText = getRecordRefundBadgeText(item);
             if (refundBadgeText) {
@@ -5042,7 +5333,12 @@
               refundBadge.textContent = refundBadgeText;
               statusWrap.appendChild(refundBadge);
               const statusText = String(value || "").trim();
-              td.setAttribute("aria-label", statusText ? `${statusText}，${refundBadgeText}` : refundBadgeText);
+              td.setAttribute(
+                "aria-label",
+                statusText
+                  ? `${statusText}，${refundBadgeText}${invoiceImage ? "，双击查看发票图片" : ""}`
+                  : refundBadgeText
+              );
             }
             td.appendChild(statusWrap);
           } else {

@@ -170,6 +170,47 @@
         <button id="openAnalysisModalBtn" class="btn-secondary" type="button">分析数据</button>
         <button id="openRecycleModalBtn" class="btn-secondary" type="button">回收站</button>
       </div>
+      <section class="order-flow-guide" aria-label="订单正常流转流程">
+        <div class="order-flow-guide-head">
+          <strong>订单流转</strong>
+          <span>看状态找下一步</span>
+        </div>
+        <ol class="order-flow-steps">
+          <li class="order-flow-step accountant">
+            <span class="order-flow-status">已接待/待确认</span>
+          </li>
+          <li class="order-flow-arrow accountant">
+            <span>会计 · 确认接单</span>
+          </li>
+          <li class="order-flow-step accountant">
+            <span class="order-flow-status">已确认/待完成</span>
+          </li>
+          <li class="order-flow-arrow accountant">
+            <span>会计 · 提交完工</span>
+          </li>
+          <li class="order-flow-step boss">
+            <span class="order-flow-status">已完成/待核对客户确认</span>
+          </li>
+          <li class="order-flow-arrow boss">
+            <span>管理员 · 核对客户确认是否确认收货</span>
+          </li>
+          <li class="order-flow-step accountant">
+            <span class="order-flow-status">已核对客户确认/待上传</span>
+          </li>
+          <li class="order-flow-arrow accountant">
+            <span>会计 · 上传发票</span>
+          </li>
+          <li class="order-flow-step boss">
+            <span class="order-flow-status">已上传/待打款</span>
+          </li>
+          <li class="order-flow-arrow boss">
+            <span>管理员 · 统一结算打款</span>
+          </li>
+          <li class="order-flow-step done">
+            <span class="order-flow-status">已打款</span>
+          </li>
+        </ol>
+      </section>
       <div class="app-side-footer">
         <div class="account-panel">
           <div class="account-panel-top">
@@ -178,6 +219,8 @@
           </div>
           <div id="headerAccountText" class="account-panel-name"></div>
           <div id="headerAccountSubText" class="account-panel-sub"></div>
+          <button id="invoiceRecipientInfoBtn" class="btn-secondary table-invoice-recipient-btn" type="button" hidden>结算申报信息录入</button>
+          <p id="appSideNotice" class="app-side-notice">温馨提示：为统一结算，请大家统一办理中信银行卡并完善系统资料。</p>
         </div>
         <div class="account-action-row">
           <button id="switchAccountBtn" class="btn-secondary switch-account-btn" type="button">
@@ -616,7 +659,7 @@
                 aria-controls="platformShopPickerList"
               >
                 <span id="platformShopPickerValue" class="accountant-picker-value placeholder"></span>
-                <span id="platformShopPickerMeta" class="accountant-picker-meta">11 项</span>
+                <span id="platformShopPickerMeta" class="accountant-picker-meta">12 项</span>
               </button>
               <div id="platformShopPickerDropdown" class="accountant-picker-dropdown" hidden>
                 <div id="platformShopPickerList" class="accountant-picker-list" role="listbox" aria-label="平台店铺列表"></div>
@@ -865,36 +908,76 @@
         <label class="invoice-upload-image-field" for="accountantInvoiceImageInput">
           <span class="invoice-upload-image-label">发票图片</span>
           <strong id="invoiceUploadImageName" class="invoice-upload-image-name">选择图片上传发票</strong>
-          <span class="invoice-upload-image-tip">支持 JPG、PNG、WebP，单张 5MB 内</span>
+          <span class="invoice-upload-image-action">选择图片</span>
+          <span id="invoiceUploadImagePreviewWrap" class="invoice-upload-image-preview-wrap" hidden>
+            <img id="invoiceUploadImagePreview" class="invoice-upload-image-preview" alt="已选择的发票图片" />
+          </span>
           <input id="accountantInvoiceImageInput" name="invoiceImage" type="file" accept="image/*" required />
         </label>
-        <div class="invoice-upload-info-grid">
-          <div class="field">
-            <label for="invoiceUploadNameInput">姓名</label>
-            <input id="invoiceUploadNameInput" name="name" type="text" maxlength="48" required autocomplete="off" />
-          </div>
-          <div class="field">
-            <label for="invoiceUploadBankInput">开户行</label>
-            <input id="invoiceUploadBankInput" name="bankName" type="text" maxlength="120" required autocomplete="off" />
-          </div>
-          <div class="field">
-            <label for="invoiceUploadBankCardInput">银行卡号</label>
-            <input id="invoiceUploadBankCardInput" name="bankCardNo" type="text" inputmode="numeric" maxlength="40" required autocomplete="off" />
-          </div>
-          <div class="field">
-            <label for="invoiceUploadIdCardInput">身份证号</label>
-            <input id="invoiceUploadIdCardInput" name="idCardNo" type="text" maxlength="24" required autocomplete="off" />
-          </div>
-          <div class="field field-wide">
-            <label for="invoiceUploadPhoneInput">申报手机号</label>
-            <input id="invoiceUploadPhoneInput" name="declarationPhone" type="tel" inputmode="tel" maxlength="24" required autocomplete="off" />
-          </div>
-        </div>
         <div class="row form-actions invoice-upload-actions">
           <button id="invoiceUploadCancelBtn" class="btn-secondary" type="button">取消</button>
           <button id="invoiceUploadSubmitBtn" class="btn-primary" type="submit">确认上传</button>
         </div>
       </form>
+    </section>
+  </div>
+
+  <div id="invoiceRecipientInfoModal" class="modal-overlay" hidden>
+    <section class="card modal-card accountant-register-modal-card" tabindex="-1">
+      <h2 class="invoice-recipient-info-title">结算与代申报个税信息</h2>
+      <p id="invoiceRecipientInfoHint" class="login-request-hint idle accountant-register-hint" aria-live="polite" hidden></p>
+      <form id="invoiceRecipientInfoForm" class="accountant-register-form" autocomplete="off" novalidate>
+        <div class="accountant-register-grid">
+          <div class="field">
+            <label for="invoiceRecipientNameInput">姓名</label>
+            <input id="invoiceRecipientNameInput" name="name" type="text" maxlength="48" required autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="invoiceRecipientIdCardInput">身份证号</label>
+            <input id="invoiceRecipientIdCardInput" name="idCardNo" type="text" maxlength="24" required autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="invoiceRecipientBankInput">开户行</label>
+            <input id="invoiceRecipientBankInput" name="bankName" type="text" maxlength="120" required autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="invoiceRecipientBankCardInput">银行卡号</label>
+            <input id="invoiceRecipientBankCardInput" name="bankCardNo" type="text" inputmode="numeric" maxlength="40" required autocomplete="off" />
+          </div>
+          <div class="field field-wide">
+            <label for="invoiceRecipientPhoneInput">申报手机号</label>
+            <input id="invoiceRecipientPhoneInput" name="declarationPhone" type="tel" inputmode="tel" maxlength="24" required autocomplete="off" />
+          </div>
+        </div>
+        <p class="invoice-upload-warning">结算、申报信息请认真填写，之后如需变更，请联系管理员处理。</p>
+        <div class="row form-actions accountant-register-actions">
+          <button id="invoiceRecipientInfoCancelBtn" class="btn-secondary" type="button">取消</button>
+          <button id="invoiceRecipientInfoSubmitBtn" class="btn-primary" type="submit">保存信息</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div id="invoiceUploadReminderModal" class="modal-overlay" hidden>
+    <section class="card modal-card invoice-upload-reminder-modal-card" tabindex="-1">
+      <div class="invoice-upload-reminder-top">
+        <div>
+          <p class="invoice-upload-reminder-kicker">发票上传提醒</p>
+          <h2 class="invoice-upload-reminder-title">有订单需要上传发票</h2>
+        </div>
+        <button id="invoiceUploadReminderCloseBtn" class="modal-icon-btn" type="button" aria-label="关闭发票上传提醒">
+          ×
+        </button>
+      </div>
+      <div class="invoice-upload-reminder-hero">
+        <span class="invoice-upload-reminder-label">需要开票金额</span>
+        <strong id="invoiceUploadReminderAmount" class="invoice-upload-reminder-amount">0.00 元</strong>
+      </div>
+      <div id="invoiceUploadReminderMeta" class="invoice-upload-reminder-meta"></div>
+      <div class="invoice-upload-reminder-actions">
+        <button id="invoiceUploadReminderDismissBtn" class="btn-secondary" type="button">知道了</button>
+        <button id="invoiceUploadReminderUploadBtn" class="btn-primary" type="button">去上传发票</button>
+      </div>
     </section>
   </div>
 

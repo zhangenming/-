@@ -246,7 +246,7 @@
       const status = String(rawValue || "").trim().toLowerCase();
       if (status === "partial_refunded" || status === "部分退款") return "partial_refunded";
       if (status === "refunded" || status === "退款") return "refunded";
-      if (status === "completed" || status === "已完成" || status.includes("待结算")) return "completed";
+      if (status === "completed" || status === "已完成" || status.includes("待结算") || status.includes("待核对客户确认")) return "completed";
       if (status === "checked" || status === "已确认" || status.includes("待完成")) return "checked";
       if (status === "returned" || status === "已退单") return "returned";
       return "pending";
@@ -672,12 +672,12 @@
       const rawStatusValues = Array.from(
         new Set(scopedRecords.flatMap((item) => getStatusFilterValues(item)))
       );
-      const statusValues = ["已接待/待确认", "已确认/待完成", "已完成/待结算", "已结算/待上传", "已上传/待打款", "已打款", "已退单", "部分退款", "退单"]
+      const statusValues = ["已接待/待确认", "已确认/待完成", "已完成/待核对客户确认", "已核对客户确认/待上传", "已上传/待打款", "已打款", "已退单", "部分退款", "退单"]
         .filter((value) => rawStatusValues.includes(value));
       const rawSettledValues = Array.from(
         new Set(scopedRecords.map((item) => getRecordSettlementFilterLabel(item)).filter(Boolean))
       );
-      const settledValues = ["已完成/待结算", "已结算/待上传", "已上传/待打款", "已打款"]
+      const settledValues = ["已完成/待核对客户确认", "已核对客户确认/待上传", "已上传/待打款", "已打款"]
         .filter((value) => rawSettledValues.includes(value));
 
       if (filterState.month && !monthValues.includes(filterState.month)) {

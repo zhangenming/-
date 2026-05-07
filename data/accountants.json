@@ -6,7 +6,24 @@
     "alias": "。。",
     "realName": "郭晓卿",
     "phone": "13719936050",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
+  },
+  {
+    "username": "15738776615",
+    "displayName": "15738776615",
+    "name": "15738776615",
+    "alias": "z",
+    "realName": "张",
+    "phone": "15738776615",
+    "loginPassword": "1",
+    "invoiceRecipientInfo": {
+      "name": "11",
+      "bankName": "33",
+      "bankCardNo": "44",
+      "idCardNo": "22",
+      "declarationPhone": "55"
+    }
   },
   {
     "username": "BieDong",
@@ -15,7 +32,8 @@
     "alias": "别动",
     "realName": "张佳鑫",
     "phone": "13473234224",
-    "loginPassword": "xin946946"
+    "loginPassword": "xin946946",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "18408256833",
@@ -24,7 +42,8 @@
     "alias": "冰冰糖",
     "realName": "唐冰",
     "phone": "18408256833",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "CaoMeiWeiDeFeng",
@@ -33,7 +52,8 @@
     "alias": "草莓味的风",
     "realName": "宋小瑜",
     "phone": "18560110213",
-    "loginPassword": "860105"
+    "loginPassword": "860105",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "ChunHuaQiuShi15973428149",
@@ -42,7 +62,8 @@
     "alias": "春华秋实",
     "realName": "邓美",
     "phone": "15973428149",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "DeLi",
@@ -51,7 +72,8 @@
     "alias": "德丽",
     "realName": "陈德丽",
     "phone": "15287840918",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "DouEr",
@@ -60,7 +82,8 @@
     "alias": "兜儿",
     "realName": "",
     "phone": "15608378025",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "GongHeuiFaCai",
@@ -69,7 +92,8 @@
     "alias": "恭囍發財",
     "realName": "",
     "phone": "17784750122",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "GuoGuoGuoGuoGuo",
@@ -78,7 +102,8 @@
     "alias": "过过过过过",
     "realName": "祝璐瑶",
     "phone": "15868835003",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "HaHaHa",
@@ -87,7 +112,8 @@
     "alias": "哈哈哈",
     "realName": "张志红",
     "phone": "13120218005",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "13418125682",
@@ -96,7 +122,8 @@
     "alias": "茴",
     "realName": "",
     "phone": "13418125682",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "16623839947",
@@ -105,7 +132,8 @@
     "alias": "姣姣",
     "realName": "何姣",
     "phone": "16623839947",
-    "loginPassword": "cqhj123456"
+    "loginPassword": "cqhj123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "15157028009",
@@ -114,7 +142,8 @@
     "alias": "金金",
     "realName": "杨琦",
     "phone": "15157028009",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "15823026932",
@@ -123,7 +152,8 @@
     "alias": "郡豆豆",
     "realName": "",
     "phone": "15823026932",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "13572050325",
@@ -132,7 +162,8 @@
     "alias": "腊月梅花开",
     "realName": "盛桂花",
     "phone": "13572050325",
-    "loginPassword": "@Aa123456"
+    "loginPassword": "@Aa123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "19923803606",
@@ -141,7 +172,8 @@
     "alias": "泪",
     "realName": "卿敏",
     "phone": "19923803606",
-    "loginPassword": "199116"
+    "loginPassword": "199116",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "LiYinHui",
@@ -150,7 +182,8 @@
     "alias": "李银慧",
     "realName": "李银慧",
     "phone": "19139859821",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "LiangJingJing",
@@ -159,7 +192,8 @@
     "alias": "亮晶晶",
     "realName": "",
     "phone": "18077950683",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "18983971878",
@@ -168,7 +202,8 @@
     "alias": "刘佳",
     "realName": "刘佳",
     "phone": "18983971878",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "15310722595",
@@ -177,7 +212,8 @@
     "alias": "路",
     "realName": "路",
     "phone": "15310722595",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "MeiWenXiXi",
@@ -186,7 +222,8 @@
     "alias": "美文嘻嘻",
     "realName": "张敏",
     "phone": "17839174191",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "MengHuanXingYue",
@@ -195,7 +232,8 @@
     "alias": "梦幻星月",
     "realName": "",
     "phone": "18883907964",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "Min",
@@ -204,7 +242,8 @@
     "alias": "敏",
     "realName": "",
     "phone": "13018373898",
-    "loginPassword": "Whm123456"
+    "loginPassword": "Whm123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "NanGongYinXue",
@@ -213,7 +252,8 @@
     "alias": "南宫尹雪",
     "realName": "",
     "phone": "18983094603",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "PiDiKeHeMao",
@@ -222,7 +262,8 @@
     "alias": "皮迪克和猫",
     "realName": "",
     "phone": "18723383956",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "liQiQi",
@@ -231,7 +272,8 @@
     "alias": "琪琪",
     "realName": "李琪",
     "phone": "13520827406",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "QiZhen",
@@ -240,7 +282,8 @@
     "alias": "启蓁",
     "realName": "",
     "phone": "18306041026",
-    "loginPassword": "123456"
+    "loginPassword": "123321",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "19923803560",
@@ -249,7 +292,8 @@
     "alias": "起风了",
     "realName": "刘秋菊",
     "phone": "19923803560",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "QinYanCaiShui",
@@ -258,7 +302,8 @@
     "alias": "秦春燕",
     "realName": "秦春燕",
     "phone": "15736025589",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "13637738305",
@@ -267,7 +312,8 @@
     "alias": "秋风秋雨",
     "realName": "梁艳",
     "phone": "13637738305",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "ShanDeKaoBei",
@@ -276,7 +322,8 @@
     "alias": "山的靠背",
     "realName": "",
     "phone": "13599855181",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "ShiQiA",
@@ -285,7 +332,8 @@
     "alias": "拾柒",
     "realName": "",
     "phone": "18895165706",
-    "loginPassword": "111712"
+    "loginPassword": "111712",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "17709663852",
@@ -294,7 +342,8 @@
     "alias": "莳柒",
     "realName": "",
     "phone": "17709663852",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "13022357331",
@@ -303,7 +352,8 @@
     "alias": "睡到人间晚饭时",
     "realName": "杨胡英",
     "phone": "13022357331",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "17608292326",
@@ -312,7 +362,8 @@
     "alias": "思兔",
     "realName": "",
     "phone": "17608292326",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "song",
@@ -321,7 +372,8 @@
     "alias": "宋会计师",
     "realName": "",
     "phone": "13280908662",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "WangDongMei",
@@ -330,7 +382,8 @@
     "alias": "王冬梅",
     "realName": "",
     "phone": "18883813129",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "WoXinFeiXiang",
@@ -339,7 +392,8 @@
     "alias": "我心飞翔",
     "realName": "",
     "phone": "15671272751",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "18056863680",
@@ -348,7 +402,8 @@
     "alias": "小花",
     "realName": "邹菁菁",
     "phone": "18056863680",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "aurora.",
@@ -357,7 +412,8 @@
     "alias": "小刘",
     "realName": "",
     "phone": "18098236782",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "XiaoMiFeng",
@@ -366,7 +422,8 @@
     "alias": "小蜜蜂",
     "realName": "",
     "phone": "18512366657",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "QiQi",
@@ -375,7 +432,8 @@
     "alias": "小七",
     "realName": "七七",
     "phone": "15282052359",
-    "loginPassword": "pyl382791"
+    "loginPassword": "pyl382791",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "小顺会计",
@@ -384,7 +442,8 @@
     "alias": "小顺会计",
     "realName": "吴晓田",
     "phone": "18279076370",
-    "loginPassword": "w121122123"
+    "loginPassword": "w121122123",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "18316142404",
@@ -393,7 +452,8 @@
     "alias": "小云子",
     "realName": "郑小云",
     "phone": "18316142404",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "XiaoZhangXiaoHongXiaoLin",
@@ -402,7 +462,8 @@
     "alias": "小张小红小琳",
     "realName": "",
     "phone": "13389652183",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "XiaoXiao",
@@ -411,7 +472,8 @@
     "alias": "晓晓",
     "realName": "",
     "phone": "15160205943",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "XiaoGaoLengzx",
@@ -420,7 +482,8 @@
     "alias": "欣欣",
     "realName": "",
     "phone": "16620484292",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "13624582408",
@@ -429,7 +492,8 @@
     "alias": "徐佳",
     "realName": "徐佳",
     "phone": "13624582408",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "YanZi",
@@ -438,7 +502,8 @@
     "alias": "燕子",
     "realName": "",
     "phone": "17338676783",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "YangShanShan",
@@ -447,7 +512,8 @@
     "alias": "杨珊珊",
     "realName": "杨珊珊",
     "phone": "15337165643",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "YangXianSen",
@@ -456,7 +522,8 @@
     "alias": "杨先森",
     "realName": "杨海柱",
     "phone": "18723833987",
-    "loginPassword": "zhu54205420"
+    "loginPassword": "zhu54205420",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "18874152462",
@@ -465,7 +532,8 @@
     "alias": "耶汁",
     "realName": "",
     "phone": "18874152462",
-    "loginPassword": "1994314@LYY"
+    "loginPassword": "1994314@LYY",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "YiLuXiangYang",
@@ -474,7 +542,8 @@
     "alias": "一路向阳",
     "realName": "",
     "phone": "18998299736",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "YiYiYiYi",
@@ -483,7 +552,8 @@
     "alias": "壹壹亿亿",
     "realName": "郑晓璇",
     "phone": "13623042815",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "YiHuaYing",
@@ -492,7 +562,8 @@
     "alias": "易华英",
     "realName": "",
     "phone": "13568556558",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "YouYouWoXin",
@@ -501,7 +572,8 @@
     "alias": "悠悠我心",
     "realName": "",
     "phone": "17857683560",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "TongTong",
@@ -510,7 +582,8 @@
     "alias": "有米U.mi",
     "realName": "有米U.mi",
     "phone": "TongTong",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "YouXing.",
@@ -519,7 +592,8 @@
     "alias": "有幸",
     "realName": "张国莉",
     "phone": "16603851225",
-    "loginPassword": "123456@"
+    "loginPassword": "123456@",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "瑜",
@@ -528,7 +602,8 @@
     "alias": "瑜",
     "realName": "张瑜",
     "phone": "13437180362",
-    "loginPassword": "yuyu0813"
+    "loginPassword": "yuyu0813",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "ChunShuYiWaizoey",
@@ -537,7 +612,14 @@
     "alias": "朱会计",
     "realName": "朱雪萍",
     "phone": "13729647596",
-    "loginPassword": "Aa13729647596"
+    "loginPassword": "Aa13729647596",
+    "invoiceRecipientInfo": {
+      "name": "朱雪萍",
+      "bankName": "中信银行广州白云新城支行",
+      "bankCardNo": "6217 6809 2104 0734",
+      "idCardNo": "44182119950408122X",
+      "declarationPhone": "13729647596"
+    }
   },
   {
     "username": "15196524460",
@@ -546,7 +628,8 @@
     "alias": "邹丽",
     "realName": "邹丽",
     "phone": "15196524460",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "abby",
@@ -555,7 +638,8 @@
     "alias": "Abby",
     "realName": "Abby",
     "phone": "13668095792",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "cxl",
@@ -564,7 +648,8 @@
     "alias": "",
     "realName": "cxl",
     "phone": "15968788338",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "13580337922",
@@ -573,7 +658,8 @@
     "alias": "D",
     "realName": "",
     "phone": "13580337922",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "15218057242",
@@ -582,7 +668,8 @@
     "alias": "Dirge",
     "realName": "",
     "phone": "15218057242",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "45558e79b3945112b447f3f791ce0fa5",
@@ -591,7 +678,18 @@
     "alias": "Hello,现在",
     "realName": "",
     "phone": "15378717795",
-    "loginPassword": "132167"
+    "loginPassword": "132167",
+    "invoiceRecipientInfo": null
+  },
+  {
+    "username": "13652359816",
+    "displayName": "Holiday",
+    "name": "Holiday",
+    "alias": "Holiday",
+    "realName": "张映珊",
+    "phone": "13652359816",
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "jia",
@@ -600,7 +698,8 @@
     "alias": "JIA",
     "realName": "",
     "phone": "18164603946",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "13602274429",
@@ -609,7 +708,8 @@
     "alias": "LIN",
     "realName": "",
     "phone": "13602274429",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "nana",
@@ -618,7 +718,14 @@
     "alias": "nana",
     "realName": "李广娜",
     "phone": "13785601960",
-    "loginPassword": "880510"
+    "loginPassword": "880510",
+    "invoiceRecipientInfo": {
+      "name": "李广娜",
+      "bankName": "中国工商银行廊坊朝阳支行",
+      "bankCardNo": "6212260410015011910",
+      "idCardNo": "131025198805102420",
+      "declarationPhone": "13785601960"
+    }
   },
   {
     "username": "rich4JiDou",
@@ -627,7 +734,8 @@
     "alias": "Rich4季豆",
     "realName": "",
     "phone": "15683655588",
-    "loginPassword": "cy123456"
+    "loginPassword": "cy123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "TT",
@@ -636,7 +744,8 @@
     "alias": "",
     "realName": "",
     "phone": "",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "ttwang",
@@ -645,7 +754,8 @@
     "alias": "TTWang",
     "realName": "",
     "phone": "15823926035",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "17782369746",
@@ -654,7 +764,8 @@
     "alias": "weather",
     "realName": "陈",
     "phone": "17782369746",
-    "loginPassword": "123"
+    "loginPassword": "123",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "15828074401",
@@ -663,7 +774,8 @@
     "alias": "WHL",
     "realName": "WHL",
     "phone": "15828074401",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "ziaRu",
@@ -672,6 +784,7 @@
     "alias": "Zia茹",
     "realName": "",
     "phone": "13631074592",
-    "loginPassword": "921101"
+    "loginPassword": "921101",
+    "invoiceRecipientInfo": null
   }
 ]

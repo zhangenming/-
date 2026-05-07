@@ -217,6 +217,35 @@
       });
     }
 
+    function openSettlementDetailInvoiceThumb(thumb) {
+      if (!thumb) return;
+      if (!requireAccount()) return;
+      const recordId = String(thumb.dataset.recordId || "").trim();
+      if (!recordId) return;
+      const targetRecord = records.find((item) => String(item?.id || "").trim() === recordId) || null;
+      if (!targetRecord || !getSettlementInvoiceImage(targetRecord)) return;
+      openInvoicePreviewModal(targetRecord);
+    }
+
+    function bindSettlementDetailInvoiceThumbEvents(container) {
+      if (!container) return;
+      container.addEventListener("dblclick", (event) => {
+        const invoiceThumb = event.target.closest(".settlement-detail-invoice-thumb");
+        if (!invoiceThumb || !container.contains(invoiceThumb)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        openSettlementDetailInvoiceThumb(invoiceThumb);
+      });
+      container.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const invoiceThumb = event.target.closest(".settlement-detail-invoice-thumb");
+        if (!invoiceThumb || !container.contains(invoiceThumb)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        openSettlementDetailInvoiceThumb(invoiceThumb);
+      });
+    }
+
     if (devTodoForm) {
       devTodoForm.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -1371,6 +1400,90 @@
       });
     }
 
+    if (invoiceRecipientInfoBtn && invoiceRecipientInfoForm) {
+      invoiceRecipientInfoBtn.addEventListener("click", () => {
+        if (!requireAccount()) return;
+        if (!canCurrentAccountManageInvoiceRecipientInfo()) return;
+        openInvoiceRecipientInfoModal();
+      });
+
+      if (invoiceRecipientInfoCancelBtn) {
+        invoiceRecipientInfoCancelBtn.addEventListener("click", () => {
+          closeInvoiceRecipientInfoModal();
+        });
+      }
+
+      invoiceRecipientInfoForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!requireAccount()) return;
+        if (!canCurrentAccountManageInvoiceRecipientInfo()) return;
+        if (getLockedInvoiceRecipientInfoForCurrentAccount()) {
+          closeInvoiceRecipientInfoModal();
+          return;
+        }
+        const profile = getInvoiceRecipientProfileForCurrentAccount();
+        const originalUsername = String(profile?.username || "").trim();
+        const info = {
+          name: String(invoiceRecipientNameInput?.value || "").trim(),
+          bankName: String(invoiceRecipientBankInput?.value || "").trim(),
+          bankCardNo: String(invoiceRecipientBankCardInput?.value || "").trim(),
+          idCardNo: String(invoiceRecipientIdCardInput?.value || "").trim(),
+          declarationPhone: String(invoiceRecipientPhoneInput?.value || "").trim()
+        };
+        const showInvoiceRecipientError = (target, message) => {
+          showInlineFormError({
+            form: invoiceRecipientInfoForm,
+            hintSetter: setInvoiceRecipientInfoHint,
+            target,
+            message
+          });
+        };
+        if (!originalUsername) {
+          showInvoiceRecipientError(invoiceRecipientNameInput, "当前账号缺少可保存的会计资料。");
+          return;
+        }
+        if (!info.name) {
+          showInvoiceRecipientError(invoiceRecipientNameInput, "请输入姓名。");
+          return;
+        }
+        if (!info.idCardNo) {
+          showInvoiceRecipientError(invoiceRecipientIdCardInput, "请输入身份证号。");
+          return;
+        }
+        if (!info.bankName) {
+          showInvoiceRecipientError(invoiceRecipientBankInput, "请输入开户行。");
+          return;
+        }
+        if (!info.bankCardNo) {
+          showInvoiceRecipientError(invoiceRecipientBankCardInput, "请输入银行卡号。");
+          return;
+        }
+        if (!info.declarationPhone) {
+          showInvoiceRecipientError(invoiceRecipientPhoneInput, "请输入申报手机号。");
+          return;
+        }
+
+        try {
+          setInvoiceRecipientInfoHint("结算申报信息保存中...", "pending");
+          await withLoading(
+            {
+              button: invoiceRecipientInfoSubmitBtn,
+              form: invoiceRecipientInfoForm,
+              buttonText: "保存中..."
+            },
+            () => updateAccountantProfile(originalUsername, { invoiceRecipientInfo: info })
+          );
+        } catch (error) {
+          console.error(error);
+          showInvoiceRecipientError(invoiceRecipientNameInput, error.message || "保存失败，请稍后重试。");
+          return;
+        }
+
+        closeInvoiceRecipientInfoModal();
+        showAppStatus("结算申报信息已保存。", "ok");
+      });
+    }
+
     if (accountantInvoiceUploadBtn && invoiceUploadForm && accountantInvoiceImageInput) {
       accountantInvoiceUploadBtn.addEventListener("click", () => {
         if (!requireAccount()) return;
@@ -1385,6 +1498,7 @@
 
       accountantInvoiceImageInput.addEventListener("change", () => {
         resetInvoiceUploadImageName();
+        updateInvoiceUploadImagePreview();
         clearInlineFieldError(accountantInvoiceImageInput);
         setInvoiceUploadFormHint("", "idle");
       });
@@ -1402,13 +1516,7 @@
         const file = accountantInvoiceImageInput.files && accountantInvoiceImageInput.files[0]
           ? accountantInvoiceImageInput.files[0]
           : null;
-        const info = {
-          name: String(invoiceUploadNameInput?.value || "").trim(),
-          bankName: String(invoiceUploadBankInput?.value || "").trim(),
-          bankCardNo: String(invoiceUploadBankCardInput?.value || "").trim(),
-          idCardNo: String(invoiceUploadIdCardInput?.value || "").trim(),
-          declarationPhone: String(invoiceUploadPhoneInput?.value || "").trim()
-        };
+        const info = getLockedInvoiceRecipientInfoForCurrentAccount();
         const showInvoiceUploadError = (target, message) => {
           showInlineFormError({
             form: invoiceUploadForm,
@@ -1429,24 +1537,8 @@
           showInvoiceUploadError(accountantInvoiceImageInput, `发票图片“${file.name || "未命名图片"}”超过 5MB。`);
           return;
         }
-        if (!info.name) {
-          showInvoiceUploadError(invoiceUploadNameInput, "请输入姓名。");
-          return;
-        }
-        if (!info.bankName) {
-          showInvoiceUploadError(invoiceUploadBankInput, "请输入开户行。");
-          return;
-        }
-        if (!info.bankCardNo) {
-          showInvoiceUploadError(invoiceUploadBankCardInput, "请输入银行卡号。");
-          return;
-        }
-        if (!info.idCardNo) {
-          showInvoiceUploadError(invoiceUploadIdCardInput, "请输入身份证号。");
-          return;
-        }
-        if (!info.declarationPhone) {
-          showInvoiceUploadError(invoiceUploadPhoneInput, "请输入申报手机号。");
+        if (!info) {
+          showInvoiceUploadError(accountantInvoiceImageInput, "请先录入结算申报信息。");
           return;
         }
 
@@ -1484,6 +1576,25 @@
       });
     }
 
+    if (invoiceUploadReminderCloseBtn) {
+      invoiceUploadReminderCloseBtn.addEventListener("click", () => {
+        closeInvoiceUploadReminderModal();
+      });
+    }
+
+    if (invoiceUploadReminderDismissBtn) {
+      invoiceUploadReminderDismissBtn.addEventListener("click", () => {
+        closeInvoiceUploadReminderModal();
+      });
+    }
+
+    if (invoiceUploadReminderUploadBtn) {
+      invoiceUploadReminderUploadBtn.addEventListener("click", () => {
+        closeInvoiceUploadReminderModal();
+        openInvoiceUploadModal();
+      });
+    }
+
     tableBody.addEventListener("change", (event) => {
       const selectCheckbox = event.target.closest(".row-select-checkbox");
       if (!selectCheckbox) return;
@@ -1506,7 +1617,7 @@
         return;
       }
       if (event.relatedTarget instanceof Node && cell.contains(event.relatedTarget)) return;
-      showTableHoverTooltip(cell.dataset.tableTooltip, event);
+      showTableHoverTooltip(cell, event);
     });
 
     tableBody.addEventListener("mousemove", (event) => {
@@ -1516,7 +1627,7 @@
         return;
       }
       if (tableHoverTooltip.hidden) {
-        showTableHoverTooltip(cell.dataset.tableTooltip, event);
+        showTableHoverTooltip(cell, event);
         return;
       }
       moveTableHoverTooltip(event);
@@ -1531,6 +1642,31 @@
 
     tableBody.addEventListener("mouseleave", () => {
       hideTableHoverTooltip();
+    });
+
+    tableBody.addEventListener("dblclick", (event) => {
+      const statusCell = event.target.closest(".data-col-status[data-record-id]");
+      if (!statusCell || !tableBody.contains(statusCell)) return;
+      const recordId = String(statusCell.dataset.recordId || "").trim();
+      if (!recordId) return;
+      const targetRecord = records.find((item) => String(item?.id || "").trim() === recordId) || null;
+      if (!targetRecord || !getSettlementInvoiceImage(targetRecord)) return;
+      hideTableHoverTooltip();
+      openInvoicePreviewModal(targetRecord);
+    });
+
+    tableBody.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const statusChip = event.target.closest(".record-status-chip.has-invoice-preview");
+      if (!statusChip || !tableBody.contains(statusChip)) return;
+      const statusCell = statusChip.closest(".data-col-status[data-record-id]");
+      const recordId = String(statusCell?.dataset.recordId || "").trim();
+      if (!recordId) return;
+      const targetRecord = records.find((item) => String(item?.id || "").trim() === recordId) || null;
+      if (!targetRecord || !getSettlementInvoiceImage(targetRecord)) return;
+      event.preventDefault();
+      hideTableHoverTooltip();
+      openInvoicePreviewModal(targetRecord);
     });
 
     if (bossSettlementDetailList) {
@@ -1588,13 +1724,7 @@
         }
 
         const invoiceThumb = event.target.closest(".settlement-detail-invoice-thumb");
-        if (!invoiceThumb) return;
-        if (!requireAccount()) return;
-        const recordId = String(invoiceThumb.dataset.recordId || "").trim();
-        if (!recordId) return;
-        const targetRecord = records.find((item) => String(item.id || "").trim() === recordId) || null;
-        if (!targetRecord) return;
-        openInvoicePreviewModal(targetRecord);
+        if (invoiceThumb) return;
       });
 
       bossSettlementDetailList.addEventListener("change", (event) => {
@@ -1607,7 +1737,11 @@
         setBossSettlementPayoutRecordSelected(payoutRecordIds, checkbox.checked);
         renderBossSettlementDetailModalContent();
       });
+      bindSettlementDetailInvoiceThumbEvents(bossSettlementDetailList);
     }
+
+    bindSettlementDetailInvoiceThumbEvents(paidSettlementDetailList);
+    bindSettlementDetailInvoiceThumbEvents(uploadedSettlementDetailList);
 
     if (settlementDetailTabAccountant && settlementDetailTabDispatcher) {
       settlementDetailTabAccountant.addEventListener("click", () => {
@@ -1758,6 +1892,22 @@
       invoiceUploadModal.addEventListener("click", (event) => {
         if (event.target === invoiceUploadModal) {
           closeInvoiceUploadModal();
+        }
+      });
+    }
+
+    if (invoiceRecipientInfoModal) {
+      invoiceRecipientInfoModal.addEventListener("click", (event) => {
+        if (event.target === invoiceRecipientInfoModal) {
+          closeInvoiceRecipientInfoModal();
+        }
+      });
+    }
+
+    if (invoiceUploadReminderModal) {
+      invoiceUploadReminderModal.addEventListener("click", (event) => {
+        if (event.target === invoiceUploadReminderModal) {
+          closeInvoiceUploadReminderModal();
         }
       });
     }
@@ -2059,6 +2209,14 @@
         closeInvoiceUploadModal();
         return;
       }
+      if (invoiceRecipientInfoModal && event.key === "Escape" && !invoiceRecipientInfoModal.hidden) {
+        closeInvoiceRecipientInfoModal();
+        return;
+      }
+      if (invoiceUploadReminderModal && event.key === "Escape" && !invoiceUploadReminderModal.hidden) {
+        closeInvoiceUploadReminderModal();
+        return;
+      }
       if (event.key === "Escape" && !refundModal.hidden) {
         closeRefundModal();
         return;
@@ -2263,6 +2421,7 @@
         bindInlineValidation(checkForm, setCheckFormHint);
         bindInlineValidation(completeForm, setCompleteFormHint);
         bindInlineValidation(invoiceUploadForm, setInvoiceUploadFormHint);
+        bindInlineValidation(invoiceRecipientInfoForm, setInvoiceRecipientInfoHint);
         bindInlineValidation(accountantRegisterForm, setAccountantRegisterHint);
         bindInlineValidation(accountantEditForm, setAccountantEditHint);
         bindInlineValidation(changePasswordForm, setChangePasswordHint);

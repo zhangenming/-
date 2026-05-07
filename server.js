@@ -871,6 +871,7 @@ function normalizeRecordSettlementState(value) {
     || normalized === "yes"
     || normalized === "已结算"
     || normalized === "已结算/待上传"
+    || normalized === "已核对客户确认/待上传"
     || normalized === "已上传"
     || normalized === "已上传/待打款"
     || normalized === "已打款";
@@ -921,6 +922,20 @@ function getNormalizedRecordSettlementPaymentFields(record) {
     isSettlementPaid,
     settlementPaidAt: isSettlementPaid ? normalizeDateTimeValue(source.settlementPaidAt) : "",
     settlementPaidBy: isSettlementPaid ? normalizeText(source.settlementPaidBy, 48) : ""
+  };
+}
+
+function getNormalizedRecordDispatcherSettlementPaymentFields(record) {
+  const source = record && typeof record === "object" ? record : {};
+  const isDispatcherSettlementPaid = normalizeRecordSettlementPaidState(
+    Object.prototype.hasOwnProperty.call(source, "isDispatcherSettlementPaid")
+      ? source.isDispatcherSettlementPaid
+      : source.dispatcherSettlementPaid
+  );
+  return {
+    isDispatcherSettlementPaid,
+    dispatcherSettlementPaidAt: isDispatcherSettlementPaid ? normalizeDateTimeValue(source.dispatcherSettlementPaidAt) : "",
+    dispatcherSettlementPaidBy: isDispatcherSettlementPaid ? normalizeText(source.dispatcherSettlementPaidBy, 48) : ""
   };
 }
 
@@ -1133,6 +1148,26 @@ function getNormalizedRecordInvoiceFields(record) {
     invoiceRecipientBankCardNo: image ? info.bankCardNo : "",
     invoiceRecipientIdCardNo: image ? info.idCardNo : "",
     invoiceRecipientDeclarationPhone: image ? info.declarationPhone : ""
+  };
+}
+
+function getNormalizedRecordDispatcherInvoiceFields(record) {
+  const source = record && typeof record === "object" ? record : {};
+  const image = normalizeStoredInvoiceImage(source.dispatcherSettlementInvoiceImage || source.dispatcherInvoiceImage);
+  const info = normalizeInvoiceRecipientInfo(source.dispatcherInvoiceRecipientInfo || source);
+  return {
+    dispatcherSettlementInvoiceImage: image,
+    dispatcherInvoiceUploadedAt: image ? normalizeDateTimeValue(source.dispatcherInvoiceUploadedAt || source.dispatcherSettlementInvoiceUploadedAt) : "",
+    dispatcherInvoiceUploadedBy: image ? normalizeText(source.dispatcherInvoiceUploadedBy || source.dispatcherSettlementInvoiceUploadedBy, 48) : "",
+    dispatcherInvoiceUploadedByUsername: image
+      ? normalizeAccountantUsername(source.dispatcherInvoiceUploadedByUsername || source.dispatcherSettlementInvoiceUploadedByUsername)
+      : "",
+    dispatcherInvoiceRecipientInfo: image ? info : null,
+    dispatcherInvoiceRecipientName: image ? info.name : "",
+    dispatcherInvoiceRecipientBankName: image ? info.bankName : "",
+    dispatcherInvoiceRecipientBankCardNo: image ? info.bankCardNo : "",
+    dispatcherInvoiceRecipientIdCardNo: image ? info.idCardNo : "",
+    dispatcherInvoiceRecipientDeclarationPhone: image ? info.declarationPhone : ""
   };
 }
 
@@ -1624,6 +1659,28 @@ function canAccessRecord(session, record, options = {}) {
   return false;
 }
 
+function canUploadInvoiceToRecord(session, record, options = {}) {
+  if (!session || !record || typeof record !== "object") return false;
+  if (session.role === "accountant") {
+    return canAccessRecord(session, record, options);
+  }
+  if (session.role === "dispatcher") {
+    const accountTag = getDispatcherTagForAccount(session.account);
+    if (!accountTag) return false;
+    const linkedAccountantName = getLinkedAccountantDisplayNameByDispatcherTag(
+      accountTag,
+      options.dispatcherAccountantMappings || {},
+      Array.isArray(options.accountants) ? options.accountants : []
+    );
+    if (!linkedAccountantName) return false;
+    const recordAccountant = normalizeAccountantDisplayName(record.accountant);
+    if (recordAccountant !== linkedAccountantName) return false;
+    const recordTag = normalizeDispatcherTag(record.dispatcher);
+    return recordTag === accountTag;
+  }
+  return false;
+}
+
 const ACCOUNTANT_RECORD_HISTORY_VISIBLE_FIELDS = new Set([
   "date",
   "dispatcher",
@@ -1676,7 +1733,9 @@ function sanitizeRecordForAccountant(record) {
   const source = record && typeof record === "object" ? record : {};
   const settlementFields = getNormalizedRecordSettlementFields(source);
   const invoiceFields = getNormalizedRecordInvoiceFields(source);
+  const dispatcherInvoiceFields = getNormalizedRecordDispatcherInvoiceFields(source);
   const paymentFields = getNormalizedRecordSettlementPaymentFields(source);
+  const dispatcherPaymentFields = getNormalizedRecordDispatcherSettlementPaymentFields(source);
   const paymentPrice = normalizeMoneyValue(source.paymentPrice);
   const totalPrice = normalizeMoneyValue(source.totalPrice);
   const settlementPrice = normalizeMoneyValue(source.settlementPrice);
@@ -1713,9 +1772,22 @@ function sanitizeRecordForAccountant(record) {
     invoiceRecipientBankCardNo: invoiceFields.invoiceRecipientBankCardNo,
     invoiceRecipientIdCardNo: invoiceFields.invoiceRecipientIdCardNo,
     invoiceRecipientDeclarationPhone: invoiceFields.invoiceRecipientDeclarationPhone,
+    dispatcherSettlementInvoiceImage: dispatcherInvoiceFields.dispatcherSettlementInvoiceImage,
+    dispatcherInvoiceUploadedAt: dispatcherInvoiceFields.dispatcherInvoiceUploadedAt,
+    dispatcherInvoiceUploadedBy: dispatcherInvoiceFields.dispatcherInvoiceUploadedBy,
+    dispatcherInvoiceUploadedByUsername: dispatcherInvoiceFields.dispatcherInvoiceUploadedByUsername,
+    dispatcherInvoiceRecipientInfo: dispatcherInvoiceFields.dispatcherInvoiceRecipientInfo,
+    dispatcherInvoiceRecipientName: dispatcherInvoiceFields.dispatcherInvoiceRecipientName,
+    dispatcherInvoiceRecipientBankName: dispatcherInvoiceFields.dispatcherInvoiceRecipientBankName,
+    dispatcherInvoiceRecipientBankCardNo: dispatcherInvoiceFields.dispatcherInvoiceRecipientBankCardNo,
+    dispatcherInvoiceRecipientIdCardNo: dispatcherInvoiceFields.dispatcherInvoiceRecipientIdCardNo,
+    dispatcherInvoiceRecipientDeclarationPhone: dispatcherInvoiceFields.dispatcherInvoiceRecipientDeclarationPhone,
     isSettlementPaid: paymentFields.isSettlementPaid,
     settlementPaidAt: paymentFields.settlementPaidAt,
     settlementPaidBy: paymentFields.settlementPaidBy,
+    isDispatcherSettlementPaid: dispatcherPaymentFields.isDispatcherSettlementPaid,
+    dispatcherSettlementPaidAt: dispatcherPaymentFields.dispatcherSettlementPaidAt,
+    dispatcherSettlementPaidBy: dispatcherPaymentFields.dispatcherSettlementPaidBy,
     operationHistory: sanitizeOperationHistoryForAccountant(source.operationHistory)
   };
 }
@@ -1882,6 +1954,8 @@ function normalizeAccountantProfile(raw) {
   const loginPassword = normalizeAccountantLoginPassword(
     raw.loginPassword || raw.password
   );
+  const invoiceRecipientInfo = normalizeInvoiceRecipientInfo(raw.invoiceRecipientInfo || raw);
+  const hasInvoiceRecipientInfo = Object.values(invoiceRecipientInfo).some(Boolean);
   return {
     username,
     displayName,
@@ -1889,7 +1963,8 @@ function normalizeAccountantProfile(raw) {
     alias,
     realName,
     phone,
-    loginPassword
+    loginPassword,
+    invoiceRecipientInfo: hasInvoiceRecipientInfo ? invoiceRecipientInfo : null
   };
 }
 
@@ -1922,7 +1997,8 @@ function buildAccountantProfiles(savedAccountants, namesFromRecords = []) {
       alias: current.alias || profile.alias || "",
       realName: current.realName || profile.realName || "",
       phone: current.phone || profile.phone || "",
-      loginPassword: current.loginPassword || profile.loginPassword || ""
+      loginPassword: current.loginPassword || profile.loginPassword || "",
+      invoiceRecipientInfo: current.invoiceRecipientInfo || profile.invoiceRecipientInfo || null
     };
     byUsername.set(profile.username, merged);
   });
@@ -1942,7 +2018,8 @@ function buildAccountantProfiles(savedAccountants, namesFromRecords = []) {
         alias: "",
         realName: "",
         phone: "",
-        loginPassword: ""
+        loginPassword: "",
+        invoiceRecipientInfo: null
       });
     }
   });
@@ -1954,12 +2031,181 @@ function buildAccountantProfiles(savedAccountants, namesFromRecords = []) {
     profile.alias = normalizeAccountantAlias(profile.alias) || (profile.displayName !== profile.username ? profile.displayName : "");
     profile.realName = normalizeAccountantRealName(profile.realName);
     profile.phone = normalizeAccountantPhone(profile.phone);
+    const invoiceRecipientInfo = normalizeInvoiceRecipientInfo(profile.invoiceRecipientInfo);
+    profile.invoiceRecipientInfo = Object.values(invoiceRecipientInfo).every(Boolean)
+      ? invoiceRecipientInfo
+      : null;
     if (!profile.loginPassword) {
       profile.loginPassword = DEFAULT_ACCOUNTANT_LOGIN_PASSWORD;
     }
   });
 
   return profiles;
+}
+
+function resolveInvoiceRecipientProfileIndex(accountants, session, dispatcherAccountantMappings = {}) {
+  if (!Array.isArray(accountants) || !session) return -1;
+  if (session.role === "accountant") {
+    const loginAccount = normalizeText(session.account, 120);
+    return accountants.findIndex((item) => {
+      const profile = normalizeAccountantProfile(item);
+      if (!profile) return false;
+      return [profile.username, profile.displayName, profile.name, profile.alias, profile.phone]
+        .map((value) => normalizeText(value, 120))
+        .filter(Boolean)
+        .includes(loginAccount);
+    });
+  }
+  if (session.role === "dispatcher") {
+    const dispatcherTag = getDispatcherTagForAccount(session.account);
+    const linkedPhone = dispatcherAccountantMappings[String(session.account || "").trim().toLowerCase()];
+    const linkedDisplayName = getLinkedAccountantDisplayNameByDispatcherTag(
+      dispatcherTag,
+      dispatcherAccountantMappings,
+      accountants
+    );
+    return accountants.findIndex((item) => {
+      const profile = normalizeAccountantProfile(item);
+      if (!profile) return false;
+      return Boolean(
+        (linkedPhone && normalizeAccountantPhone(profile.phone) === normalizeAccountantPhone(linkedPhone)) ||
+        (linkedDisplayName && normalizeAccountantDisplayName(profile.displayName) === normalizeAccountantDisplayName(linkedDisplayName))
+      );
+    });
+  }
+  return -1;
+}
+
+function getLockedInvoiceRecipientInfoForSession(accountants, session, submittedInfo, dispatcherAccountantMappings = {}) {
+  const profileIndex = resolveInvoiceRecipientProfileIndex(accountants, session, dispatcherAccountantMappings);
+  const savedInfo = profileIndex >= 0
+    ? normalizeInvoiceRecipientInfo(accountants[profileIndex]?.invoiceRecipientInfo)
+    : normalizeInvoiceRecipientInfo(null);
+  const hasSavedInfo = Object.values(savedInfo).every(Boolean);
+  if (hasSavedInfo) {
+    return { info: savedInfo, profileIndex, changed: false };
+  }
+  const info = validateInvoiceRecipientInfo(submittedInfo);
+  if (profileIndex < 0) {
+    return { info, profileIndex, changed: false };
+  }
+  accountants[profileIndex] = {
+    ...accountants[profileIndex],
+    invoiceRecipientInfo: info
+  };
+  return { info, profileIndex, changed: true };
+}
+
+function getAccountantUploadIdentitySet(accountantName, accountants = []) {
+  const normalizedName = normalizeAccountantDisplayName(accountantName);
+  const identities = new Set();
+  const addIdentity = (value, normalizer = normalizeText) => {
+    const text = normalizer(value);
+    if (text) identities.add(text);
+  };
+
+  addIdentity(normalizedName, normalizeAccountantDisplayName);
+  const profile = resolveAccountantByIdentifier(accountants, normalizedName);
+  if (profile) {
+    addIdentity(profile.displayName, normalizeAccountantDisplayName);
+    addIdentity(profile.name, normalizeAccountantDisplayName);
+    addIdentity(profile.alias, normalizeAccountantDisplayName);
+    addIdentity(profile.username, normalizeAccountantUsername);
+    addIdentity(profile.phone, normalizeAccountantPhone);
+  }
+
+  return identities;
+}
+
+function isInvoiceUploadedByAccountant(record, accountantName, accountants = []) {
+  const identities = getAccountantUploadIdentitySet(accountantName, accountants);
+  if (!identities.size) return false;
+  const invoiceFields = getNormalizedRecordInvoiceFields(record);
+  if (!invoiceFields.settlementInvoiceImage) return false;
+  const uploadedBy = normalizeText(invoiceFields.invoiceUploadedBy, 48);
+  const uploadedByUsername = normalizeAccountantUsername(invoiceFields.invoiceUploadedByUsername);
+  return identities.has(uploadedBy) || identities.has(uploadedByUsername);
+}
+
+function isInvoiceUploadedByAccountantOrLinkedDispatcher(record, accountantName, options = {}) {
+  const accountants = Array.isArray(options.accountants) ? options.accountants : [];
+  if (isInvoiceUploadedByAccountant(record, accountantName, accountants)) return true;
+  const normalizedAccountant = normalizeAccountantDisplayName(accountantName);
+  const invoiceFields = getNormalizedRecordInvoiceFields(record);
+  if (!normalizedAccountant || !invoiceFields.settlementInvoiceImage) return false;
+  const uploadedDispatcherTag = normalizeDispatcherTag(invoiceFields.invoiceUploadedByUsername);
+  if (!uploadedDispatcherTag) return false;
+  const linkedAccountantName = getLinkedAccountantDisplayNameByDispatcherTag(
+    uploadedDispatcherTag,
+    options.dispatcherAccountantMappings || {},
+    accountants
+  );
+  return Boolean(linkedAccountantName && linkedAccountantName === normalizedAccountant);
+}
+
+function isDispatcherInvoiceUploadedByAccountantOrLinkedDispatcher(record, accountantName, options = {}) {
+  const dispatcherInvoiceFields = getNormalizedRecordDispatcherInvoiceFields(record);
+  if (!dispatcherInvoiceFields.dispatcherSettlementInvoiceImage) return false;
+  return isInvoiceUploadedByAccountantOrLinkedDispatcher({
+    ...record,
+    settlementInvoiceImage: dispatcherInvoiceFields.dispatcherSettlementInvoiceImage,
+    invoiceUploadedAt: dispatcherInvoiceFields.dispatcherInvoiceUploadedAt,
+    invoiceUploadedBy: dispatcherInvoiceFields.dispatcherInvoiceUploadedBy,
+    invoiceUploadedByUsername: dispatcherInvoiceFields.dispatcherInvoiceUploadedByUsername
+  }, accountantName, options);
+}
+
+function isRecordInvoiceUploadedByRecordAccountant(record, accountants = []) {
+  return isInvoiceUploadedByAccountant(record, record?.accountant, accountants);
+}
+
+function isRecordInvoiceUploadedByRecordAccountantOrLinkedDispatcher(record, options = {}) {
+  return isInvoiceUploadedByAccountantOrLinkedDispatcher(record, record?.accountant, options);
+}
+
+function normalizePayoutTarget(rawTarget) {
+  const source = normalizeText(rawTarget, 160);
+  if (!source) return null;
+  const separatorIndex = source.indexOf(":");
+  if (separatorIndex < 0) {
+    return { key: source, type: "accountant", recordId: source };
+  }
+  const type = normalizeText(source.slice(0, separatorIndex), 32).toLowerCase();
+  const recordId = normalizeText(source.slice(separatorIndex + 1), 120);
+  if (!recordId) return null;
+  if (type === "dispatcher") {
+    return { key: recordId, type: "accountant", recordId };
+  }
+  return { key: recordId, type: "accountant", recordId };
+}
+
+function normalizePayoutTargets(rawTargets, fallbackRecordIds = []) {
+  const sourceTargets = Array.isArray(rawTargets) && rawTargets.length ? rawTargets : fallbackRecordIds;
+  const targetMap = new Map();
+  (Array.isArray(sourceTargets) ? sourceTargets : [])
+    .map((item) => normalizePayoutTarget(item))
+    .filter(Boolean)
+    .forEach((target) => {
+      targetMap.set(target.key, target);
+    });
+  return Array.from(targetMap.values());
+}
+
+function isDispatcherPayoutTargetUploadedForLinkedAccountant(record, options = {}) {
+  const accountants = Array.isArray(options.accountants) ? options.accountants : [];
+  const dispatcherAccountantMappings = options.dispatcherAccountantMappings || {};
+  const recordTag = normalizeDispatcherTag(record?.dispatcher);
+  if (!recordTag) return false;
+  const linkedAccountantName = getLinkedAccountantDisplayNameByDispatcherTag(
+    recordTag,
+    dispatcherAccountantMappings,
+    accountants
+  );
+  if (!linkedAccountantName) return false;
+  return isDispatcherInvoiceUploadedByAccountantOrLinkedDispatcher(record, linkedAccountantName, {
+    dispatcherAccountantMappings,
+    accountants
+  });
 }
 function generateId(prefix = "rec") {
   const ts = Date.now().toString(36);
@@ -1991,20 +2237,22 @@ const RECORD_HISTORY_ACTION_LABELS = {
 function getRecordWorkflowStatusLabelByKey(statusKey) {
   if (statusKey === "paid") return "已打款";
   if (statusKey === "uploaded") return "已上传/待打款";
-  if (statusKey === "settled") return "已结算/待上传";
+  if (statusKey === "settled") return "已核对客户确认/待上传";
   if (statusKey === "partial_refunded") return "部分退款";
   if (statusKey === "refunded") return "退款";
-  if (statusKey === "completed") return "已完成/待结算";
+  if (statusKey === "completed") return "已完成/待核对客户确认";
   if (statusKey === "checked") return "已确认/待完成";
   if (statusKey === "returned") return "已退单";
   return "已派单/待确认";
 }
 
-function getRecordSettlementWorkflowStatusLabel(record) {
+function getRecordSettlementWorkflowStatusLabel(record, accountants = []) {
   const invoiceFields = getNormalizedRecordInvoiceFields(record);
   const paymentFields = getNormalizedRecordSettlementPaymentFields(record);
   if (paymentFields.isSettlementPaid) return getRecordWorkflowStatusLabelByKey("paid");
-  if (invoiceFields.settlementInvoiceImage) return getRecordWorkflowStatusLabelByKey("uploaded");
+  if (invoiceFields.settlementInvoiceImage && isRecordInvoiceUploadedByRecordAccountant(record, accountants)) {
+    return getRecordWorkflowStatusLabelByKey("uploaded");
+  }
   return getNormalizedRecordSettlementFields(record).isSettled
     ? getRecordWorkflowStatusLabelByKey("settled")
     : "未结算";
@@ -2286,7 +2534,9 @@ function ensureRecordIds(sourceRecords) {
     const normalizedHistory = normalizeOperationHistory(current.operationHistory);
     const normalizedSettlementFields = getNormalizedRecordSettlementFields(current);
     const normalizedInvoiceFields = getNormalizedRecordInvoiceFields(current);
+    const normalizedDispatcherInvoiceFields = getNormalizedRecordDispatcherInvoiceFields(current);
     const normalizedSettlementPaymentFields = getNormalizedRecordSettlementPaymentFields(current);
+    const normalizedDispatcherSettlementPaymentFields = getNormalizedRecordDispatcherSettlementPaymentFields(current);
     const normalizedMonthlySettlement = normalizeMonthlySettlementState(current.isMonthlySettlement);
     const hasNormalizedHistory = Array.isArray(current.operationHistory)
       && JSON.stringify(current.operationHistory) === JSON.stringify(normalizedHistory);
@@ -2299,9 +2549,18 @@ function ensureRecordIds(sourceRecords) {
       && normalizeText(current.invoiceUploadedBy || current.settlementInvoiceUploadedBy, 48) === normalizedInvoiceFields.invoiceUploadedBy
       && normalizeAccountantUsername(current.invoiceUploadedByUsername || current.settlementInvoiceUploadedByUsername) === normalizedInvoiceFields.invoiceUploadedByUsername
       && JSON.stringify(normalizeInvoiceRecipientInfo(current.invoiceRecipientInfo || current)) === JSON.stringify(normalizedInvoiceFields.invoiceRecipientInfo || normalizeInvoiceRecipientInfo({}));
+    const hasNormalizedDispatcherInvoice = JSON.stringify(normalizeStoredInvoiceImage(current.dispatcherSettlementInvoiceImage || current.dispatcherInvoiceImage))
+      === JSON.stringify(normalizedDispatcherInvoiceFields.dispatcherSettlementInvoiceImage)
+      && normalizeDateTimeValue(current.dispatcherInvoiceUploadedAt || current.dispatcherSettlementInvoiceUploadedAt) === normalizedDispatcherInvoiceFields.dispatcherInvoiceUploadedAt
+      && normalizeText(current.dispatcherInvoiceUploadedBy || current.dispatcherSettlementInvoiceUploadedBy, 48) === normalizedDispatcherInvoiceFields.dispatcherInvoiceUploadedBy
+      && normalizeAccountantUsername(current.dispatcherInvoiceUploadedByUsername || current.dispatcherSettlementInvoiceUploadedByUsername) === normalizedDispatcherInvoiceFields.dispatcherInvoiceUploadedByUsername
+      && JSON.stringify(normalizeInvoiceRecipientInfo(current.dispatcherInvoiceRecipientInfo || current)) === JSON.stringify(normalizedDispatcherInvoiceFields.dispatcherInvoiceRecipientInfo || normalizeInvoiceRecipientInfo({}));
     const hasNormalizedSettlementPayment = current.isSettlementPaid === normalizedSettlementPaymentFields.isSettlementPaid
       && normalizeDateTimeValue(current.settlementPaidAt) === normalizedSettlementPaymentFields.settlementPaidAt
       && normalizeText(current.settlementPaidBy, 48) === normalizedSettlementPaymentFields.settlementPaidBy;
+    const hasNormalizedDispatcherSettlementPayment = current.isDispatcherSettlementPaid === normalizedDispatcherSettlementPaymentFields.isDispatcherSettlementPaid
+      && normalizeDateTimeValue(current.dispatcherSettlementPaidAt) === normalizedDispatcherSettlementPaymentFields.dispatcherSettlementPaidAt
+      && normalizeText(current.dispatcherSettlementPaidBy, 48) === normalizedDispatcherSettlementPaymentFields.dispatcherSettlementPaidBy;
     const hasNormalizedMonthlySettlement = current.isMonthlySettlement === normalizedMonthlySettlement;
     const hasBuiltInCompletion = !isBuiltInAccountantRecord
       || (
@@ -2324,7 +2583,9 @@ function ensureRecordIds(sourceRecords) {
       && hasNormalizedHistory
       && hasNormalizedSettlement
       && hasNormalizedInvoice
+      && hasNormalizedDispatcherInvoice
       && hasNormalizedSettlementPayment
+      && hasNormalizedDispatcherSettlementPayment
       && hasNormalizedMonthlySettlement
       && hasBuiltInCompletion
     ) {
@@ -2342,7 +2603,9 @@ function ensureRecordIds(sourceRecords) {
       operationHistory: normalizedHistory,
       ...normalizedSettlementFields,
       ...normalizedInvoiceFields,
-      ...normalizedSettlementPaymentFields
+      ...normalizedDispatcherInvoiceFields,
+      ...normalizedSettlementPaymentFields,
+      ...normalizedDispatcherSettlementPaymentFields
     }, normalizedCreatedAt);
   });
   return { records, changed };
@@ -2400,9 +2663,22 @@ function normalizeRecord(input) {
     invoiceRecipientBankCardNo: "",
     invoiceRecipientIdCardNo: "",
     invoiceRecipientDeclarationPhone: "",
+    dispatcherSettlementInvoiceImage: null,
+    dispatcherInvoiceUploadedAt: "",
+    dispatcherInvoiceUploadedBy: "",
+    dispatcherInvoiceUploadedByUsername: "",
+    dispatcherInvoiceRecipientInfo: null,
+    dispatcherInvoiceRecipientName: "",
+    dispatcherInvoiceRecipientBankName: "",
+    dispatcherInvoiceRecipientBankCardNo: "",
+    dispatcherInvoiceRecipientIdCardNo: "",
+    dispatcherInvoiceRecipientDeclarationPhone: "",
     isSettlementPaid: false,
     settlementPaidAt: "",
     settlementPaidBy: "",
+    isDispatcherSettlementPaid: false,
+    dispatcherSettlementPaidAt: "",
+    dispatcherSettlementPaidBy: "",
     checkStatus: shouldAutoComplete ? "completed" : "pending",
     checkedAt: "",
     completedAt: shouldAutoComplete ? createdAt : "",
@@ -2970,7 +3246,9 @@ async function serveInvoiceImageAsset(res, pathname) {
     const content = await fs.readFile(filePath);
     res.writeHead(200, {
       "Content-Type": toStaticMimeType(filePath),
-      "Cache-Control": "no-store"
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Length": stat.size,
+      "Last-Modified": stat.mtime.toUTCString()
     });
     res.end(content);
   } catch {
@@ -3182,7 +3460,7 @@ async function serveRecordInvoiceUpload(req, res) {
   try {
     const body = await parseBody(req);
     const rawImage = body?.image || body?.invoiceImage || body?.settlementInvoiceImage;
-    const invoiceRecipientInfo = validateInvoiceRecipientInfo(body?.invoiceRecipientInfo || body?.recipientInfo || body);
+    const submittedInvoiceRecipientInfo = body?.invoiceRecipientInfo || body?.recipientInfo || body;
     const uploadedAt = getCurrentBeijingDateTime();
     const uploadedByUsername = session.role === "accountant"
       ? normalizeAccountantUsername(session.account)
@@ -3200,7 +3478,17 @@ async function serveRecordInvoiceUpload(req, res) {
       ]);
       const accountantsFromRecords = migration.records.map((item) => normalizeAccountantDisplayName(item.accountant));
       const accountants = buildAccountantProfiles(savedAccountants, accountantsFromRecords);
-      const shouldUpdateAccountants = JSON.stringify(savedAccountants) !== JSON.stringify(accountants);
+      let shouldUpdateAccountants = JSON.stringify(savedAccountants) !== JSON.stringify(accountants);
+      const lockedInvoiceRecipient = getLockedInvoiceRecipientInfoForSession(
+        accountants,
+        session,
+        submittedInvoiceRecipientInfo,
+        dispatcherAccountantMappings
+      );
+      const invoiceRecipientInfo = lockedInvoiceRecipient.info;
+      if (lockedInvoiceRecipient.changed) {
+        shouldUpdateAccountants = true;
+      }
       const accessOptions = {
         includeLinkedSettlementPeers: true,
         dispatcherAccountantMappings,
@@ -3210,7 +3498,7 @@ async function serveRecordInvoiceUpload(req, res) {
 
       migration.records.forEach((item, index) => {
         const current = item && typeof item === "object" ? item : {};
-        if (!canAccessRecord(session, current, accessOptions)) return;
+        if (!canUploadInvoiceToRecord(session, current, accessOptions)) return;
         const settlementFields = getNormalizedRecordSettlementFields(current);
         const invoiceFields = getNormalizedRecordInvoiceFields(current);
         const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
@@ -3323,25 +3611,30 @@ async function serveRecordSettlementPayout(req, res) {
 
   try {
     const body = await parseBody(req);
-    const recordIds = Array.from(
-      new Set(
-        (Array.isArray(body?.recordIds) ? body.recordIds : [])
-          .map((item) => normalizeText(item, 120))
-          .filter(Boolean)
-      )
-    );
-    if (!recordIds.length) {
+    const payoutTargets = normalizePayoutTargets(body?.payoutTargets, body?.recordIds);
+    if (!payoutTargets.length) {
       sendJson(res, 400, { error: "请选择要打款的数据。" });
       return;
     }
 
-    const recordIdSet = new Set(recordIds);
+    const targetMapByRecordId = payoutTargets.reduce((map, target) => {
+      const list = map.get(target.recordId) || [];
+      list.push(target);
+      map.set(target.recordId, list);
+      return map;
+    }, new Map());
     const paidAt = getCurrentBeijingDateTime();
     const paidBy = normalizeText(session.account, 48) || BOSS_LOGIN_ACCOUNT;
 
     const result = await withWriteLock(async () => {
       const all = await readRecords();
       const migration = ensureRecordIds(all);
+      const [dispatcherAccountantMappings, savedAccountants] = await Promise.all([
+        readDispatcherAccountantMappings(),
+        readAccountants()
+      ]);
+      const accountantsFromRecords = migration.records.map((item) => normalizeAccountantDisplayName(item.accountant));
+      const accountants = buildAccountantProfiles(savedAccountants, accountantsFromRecords);
       const foundRecordIds = new Set();
       const paidRecordIds = [];
       const skippedRecordIds = [];
@@ -3349,10 +3642,11 @@ async function serveRecordSettlementPayout(req, res) {
       const nextRecords = migration.records.map((item) => {
         const current = item && typeof item === "object" ? item : {};
         const recordId = normalizeText(current.id, 120);
+        const recordTargets = recordId ? (targetMapByRecordId.get(recordId) || []) : [];
         const settlementFields = getNormalizedRecordSettlementFields(current);
         const invoiceFields = getNormalizedRecordInvoiceFields(current);
         const paymentFields = getNormalizedRecordSettlementPaymentFields(current);
-        if (!recordId || !recordIdSet.has(recordId)) {
+        if (!recordId || !recordTargets.length) {
           return {
             ...current,
             ...settlementFields,
@@ -3363,12 +3657,23 @@ async function serveRecordSettlementPayout(req, res) {
 
         foundRecordIds.add(recordId);
         const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
-        if (!canAccessRecord(session, current)
-          || !settlementFields.isSettled
-          || !invoiceFields.settlementInvoiceImage
-          || paymentFields.isSettlementPaid
-          || !isCompletedCheckStatus(checkStatus)) {
-          skippedRecordIds.push(recordId);
+        const isUploadedByRecordAccountant = isRecordInvoiceUploadedByRecordAccountantOrLinkedDispatcher({
+          ...current,
+          ...invoiceFields
+        }, {
+          dispatcherAccountantMappings,
+          accountants
+        });
+        const canPayBaseRecord = canAccessRecord(session, current)
+          && settlementFields.isSettled
+          && isCompletedCheckStatus(checkStatus);
+        const canPayAccountantTarget = canPayBaseRecord
+          && invoiceFields.settlementInvoiceImage
+          && isUploadedByRecordAccountant
+          && !paymentFields.isSettlementPaid;
+        const shouldPayAccountantTarget = recordTargets.some((target) => target.type === "accountant");
+        if (!shouldPayAccountantTarget || !canPayAccountantTarget) {
+          recordTargets.forEach((target) => skippedRecordIds.push(target.key));
           return {
             ...current,
             ...settlementFields,
@@ -3384,12 +3689,16 @@ async function serveRecordSettlementPayout(req, res) {
           ...paymentFields
         };
         const nextRecord = {
-          ...beforeRecord,
-          isSettlementPaid: true,
-          settlementPaidAt: paidAt,
-          settlementPaidBy: paidBy
+          ...beforeRecord
         };
-        paidRecordIds.push(recordId);
+        if (shouldPayAccountantTarget && canPayAccountantTarget) {
+          nextRecord.isSettlementPaid = true;
+          nextRecord.settlementPaidAt = paidAt;
+          nextRecord.settlementPaidBy = paidBy;
+          paidRecordIds.push(recordId);
+        } else if (shouldPayAccountantTarget) {
+          skippedRecordIds.push(recordId);
+        }
         return appendRecordHistory(nextRecord, buildRecordHistoryEntry({
           beforeRecord,
           afterRecord: nextRecord,
@@ -3401,9 +3710,9 @@ async function serveRecordSettlementPayout(req, res) {
         }));
       });
 
-      recordIds.forEach((recordId) => {
-        if (!foundRecordIds.has(recordId)) {
-          skippedRecordIds.push(recordId);
+      payoutTargets.forEach((target) => {
+        if (!foundRecordIds.has(target.recordId)) {
+          skippedRecordIds.push(target.key);
         }
       });
 
@@ -4214,6 +4523,25 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
         const nextPassword = normalizeAccountantLoginPassword(
           hasPassword ? (body.password || body.loginPassword) : (target.loginPassword || DEFAULT_ACCOUNTANT_LOGIN_PASSWORD)
         );
+        const hasInvoiceRecipientInfo = (
+          Object.prototype.hasOwnProperty.call(body, "invoiceRecipientInfo")
+          || Object.prototype.hasOwnProperty.call(body, "recipientInfo")
+        );
+        const nextInvoiceRecipientInfo = hasInvoiceRecipientInfo
+          ? validateInvoiceRecipientInfo(body.invoiceRecipientInfo || body.recipientInfo)
+          : (target.invoiceRecipientInfo || null);
+        const invoiceRecipientOnlyUpdate = hasInvoiceRecipientInfo
+          && !Object.prototype.hasOwnProperty.call(body, "phone")
+          && !Object.prototype.hasOwnProperty.call(body, "mobile")
+          && !Object.prototype.hasOwnProperty.call(body, "mobilePhone")
+          && !Object.prototype.hasOwnProperty.call(body, "username")
+          && !Object.prototype.hasOwnProperty.call(body, "account")
+          && !Object.prototype.hasOwnProperty.call(body, "alias")
+          && !Object.prototype.hasOwnProperty.call(body, "displayName")
+          && !Object.prototype.hasOwnProperty.call(body, "nickname")
+          && !Object.prototype.hasOwnProperty.call(body, "realName")
+          && !Object.prototype.hasOwnProperty.call(body, "password")
+          && !Object.prototype.hasOwnProperty.call(body, "loginPassword");
 
         if (!nextUsername) {
           throw new Error("账号不能为空");
@@ -4238,10 +4566,11 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
           ...target,
           username: nextUsername,
           displayName: nextDisplayName,
-          alias,
-          realName: body.realName,
+          alias: invoiceRecipientOnlyUpdate ? target.alias : alias,
+          realName: invoiceRecipientOnlyUpdate ? target.realName : body.realName,
           phone: nextPhone,
-          loginPassword: nextPassword
+          loginPassword: nextPassword,
+          invoiceRecipientInfo: nextInvoiceRecipientInfo
         });
         if (!nextProfile) {
           throw new Error("会计资料无效");
