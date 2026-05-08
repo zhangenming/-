@@ -1659,10 +1659,42 @@ function canAccessRecord(session, record, options = {}) {
   return false;
 }
 
+function getRecordWorkflowStatusKey(record) {
+  const checkStatus = normalizeText(record?.checkStatus, 24).toLowerCase();
+  if (checkStatus === "refunded" || checkStatus === "partial_refunded") {
+    if (getNormalizedRecordSettlementPaymentFields(record).isSettlementPaid) return "paid";
+    if (getNormalizedRecordInvoiceFields(record).settlementInvoiceImage) return "uploaded";
+    if (getNormalizedRecordSettlementFields(record).isSettled) return "settled";
+    return "completed";
+  }
+  if (checkStatus === "returned") return "returned";
+  if (checkStatus === "completed") {
+    if (getNormalizedRecordSettlementPaymentFields(record).isSettlementPaid) return "paid";
+    if (getNormalizedRecordInvoiceFields(record).settlementInvoiceImage) return "uploaded";
+    if (getNormalizedRecordSettlementFields(record).isSettled) return "settled";
+    return "completed";
+  }
+  if (checkStatus === "checked") return "checked";
+  return "pending";
+}
+
+function canDeleteRecord(session, record) {
+  if (!session || !record || typeof record !== "object") return false;
+  if (session.role === "boss") return true;
+  if (session.role === "dispatcher") return getRecordWorkflowStatusKey(record) === "pending";
+  return false;
+}
+
 function canUploadInvoiceToRecord(session, record, options = {}) {
   if (!session || !record || typeof record !== "object") return false;
   if (session.role === "accountant") {
-    return canAccessRecord(session, record, options);
+    if (normalizeAccountantDisplayName(record.accountant) === getSessionAccountantDisplayName(session)) return true;
+    const linkedTags = getDispatcherTagsLinkedToSessionAccountant(
+      session,
+      options.dispatcherAccountantMappings || {}
+    );
+    const recordTag = normalizeDispatcherTag(record.dispatcher);
+    return Boolean(recordTag && linkedTags.includes(recordTag));
   }
   if (session.role === "dispatcher") {
     const accountTag = getDispatcherTagForAccount(session.account);
@@ -1672,13 +1704,43 @@ function canUploadInvoiceToRecord(session, record, options = {}) {
       options.dispatcherAccountantMappings || {},
       Array.isArray(options.accountants) ? options.accountants : []
     );
-    if (!linkedAccountantName) return false;
-    const recordAccountant = normalizeAccountantDisplayName(record.accountant);
-    if (recordAccountant !== linkedAccountantName) return false;
     const recordTag = normalizeDispatcherTag(record.dispatcher);
-    return recordTag === accountTag;
+    return Boolean(linkedAccountantName && recordTag === accountTag);
   }
   return false;
+}
+
+function getInvoiceUploadFieldScopeForRecord(session, record, options = {}) {
+  if (!session || !record || typeof record !== "object") return "";
+  if (session.role === "accountant") {
+    const linkedTags = getDispatcherTagsLinkedToSessionAccountant(
+      session,
+      options.dispatcherAccountantMappings || {}
+    );
+    const recordTag = normalizeDispatcherTag(record.dispatcher);
+    if (recordTag && linkedTags.includes(recordTag)) {
+      return "dispatcher";
+    }
+    if (normalizeAccountantDisplayName(record.accountant) === getSessionAccountantDisplayName(session)) {
+      return "accountant";
+    }
+    return "";
+  }
+  if (session.role === "dispatcher") {
+    const accountTag = getDispatcherTagForAccount(session.account);
+    if (!accountTag) return "";
+    const linkedAccountantName = getLinkedAccountantDisplayNameByDispatcherTag(
+      accountTag,
+      options.dispatcherAccountantMappings || {},
+      Array.isArray(options.accountants) ? options.accountants : []
+    );
+    const recordTag = normalizeDispatcherTag(record.dispatcher);
+    return linkedAccountantName &&
+      recordTag === accountTag
+      ? "dispatcher"
+      : "";
+  }
+  return "";
 }
 
 const ACCOUNTANT_RECORD_HISTORY_VISIBLE_FIELDS = new Set([
@@ -3460,7 +3522,6 @@ async function serveRecordInvoiceUpload(req, res) {
   try {
     const body = await parseBody(req);
     const rawImage = body?.image || body?.invoiceImage || body?.settlementInvoiceImage;
-    const submittedInvoiceRecipientInfo = body?.invoiceRecipientInfo || body?.recipientInfo || body;
     const uploadedAt = getCurrentBeijingDateTime();
     const uploadedByUsername = session.role === "accountant"
       ? normalizeAccountantUsername(session.account)
@@ -3479,16 +3540,21 @@ async function serveRecordInvoiceUpload(req, res) {
       const accountantsFromRecords = migration.records.map((item) => normalizeAccountantDisplayName(item.accountant));
       const accountants = buildAccountantProfiles(savedAccountants, accountantsFromRecords);
       let shouldUpdateAccountants = JSON.stringify(savedAccountants) !== JSON.stringify(accountants);
-      const lockedInvoiceRecipient = getLockedInvoiceRecipientInfoForSession(
-        accountants,
-        session,
-        submittedInvoiceRecipientInfo,
-        dispatcherAccountantMappings
-      );
-      const invoiceRecipientInfo = lockedInvoiceRecipient.info;
-      if (lockedInvoiceRecipient.changed) {
-        shouldUpdateAccountants = true;
+      const profileIndex = resolveInvoiceRecipientProfileIndex(accountants, session, dispatcherAccountantMappings);
+      const savedInvoiceRecipientInfo = profileIndex >= 0
+        ? normalizeInvoiceRecipientInfo(accountants[profileIndex]?.invoiceRecipientInfo)
+        : normalizeInvoiceRecipientInfo(null);
+      const hasSavedInvoiceRecipientInfo = Object.values(savedInvoiceRecipientInfo).every(Boolean);
+      if (!hasSavedInvoiceRecipientInfo) {
+        if (shouldUpdateAccountants) {
+          await writeAccountants(accountants);
+        }
+        if (migration.changed) {
+          await writeRecords(migration.records);
+        }
+        return { missingInvoiceRecipientInfo: true };
       }
+      const invoiceRecipientInfo = savedInvoiceRecipientInfo;
       const accessOptions = {
         includeLinkedSettlementPeers: true,
         dispatcherAccountantMappings,
@@ -3500,10 +3566,14 @@ async function serveRecordInvoiceUpload(req, res) {
         const current = item && typeof item === "object" ? item : {};
         if (!canUploadInvoiceToRecord(session, current, accessOptions)) return;
         const settlementFields = getNormalizedRecordSettlementFields(current);
+        if (!settlementFields.isSettled) return;
         const invoiceFields = getNormalizedRecordInvoiceFields(current);
+        const dispatcherInvoiceFields = getNormalizedRecordDispatcherInvoiceFields(current);
+        const uploadFieldScope = getInvoiceUploadFieldScopeForRecord(session, current, accessOptions);
         const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
-        if (!settlementFields.isSettled
-          || invoiceFields.settlementInvoiceImage
+        if (!uploadFieldScope
+          || (uploadFieldScope === "accountant" && invoiceFields.settlementInvoiceImage)
+          || (uploadFieldScope === "dispatcher" && dispatcherInvoiceFields.dispatcherSettlementInvoiceImage)
           || !isCompletedCheckStatus(checkStatus)) return;
         targetIndexes.push(index);
       });
@@ -3525,32 +3595,50 @@ async function serveRecordInvoiceUpload(req, res) {
         const current = item && typeof item === "object" ? item : {};
         const settlementFields = getNormalizedRecordSettlementFields(current);
         const invoiceFields = getNormalizedRecordInvoiceFields(current);
+        const dispatcherInvoiceFields = getNormalizedRecordDispatcherInvoiceFields(current);
         if (!targetIndexSet.has(index)) {
           return {
             ...current,
             ...settlementFields,
-            ...invoiceFields
+            ...invoiceFields,
+            ...dispatcherInvoiceFields
           };
         }
 
         const beforeRecord = {
           ...current,
           ...settlementFields,
-          ...invoiceFields
+          ...invoiceFields,
+          ...dispatcherInvoiceFields
         };
-        const nextRecord = {
-          ...beforeRecord,
-          settlementInvoiceImage: invoiceImage,
-          invoiceUploadedAt: uploadedAt,
-          invoiceUploadedBy: uploadedBy,
-          invoiceUploadedByUsername: uploadedByUsername,
-          invoiceRecipientInfo,
-          invoiceRecipientName: invoiceRecipientInfo.name,
-          invoiceRecipientBankName: invoiceRecipientInfo.bankName,
-          invoiceRecipientBankCardNo: invoiceRecipientInfo.bankCardNo,
-          invoiceRecipientIdCardNo: invoiceRecipientInfo.idCardNo,
-          invoiceRecipientDeclarationPhone: invoiceRecipientInfo.declarationPhone
-        };
+        const uploadFieldScope = getInvoiceUploadFieldScopeForRecord(session, current, accessOptions);
+        const nextRecord = uploadFieldScope === "dispatcher"
+          ? {
+              ...beforeRecord,
+              dispatcherSettlementInvoiceImage: invoiceImage,
+              dispatcherInvoiceUploadedAt: uploadedAt,
+              dispatcherInvoiceUploadedBy: uploadedBy,
+              dispatcherInvoiceUploadedByUsername: uploadedByUsername,
+              dispatcherInvoiceRecipientInfo: invoiceRecipientInfo,
+              dispatcherInvoiceRecipientName: invoiceRecipientInfo.name,
+              dispatcherInvoiceRecipientBankName: invoiceRecipientInfo.bankName,
+              dispatcherInvoiceRecipientBankCardNo: invoiceRecipientInfo.bankCardNo,
+              dispatcherInvoiceRecipientIdCardNo: invoiceRecipientInfo.idCardNo,
+              dispatcherInvoiceRecipientDeclarationPhone: invoiceRecipientInfo.declarationPhone
+            }
+          : {
+              ...beforeRecord,
+              settlementInvoiceImage: invoiceImage,
+              invoiceUploadedAt: uploadedAt,
+              invoiceUploadedBy: uploadedBy,
+              invoiceUploadedByUsername: uploadedByUsername,
+              invoiceRecipientInfo,
+              invoiceRecipientName: invoiceRecipientInfo.name,
+              invoiceRecipientBankName: invoiceRecipientInfo.bankName,
+              invoiceRecipientBankCardNo: invoiceRecipientInfo.bankCardNo,
+              invoiceRecipientIdCardNo: invoiceRecipientInfo.idCardNo,
+              invoiceRecipientDeclarationPhone: invoiceRecipientInfo.declarationPhone
+            };
         const recordId = normalizeText(nextRecord.id, 120);
         if (recordId) {
           uploadedRecordIds.push(recordId);
@@ -3576,6 +3664,11 @@ async function serveRecordInvoiceUpload(req, res) {
         invoiceImage
       };
     });
+
+    if (result.missingInvoiceRecipientInfo) {
+      sendJson(res, 400, { error: "请先录入结算申报信息。" });
+      return;
+    }
 
     if (result.empty) {
       sendJson(res, 400, { error: `当前没有${getRecordWorkflowStatusLabelByKey("settled")}数据可上传发票。` });
@@ -3776,6 +3869,13 @@ async function serveRecordById(req, res, recordIdRaw) {
           return { forbidden: true };
         }
 
+        if (!canDeleteRecord(session, targetRecord)) {
+          if (migration.changed) {
+            await writeRecords(migration.records);
+          }
+          return { deleteForbidden: true };
+        }
+
         const [deletedRecord] = migration.records.splice(index, 1);
         const recycleBinRecords = await readRecycleBin();
         recycleBinRecords.unshift({
@@ -3797,6 +3897,11 @@ async function serveRecordById(req, res, recordIdRaw) {
 
       if (result.forbidden) {
         sendJson(res, 403, { error: "当前账号无权删除这条数据。" });
+        return;
+      }
+
+      if (result.deleteForbidden) {
+        sendJson(res, 403, { error: "当前状态无权删除这条数据。" });
         return;
       }
 
@@ -4511,11 +4616,6 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
               || body.account
               || (shouldFollowPhoneAsUsername ? nextPhone : target.username)
           );
-        const alias = normalizeAccountantAlias(body.alias || body.displayName || body.nickname);
-        const preservedDisplayName = normalizeAccountantDisplayName(target.displayName) || nextUsername;
-        const nextDisplayName = normalizeAccountantDisplayName(
-          alias || (session.role === "dispatcher" ? preservedDisplayName : nextUsername)
-        );
         const hasPassword = (
           Object.prototype.hasOwnProperty.call(body, "password")
           || Object.prototype.hasOwnProperty.call(body, "loginPassword")
@@ -4542,6 +4642,11 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
           && !Object.prototype.hasOwnProperty.call(body, "realName")
           && !Object.prototype.hasOwnProperty.call(body, "password")
           && !Object.prototype.hasOwnProperty.call(body, "loginPassword");
+        const alias = normalizeAccountantAlias(body.alias || body.displayName || body.nickname);
+        const preservedDisplayName = normalizeAccountantDisplayName(target.displayName) || nextUsername;
+        const nextDisplayName = normalizeAccountantDisplayName(
+          alias || (invoiceRecipientOnlyUpdate || session.role === "dispatcher" ? preservedDisplayName : nextUsername)
+        );
 
         if (!nextUsername) {
           throw new Error("账号不能为空");

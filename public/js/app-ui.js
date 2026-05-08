@@ -2878,9 +2878,28 @@
       return true;
     }
 
-    function openInvoiceUploadModal() {
+    async function requireInvoiceRecipientInfoBeforeUpload() {
+      if (getLockedInvoiceRecipientInfoForCurrentAccount()) return true;
+      if (!canCurrentAccountManageInvoiceRecipientInfo()) {
+        return false;
+      }
+      const confirmed = await openConfirmDialog({
+        title: "录入结算申报信息",
+        message: "请录入结算申报信息后再上传发票。",
+        confirmText: "确认",
+        cancelText: "取消",
+        tone: "primary"
+      });
+      if (confirmed) {
+        openInvoiceRecipientInfoModal();
+      }
+      return false;
+    }
+
+    async function openInvoiceUploadModal() {
       if (!invoiceUploadModal || !invoiceUploadModalCard || !invoiceUploadForm) return;
       if (!canCurrentAccountUploadSettlementInvoice()) return;
+      if (!(await requireInvoiceRecipientInfoBeforeUpload())) return;
       const summary = getAccountantInvoiceUploadSummary(records);
       if (!Number(summary.uploadableCount || 0)) {
         updateAccountantInvoiceUploadControls();
@@ -2907,20 +2926,38 @@
       resetInlineFormState(invoiceUploadForm, setInvoiceUploadFormHint);
       if (invoiceUploadModalMeta) {
         invoiceUploadModalMeta.innerHTML = "";
-        [
-          { text: `${summary.count || summary.uploadableCount || 0} 条待上传` },
-          { text: `开票金额 ${toMoney(summary.invoiceAmount)}`, highlight: true },
-          { text: `个税 ${toMoney(summary.taxAmount)}`, highlight: true },
-          { text: `应打款 ${toMoney(summary.payableAmount)}`, highlight: true }
-        ].forEach((item, index) => {
-          if (index > 0) {
-            invoiceUploadModalMeta.appendChild(document.createTextNode(" · "));
-          }
+        const countItem = { label: "待上传订单", value: `${summary.count || summary.uploadableCount || 0}`, unit: "条" };
+        const moneyItems = [
+          { label: "开票金额", value: toMoney(summary.invoiceAmount), tone: "amount" },
+          { label: "个税", value: toMoney(summary.taxAmount), tone: "tax" },
+          { label: "应打款", value: toMoney(summary.payableAmount), tone: "payable" }
+        ];
+        const appendMetaItem = (item, parentNode) => {
           const itemNode = document.createElement("span");
-          itemNode.className = item.highlight ? "invoice-upload-meta-highlight" : "invoice-upload-meta-muted";
-          itemNode.textContent = item.text;
-          invoiceUploadModalMeta.appendChild(itemNode);
-        });
+          itemNode.className = item.tone
+            ? `invoice-upload-meta-item is-${item.tone}`
+            : "invoice-upload-meta-item";
+          const labelNode = document.createElement("span");
+          labelNode.className = "invoice-upload-meta-label";
+          labelNode.textContent = item.label;
+          const valueNode = document.createElement("strong");
+          valueNode.className = "invoice-upload-meta-value";
+          valueNode.textContent = item.value;
+          itemNode.appendChild(labelNode);
+          itemNode.appendChild(valueNode);
+          if (item.unit) {
+            const unitNode = document.createElement("span");
+            unitNode.className = "invoice-upload-meta-unit";
+            unitNode.textContent = item.unit;
+            itemNode.appendChild(unitNode);
+          }
+          parentNode.appendChild(itemNode);
+        };
+        appendMetaItem(countItem, invoiceUploadModalMeta);
+        const moneyGroupNode = document.createElement("span");
+        moneyGroupNode.className = "invoice-upload-meta-money-group";
+        moneyItems.forEach((item) => appendMetaItem(item, moneyGroupNode));
+        invoiceUploadModalMeta.appendChild(moneyGroupNode);
       }
       invoiceUploadModal.hidden = false;
       invoiceUploadModal.classList.remove("modal-enter");
@@ -2945,60 +2982,19 @@
       syncModalOpenState();
     }
 
-    function openInvoiceUploadReminderModal(summary) {
-      if (!invoiceUploadReminderModal || !invoiceUploadReminderModalCard) return;
-      const uploadSummary = summary || getAccountantInvoiceUploadSummary(records);
-      if (!Number(uploadSummary?.uploadableCount || 0)) return;
-      closeAllFilterPopovers();
-      if (invoiceUploadReminderAmount) {
-        invoiceUploadReminderAmount.textContent = toMoney(uploadSummary.invoiceAmount);
-      }
-      if (invoiceUploadReminderMeta) {
-        invoiceUploadReminderMeta.innerHTML = "";
-        [
-          `${uploadSummary.count || uploadSummary.uploadableCount || 0} 条订单待上传发票`,
-          `个税 ${toMoney(uploadSummary.taxAmount)}`,
-          `应打款 ${toMoney(uploadSummary.payableAmount)}`
-        ].forEach((text) => {
-          const item = document.createElement("span");
-          item.textContent = text;
-          invoiceUploadReminderMeta.appendChild(item);
-        });
-      }
-      invoiceUploadReminderModal.hidden = false;
-      invoiceUploadReminderModal.classList.remove("modal-enter");
-      invoiceUploadReminderModalCard.classList.remove("modal-enter");
-      void invoiceUploadReminderModal.offsetWidth;
-      invoiceUploadReminderModal.classList.add("modal-enter");
-      invoiceUploadReminderModalCard.classList.add("modal-enter");
-      syncModalOpenState();
-      invoiceUploadReminderUploadBtn?.focus();
-    }
-
-    function closeInvoiceUploadReminderModal() {
-      if (!invoiceUploadReminderModal) return;
-      invoiceUploadReminderModal.classList.remove("modal-enter");
-      if (invoiceUploadReminderModalCard) invoiceUploadReminderModalCard.classList.remove("modal-enter");
-      invoiceUploadReminderModal.hidden = true;
-      syncModalOpenState();
-    }
-
-    function maybeShowInvoiceUploadReminder() {
+    async function maybeShowInvoiceUploadReminder() {
       if (!canCurrentAccountUploadSettlementInvoice()) {
-        closeInvoiceUploadReminderModal();
         return;
       }
       if (maybeShowMissingInvoiceRecipientInfoModal()) {
-        closeInvoiceUploadReminderModal();
         return;
       }
       if (invoiceUploadModal && !invoiceUploadModal.hidden) return;
       const summary = getAccountantInvoiceUploadSummary(records);
       if (!Number(summary.uploadableCount || 0)) {
-        closeInvoiceUploadReminderModal();
         return;
       }
-      openInvoiceUploadReminderModal(summary);
+      await openInvoiceUploadModal();
     }
 
     function renderBossSettlementSummaryContent() {
@@ -3452,17 +3448,22 @@
           const totalInvoiceAmount = accountantInvoiceAmount + dispatcherInvoiceAmount;
           const totalTaxAmount = getSettlementTaxAmount(totalInvoiceAmount);
           const totalPayableAmount = totalInvoiceAmount - totalTaxAmount;
-          const combinedRecordCount = group.recordCount + dispatcherRecordCount;
-          const combinedPendingCount = group.pendingCount + (linkedDispatcherAmount?.pendingCount || 0);
-          const combinedUploadedCount = group.uploadedCount + (linkedDispatcherAmount?.uploadedCount || 0);
-          const combinedPaidCount = group.paidCount + (linkedDispatcherAmount?.paidCount || 0);
+          const shouldMergeLinkedDispatcherCounts = !group.isLinkedDispatcherOnly;
+          const combinedRecordCount = group.recordCount + (shouldMergeLinkedDispatcherCounts ? dispatcherRecordCount : 0);
+          const combinedPendingCount = group.pendingCount + (shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.pendingCount || 0) : 0);
+          const combinedUploadedCount = group.uploadedCount + (shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.uploadedCount || 0) : 0);
+          const combinedPaidCount = group.paidCount + (shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.paidCount || 0) : 0);
+          const combinedRecordIds = Array.from(new Set([
+            ...group.recordIds,
+            ...(shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.recordIds || []) : [])
+          ]));
           const combinedPayoutRecordIds = Array.from(new Set([
             ...group.payoutRecordIds,
-            ...(linkedDispatcherAmount?.payoutRecordIds || [])
+            ...(shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.payoutRecordIds || []) : [])
           ]));
           const combinedPayoutTargets = Array.from(new Set([
             ...(Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds),
-            ...(linkedDispatcherAmount?.payoutTargets || linkedDispatcherAmount?.payoutRecordIds || [])
+            ...(shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.payoutTargets || linkedDispatcherAmount?.payoutRecordIds || []) : [])
           ]));
           const combinedInvoiceMap = new Map(group.invoiceMap);
           if (linkedDispatcherAmount?.invoiceMap) {
@@ -3489,7 +3490,7 @@
 
           return {
             accountant: group.accountant,
-            recordIds: group.recordIds,
+            recordIds: combinedRecordIds,
             recordCount: combinedRecordCount,
             pendingCount: combinedPendingCount,
             uploadedCount: combinedUploadedCount,
@@ -4079,7 +4080,9 @@
       const isAccountant = isAccountantLogin();
       const uploadedGroups = isAccountant ? getUploadedPendingSettlementDetailGroups(getVisibleRecords()) : [];
       const uploadedTotals = getBossSettlementDetailGroupTotals(uploadedGroups);
-      const shouldShow = isAccountant && uploadedTotals.uploadedRecordCount > 0;
+      const uploadSummary = isAccountant ? getAccountantInvoiceUploadSummary(getVisibleRecords()) : null;
+      const hasPendingInvoiceUploads = Number(uploadSummary?.uploadableCount || 0) > 0;
+      const shouldShow = isAccountant && !hasPendingInvoiceUploads && uploadedTotals.uploadedRecordCount > 0;
 
       accountantUploadedSettlementDetailBtn.hidden = !shouldShow;
       accountantUploadedSettlementDetailBtn.disabled = !shouldShow;
@@ -4112,6 +4115,11 @@
       const activeUploadableCount = Number(uploadableCount) || 0;
       const shouldShow = canCurrentAccountUploadSettlementInvoice() && activeUploadableCount > 0;
       const shouldShowRecipientInfoEntry = canCurrentAccountManageInvoiceRecipientInfo();
+      const shouldShowIncomeBreakdown = Boolean(
+        hasIncomeBreakdown &&
+        isAccountantLogin() &&
+        isAccountantLinkedToDispatcher(getCurrentAccountantDisplayName())
+      );
       const hasRecipientInfo = Boolean(getLockedInvoiceRecipientInfoForCurrentAccount());
       if (invoiceRecipientInfoBtn) {
         invoiceRecipientInfoBtn.hidden = !shouldShowRecipientInfoEntry;
@@ -4126,6 +4134,11 @@
       accountantInvoiceUploadBtn.hidden = !shouldShow;
       accountantInvoiceUploadBtn.disabled = !shouldShow || isInvoiceUploadSubmitting;
       accountantInvoiceUploadBtn.replaceChildren();
+      if (accountantInvoiceUploadSummary) {
+        accountantInvoiceUploadSummary.hidden = !shouldShow;
+        accountantInvoiceUploadSummary.setAttribute("aria-hidden", String(!shouldShow));
+        accountantInvoiceUploadSummary.replaceChildren();
+      }
 
       const title = document.createElement("span");
       title.className = "invoice-upload-btn-title";
@@ -4138,12 +4151,17 @@
       const titleText = document.createElement("span");
       titleText.className = "invoice-upload-btn-title-text";
       titleText.textContent = activeUploadableCount > 0
-        ? `${isInvoiceUploadSubmitting ? "上传中" : "上传发票"}（${count}）`
+        ? `${isInvoiceUploadSubmitting ? "上传中" : "上传发票"}`
         : "上传发票";
       title.appendChild(titleText);
       accountantInvoiceUploadBtn.appendChild(title);
 
-      if (activeUploadableCount > 0) {
+      if (activeUploadableCount > 0 && accountantInvoiceUploadSummary) {
+        const summaryTitle = document.createElement("span");
+        summaryTitle.className = "invoice-upload-summary-title";
+        summaryTitle.textContent = `上传发票（${count}）`;
+        accountantInvoiceUploadSummary.appendChild(summaryTitle);
+
         const stats = document.createElement("span");
         stats.className = "invoice-upload-btn-stats";
         const statRows = [
@@ -4165,7 +4183,7 @@
 
           row.appendChild(label);
           row.appendChild(amount);
-          if (labelText === "开票金额" && hasIncomeBreakdown) {
+          if (labelText === "开票金额" && shouldShowIncomeBreakdown) {
             row.classList.add("invoice-upload-btn-stat-popover-host");
             row.tabIndex = 0;
             row.setAttribute(
@@ -4184,7 +4202,7 @@
           }
           stats.appendChild(row);
         });
-        accountantInvoiceUploadBtn.appendChild(stats);
+        accountantInvoiceUploadSummary.appendChild(stats);
       }
 
       accountantInvoiceUploadBtn.setAttribute("aria-busy", String(isInvoiceUploadSubmitting));
@@ -4934,7 +4952,8 @@
         setRecentBossSettlementRecordIds([]);
         closeBossSettlementSummaryModal();
       }
-      updateAccountantInvoiceUploadControls();
+      const scopedRecords = getVisibleRecords();
+      updateAccountantInvoiceUploadControls(scopedRecords);
       filterDispatcherBtn.disabled = false;
       if (isDispatcher) {
         syncDispatcherSelfViewState();
@@ -5112,6 +5131,9 @@
       loginCodeInput.value = "";
       loginPasswordInput.value = "";
       setLoginRequestHint("", "idle");
+      if (isQuickLoginDebugEnabled) {
+        await loadSavedLoginEntries();
+      }
       loginCodeInput.focus();
     }
 
@@ -5128,7 +5150,6 @@
       saveViewState();
       syncBossRecordSelection(records);
       const canEditRecords = !isAccountantLogin();
-      const canDeleteRecords = !isAccountantLogin();
       const canCheckRecords = isAccountantLogin();
       const isBoss = isBossLogin();
       const canSettleRecords = canCurrentAccountSettleRecords();
@@ -5185,7 +5206,7 @@
           ? (filteredRecords.length ? "导出当前筛选数据" : "当前没有可导出数据")
           : "";
       }
-      updateAccountantInvoiceUploadControls();
+      updateAccountantInvoiceUploadControls(scopedRecords);
       updateAccountantUploadedSettlementDetailControls();
       updateSortHeaderUI(filteredRecords);
       updateBossSettlementControls(sortedRecords);
@@ -5412,7 +5433,7 @@
             }
           }
         }
-        if (canDeleteRecords && recordId) {
+        if (recordId && canCurrentAccountDeleteRecord(item)) {
           const deleteBtn = document.createElement("button");
           deleteBtn.type = "button";
           deleteBtn.className = "row-delete-btn";

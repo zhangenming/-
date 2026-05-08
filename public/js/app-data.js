@@ -36,7 +36,6 @@
       closeCompleteModal();
       closeRecordHistoryModal();
       closeInvoicePreviewModal();
-      closeInvoiceUploadReminderModal();
       closeBossSettlementSummaryModal();
       closeAnalysisModal();
       closeDispatcherModal();
@@ -106,7 +105,6 @@
         || !refundModal.hidden
         || !recordHistoryModal.hidden
         || (invoicePreviewModal && !invoicePreviewModal.hidden)
-        || (invoiceUploadReminderModal && !invoiceUploadReminderModal.hidden)
         || !bossSettlementSummaryModal.hidden
         || (bossSettlementDetailModal && !bossSettlementDetailModal.hidden)
         || !analysisModal.hidden
@@ -1304,6 +1302,7 @@
         }
         if (shouldPersistAccountSnapshot) {
           saveToStorage();
+          setPageMode(hasAuthenticatedAccount());
         }
       }
       syncAccountantsFromRecords();
@@ -1932,6 +1931,10 @@
     }
 
     function persistSavedLoginEntries() {
+      if (isQuickLoginDebugEnabled) {
+        renderSavedLoginList();
+        return;
+      }
       if (!isQuickLoginEnabled) {
         savedLoginEntries = [];
         renderSavedLoginList();
@@ -2012,6 +2015,7 @@
     }
 
     function saveSuccessfulLoginEntry(accountName, password, role = "") {
+      if (isQuickLoginDebugEnabled) return;
       if (!isQuickLoginEnabled) return;
       const normalized = normalizeSavedLoginEntry({
         account: accountName,
@@ -2025,6 +2029,7 @@
     }
 
     function updateSavedLoginPassword(accountName, password, role = "") {
+      if (isQuickLoginDebugEnabled) return;
       if (!isQuickLoginEnabled) return;
       const normalized = normalizeSavedLoginEntry({
         account: accountName,
@@ -2041,6 +2046,7 @@
     }
 
     function removeSavedLoginEntry(accountName) {
+      if (isQuickLoginDebugEnabled) return;
       if (!isQuickLoginEnabled) return;
       const entryKey = getSavedLoginEntryKey(accountName);
       if (!entryKey) return;

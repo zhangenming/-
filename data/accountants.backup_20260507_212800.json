@@ -216,22 +216,6 @@
     "invoiceRecipientInfo": null
   },
   {
-    "username": "MeiWenXiXi",
-    "displayName": "美文嘻嘻",
-    "name": "美文嘻嘻",
-    "alias": "美文嘻嘻",
-    "realName": "张敏",
-    "phone": "17839174191",
-    "loginPassword": "123456",
-    "invoiceRecipientInfo": {
-      "name": "张敏",
-      "bankName": "中信银行河南省安阳市永明路支行",
-      "bankCardNo": "6217 7111 2921 2658",
-      "idCardNo": "410511199604100023",
-      "declarationPhone": "17839174191"
-    }
-  },
-  {
     "username": "MengHuanXingYue",
     "displayName": "梦幻星月",
     "name": "梦幻星月",
@@ -716,6 +700,22 @@
     "phone": "13602274429",
     "loginPassword": "123456",
     "invoiceRecipientInfo": null
+  },
+  {
+    "username": "MeiWenXiXi",
+    "displayName": "MeiWenXiXi",
+    "name": "MeiWenXiXi",
+    "alias": "美文嘻嘻",
+    "realName": "张敏",
+    "phone": "17839174191",
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217 7111 2921 2658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    }
   },
   {
     "username": "nana",

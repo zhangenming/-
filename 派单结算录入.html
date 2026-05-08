@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>派单结算录入</title>
-  <link rel="stylesheet" href="./public/css/app.css" />
+  <link rel="stylesheet" href="./public/css/app.css?v=22.20.338" />
 </head>
 <body class="app-booting">
   <button id="devTodoLauncher" class="btn-secondary dev-todo-launcher" type="button" hidden>Todo</button>
@@ -191,8 +191,9 @@
           <li class="order-flow-step boss">
             <span class="order-flow-status">已完成/待核对客户确认</span>
           </li>
-          <li class="order-flow-arrow boss">
-            <span>管理员 · 核对客户确认是否确认收货</span>
+          <li class="order-flow-arrow boss with-note">
+            <span>管理员 · 核对客户是否确认收货</span>
+            <span class="order-flow-note-item">工单完工，结算周期内若停留在本状态，代表客户对账截止日尚未确认收货。</span>
           </li>
           <li class="order-flow-step accountant">
             <span class="order-flow-status">已核对客户确认/待上传</span>
@@ -267,6 +268,7 @@
           <button id="openReminderModalBtn" class="btn-secondary reminder-entry-btn" type="button" hidden>提醒</button>
           <button id="exportTableBtn" class="btn-secondary table-export-btn" type="button" aria-label="导出当前筛选数据" hidden disabled>导出</button>
           <button id="accountantInvoiceUploadBtn" class="btn-secondary table-invoice-upload-btn" type="button" hidden disabled>上传发票</button>
+          <div id="accountantInvoiceUploadSummary" class="table-invoice-upload-summary" hidden aria-hidden="true"></div>
           <button id="accountantUploadedSettlementDetailBtn" class="btn-secondary table-uploaded-detail-btn" type="button" hidden>已上传/待打款详细</button>
           <button id="bossSettlementBtn" class="btn-secondary table-settlement-btn" type="button" hidden disabled>结算</button>
           <button id="bossSettlementSummaryBtn" class="btn-secondary table-settlement-summary-btn" type="button" hidden>结算详细</button>
@@ -903,6 +905,9 @@
           <p id="invoiceUploadModalMeta" class="return-price-meta"></p>
         </div>
       </div>
+      <div class="invoice-upload-settlement-note" role="note" aria-label="本次结算范围提示">
+        <strong>本次结算范围：</strong>截止日完工且客户已确认收货的订单。 客户未确认的订单后续结算。
+      </div>
       <p id="invoiceUploadFormHint" class="login-request-hint form-request-hint idle" aria-live="polite" hidden></p>
       <form id="invoiceUploadForm" class="invoice-upload-form" autocomplete="off" novalidate>
         <label class="invoice-upload-image-field" for="accountantInvoiceImageInput">
@@ -955,29 +960,6 @@
           <button id="invoiceRecipientInfoSubmitBtn" class="btn-primary" type="submit">保存信息</button>
         </div>
       </form>
-    </section>
-  </div>
-
-  <div id="invoiceUploadReminderModal" class="modal-overlay" hidden>
-    <section class="card modal-card invoice-upload-reminder-modal-card" tabindex="-1">
-      <div class="invoice-upload-reminder-top">
-        <div>
-          <p class="invoice-upload-reminder-kicker">发票上传提醒</p>
-          <h2 class="invoice-upload-reminder-title">有订单需要上传发票</h2>
-        </div>
-        <button id="invoiceUploadReminderCloseBtn" class="modal-icon-btn" type="button" aria-label="关闭发票上传提醒">
-          ×
-        </button>
-      </div>
-      <div class="invoice-upload-reminder-hero">
-        <span class="invoice-upload-reminder-label">需要开票金额</span>
-        <strong id="invoiceUploadReminderAmount" class="invoice-upload-reminder-amount">0.00 元</strong>
-      </div>
-      <div id="invoiceUploadReminderMeta" class="invoice-upload-reminder-meta"></div>
-      <div class="invoice-upload-reminder-actions">
-        <button id="invoiceUploadReminderDismissBtn" class="btn-secondary" type="button">知道了</button>
-        <button id="invoiceUploadReminderUploadBtn" class="btn-primary" type="button">去上传发票</button>
-      </div>
     </section>
   </div>
 
@@ -1388,10 +1370,10 @@
   </div>
 
   <script src="https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-  <script src="./public/js/app-core.js"></script>
-  <script src="./public/js/app-data.js"></script>
-  <script src="./public/js/app-table-analysis.js"></script>
-  <script src="./public/js/app-ui.js"></script>
-  <script src="./public/js/app-events.js"></script>
+  <script src="./public/js/app-core.js?v=22.20.338"></script>
+  <script src="./public/js/app-data.js?v=22.20.338"></script>
+  <script src="./public/js/app-table-analysis.js?v=22.20.338"></script>
+  <script src="./public/js/app-ui.js?v=22.20.338"></script>
+  <script src="./public/js/app-events.js?v=22.20.338"></script>
 </body>
 </html>

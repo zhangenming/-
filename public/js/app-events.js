@@ -1485,15 +1485,16 @@
     }
 
     if (accountantInvoiceUploadBtn && invoiceUploadForm && accountantInvoiceImageInput) {
-      accountantInvoiceUploadBtn.addEventListener("click", () => {
+      accountantInvoiceUploadBtn.addEventListener("click", async () => {
         if (!requireAccount()) return;
         if (!canCurrentAccountUploadSettlementInvoice()) return;
+        if (!(await requireInvoiceRecipientInfoBeforeUpload())) return;
         const targetRecords = getAccountantInvoiceUploadTargetRecords(records);
         if (!targetRecords.length) {
           updateAccountantInvoiceUploadControls();
           return;
         }
-        openInvoiceUploadModal();
+        await openInvoiceUploadModal();
       });
 
       accountantInvoiceImageInput.addEventListener("change", () => {
@@ -1573,25 +1574,6 @@
           isInvoiceUploadSubmitting = false;
           updateAccountantInvoiceUploadControls();
         }
-      });
-    }
-
-    if (invoiceUploadReminderCloseBtn) {
-      invoiceUploadReminderCloseBtn.addEventListener("click", () => {
-        closeInvoiceUploadReminderModal();
-      });
-    }
-
-    if (invoiceUploadReminderDismissBtn) {
-      invoiceUploadReminderDismissBtn.addEventListener("click", () => {
-        closeInvoiceUploadReminderModal();
-      });
-    }
-
-    if (invoiceUploadReminderUploadBtn) {
-      invoiceUploadReminderUploadBtn.addEventListener("click", () => {
-        closeInvoiceUploadReminderModal();
-        openInvoiceUploadModal();
       });
     }
 
@@ -1904,14 +1886,6 @@
       });
     }
 
-    if (invoiceUploadReminderModal) {
-      invoiceUploadReminderModal.addEventListener("click", (event) => {
-        if (event.target === invoiceUploadReminderModal) {
-          closeInvoiceUploadReminderModal();
-        }
-      });
-    }
-
     if (bossSettlementSummaryModal) {
       bossSettlementSummaryModal.addEventListener("click", (event) => {
         if (event.target === bossSettlementSummaryModal) {
@@ -2211,10 +2185,6 @@
       }
       if (invoiceRecipientInfoModal && event.key === "Escape" && !invoiceRecipientInfoModal.hidden) {
         closeInvoiceRecipientInfoModal();
-        return;
-      }
-      if (invoiceUploadReminderModal && event.key === "Escape" && !invoiceUploadReminderModal.hidden) {
-        closeInvoiceUploadReminderModal();
         return;
       }
       if (event.key === "Escape" && !refundModal.hidden) {

@@ -377,14 +377,25 @@ function getLinkedDispatcherSettlementAmount(
     recordCount += 1;
 
     const isUploaded =
-      isRecordInvoiceUploaded(record) &&
-      isInvoiceUploadedByAccountant(record, accountantName);
-    const uploadedAt = String(record?.invoiceUploadedAt || "").trim();
+      isRecordDispatcherInvoiceUploaded(record) &&
+      isInvoiceUploadedByAccountant(
+        {
+          ...record,
+          settlementInvoiceImage: getDispatcherSettlementInvoiceImage(record),
+          invoiceUploadedAt: record?.dispatcherInvoiceUploadedAt,
+          invoiceUploadedBy: record?.dispatcherInvoiceUploadedBy,
+          invoiceUploadedByUsername: record?.dispatcherInvoiceUploadedByUsername,
+        },
+        accountantName,
+      );
+    const uploadedAt = String(record?.dispatcherInvoiceUploadedAt || "").trim();
     const uploadedBy = String(
-      record?.invoiceUploadedBy || record?.invoiceUploadedByUsername || "",
+      record?.dispatcherInvoiceUploadedBy ||
+        record?.dispatcherInvoiceUploadedByUsername ||
+        "",
     ).trim();
     const uploadedAtTime = parseDateTimeValue(uploadedAt);
-    const invoiceImage = getSettlementInvoiceImage(record);
+    const invoiceImage = getDispatcherSettlementInvoiceImage(record);
     const isPaid = isRecordSettlementPaid(record);
 
     if (isUploaded) {
@@ -396,7 +407,16 @@ function getLinkedDispatcherSettlementAmount(
       }
       if (
         invoiceImage &&
-        isInvoiceUploadedByAccountant(record, accountantName)
+        isInvoiceUploadedByAccountant(
+          {
+            ...record,
+            settlementInvoiceImage: invoiceImage,
+            invoiceUploadedAt: uploadedAt,
+            invoiceUploadedBy: uploadedBy,
+            invoiceUploadedByUsername: record?.dispatcherInvoiceUploadedByUsername,
+          },
+          accountantName,
+        )
       ) {
         const invoiceKey = [
           String(invoiceImage.fileName || invoiceImage.url || "").trim(),
@@ -621,29 +641,6 @@ const invoicePreviewModalCard = invoicePreviewModal
   : null;
 const invoicePreviewMeta = document.getElementById("invoicePreviewMeta");
 const invoicePreviewImage = document.getElementById("invoicePreviewImage");
-const invoiceUploadReminderModal = document.getElementById(
-  "invoiceUploadReminderModal",
-);
-const invoiceUploadReminderModalCard = invoiceUploadReminderModal
-  ? invoiceUploadReminderModal.querySelector(
-      ".invoice-upload-reminder-modal-card",
-    )
-  : null;
-const invoiceUploadReminderCloseBtn = document.getElementById(
-  "invoiceUploadReminderCloseBtn",
-);
-const invoiceUploadReminderDismissBtn = document.getElementById(
-  "invoiceUploadReminderDismissBtn",
-);
-const invoiceUploadReminderUploadBtn = document.getElementById(
-  "invoiceUploadReminderUploadBtn",
-);
-const invoiceUploadReminderAmount = document.getElementById(
-  "invoiceUploadReminderAmount",
-);
-const invoiceUploadReminderMeta = document.getElementById(
-  "invoiceUploadReminderMeta",
-);
 const bossSettlementSummaryModal = document.getElementById(
   "bossSettlementSummaryModal",
 );
@@ -924,6 +921,9 @@ const bossSettlementDetailBtn = document.getElementById(
 );
 const accountantInvoiceUploadBtn = document.getElementById(
   "accountantInvoiceUploadBtn",
+);
+const accountantInvoiceUploadSummary = document.getElementById(
+  "accountantInvoiceUploadSummary",
 );
 const invoiceRecipientInfoBtn = document.getElementById(
   "invoiceRecipientInfoBtn",
@@ -2089,6 +2089,13 @@ function canCurrentAccountPayoutSettlementRecords() {
   return isBossLogin();
 }
 
+function canCurrentAccountDeleteRecord(record) {
+  if (!record || typeof record !== "object") return false;
+  if (isBossLogin()) return true;
+  if (isDispatcherLogin()) return getRecordWorkflowStatusKey(record) === "pending";
+  return false;
+}
+
 function shouldShowProfitColumn(accountName = currentAccount) {
   return isDispatcherLogin(accountName);
 }
@@ -2531,21 +2538,18 @@ function getRecordStatusWithSettlementText(record) {
 
 function isLinkedDispatcherRecordForCurrentAccount(record) {
   if (!record || typeof record !== "object") return false;
+  const recordDispatcherTag = normalizeDispatcherTag(record?.dispatcher);
   if (isDispatcherLogin()) {
     const currentDispatcherTag = getCurrentDispatcherTag();
     if (!currentDispatcherTag) return false;
     const linkedAccountant =
       getLinkedAccountantDisplayNameByTag(currentDispatcherTag);
-    return Boolean(
-      linkedAccountant &&
-      String(record?.accountant || "").trim() === linkedAccountant,
-    );
+    return Boolean(linkedAccountant && recordDispatcherTag === currentDispatcherTag);
   }
   if (isAccountantLogin()) {
     const currentAccountant = getCurrentAccountantDisplayName();
     const dispatcherTags =
       getDispatcherTagsLinkedToAccountant(currentAccountant);
-    const recordDispatcherTag = normalizeDispatcherTag(record?.dispatcher);
     return Boolean(
       recordDispatcherTag && dispatcherTags.includes(recordDispatcherTag),
     );
@@ -2553,14 +2557,40 @@ function isLinkedDispatcherRecordForCurrentAccount(record) {
   return false;
 }
 
+function shouldUseFullInvoiceUploadSource() {
+  if (isDispatcherLogin()) {
+    const currentDispatcherTag = getCurrentDispatcherTag();
+    return Boolean(
+      currentDispatcherTag &&
+        getLinkedAccountantDisplayNameByTag(currentDispatcherTag),
+    );
+  }
+  if (isAccountantLogin()) {
+    const currentAccountant = getCurrentAccountantDisplayName();
+    return getDispatcherTagsLinkedToAccountant(currentAccountant).length > 0;
+  }
+  return false;
+}
+
+function getInvoiceUploadSourceRecords(sourceRecords = records) {
+  const source = Array.isArray(sourceRecords) ? sourceRecords : [];
+  if (!shouldUseFullInvoiceUploadSource()) return source;
+  return Array.isArray(records) && records.length ? records : source;
+}
+
 function canCurrentAccountUploadInvoiceToRecord(record) {
   if (!record || typeof record !== "object") return false;
+  if (!isRecordCompletionStatus(record)) return false;
+  if (!isRecordSettled(record)) return false;
   if (isAccountantLogin()) {
     const currentAccountant = getCurrentAccountantDisplayName();
     if (!currentAccountant) return false;
+    if (isLinkedDispatcherRecordForCurrentAccount(record)) {
+      return !getDispatcherSettlementInvoiceImage(record);
+    }
     if (String(record?.accountant || "").trim() === currentAccountant)
-      return true;
-    return isLinkedDispatcherRecordForCurrentAccount(record);
+      return !getSettlementInvoiceImage(record);
+    return false;
   }
   if (isDispatcherLogin()) {
     const currentDispatcherTag = getCurrentDispatcherTag();
@@ -2569,8 +2599,8 @@ function canCurrentAccountUploadInvoiceToRecord(record) {
     return Boolean(
       currentDispatcherTag &&
       linkedAccountant &&
-      String(record?.accountant || "").trim() === linkedAccountant &&
-      normalizeDispatcherTag(record?.dispatcher) === currentDispatcherTag,
+      normalizeDispatcherTag(record?.dispatcher) === currentDispatcherTag &&
+      !getDispatcherSettlementInvoiceImage(record),
     );
   }
   return false;
@@ -2578,10 +2608,9 @@ function canCurrentAccountUploadInvoiceToRecord(record) {
 
 function getAccountantInvoiceUploadTargetRecords(sourceRecords = records) {
   if (!canCurrentAccountUploadSettlementInvoice()) return [];
-  return (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) => {
+  const uploadSourceRecords = getInvoiceUploadSourceRecords(sourceRecords);
+  return (Array.isArray(uploadSourceRecords) ? uploadSourceRecords : []).filter((item) => {
     return (
-      isRecordSettled(item) &&
-      !isRecordInvoiceUploadedByRecordAccountant(item) &&
       isRecordCompletionStatus(item) &&
       canCurrentAccountUploadInvoiceToRecord(item)
     );
@@ -2612,8 +2641,9 @@ function getCurrentInvoiceUploadSettlementGroup(sourceRecords = records) {
 }
 
 function getAccountantInvoiceUploadSummary(sourceRecords = records) {
-  const targetRecords = getAccountantInvoiceUploadTargetRecords(sourceRecords);
-  const settlementGroup = getCurrentInvoiceUploadSettlementGroup(sourceRecords);
+  const uploadSourceRecords = getInvoiceUploadSourceRecords(sourceRecords);
+  const targetRecords = getAccountantInvoiceUploadTargetRecords(uploadSourceRecords);
+  const settlementGroup = getCurrentInvoiceUploadSettlementGroup(targetRecords);
   if (settlementGroup) {
     const invoiceAmount = Number(settlementGroup.invoiceAmount) || 0;
     const taxAmount =
