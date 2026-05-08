@@ -4882,7 +4882,7 @@ async function serveAuthAccountantRegister(req, res) {
     const username = normalizeAccountantUsername(phone || body.username || body.account);
     const loginPassword = normalizeAccountantLoginPassword(body.loginPassword || body.password);
     const alias = normalizeAccountantAlias(body.alias || body.displayName || body.nickname);
-    const realName = normalizeAccountantRealName(body.realName || body.fullName || body.legalName || body.name);
+    const realName = normalizeAccountantRealName(body.realName || body.fullName || body.legalName);
     const displayName = normalizeAccountantDisplayName(alias || username);
 
     if (!username) {
@@ -4895,10 +4895,6 @@ async function serveAuthAccountantRegister(req, res) {
     }
     if (!alias) {
       sendJson(res, 400, { error: "别名不能为空" });
-      return;
-    }
-    if (!realName) {
-      sendJson(res, 400, { error: "姓名不能为空" });
       return;
     }
     if (!phone) {

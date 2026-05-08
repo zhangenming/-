@@ -3,11 +3,11 @@
       { label: "删除时间", getValue: (entry) => formatDateTimeDisplay(entry.deletedAt) },
       { label: "删除人", getValue: (entry) => String(entry.deletedBy || "未知账号") },
       { label: "接单日期", getValue: (entry) => formatDateDisplay(entry?.record?.date) },
-      { label: "接待人", className: "recycle-col-dispatcher", getValue: (entry) => getDispatcherDisplayNameByTag(entry?.record?.dispatcher) },
       { label: "会计", className: "recycle-col-accountant", getValue: (entry) => String(entry?.record?.accountant || "") },
       { label: "平台", getValue: (entry) => String(entry?.record?.platform || "") },
       { label: "店铺名", getValue: (entry) => String(entry?.record?.shopName || "") },
       { label: "订单号", getValue: (entry) => String(entry?.record?.orderNo || "") },
+      { label: "接待人", className: "recycle-col-dispatcher", getValue: (entry) => getDispatcherDisplayNameByTag(entry?.record?.dispatcher) },
       { label: "来源", getValue: (entry) => String(entry?.record?.source || "") },
       { label: "客户", getValue: (entry) => String(entry?.record?.customer || "") },
       { label: "任务简介", className: "summary", getValue: (entry) => String(entry?.record?.summary || "") },
@@ -492,6 +492,14 @@
         accountantEditTitle.textContent = "修改会计资料";
       }
       syncAccountantEditSensitiveFieldVisibility("admin");
+      if (accountantEditRecipientFieldset) {
+        accountantEditRecipientFieldset.hidden = true;
+      }
+      if (accountantEditRecipientNameInput) accountantEditRecipientNameInput.value = "";
+      if (accountantEditRecipientIdCardInput) accountantEditRecipientIdCardInput.value = "";
+      if (accountantEditRecipientBankInput) accountantEditRecipientBankInput.value = "";
+      if (accountantEditRecipientBankCardInput) accountantEditRecipientBankCardInput.value = "";
+      if (accountantEditRecipientPhoneInput) accountantEditRecipientPhoneInput.value = "";
       if (accountantEditSubmitBtn) {
         accountantEditSubmitBtn.disabled = false;
         accountantEditSubmitBtn.textContent = "保存修改";
@@ -519,6 +527,25 @@
           accountantEditPhoneInput.value = "";
         }
       }
+      const canEditRecipientFields = mode === "admin";
+      if (accountantEditRecipientFieldset) {
+        accountantEditRecipientFieldset.hidden = !canEditRecipientFields;
+      }
+      [
+        accountantEditRecipientNameInput,
+        accountantEditRecipientIdCardInput,
+        accountantEditRecipientBankInput,
+        accountantEditRecipientBankCardInput,
+        accountantEditRecipientPhoneInput
+      ].forEach((input) => {
+        if (!input) return;
+        input.readOnly = !canEditRecipientFields;
+        input.disabled = !canEditRecipientFields;
+        input.required = canEditRecipientFields;
+        input.toggleAttribute("readonly", !canEditRecipientFields);
+        input.toggleAttribute("disabled", !canEditRecipientFields);
+        input.toggleAttribute("required", canEditRecipientFields);
+      });
     }
 
     function openAccountantEditModal(profile, options = {}) {
@@ -543,7 +570,15 @@
         accountantEditPasswordInput.value = canEditSensitiveFields ? String(profile.loginPassword || "").trim() : "";
       }
       if (accountantEditAliasInput) accountantEditAliasInput.value = alias;
-      if (accountantEditRealNameInput) accountantEditRealNameInput.value = String(profile.realName || "").trim();
+      const recipientInfo = normalizeInvoiceRecipientInfo(profile.invoiceRecipientInfo);
+      if (accountantEditRecipientFieldset) {
+        accountantEditRecipientFieldset.hidden = mode !== "admin";
+      }
+      if (accountantEditRecipientNameInput) accountantEditRecipientNameInput.value = recipientInfo.name || String(profile.realName || "").trim();
+      if (accountantEditRecipientIdCardInput) accountantEditRecipientIdCardInput.value = recipientInfo.idCardNo || "";
+      if (accountantEditRecipientBankInput) accountantEditRecipientBankInput.value = recipientInfo.bankName || "";
+      if (accountantEditRecipientBankCardInput) accountantEditRecipientBankCardInput.value = recipientInfo.bankCardNo || "";
+      if (accountantEditRecipientPhoneInput) accountantEditRecipientPhoneInput.value = recipientInfo.declarationPhone || "";
       if (accountantEditPhoneInput) {
         accountantEditPhoneInput.value = canEditSensitiveFields ? String(profile.phone || "").trim() : "";
       }
@@ -5267,11 +5302,11 @@
         const values = [
           getDateCellDisplayParts(item.date).dateText,
           [getDateCellDisplayParts(item.completedAt).dateText, getRecordCompletionDurationText(item)].filter(Boolean).join(""),
-          getDispatcherDisplayNameByTag(dispatcherTag),
           String(item.source || ""),
           String(item.platform || ""),
           String(item.shopName || ""),
           String(item.orderNo || ""),
+          getDispatcherDisplayNameByTag(dispatcherTag),
           String(item.accountant || ""),
           String(item.customer || ""),
           String(item.summary || ""),
@@ -5320,6 +5355,18 @@
               td.setAttribute("aria-label", `${String(value || "").trim()}，${completedAtTooltip}`);
             }
           } else if (index === 2) {
+            td.classList.add("data-col-source");
+            td.textContent = value;
+          } else if (index === 3) {
+            td.classList.add("data-col-platform");
+            td.textContent = value;
+          } else if (index === 4) {
+            td.classList.add("data-col-shop");
+            td.textContent = value;
+          } else if (index === 5) {
+            td.classList.add("data-col-order");
+            td.textContent = value;
+          } else if (index === 6) {
             td.classList.add("data-col-dispatcher");
             const chip = document.createElement("span");
             chip.className = "dispatcher-chip";
@@ -5371,10 +5418,6 @@
           if (tooltipMode) {
             td.dataset.tableTooltipMode = tooltipMode;
           }
-          if (index === 3) td.classList.add("data-col-source");
-          if (index === 4) td.classList.add("data-col-platform");
-          if (index === 5) td.classList.add("data-col-shop");
-          if (index === 6) td.classList.add("data-col-order");
           if (index === 7) td.classList.add("data-col-accountant");
           if (index === 9) td.classList.add("summary");
           if (index === 10) td.classList.add("remark", "data-col-remark");

@@ -3304,6 +3304,53 @@
       background: linear-gradient(180deg, rgba(255, 247, 247, 0.96), #ffffff 78%);
     }
 
+    .accountant-edit-recipient-fieldset {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid #d6e8e0;
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(241, 249, 246, 0.96), rgba(250, 253, 252, 0.98)),
+        #f5fbf8;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+    }
+
+    .accountant-edit-recipient-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-width: 0;
+      padding: 0 2px;
+    }
+
+    .accountant-edit-recipient-head h3 {
+      margin: 0;
+      color: #245246;
+      font-size: 15px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .accountant-edit-recipient-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 12px;
+      align-items: start;
+    }
+
+    .accountant-edit-recipient-grid .field {
+      min-height: 86px;
+      padding: 12px 14px;
+      border-color: #dceae4;
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    .accountant-edit-recipient-grid .field:last-child:nth-child(odd) {
+      max-width: calc(50% - 6px);
+    }
+
     .change-password-form {
       grid-template-columns: 1fr;
     }
@@ -3329,6 +3376,14 @@
       .accountant-modal-create-btn {
         min-width: 0;
         flex: 1 1 auto;
+      }
+
+      .accountant-edit-recipient-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .accountant-edit-recipient-grid .field:last-child:nth-child(odd) {
+        max-width: none;
       }
     }
 
@@ -4903,8 +4958,13 @@
       width: 21%;
     }
 
-    .accountant-col-realname {
-      width: 17%;
+    .accountant-col-recipient {
+      width: 28%;
+      text-align: left;
+    }
+
+    .accountant-col-recipient[hidden] {
+      display: none;
     }
 
     .accountant-col-phone {
@@ -4919,6 +4979,29 @@
 
     .accountant-col-count {
       width: 88px;
+    }
+
+    .accountant-recipient-info {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+      font-size: 12px;
+      line-height: 1.35;
+      color: oklch(35% 0.03 160);
+    }
+
+    .accountant-recipient-line,
+    .accountant-recipient-empty {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .accountant-recipient-empty {
+      color: oklch(54% 0.025 160);
+      font-weight: 700;
     }
 
     .accountant-action-group {
@@ -8211,6 +8294,10 @@
 
       .accountant-col-password {
         width: 118px;
+      }
+
+      .accountant-col-recipient {
+        width: 240px;
       }
 
       .accountant-col-count {

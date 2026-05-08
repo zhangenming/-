@@ -552,9 +552,6 @@ const accountantRegisterPasswordInput = document.getElementById(
 const accountantRegisterAliasInput = document.getElementById(
   "accountantRegisterAliasInput",
 );
-const accountantRegisterRealNameInput = document.getElementById(
-  "accountantRegisterRealNameInput",
-);
 const accountantRegisterPhoneInput = document.getElementById(
   "accountantRegisterPhoneInput",
 );
@@ -780,8 +777,23 @@ const accountantEditPasswordInput = document.getElementById(
 const accountantEditAliasInput = document.getElementById(
   "accountantEditAliasInput",
 );
-const accountantEditRealNameInput = document.getElementById(
-  "accountantEditRealNameInput",
+const accountantEditRecipientFieldset = document.getElementById(
+  "accountantEditRecipientFieldset",
+);
+const accountantEditRecipientNameInput = document.getElementById(
+  "accountantEditRecipientNameInput",
+);
+const accountantEditRecipientIdCardInput = document.getElementById(
+  "accountantEditRecipientIdCardInput",
+);
+const accountantEditRecipientBankInput = document.getElementById(
+  "accountantEditRecipientBankInput",
+);
+const accountantEditRecipientBankCardInput = document.getElementById(
+  "accountantEditRecipientBankCardInput",
+);
+const accountantEditRecipientPhoneInput = document.getElementById(
+  "accountantEditRecipientPhoneInput",
 );
 const accountantEditPhoneField = document.getElementById(
   "accountantEditPhoneField",
@@ -4510,9 +4522,6 @@ function getAccountantRegisterErrorTarget(message) {
   if (messageIncludesAnyKeyword(message, ["别名", "显示名"])) {
     return accountantRegisterAliasInput;
   }
-  if (messageIncludesAnyKeyword(message, ["姓名"])) {
-    return accountantRegisterRealNameInput;
-  }
   if (messageIncludesAnyKeyword(message, ["密码"])) {
     return accountantRegisterPasswordInput;
   }
@@ -4533,9 +4542,6 @@ function getAccountantEditErrorTarget(message, mode = accountantEditMode) {
   if (messageIncludesAnyKeyword(message, ["别名", "显示名"])) {
     return accountantEditAliasInput;
   }
-  if (messageIncludesAnyKeyword(message, ["姓名"])) {
-    return accountantEditRealNameInput;
-  }
   if (canEditSensitiveFields) {
     return (
       accountantEditPhoneInput ||
@@ -4543,7 +4549,7 @@ function getAccountantEditErrorTarget(message, mode = accountantEditMode) {
       accountantEditAliasInput
     );
   }
-  return accountantEditAliasInput || accountantEditRealNameInput;
+  return accountantEditAliasInput || accountantEditPhoneInput;
 }
 
 function showAppStatus(text, state = "error") {

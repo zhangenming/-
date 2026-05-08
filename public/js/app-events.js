@@ -903,7 +903,6 @@
         event.preventDefault();
         const password = String(accountantRegisterPasswordInput?.value || "").trim();
         const alias = String(accountantRegisterAliasInput?.value || "").trim();
-        const realName = String(accountantRegisterRealNameInput?.value || "").trim();
         const phone = String(accountantRegisterPhoneInput?.value || "").trim();
         const requiredFields = [
           {
@@ -920,11 +919,6 @@
             value: alias,
             input: accountantRegisterAliasInput,
             message: "请输入别名。"
-          },
-          {
-            value: realName,
-            input: accountantRegisterRealNameInput,
-            message: "请输入姓名。"
           }
         ];
         const firstMissingField = requiredFields.find((field) => !field.value);
@@ -949,7 +943,6 @@
             () => registerAccountantProfile({
               password,
               alias,
-              realName,
               phone
             })
           );
@@ -979,9 +972,16 @@
         const originalUsername = String(accountantEditOriginalUsernameInput?.value || editingAccountantUsername || "").trim();
         const password = String(accountantEditPasswordInput?.value || "").trim();
         const alias = String(accountantEditAliasInput?.value || "").trim();
-        const realName = String(accountantEditRealNameInput?.value || "").trim();
         const phone = String(accountantEditPhoneInput?.value || "").trim();
+        const recipientInfo = {
+          name: String(accountantEditRecipientNameInput?.value || "").trim(),
+          idCardNo: String(accountantEditRecipientIdCardInput?.value || "").trim(),
+          bankName: String(accountantEditRecipientBankInput?.value || "").trim(),
+          bankCardNo: String(accountantEditRecipientBankCardInput?.value || "").trim(),
+          declarationPhone: String(accountantEditRecipientPhoneInput?.value || "").trim()
+        };
         const canEditSensitiveFields = canEditAccountantSensitiveFields(accountantEditMode);
+        const canEditRecipientFields = accountantEditMode === "admin";
 
         if (!originalUsername) {
           closeAccountantEditModal();
@@ -1005,15 +1005,37 @@
           });
           return;
         }
+        if (canEditRecipientFields) {
+          const recipientTargets = [
+            [accountantEditRecipientNameInput, recipientInfo.name, "请输入结算申报姓名。"],
+            [accountantEditRecipientIdCardInput, recipientInfo.idCardNo, "请输入身份证号。"],
+            [accountantEditRecipientBankInput, recipientInfo.bankName, "请输入开户行。"],
+            [accountantEditRecipientBankCardInput, recipientInfo.bankCardNo, "请输入银行卡号。"],
+            [accountantEditRecipientPhoneInput, recipientInfo.declarationPhone, "请输入申报手机号。"]
+          ];
+          const invalidRecipientField = recipientTargets.find(([, value]) => !value);
+          if (invalidRecipientField) {
+            const [target, , message] = invalidRecipientField;
+            showInlineFormError({
+              form: accountantEditForm,
+              hintSetter: setAccountantEditHint,
+              target,
+              message
+            });
+            return;
+          }
+        }
 
         try {
           const payload = {
-            alias,
-            realName
+            alias
           };
           if (canEditSensitiveFields) {
             payload.password = password;
             payload.phone = phone;
+          }
+          if (canEditRecipientFields) {
+            payload.invoiceRecipientInfo = recipientInfo;
           }
           setAccountantEditHint(accountantEditMode === "self" ? "个人信息与密码保存中..." : "修改提交中...", "pending");
           await withLoading(

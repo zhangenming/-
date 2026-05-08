@@ -477,6 +477,13 @@
     function renderAccountantList() {
       renderAccountantSortHeaderUI();
       accountantList.innerHTML = "";
+      const showRecipientColumn = accountants.some((profile) =>
+        Object.values(normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo)).every(Boolean)
+      );
+      const recipientHeader = document.querySelector(".accountant-col-recipient");
+      if (recipientHeader) {
+        recipientHeader.hidden = !showRecipientColumn;
+      }
       if (!accountants.length) {
         accountantEmptyState.style.display = "block";
         return;
@@ -492,6 +499,10 @@
           node.textContent = normalized || fallback;
           node.title = normalized;
         };
+        const formatRecipientLine = (label, value) => {
+          const normalized = String(value || "").trim();
+          return `${label}：${normalized || "—"}`;
+        };
         const row = document.createElement("tr");
         row.className = "accountant-list-item";
         if (String(profile.username || profile.name || "").trim() === highlightedAccountantUsername) {
@@ -501,6 +512,19 @@
         const displayName = String(profile.displayName || profile.name || "").trim();
         const realName = String(profile.realName || "").trim();
         const phone = String(profile.phone || "").trim();
+        const invoiceRecipientInfo = normalizeInvoiceRecipientInfo(profile.invoiceRecipientInfo);
+        const hasInvoiceRecipientInfo = Object.values(invoiceRecipientInfo).every(Boolean);
+        const recipientSummary = hasInvoiceRecipientInfo
+          ? [
+              invoiceRecipientInfo.name || realName,
+              invoiceRecipientInfo.bankName,
+              invoiceRecipientInfo.bankCardNo,
+              invoiceRecipientInfo.declarationPhone
+            ]
+              .map((item) => String(item || "").trim())
+              .filter(Boolean)
+              .join(" · ")
+          : "";
         const orderCount = orderCountByAccountant.get(displayName) || 0;
 
         const displayNameCell = document.createElement("td");
@@ -510,11 +534,6 @@
         displayNameSpan.className = "accountant-item-sub";
         setNodeText(displayNameSpan, displayName);
         displayNameCell.appendChild(displayNameSpan);
-
-        const realNameCell = document.createElement("td");
-        realNameCell.className = "accountant-col-realname";
-        realNameCell.dataset.label = "姓名";
-        setNodeText(realNameCell, realName);
 
         const phoneCell = document.createElement("td");
         phoneCell.className = "accountant-col-phone";
@@ -536,6 +555,34 @@
         countCell.className = "accountant-col-count";
         countCell.dataset.label = "单量";
         countCell.appendChild(countSpan);
+
+        const recipientCell = document.createElement("td");
+        recipientCell.className = "accountant-col-recipient";
+        recipientCell.dataset.label = "结算申报信息";
+        recipientCell.hidden = !showRecipientColumn;
+        const recipientWrap = document.createElement("div");
+        recipientWrap.className = "accountant-recipient-info";
+        if (hasInvoiceRecipientInfo) {
+          [
+            formatRecipientLine("姓名", invoiceRecipientInfo.name || realName),
+            formatRecipientLine("身份证号", invoiceRecipientInfo.idCardNo),
+            formatRecipientLine("开户行", invoiceRecipientInfo.bankName),
+            formatRecipientLine("银行卡号", invoiceRecipientInfo.bankCardNo),
+            formatRecipientLine("申报手机号", invoiceRecipientInfo.declarationPhone)
+          ].forEach((line) => {
+            const item = document.createElement("span");
+            item.className = "accountant-recipient-line";
+            item.textContent = line;
+            recipientWrap.appendChild(item);
+          });
+        } else {
+          const empty = document.createElement("span");
+          empty.className = "accountant-recipient-empty";
+          empty.textContent = "未录入";
+          recipientWrap.appendChild(empty);
+        }
+        recipientCell.appendChild(recipientWrap);
+        recipientCell.title = recipientSummary || "未录入";
 
         const actionLabel = displayName || phone || usernameText || "会计";
         const editBtn = document.createElement("button");
@@ -573,7 +620,7 @@
         row.appendChild(phoneCell);
         row.appendChild(passwordCell);
         row.appendChild(displayNameCell);
-        row.appendChild(realNameCell);
+        row.appendChild(recipientCell);
         row.appendChild(countCell);
         row.appendChild(actionCell);
         accountantList.appendChild(row);
@@ -586,11 +633,22 @@
       const phone = String(profile?.phone || "").trim();
       const password = String(profile?.loginPassword || "").trim();
       const orderCount = orderCountByAccountant.get(displayName) || 0;
+      const invoiceRecipientInfo = normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo);
+      const recipientText = [
+        invoiceRecipientInfo.name || realName,
+        invoiceRecipientInfo.idCardNo,
+        invoiceRecipientInfo.bankName,
+        invoiceRecipientInfo.bankCardNo,
+        invoiceRecipientInfo.declarationPhone
+      ]
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+        .join(" ");
 
       if (key === "displayName") return displayName;
-      if (key === "realName") return realName;
       if (key === "phone") return phone;
       if (key === "password") return password;
+      if (key === "recipient") return recipientText;
       if (key === "orderCount") return orderCount;
       if (key === "action") return orderCount > 0 ? 1 : 0;
       return displayName;
