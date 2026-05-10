@@ -18422,7 +18422,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -18456,8 +18456,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -18617,7 +18617,7 @@
             "field": "isSettled",
             "label": "结算",
             "before": "已上传/待打款",
-            "after": "已结算/待上传"
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settlementInvoiceImage",
@@ -18650,7 +18650,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -18684,8 +18684,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -19797,7 +19797,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -19861,8 +19861,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -20033,7 +20033,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -20097,8 +20097,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -20286,7 +20286,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -20350,8 +20350,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -21501,8 +21501,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -21859,8 +21859,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -21945,8 +21945,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -22182,8 +22182,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -22289,7 +22289,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -22323,8 +22323,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -22900,7 +22900,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -22934,8 +22934,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -23399,8 +23399,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -23554,8 +23554,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -23709,8 +23709,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -23976,7 +23976,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -24010,8 +24010,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -24365,7 +24365,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -24399,8 +24399,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -24660,7 +24660,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -24694,8 +24694,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -24854,7 +24854,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -24888,8 +24888,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -25611,8 +25611,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -26629,8 +26629,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -26891,8 +26891,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -27269,7 +27269,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -27303,8 +27303,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -27479,7 +27479,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -27513,8 +27513,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -27988,7 +27988,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -28052,8 +28052,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -28506,8 +28506,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -28736,8 +28736,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -29029,8 +29029,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -29277,8 +29277,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -29484,7 +29484,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -29548,8 +29548,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -29746,7 +29746,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -29810,8 +29810,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -29976,7 +29976,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -30010,8 +30010,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -30271,7 +30271,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -30305,8 +30305,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -30451,8 +30451,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -30658,7 +30658,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -30692,8 +30692,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -30994,7 +30994,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -31059,7 +31059,7 @@
             "field": "isSettled",
             "label": "结算",
             "before": "已上传/待打款",
-            "after": "已结算/待上传"
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settlementInvoiceImage",
@@ -31092,7 +31092,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -31126,8 +31126,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -31677,7 +31677,7 @@
             "field": "isSettled",
             "label": "结算",
             "before": "已上传/待打款",
-            "after": "已结算/待上传"
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settlementInvoiceImage",
@@ -31710,7 +31710,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -31744,8 +31744,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -32627,8 +32627,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -33691,7 +33691,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -33725,8 +33725,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -33986,7 +33986,7 @@
             "field": "isSettled",
             "label": "结算",
             "before": "已上传/待打款",
-            "after": "已结算/待上传"
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settlementInvoiceImage",
@@ -34019,7 +34019,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -34053,8 +34053,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -34728,7 +34728,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -34793,7 +34793,7 @@
             "field": "isSettled",
             "label": "结算",
             "before": "已上传/待打款",
-            "after": "已结算/待上传"
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settlementInvoiceImage",
@@ -34826,7 +34826,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -34860,8 +34860,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -35285,7 +35285,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -35350,7 +35350,7 @@
             "field": "isSettled",
             "label": "结算",
             "before": "已上传/待打款",
-            "after": "已结算/待上传"
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settlementInvoiceImage",
@@ -35383,7 +35383,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -35417,8 +35417,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -35669,7 +35669,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -35703,8 +35703,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -35889,7 +35889,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -35923,8 +35923,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -36378,7 +36378,7 @@
             "field": "isSettled",
             "label": "结算",
             "before": "已上传/待打款",
-            "after": "已结算/待上传"
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settlementInvoiceImage",
@@ -36411,7 +36411,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -36445,8 +36445,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -36693,7 +36693,7 @@
             "field": "isSettled",
             "label": "结算",
             "before": "已上传/待打款",
-            "after": "已结算/待上传"
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settlementInvoiceImage",
@@ -36726,7 +36726,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -36760,8 +36760,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -37128,7 +37128,7 @@
             "field": "isSettled",
             "label": "结算",
             "before": "已上传/待打款",
-            "after": "已结算/待上传"
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settlementInvoiceImage",
@@ -37161,7 +37161,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -37195,8 +37195,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -37378,7 +37378,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -37412,8 +37412,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -37594,7 +37594,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -37628,8 +37628,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -37799,7 +37799,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -37833,8 +37833,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -38141,7 +38141,7 @@
             "field": "isSettled",
             "label": "结算",
             "before": "已上传/待打款",
-            "after": "已结算/待上传"
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settlementInvoiceImage",
@@ -38174,7 +38174,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -38208,8 +38208,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -38830,7 +38830,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -38864,8 +38864,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -39243,7 +39243,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -39277,8 +39277,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -39737,7 +39737,7 @@
             "field": "isSettled",
             "label": "结算",
             "before": "已上传/待打款",
-            "after": "已结算/待上传"
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settlementInvoiceImage",
@@ -39770,7 +39770,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -39804,8 +39804,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
@@ -39961,7 +39961,7 @@
             "field": "isSettled",
             "label": "结算",
             "before": "已上传/待打款",
-            "after": "已结算/待上传"
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settlementInvoiceImage",
@@ -39994,7 +39994,7 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "已结算/待上传",
+            "before": "已核对客户确认/待上传",
             "after": "已上传/待打款"
           },
           {
@@ -40028,8 +40028,8 @@
           {
             "field": "isSettled",
             "label": "结算",
-            "before": "未结算",
-            "after": "已结算/待上传"
+            "before": "已完成/待核对客户确认",
+            "after": "已核对客户确认/待上传"
           },
           {
             "field": "settledAt",
