@@ -2227,7 +2227,7 @@ function normalizeRecordSettlementPaidState(value) {
     normalized === "true" ||
     normalized === "1" ||
     normalized === "yes" ||
-    normalized === "已打款"
+    normalized === "已结算"
   );
 }
 
@@ -2316,8 +2316,8 @@ function isRecordSettled(record) {
     normalized === "yes" ||
     normalized === "已核对客户确认/待上传" ||
     normalized === "已上传" ||
-    normalized === "已上传/待打款" ||
-    normalized === "已打款"
+    normalized === "已上传/待结算" ||
+    normalized === "已结算"
   );
 }
 
@@ -2408,8 +2408,8 @@ function isRecordDispatcherInvoiceUploaded(record) {
 }
 
 function getRecordWorkflowStatusLabelByKey(statusKey) {
-  if (statusKey === "paid") return "已打款";
-  if (statusKey === "uploaded") return "已上传/待打款";
+  if (statusKey === "paid") return "已结算";
+  if (statusKey === "uploaded") return "已上传/待结算";
   if (statusKey === "settled") return "已核对客户确认/待上传";
   if (statusKey === "partial_refunded") return "部分退款";
   if (statusKey === "refunded") return "退款";
@@ -2424,8 +2424,8 @@ function normalizeSettlementWorkflowStatus(value) {
     .trim()
     .toLowerCase();
   if (!status) return "";
-  if (status === "已打款") return "paid";
-  if (status === "已上传" || status === "已上传/待打款") return "uploaded";
+  if (status === "已结算") return "paid";
+  if (status === "已上传" || status === "已上传/待结算") return "uploaded";
   if (status === "已核对客户确认/待上传")
     return "settled";
   if (status === "已完成/待核对客户确认")

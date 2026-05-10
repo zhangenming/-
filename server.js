@@ -873,8 +873,8 @@ function normalizeRecordSettlementState(value) {
     || normalized === "yes"
     || normalized === "已核对客户确认/待上传"
     || normalized === "已上传"
-    || normalized === "已上传/待打款"
-    || normalized === "已打款";
+    || normalized === "已上传/待结算"
+    || normalized === "已结算";
 }
 
 function normalizeMonthlySettlementState(value) {
@@ -908,7 +908,7 @@ function normalizeRecordSettlementPaidState(value) {
   return normalized === "true"
     || normalized === "1"
     || normalized === "yes"
-    || normalized === "已打款";
+    || normalized === "已结算";
 }
 
 function getNormalizedRecordSettlementPaymentFields(record) {
@@ -2299,8 +2299,8 @@ const RECORD_HISTORY_ACTION_LABELS = {
 };
 
 function getRecordWorkflowStatusLabelByKey(statusKey) {
-  if (statusKey === "paid") return "已打款";
-  if (statusKey === "uploaded") return "已上传/待打款";
+  if (statusKey === "paid") return "已结算";
+  if (statusKey === "uploaded") return "已上传/待结算";
   if (statusKey === "settled") return "已核对客户确认/待上传";
   if (statusKey === "partial_refunded") return "部分退款";
   if (statusKey === "refunded") return "退款";
@@ -2391,7 +2391,7 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
     field: "isSettlementPaid",
     label: "打款",
     kind: "text",
-    getValue: (record) => getNormalizedRecordSettlementPaymentFields(record).isSettlementPaid ? "已打款" : ""
+    getValue: (record) => getNormalizedRecordSettlementPaymentFields(record).isSettlementPaid ? "已结算" : ""
   },
   { field: "settlementPaidAt", label: "打款时间", kind: "datetime" },
   { field: "settlementPaidBy", label: "打款人", kind: "text" },

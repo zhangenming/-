@@ -626,8 +626,9 @@ body.mobile-ready .table-wrap {
 .mobile-record-accountant {
   max-width: 96px;
   color: var(--m-text);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 900;
+  font-synthesis: weight;
   line-height: 1.1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -642,7 +643,7 @@ body.mobile-ready .table-wrap {
 
 .mobile-record-title {
   font-size: 15px;
-  font-weight: 560;
+  font-weight: 400;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
@@ -2390,7 +2391,7 @@ body.mobile-sheet-open {
 
   .mobile-record-accountant {
     max-width: 76px;
-    font-size: 10px;
+    font-size: 13px;
   }
 
   .mobile-record-amount {

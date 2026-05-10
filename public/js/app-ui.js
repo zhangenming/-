@@ -1133,14 +1133,14 @@
       const paidTableTotals = getBossSettlementDetailGroupTotals(sortedPaidGroups);
 
       paidSettlementDetailMeta.textContent = sortedPaidGroups.length
-        ? `已打款 ${paidTableTotals.paidRecordCount || 0}单 / ${paidTableTotals.accountantCount}位会计`
-        : "暂无已打款记录";
+        ? `已结算 ${paidTableTotals.paidRecordCount || 0}单 / ${paidTableTotals.accountantCount}位会计`
+        : "暂无已结算记录";
       paidSettlementDetailList.innerHTML = "";
 
       if (!sortedPaidGroups.length) {
         const empty = document.createElement("div");
         empty.className = "paid-settlement-detail-empty";
-        empty.textContent = "暂无已打款记录。";
+        empty.textContent = "暂无已结算记录。";
         paidSettlementDetailList.appendChild(empty);
         return;
       }
@@ -1176,7 +1176,7 @@
         { key: "taxAmount", label: "个税", summary: `合计 ${toMoney(paidTableTotals.totalTaxAmount)}`, align: "money" },
         { key: "payableAmount", label: "应打款金额", summary: `合计 ${toMoney(paidTableTotals.totalPayableAmount)}`, align: "money" },
         { key: "invoiceCount", label: "上传的发票", summary: `${paidTableTotals.uploadedAccountantCount}人已上传`, align: "invoice" },
-        { key: "payout", label: "打款状态", summary: `已打款 ${paidTableTotals.paidRecordCount || 0}单`, align: "payout" }
+        { key: "payout", label: "打款状态", summary: `已结算 ${paidTableTotals.paidRecordCount || 0}单`, align: "payout" }
       ];
       paidHeaderColumns.forEach((column) => {
         const th = document.createElement("th");
@@ -1303,7 +1303,7 @@
         const payoutState = document.createElement("span");
         payoutState.className = "settlement-detail-payout-state paid";
         const paidDate = formatSettlementPaidDateDisplay(group.latestPaidAt);
-        payoutState.textContent = paidDate ? `已打款 ${paidDate}` : "已打款";
+        payoutState.textContent = paidDate ? `已结算 ${paidDate}` : "已结算";
         const paidTooltip = getSettlementPaidTimeTooltip(group);
         if (paidTooltip) {
           payoutState.title = paidTooltip;
@@ -1359,14 +1359,14 @@
       const uploadedTableTotals = getBossSettlementDetailGroupTotals(sortedUploadedGroups);
 
       uploadedSettlementDetailMeta.textContent = sortedUploadedGroups.length
-        ? `已上传/待打款 ${uploadedTableTotals.uploadedRecordCount || 0}单 / ${uploadedTableTotals.accountantCount}位会计`
-        : "暂无已上传/待打款记录";
+        ? `已上传/待结算 ${uploadedTableTotals.uploadedRecordCount || 0}单 / ${uploadedTableTotals.accountantCount}位会计`
+        : "暂无已上传/待结算记录";
       uploadedSettlementDetailList.innerHTML = "";
 
       if (!sortedUploadedGroups.length) {
         const empty = document.createElement("div");
         empty.className = "paid-settlement-detail-empty";
-        empty.textContent = "暂无已上传/待打款记录。";
+        empty.textContent = "暂无已上传/待结算记录。";
         uploadedSettlementDetailList.appendChild(empty);
         return;
       }
@@ -1402,7 +1402,7 @@
         { label: "个税", summary: `合计 ${toMoney(uploadedTableTotals.totalTaxAmount)}`, align: "money" },
         { label: "应打款金额", summary: `合计 ${toMoney(uploadedTableTotals.totalPayableAmount)}`, align: "money" },
         { label: "上传的发票", summary: `${uploadedTableTotals.uploadedAccountantCount}人已上传`, align: "invoice" },
-        { label: "打款状态", summary: `待打款 ${uploadedTableTotals.payoutRecordCount || 0}单`, align: "payout" }
+        { label: "打款状态", summary: `待结算 ${uploadedTableTotals.payoutRecordCount || 0}单`, align: "payout" }
       ];
       headerColumns.forEach((column) => {
         const th = document.createElement("th");
@@ -1523,7 +1523,7 @@
 
         const payoutState = document.createElement("span");
         payoutState.className = "settlement-detail-payout-state";
-        payoutState.textContent = "待打款";
+        payoutState.textContent = "待结算";
         payoutTd.appendChild(payoutState);
 
         row.appendChild(payoutTd);
@@ -3665,7 +3665,7 @@
 
       const sectionTitle = document.createElement("h3");
       sectionTitle.className = "settlement-detail-section-title";
-      sectionTitle.textContent = "待打款";
+      sectionTitle.textContent = "待结算";
       sectionHeading.appendChild(sectionTitle);
 
       section.appendChild(sectionHeading);
@@ -3676,7 +3676,7 @@
         uploadedDetailBtn.type = "button";
         uploadedDetailBtn.className = "settlement-detail-uploaded-btn";
         uploadedDetailBtn.dataset.settlementUploadedRecords = "true";
-        uploadedDetailBtn.textContent = "已上传/待打款详细";
+        uploadedDetailBtn.textContent = "已上传/待结算详细";
         sectionHeading.appendChild(uploadedDetailBtn);
       }
 
@@ -3692,7 +3692,7 @@
           paidBtn.type = "button";
           paidBtn.className = "settlement-detail-paid-btn";
           paidBtn.dataset.settlementPaidRecords = "true";
-          paidBtn.textContent = `已打款 ${sortedPaidGroups.length}单`;
+          paidBtn.textContent = `已结算 ${sortedPaidGroups.length}单`;
           payoutToolbar.appendChild(paidBtn);
         }
 
@@ -3935,7 +3935,7 @@
         } else if (group.uploadedCount > 0 && group.paidCount >= group.uploadedCount) {
           const payoutState = document.createElement("span");
           payoutState.className = "settlement-detail-payout-state paid";
-          payoutState.textContent = "已打款";
+          payoutState.textContent = "已结算";
           payoutTd.appendChild(payoutState);
         }
 
@@ -4121,9 +4121,9 @@
 
       accountantUploadedSettlementDetailBtn.hidden = !shouldShow;
       accountantUploadedSettlementDetailBtn.disabled = !shouldShow;
-      accountantUploadedSettlementDetailBtn.textContent = "已上传/待打款详细";
+      accountantUploadedSettlementDetailBtn.textContent = "已上传/待结算详细";
       accountantUploadedSettlementDetailBtn.title = shouldShow
-        ? `查看 ${uploadedTotals.uploadedRecordCount} 条已上传/待打款数据`
+        ? `查看 ${uploadedTotals.uploadedRecordCount} 条已上传/待结算数据`
         : "";
 
       if (!shouldShow && uploadedSettlementDetailModal && !uploadedSettlementDetailModal.hidden) {
@@ -4436,7 +4436,7 @@
         );
         const messageParts = [];
         if (paidRecordIds.length) {
-          messageParts.push(`已打款 ${paidRecordIds.length} 条`);
+          messageParts.push(`已结算 ${paidRecordIds.length} 条`);
         }
         if (skippedRecordIds.length) {
           messageParts.push(`跳过 ${skippedRecordIds.length} 条`);

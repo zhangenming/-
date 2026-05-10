@@ -176,7 +176,7 @@
       { text: "结算", className: "mobile-action-btn", button: bossSettlementBtn },
       { text: "结算详细", className: "mobile-action-btn", button: bossSettlementSummaryBtn },
       { text: "打款", className: "mobile-action-btn", button: bossSettlementDetailBtn },
-      { text: "已上传/待打款详细", className: "mobile-action-btn", button: accountantUploadedSettlementDetailBtn },
+      { text: "已上传/待结算详细", className: "mobile-action-btn", button: accountantUploadedSettlementDetailBtn },
       { text: "提醒", className: "mobile-action-btn", button: openReminderModalBtn },
     ].filter((item) => item.button && !item.button.hidden);
   }

@@ -189,13 +189,13 @@
             <span>会计 · 上传发票</span>
           </li>
           <li class="order-flow-step boss">
-            <span class="order-flow-status">已上传/待打款</span>
+            <span class="order-flow-status">已上传/待结算</span>
           </li>
           <li class="order-flow-arrow boss">
             <span>管理员 · 统一结算打款</span>
           </li>
           <li class="order-flow-step done">
-            <span class="order-flow-status">已打款</span>
+            <span class="order-flow-status">已结算</span>
           </li>
         </ol>
       </section>
@@ -294,7 +294,7 @@
           <button id="exportTableBtn" class="btn-secondary table-export-btn" type="button" aria-label="导出当前筛选数据" hidden disabled>导出</button>
           <button id="accountantInvoiceUploadBtn" class="btn-secondary table-invoice-upload-btn" type="button" hidden disabled>上传发票</button>
           <div id="accountantInvoiceUploadSummary" class="table-invoice-upload-summary" hidden aria-hidden="true"></div>
-          <button id="accountantUploadedSettlementDetailBtn" class="btn-secondary table-uploaded-detail-btn" type="button" hidden>已上传/待打款详细</button>
+          <button id="accountantUploadedSettlementDetailBtn" class="btn-secondary table-uploaded-detail-btn" type="button" hidden>已上传/待结算详细</button>
           <button id="bossSettlementBtn" class="btn-secondary table-settlement-btn" type="button" hidden disabled>结算</button>
           <button id="bossSettlementSummaryBtn" class="btn-secondary table-settlement-summary-btn" type="button" hidden>结算详细</button>
           <button id="bossSettlementDetailBtn" class="btn-secondary table-settlement-detail-btn" type="button" hidden disabled>打款</button>
@@ -1062,7 +1062,7 @@
     <section class="card modal-card paid-settlement-detail-modal-card" tabindex="-1">
       <div class="paid-settlement-detail-top">
         <div>
-          <h2 class="paid-settlement-detail-title">已打款记录</h2>
+          <h2 class="paid-settlement-detail-title">已结算记录</h2>
           <p id="paidSettlementDetailMeta" class="paid-settlement-detail-meta"></p>
         </div>
       </div>
@@ -1074,7 +1074,7 @@
     <section class="card modal-card paid-settlement-detail-modal-card uploaded-settlement-detail-modal-card" tabindex="-1">
       <div class="paid-settlement-detail-top">
         <div>
-          <h2 class="paid-settlement-detail-title">已上传/待打款详细</h2>
+          <h2 class="paid-settlement-detail-title">已上传/待结算详细</h2>
           <p id="uploadedSettlementDetailMeta" class="paid-settlement-detail-meta"></p>
         </div>
       </div>

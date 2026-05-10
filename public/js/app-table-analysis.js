@@ -673,12 +673,12 @@
       const rawStatusValues = Array.from(
         new Set(scopedRecords.flatMap((item) => getStatusFilterValues(item)))
       );
-      const statusValues = ["已接待/待确认", "已确认/待完成", "已完成/待核对客户确认", "已核对客户确认/待上传", "已上传/待打款", "已打款", "已退单", "部分退款", "退单"]
+      const statusValues = ["已接待/待确认", "已确认/待完成", "已完成/待核对客户确认", "已核对客户确认/待上传", "已上传/待结算", "已结算", "已退单", "部分退款", "退单"]
         .filter((value) => rawStatusValues.includes(value));
       const rawSettledValues = Array.from(
         new Set(scopedRecords.map((item) => getRecordSettlementFilterLabel(item)).filter(Boolean))
       );
-      const settledValues = ["已完成/待核对客户确认", "已核对客户确认/待上传", "已上传/待打款", "已打款"]
+      const settledValues = ["已完成/待核对客户确认", "已核对客户确认/待上传", "已上传/待结算", "已结算"]
         .filter((value) => rawSettledValues.includes(value));
 
       if (filterState.month && !monthValues.includes(filterState.month)) {
@@ -1283,7 +1283,7 @@
         { key: "completed", label: "已完成", match: (item) => isRecordEffectivelyCompleted(item) },
         { key: "settled", label: "已核对客户确认", match: (item) => isRecordSettled(item) },
         { key: "uploaded", label: "已上传发票", match: (item) => isRecordInvoiceUploaded(item) },
-        { key: "paid", label: "已打款", match: (item) => isRecordSettlementPaid(item) }
+        { key: "paid", label: "已结算", match: (item) => isRecordSettlementPaid(item) }
       ];
       return stages.map((stage) => {
         const matchedRecords = scopeRecords.filter((item) => stage.match(item));
@@ -3090,7 +3090,7 @@
           <article class="analysis-chart-panel">
             <div class="analysis-chart-panel-head">
               <h3>结算链路</h3>
-              <span>${formatCount(funnelRows[funnelRows.length - 1]?.count || 0)} 单已打款</span>
+              <span>${formatCount(funnelRows[funnelRows.length - 1]?.count || 0)} 单已结算</span>
             </div>
             <div id="analysisFunnelChart" class="analysis-small-chart" role="img" aria-label="从派单到打款的结算链路图"></div>
           </article>
