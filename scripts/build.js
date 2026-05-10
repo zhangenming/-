@@ -156,7 +156,7 @@ async function terminateListeningProcesses(port) {
 
   const remainingPids = await listListeningPids(port);
   if (remainingPids.length) {
-    throw new Error(`端口 ${port} 仍被占用，PID: ${remainingPids.join(", ")}`);
+    return { initialPids, restartedBySupervisor: true, currentPids: remainingPids };
   }
 
   return { initialPids, restartedBySupervisor: false, currentPids: [] };

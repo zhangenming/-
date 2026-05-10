@@ -720,7 +720,40 @@
       renderAccountantList();
     }
 
+    function compareDispatcherSortValues(leftValue, rightValue) {
+      return compareAccountantSortValues(leftValue, rightValue);
+    }
+
+    function renderDispatcherSortHeaderUI() {
+      dispatcherSortableHeaders.forEach((button) => {
+        const key = String(button?.dataset?.key || "").trim();
+        const label = String(button?.dataset?.label || "").trim();
+        const active = key === dispatcherSortState.key;
+        const arrow = active
+          ? (dispatcherSortState.direction === "asc" ? " ↑" : " ↓")
+          : "";
+        button.classList.toggle("active", active);
+        const labelNode = document.createElement("span");
+        labelNode.className = "sort-btn-label";
+        labelNode.textContent = `${label}${arrow}`;
+        button.replaceChildren(labelNode);
+      });
+    }
+
+    function toggleDispatcherSort(key) {
+      const normalizedKey = String(key || "").trim();
+      if (!normalizedKey) return;
+      if (dispatcherSortState.key === normalizedKey) {
+        dispatcherSortState.direction = dispatcherSortState.direction === "asc" ? "desc" : "asc";
+      } else {
+        dispatcherSortState.key = normalizedKey;
+        dispatcherSortState.direction = "desc";
+      }
+      renderDispatcherList();
+    }
+
     function renderDispatcherList() {
+      renderDispatcherSortHeaderUI();
       dispatcherList.innerHTML = "";
       if (!dispatchers.length) {
         dispatcherEmptyState.style.display = "block";
@@ -728,6 +761,7 @@
       }
       dispatcherEmptyState.style.display = "none";
 
+      const orderCountByAccountant = getAccountantOrderCountMap();
       const orderCountByDispatcher = records.reduce((map, item) => {
         const dispatcherTag = normalizeDispatcherTag(item?.dispatcher);
         if (!dispatcherTag) return map;
@@ -735,7 +769,7 @@
         return map;
       }, new Map());
 
-      dispatchers.forEach((dispatcherProfile) => {
+      const dispatcherRows = dispatchers.map((dispatcherProfile, index) => {
         const row = document.createElement("tr");
         row.className = "accountant-list-item";
 
@@ -776,6 +810,9 @@
           ? (linkedAccountant.displayName || linkedAccountant.alias || linkedAccountant.name || "")
           : "";
         const linkedAccountantPhone = linkedAccountant ? (linkedAccountant.phone || "") : "";
+        const linkedAccountantOrderCount = linkedAccountantAlias
+          ? (orderCountByAccountant.get(linkedAccountantAlias) || 0)
+          : 0;
 
         const linkedAccountantAliasCell = document.createElement("td");
         linkedAccountantAliasCell.className = "dispatcher-col-linked-accountant-alias";
@@ -792,9 +829,17 @@
         linkedAccountantPhoneSpan.title = linkedAccountantPhone;
         linkedAccountantPhoneCell.appendChild(linkedAccountantPhoneSpan);
 
+        const linkedAccountantCountCell = document.createElement("td");
+        linkedAccountantCountCell.className = "dispatcher-col-accountant-count";
+        linkedAccountantCountCell.dataset.label = "接单数";
+        const linkedAccountantCountSpan = document.createElement("span");
+        linkedAccountantCountSpan.className = "accountant-item-count";
+        linkedAccountantCountSpan.textContent = `${linkedAccountantOrderCount} 单`;
+        linkedAccountantCountCell.appendChild(linkedAccountantCountSpan);
+
         const countCell = document.createElement("td");
         countCell.className = "dispatcher-col-count";
-        countCell.dataset.label = "接单数";
+        countCell.dataset.label = "派单数";
         const countSpan = document.createElement("span");
         countSpan.className = "accountant-item-count";
         countSpan.textContent = `${orderCount} 单`;
@@ -806,8 +851,32 @@
         row.appendChild(linkedAccountantAliasCell);
         row.appendChild(linkedAccountantPhoneCell);
         row.appendChild(countCell);
-        dispatcherList.appendChild(row);
+        row.appendChild(linkedAccountantCountCell);
+
+        return {
+          row,
+          index,
+          dispatchCount: orderCount,
+          accountantOrderCount: linkedAccountantOrderCount,
+          displayName
+        };
       });
+
+      const directionFactor = dispatcherSortState.direction === "asc" ? 1 : -1;
+      dispatcherRows
+        .sort((left, right) => {
+          const key = dispatcherSortState.key === "accountantOrderCount"
+            ? "accountantOrderCount"
+            : "dispatchCount";
+          const primaryCompare = compareDispatcherSortValues(left[key], right[key]);
+          if (primaryCompare !== 0) return primaryCompare * directionFactor;
+          const nameCompare = compareDispatcherSortValues(left.displayName, right.displayName);
+          if (nameCompare !== 0) return nameCompare;
+          return left.index - right.index;
+        })
+        .forEach((entry) => {
+          dispatcherList.appendChild(entry.row);
+        });
     }
 
     function syncAccountantsFromRecords() {
@@ -2243,9 +2312,11 @@
         setStatusFilterValues(persistedStatus);
         filterState.settled = persistedSettled;
         setSidebarCollapsed(persistedSidebarCollapsed);
+        setSettlementScheduleCollapsed(false);
       } catch (error) {
         console.error(error);
         hasDispatcherFilterPreference = false;
         setSidebarCollapsed(false);
+        setSettlementScheduleCollapsed(false);
       }
     }

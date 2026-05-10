@@ -1030,6 +1030,10 @@
     #recordForm {
       --record-label-width: 74px;
       width: 100%;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: visible;
+      padding: 0 2px 18px;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 18px;
       align-items: start;
@@ -1624,12 +1628,17 @@
       grid-area: actions;
       grid-column: 1 / -1;
       grid-row: 7;
+      position: sticky;
+      bottom: 0;
+      z-index: 8;
       display: flex;
       gap: 12px;
-      margin-top: 0;
+      margin: 0 -2px;
+      padding: 14px 2px 0;
       align-items: center;
       justify-content: flex-end;
       flex-wrap: nowrap;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, var(--surface) 36%);
     }
 
     #recordForm .form-actions .btn-danger,
@@ -2412,6 +2421,135 @@
       min-width: 0;
     }
 
+    .accountant-settlement-schedule {
+      display: none;
+      margin: 0 10px 10px 0;
+      padding: 10px 12px 12px;
+      border: 1px solid oklch(86% 0.04 92);
+      border-radius: 8px;
+      background: linear-gradient(180deg, oklch(98.5% 0.014 96) 0%, oklch(97.5% 0.018 96) 100%);
+      color: oklch(31% 0.035 78);
+      box-shadow: var(--inset-highlight), 0 10px 22px rgba(98, 80, 34, 0.08);
+    }
+
+    #appPage.accountant-view .accountant-settlement-schedule {
+      display: grid;
+      gap: 12px;
+      align-items: start;
+    }
+
+    #appPage.accountant-view .accountant-settlement-schedule.is-collapsed {
+      display: none;
+    }
+
+    .accountant-settlement-schedule-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .accountant-settlement-schedule-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .accountant-settlement-schedule-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid oklch(78% 0.06 86);
+      background: oklch(93% 0.045 92);
+      color: oklch(38% 0.075 78);
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    }
+
+    .accountant-settlement-schedule-head strong {
+      font-size: 16px;
+      line-height: 1.25;
+      color: oklch(27% 0.042 78);
+    }
+
+    .accountant-settlement-schedule-list {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .accountant-settlement-schedule-list li {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+      padding: 8px 9px;
+      border: 1px solid oklch(88% 0.026 96);
+      border-radius: 7px;
+      background: oklch(99% 0.008 96);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .accountant-settlement-schedule-date {
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.25;
+      color: oklch(39% 0.065 82);
+    }
+
+    .accountant-settlement-schedule-body {
+      display: block;
+    }
+
+    .settlement-schedule-close-btn {
+      flex: 0 0 auto;
+      width: 26px;
+      height: 26px;
+      min-width: 26px;
+      margin-left: auto;
+      padding: 0;
+      border: 1px solid oklch(84% 0.026 92);
+      border-radius: 999px;
+      background: oklch(98.5% 0.008 96);
+      color: oklch(48% 0.035 78);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      line-height: 1;
+      font-weight: 800;
+      box-shadow: var(--inset-highlight), 0 5px 12px rgba(98, 80, 34, 0.07);
+      cursor: pointer;
+      transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .settlement-schedule-close-btn:hover {
+      border-color: oklch(74% 0.052 82);
+      background: oklch(96.5% 0.018 92);
+      color: oklch(32% 0.065 72);
+      box-shadow: var(--inset-highlight), 0 8px 16px rgba(98, 80, 34, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .settlement-schedule-close-btn:active {
+      transform: translateY(0);
+      box-shadow: var(--inset-highlight), 0 4px 10px rgba(98, 80, 34, 0.1);
+    }
+
+    .settlement-schedule-close-btn:focus-visible {
+      outline: 3px solid oklch(72% 0.09 170 / 0.35);
+      outline-offset: 2px;
+    }
+
     .table-invoice-upload-btn {
       min-width: 92px;
       min-height: 44px;
@@ -2972,7 +3110,9 @@
 
     @media (min-width: 861px) {
       #createModal > .modal-card {
-        overflow: visible;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
       }
     }
 
@@ -5105,8 +5245,9 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .dispatcher-table .dispatcher-col-count {
-      width: 14%;
+    .dispatcher-table .dispatcher-col-count,
+    .dispatcher-table .dispatcher-col-accountant-count {
+      width: 10%;
       text-align: center;
     }
 
@@ -7336,9 +7477,9 @@
     }
 
     .record-status-chip.pending {
-      border-color: oklch(80% 0.018 230);
-      background: oklch(96% 0.008 230);
-      color: oklch(45% 0.025 230);
+      border-color: #cfd6d2;
+      background: #f2f4f3;
+      color: #69736f;
     }
 
     .record-status-chip.checked {
@@ -8260,6 +8401,15 @@
       .table-card-head {
         flex-wrap: wrap;
         align-items: stretch;
+      }
+
+      #appPage.accountant-view .accountant-settlement-schedule {
+        margin-right: 0;
+        padding: 11px;
+      }
+
+      .accountant-settlement-schedule-list {
+        grid-template-columns: 1fr;
       }
 
     .table-card-actions {

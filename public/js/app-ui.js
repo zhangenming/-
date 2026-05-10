@@ -4741,6 +4741,22 @@
       }
     }
 
+    function syncSettlementScheduleToggleUI() {
+      if (!settlementScheduleToggleBtn || !settlementScheduleToggleIcon || !settlementScheduleBody) return;
+      const isExpanded = !isSettlementScheduleCollapsed;
+      const actionLabel = "关闭结算时间节点";
+      const scheduleRoot = settlementScheduleToggleBtn.closest(".accountant-settlement-schedule");
+      if (scheduleRoot) {
+        scheduleRoot.classList.toggle("is-collapsed", isSettlementScheduleCollapsed);
+        scheduleRoot.hidden = isSettlementScheduleCollapsed;
+      }
+      settlementScheduleBody.hidden = false;
+      settlementScheduleToggleBtn.setAttribute("aria-expanded", String(isExpanded));
+      settlementScheduleToggleBtn.setAttribute("aria-label", actionLabel);
+      settlementScheduleToggleBtn.title = actionLabel;
+      settlementScheduleToggleIcon.textContent = "×";
+    }
+
     function setSidebarCollapsed(collapsed) {
       isSidebarCollapsed = Boolean(collapsed);
       syncSidebarToggleUI();
@@ -4751,6 +4767,16 @@
       isSidebarCollapsed = !isSidebarCollapsed;
       syncSidebarToggleUI();
       saveViewState();
+    }
+
+    function setSettlementScheduleCollapsed(collapsed) {
+      isSettlementScheduleCollapsed = Boolean(collapsed);
+      syncSettlementScheduleToggleUI();
+    }
+
+    function toggleSettlementScheduleCollapsed() {
+      isSettlementScheduleCollapsed = true;
+      syncSettlementScheduleToggleUI();
     }
 
     function toggleFilterPopover(key) {
@@ -4996,6 +5022,7 @@
       }
       updateBossSettlementControls();
       updateBossSettlementDetailControls();
+      syncSettlementScheduleToggleUI();
     }
 
     function applyAccountToForm() {

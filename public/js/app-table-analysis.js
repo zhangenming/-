@@ -236,6 +236,7 @@
       if (lower.includes("财税k旧")) return "K旧";
       if (lower.includes("财税a")) return "A";
       if (lower.includes("财税c")) return "C";
+      if (lower.includes("财税d")) return "D";
       if (lower.includes("财税e")) return "E";
       if (lower.includes("财税k")) return "K";
       if (lower.includes("财税1")) return "1";
@@ -246,7 +247,7 @@
       const status = String(rawValue || "").trim().toLowerCase();
       if (status === "partial_refunded" || status === "部分退款") return "partial_refunded";
       if (status === "refunded" || status === "退款") return "refunded";
-      if (status === "completed" || status === "已完成" || status.includes("待结算") || status.includes("待核对客户确认")) return "completed";
+      if (status === "completed" || status === "已完成" || status.includes("待核对客户确认")) return "completed";
       if (status === "checked" || status === "已确认" || status.includes("待完成")) return "checked";
       if (status === "returned" || status === "已退单") return "returned";
       return "pending";
@@ -1280,7 +1281,7 @@
         { key: "created", label: "已派单", match: () => true },
         { key: "confirmed", label: "已确认", match: (item) => hasRecordAccountantConfirmation(item) },
         { key: "completed", label: "已完成", match: (item) => isRecordEffectivelyCompleted(item) },
-        { key: "settled", label: "已结算", match: (item) => isRecordSettled(item) },
+        { key: "settled", label: "已核对客户确认", match: (item) => isRecordSettled(item) },
         { key: "uploaded", label: "已上传发票", match: (item) => isRecordInvoiceUploaded(item) },
         { key: "paid", label: "已打款", match: (item) => isRecordSettlementPaid(item) }
       ];
@@ -1296,12 +1297,12 @@
       });
     }
 
-    function buildUnsettledAmountRows(scopeRecords) {
-      const unsettledRecords = (Array.isArray(scopeRecords) ? scopeRecords : [])
+    function buildPendingCustomerConfirmationAmountRows(scopeRecords) {
+      const pendingCustomerConfirmationRecords = (Array.isArray(scopeRecords) ? scopeRecords : [])
         .filter((item) => getBossSettlementRecordState(item) === "ready");
 
       const accountantRows = summarizeBy(
-        unsettledRecords,
+        pendingCustomerConfirmationRecords,
         (item) => String(item.accountant || "").trim() || "未填"
       )
         .map((row) => ({
@@ -1315,7 +1316,7 @@
         }));
 
       const dispatcherGroups = new Map();
-      unsettledRecords.forEach((item) => {
+      pendingCustomerConfirmationRecords.forEach((item) => {
         const key = getDispatcherDisplayNameByTag(item.dispatcher) || "未填";
         const group = dispatcherGroups.get(key) || [];
         group.push(item);
@@ -1342,8 +1343,8 @@
         });
 
       return {
-        records: unsettledRecords,
-        count: unsettledRecords.length,
+        records: pendingCustomerConfirmationRecords,
+        count: pendingCustomerConfirmationRecords.length,
         accountantRows,
         dispatcherRows
       };
@@ -2664,7 +2665,7 @@
       const trendRows = buildAnalysisTrendRows(scopeRecords);
       const statusRows = buildStatusRows(scopeRecords);
       const funnelRows = buildSettlementFunnelRows(scopeRecords);
-      const unsettledAmountRows = buildUnsettledAmountRows(scopeRecords);
+      const pendingCustomerConfirmationAmountRows = buildPendingCustomerConfirmationAmountRows(scopeRecords);
       const operationRows = buildOperationActionRows(scopeRecords);
       const ageRows = buildAgeRows(scopeRecords);
       const monthlySettlementRows = buildMonthlySettlementRows(scopeRecords);
@@ -2749,7 +2750,7 @@
         .map((text) => `<span class="analysis-tag">${escapeHtml(text)}</span>`)
         .join("");
 
-      const accountantTotal = unsettledAmountRows.accountantRows.reduce(
+      const accountantTotal = pendingCustomerConfirmationAmountRows.accountantRows.reduce(
         (acc, row) => ({
           count: acc.count + row.count,
           amount: acc.amount + row.amount
@@ -2757,28 +2758,28 @@
         { count: 0, amount: 0 }
       );
 
-      const unsettledAccountantColumns = [
+      const pendingCustomerConfirmationAccountantColumns = [
         "会计",
         {
-          label: "未结算单量",
+          label: "待核对客户确认单量",
           total: `合计 ${formatCount(accountantTotal.count)}`
         },
         {
-          label: "会计未结算金额",
+          label: "会计待核对客户确认金额",
           total: `合计 ${formatCurrency(accountantTotal.amount)}`
         }
       ];
 
-      const unsettledAccountantTable = buildHtmlTable(
-        unsettledAccountantColumns,
-        unsettledAmountRows.accountantRows.map((row) => [
+      const pendingCustomerConfirmationAccountantTable = buildHtmlTable(
+        pendingCustomerConfirmationAccountantColumns,
+        pendingCustomerConfirmationAmountRows.accountantRows.map((row) => [
           row.key,
           formatCount(row.count),
           formatCurrency(row.amount)
         ])
       );
 
-      const dispatcherTotal = unsettledAmountRows.dispatcherRows.reduce(
+      const dispatcherTotal = pendingCustomerConfirmationAmountRows.dispatcherRows.reduce(
         (acc, row) => ({
           count: acc.count + row.count,
           amount: acc.amount + row.amount
@@ -2786,21 +2787,21 @@
         { count: 0, amount: 0 }
       );
 
-      const unsettledDispatcherColumns = [
+      const pendingCustomerConfirmationDispatcherColumns = [
         "接待人",
         {
-          label: "未结算单量",
+          label: "待核对客户确认单量",
           total: `合计 ${formatCount(dispatcherTotal.count)}`
         },
         {
-          label: "接待未结算金额",
+          label: "接待待核对客户确认金额",
           total: `合计 ${formatCurrency(dispatcherTotal.amount)}`
         }
       ];
 
-      const unsettledDispatcherTable = buildHtmlTable(
-        unsettledDispatcherColumns,
-        unsettledAmountRows.dispatcherRows.map((row) => [
+      const pendingCustomerConfirmationDispatcherTable = buildHtmlTable(
+        pendingCustomerConfirmationDispatcherColumns,
+        pendingCustomerConfirmationAmountRows.dispatcherRows.map((row) => [
           row.key,
           formatCount(row.count),
           formatCurrency(row.amount)
@@ -3050,8 +3051,8 @@
           分析范围：当前筛选 ${formatCount(scopeRecords.length)} 条 / 全部 ${formatCount(allRecords.length)} 条
         </div>
         <div class="analysis-grid analysis-unsettled-grid">
-          <section class="analysis-panel"><h3>会计未结算金额</h3>${unsettledAccountantTable}</section>
-          <section class="analysis-panel"><h3>接待未结算金额</h3>${unsettledDispatcherTable}</section>
+          <section class="analysis-panel"><h3>会计待核对客户确认金额</h3>${pendingCustomerConfirmationAccountantTable}</section>
+          <section class="analysis-panel"><h3>接待待核对客户确认金额</h3>${pendingCustomerConfirmationDispatcherTable}</section>
         </div>
         <div class="analysis-kpis">
           <div class="analysis-kpi"><div class="analysis-kpi-label">记录数</div><div class="analysis-kpi-value">${formatCount(scopeRecords.length)}</div></div>

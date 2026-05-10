@@ -20,6 +20,12 @@
       });
     }
 
+    if (settlementScheduleToggleBtn) {
+      settlementScheduleToggleBtn.addEventListener("click", () => {
+        toggleSettlementScheduleCollapsed();
+      });
+    }
+
     if (devTodoLauncher) {
       devTodoLauncher.addEventListener("click", () => {
         openDevTodoModal();
@@ -512,6 +518,12 @@
     accountantSortableHeaders.forEach((button) => {
       button.addEventListener("click", () => {
         toggleAccountantSort(button.dataset.key || "");
+      });
+    });
+
+    dispatcherSortableHeaders.forEach((button) => {
+      button.addEventListener("click", () => {
+        toggleDispatcherSort(button.dataset.key || "");
       });
     });
 

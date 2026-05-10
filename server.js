@@ -37,7 +37,7 @@ const INVOICE_IMAGE_DIR = path.join(DATA_DIR, "invoice-images");
 const INVOICE_IMAGE_URL_PREFIX = "/invoice-images/";
 const SERVER_LOG_FILE = path.join(ROOT_DIR, "server.log");
 const DEV_LIVE_RELOAD_PATHNAME = "/__dev/events";
-const DISPATCHER_ACCOUNT_LIST = ["1", "a", "c", "e", "k", "开心财税", "开心财税1旧", "开心财税k旧"];
+const DISPATCHER_ACCOUNT_LIST = ["1", "a", "c", "d", "e", "k", "开心财税", "开心财税1旧", "开心财税k旧"];
 const DISPATCHER_ACCOUNTS = new Set(DISPATCHER_ACCOUNT_LIST);
 const DISPATCHER_LOGIN_PASSWORD = "11";
 const BOSS_LOGIN_ACCOUNT = "开心";
@@ -69,6 +69,7 @@ const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
   "1": "1",
   a: "a",
   c: "c",
+  d: "d",
   e: "e",
   k: "k",
   "开心财税": "开心财税",
@@ -77,6 +78,7 @@ const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
   "开心财税1": "1",
   "开心财税a": "a",
   "开心财税c": "c",
+  "开心财税d": "d",
   "开心财税e": "e",
   "开心财税k": "k",
   "1旧": "开心财税1旧",
@@ -869,8 +871,6 @@ function normalizeRecordSettlementState(value) {
   return normalized === "true"
     || normalized === "1"
     || normalized === "yes"
-    || normalized === "已结算"
-    || normalized === "已结算/待上传"
     || normalized === "已核对客户确认/待上传"
     || normalized === "已上传"
     || normalized === "已上传/待打款"
@@ -1366,6 +1366,7 @@ function normalizeDispatcherTag(rawValue) {
   if (lower === "1" || lower.includes("财税1")) return "1";
   if (lower === "a" || lower.includes("财税a")) return "A";
   if (lower === "c" || lower.includes("财税c")) return "C";
+  if (lower === "d" || lower.includes("财税d")) return "D";
   if (lower === "e" || lower.includes("财税e")) return "E";
   if (lower === "k" || lower.includes("财税k")) return "K";
   return "";
@@ -1380,6 +1381,7 @@ function getDispatcherTagForAccount(accountNameRaw) {
   if (lower === "1") return "1";
   if (lower === "a") return "A";
   if (lower === "c") return "C";
+  if (lower === "d") return "D";
   if (lower === "e") return "E";
   if (lower === "k") return "K";
   return "";
@@ -1405,7 +1407,7 @@ function buildDispatcherManagementRows(records, dispatcherPasswords) {
       return map;
     }, new Map())
     : new Map();
-  const tagOrder = ["开心财税", "1", "A", "C", "E", "K", "1旧", "K旧"];
+  const tagOrder = ["开心财税", "1", "A", "C", "D", "E", "K", "1旧", "K旧"];
   const rows = tagOrder.map((dispatcherTag) => {
     const accounts = DISPATCHER_ACCOUNT_LIST.filter((account) => getDispatcherTagForAccount(account) === dispatcherTag);
     const accountPasswordPairs = accounts.map((account) => ({
@@ -2317,7 +2319,7 @@ function getRecordSettlementWorkflowStatusLabel(record, accountants = []) {
   }
   return getNormalizedRecordSettlementFields(record).isSettled
     ? getRecordWorkflowStatusLabelByKey("settled")
-    : "未结算";
+    : getRecordWorkflowStatusLabelByKey("completed");
 }
 
 function resolveActionLabel(actionKey, rawActionLabel) {
@@ -2910,7 +2912,7 @@ function buildRefundRecordUpdate(currentRecord, payload, session) {
     throw new Error("当前仅支持已确认或已完成订单退款。");
   }
   if (currentSettlementFields.isSettled || currentInvoiceFields.settlementInvoiceImage) {
-    throw new Error("已结算订单请先处理结算记录。");
+    throw new Error("订单已进入待上传或后续状态，请先处理发票或打款记录。");
   }
 
   const currentPaymentPrice = normalizeMoneyValue(current.paymentPrice);

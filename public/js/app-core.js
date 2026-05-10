@@ -30,6 +30,8 @@ const STORAGE_KEY_LOGIN_ACCOUNT = "dispatch_current_login_account_v1";
 const STORAGE_KEY_SAVED_LOGINS = "dispatch_saved_logins_v1";
 const STORAGE_KEY_DEV_TODO_ITEMS = "dispatch_dev_todo_items_v1";
 const STORAGE_KEY_VIEW_STATE = "dispatch_view_state_v1";
+const STORAGE_KEY_SETTLEMENT_SCHEDULE_COLLAPSED =
+  "dispatch_settlement_schedule_collapsed_v1";
 const STORAGE_KEY_UPDATED_ROW_DISMISSED_PREFIX =
   "dispatch_updated_row_dismissed_v1";
 const STORAGE_KEY_UPDATED_ROW_HIGHLIGHT_PREFIX =
@@ -165,11 +167,12 @@ function removePersistentStateItem(key) {
   persistentStateStorage.removeItem(key);
   legacyPersistentStateStorage.removeItem(key);
 }
-const DISPATCHER_TAGS = ["1", "A", "C", "E", "K", "1旧", "K旧"];
+const DISPATCHER_TAGS = ["1", "A", "C", "D", "E", "K", "1旧", "K旧"];
 const ACCOUNT_TO_DISPATCHER_TAG = {
   1: "1",
   a: "A",
   c: "C",
+  d: "D",
   e: "E",
   k: "K",
   开心财税: "开心财税",
@@ -182,6 +185,7 @@ const DISPATCHER_TAG_TO_ACCOUNT = {
   1: "1",
   A: "a",
   C: "c",
+  D: "d",
   E: "e",
   K: "k",
   开心财税: "开心财税",
@@ -192,6 +196,7 @@ const DISPATCHER_ACCOUNT_DISPLAY_NAME = {
   1: "开心财税1",
   a: "开心财税a",
   c: "开心财税c",
+  d: "开心财税d",
   e: "开心财税e",
   k: "开心财税k",
   开心财税: "开心财税",
@@ -204,6 +209,7 @@ const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
   1: "1",
   a: "a",
   c: "c",
+  d: "d",
   e: "e",
   k: "k",
   开心财税: "开心财税",
@@ -212,6 +218,7 @@ const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
   开心财税1: "1",
   开心财税a: "a",
   开心财税c: "c",
+  开心财税d: "d",
   开心财税e: "e",
   开心财税k: "k",
   "1旧": "开心财税1旧",
@@ -515,6 +522,9 @@ const appPage = document.getElementById("appPage");
 const appSidebar = document.getElementById("appSidebar");
 const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
 const sidebarToggleIcon = document.getElementById("sidebarToggleIcon");
+const settlementScheduleToggleBtn = document.getElementById("settlementScheduleToggleBtn");
+const settlementScheduleToggleIcon = document.getElementById("settlementScheduleToggleIcon");
+const settlementScheduleBody = document.getElementById("settlementScheduleBody");
 const devTodoLauncher = document.getElementById("devTodoLauncher");
 const devTodoModal = document.getElementById("devTodoModal");
 const devTodoModalCard = devTodoModal
@@ -580,6 +590,9 @@ const openAccountantModalBtn = document.getElementById(
 const openReminderModalBtn = document.getElementById("openReminderModalBtn");
 const accountantSortableHeaders = Array.from(
   document.querySelectorAll(".accountant-sort-btn"),
+);
+const dispatcherSortableHeaders = Array.from(
+  document.querySelectorAll(".dispatcher-sort-btn"),
 );
 const createModal = document.getElementById("createModal");
 const createModalCard = createModal.querySelector(".modal-card");
@@ -1132,6 +1145,7 @@ let highlightedUpdatedRecordIds = new Set();
 let dismissedUpdatedRecordSignatures = {};
 let hasDispatcherFilterPreference = false;
 let isSidebarCollapsed = false;
+let isSettlementScheduleCollapsed = false;
 let savedLoginEntries = [];
 let highlightedAccountantUsername = "";
 let accountantRegisterReturnTarget = "";
@@ -1158,6 +1172,10 @@ const sortState = {
 };
 const accountantSortState = {
   key: "orderCount",
+  direction: "desc",
+};
+const dispatcherSortState = {
+  key: "dispatchCount",
   direction: "desc",
 };
 const filterState = {
@@ -2090,7 +2108,7 @@ function canCurrentAccountExportTableRecords() {
 }
 
 function canCurrentAccountUploadSettlementInvoice() {
-  return isAccountantLogin() || isDispatcherLogin();
+  return isAccountantLogin();
 }
 
 function canCurrentAccountManageInvoiceRecipientInfo() {
@@ -2296,8 +2314,6 @@ function isRecordSettled(record) {
     normalized === "true" ||
     normalized === "1" ||
     normalized === "yes" ||
-    normalized === "已结算" ||
-    normalized === "已结算/待上传" ||
     normalized === "已核对客户确认/待上传" ||
     normalized === "已上传" ||
     normalized === "已上传/待打款" ||
@@ -2410,18 +2426,9 @@ function normalizeSettlementWorkflowStatus(value) {
   if (!status) return "";
   if (status === "已打款") return "paid";
   if (status === "已上传" || status === "已上传/待打款") return "uploaded";
-  if (
-    status === "已结算" ||
-    status === "已结算/待上传" ||
-    status === "已核对客户确认/待上传"
-  )
+  if (status === "已核对客户确认/待上传")
     return "settled";
-  if (
-    status === "未结算" ||
-    status === "待结算" ||
-    status === "已完成/待结算" ||
-    status === "已完成/待核对客户确认"
-  )
+  if (status === "已完成/待核对客户确认")
     return "completed";
   return "";
 }
@@ -2442,7 +2449,7 @@ function getRecordSettlementLabel(record) {
     return getRecordWorkflowStatusLabelByKey("settled");
   return isRecordCompleted(record)
     ? getRecordWorkflowStatusLabelByKey("completed")
-    : "未结算";
+    : getRecordWorkflowStatusLabelByKey("completed");
 }
 
 function hasRecordRefundOperation(record) {
@@ -3335,7 +3342,7 @@ function getUpdatedRecordIndicatorLabel(record) {
   if (actionKey === "partial_refunded") return "部分退款";
   if (actionKey === "refunded") return "已退款";
   if (actionKey === "returned") return "已退单";
-  if (actionKey === "settled") return "已结算";
+  if (actionKey === "settled") return "已核对客户确认";
   if (actionKey === "invoice_uploaded") return "发票已上传";
   if (actionKey === "updated") return "信息更新";
   return normalizeText(latestEntry?.actionLabel, 32) || "信息更新";

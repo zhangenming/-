@@ -6,7 +6,8 @@
     "alias": "3",
     "realName": "432",
     "phone": "kj",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "15683655588",
@@ -15,7 +16,18 @@
     "alias": "接待1_的_会计账号_别名",
     "realName": "接待1_的_会计账号_姓名",
     "phone": "15683655588",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
+  },
+  {
+    "username": "19923803560",
+    "displayName": "起风了",
+    "name": "起风了",
+    "alias": "起风了",
+    "realName": "刘秋菊",
+    "phone": "19923803560",
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "13900008706",
@@ -24,6 +36,7 @@
     "alias": "SSE5222",
     "realName": "SSE5222",
     "phone": "13900008706",
-    "loginPassword": "123456"
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
   }
 ]
