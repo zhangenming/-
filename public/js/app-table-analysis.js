@@ -440,6 +440,59 @@
       return percent === 0 ? "" : formatTrimmedPercent(percent);
     }
 
+    function buildAnalysisAmountSummaryHtml(sourceRecords) {
+      const records = Array.isArray(sourceRecords) ? sourceRecords : [];
+      const profitBreakdown = getProfitTotalBreakdown(records);
+      const paymentTotal = toMoney(getColumnTotal(records, "paymentPrice"));
+      const premiumTotal = toMoney(getColumnTotal(records, "premiumPrice"));
+      const premiumProfit = Number.isFinite(profitBreakdown.premiumProfit)
+        ? toMoney(profitBreakdown.premiumProfit)
+        : "";
+      const premiumPercent = getPremiumTotalPercent(records);
+      const totalPriceTotal = toMoney(getColumnTotal(records, "totalPrice"));
+      const totalBase = Number.isFinite(profitBreakdown.totalBase) && !isAccountantLogin()
+        ? toMoney(profitBreakdown.totalBase)
+        : "";
+      const settlementTotal = toMoney(getColumnTotal(records, "settlementPrice"));
+
+      const items = [
+        {
+          label: "付款价",
+          value: paymentTotal
+        },
+        {
+          label: "溢价",
+          value: premiumTotal,
+          meta: [premiumProfit ? `(${premiumProfit})` : "", premiumPercent ? `[${premiumPercent}]` : ""]
+            .filter(Boolean)
+            .join(" ")
+        },
+        {
+          label: "会计价",
+          value: totalPriceTotal,
+          meta: totalBase ? `(${totalBase})` : ""
+        },
+        {
+          label: "会计结算价",
+          value: settlementTotal
+        }
+      ];
+
+      return `
+        <section class="analysis-amount-summary" aria-label="金额合计">
+          ${items.map((item) => `
+            <div class="analysis-amount-summary-item">
+              <div class="analysis-amount-summary-label">${escapeHtml(item.label)}</div>
+              <div class="analysis-amount-summary-value">
+                <span>合计 ${escapeHtml(item.value)}</span>
+                ${item.meta ? `<span class="analysis-amount-summary-meta">${escapeHtml(item.meta)}</span>` : ""}
+              </div>
+            </div>
+          `).join("")}
+        </section>
+      `;
+    }
+
     function getSortedRecords(sourceRecords) {
       if (!sortState.key) return sourceRecords;
 
@@ -3031,6 +3084,7 @@
       );
 
       analysisContent.innerHTML = `
+        ${buildAnalysisAmountSummaryHtml(scopeRecords)}
         <section class="analysis-trend-card">
           <div class="analysis-trend-main">
             <div class="analysis-trend-head">

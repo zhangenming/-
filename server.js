@@ -107,6 +107,15 @@ const STATIC_MIME_TYPES = {
 };
 const BEIJING_TIME_ZONE = "Asia/Shanghai";
 const STRUCTURED_DATE_TIME_PATTERN = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/;
+const TRUTHY_STATE_TEXT_VALUES = new Set(["true", "1", "yes"]);
+const SETTLED_WORKFLOW_STATE_VALUES = new Set([
+  "已核对客户确认/待上传",
+  "已上传",
+  "已上传/待结算",
+  "已结算"
+]);
+const MONTHLY_SETTLEMENT_STATE_VALUES = new Set(["on", "是", "月结"]);
+const PAID_WORKFLOW_STATE_VALUES = new Set(["已结算"]);
 const BEIJING_DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-CA", {
   timeZone: BEIJING_TIME_ZONE,
   year: "numeric",
@@ -460,37 +469,27 @@ async function ensureStorage() {
 }
 
 async function readRecords() {
-  await ensureStorage();
-  const raw = await fs.readFile(DATA_FILE, "utf8");
-  const parsed = JSON.parse(raw || "[]");
+  const parsed = await readJsonFile(DATA_FILE, []);
   return Array.isArray(parsed) ? parsed : [];
 }
 
 async function readRecycleBin() {
-  await ensureStorage();
-  const raw = await fs.readFile(RECYCLE_BIN_FILE, "utf8");
-  const parsed = JSON.parse(raw || "[]");
+  const parsed = await readJsonFile(RECYCLE_BIN_FILE, []);
   return Array.isArray(parsed) ? parsed : [];
 }
 
 async function readAccountants() {
-  await ensureStorage();
-  const raw = await fs.readFile(ACCOUNTANTS_FILE, "utf8");
-  const parsed = JSON.parse(raw || "[]");
+  const parsed = await readJsonFile(ACCOUNTANTS_FILE, []);
   return Array.isArray(parsed) ? parsed : [];
 }
 
 async function readDispatcherPasswords() {
-  await ensureStorage();
-  const raw = await fs.readFile(DISPATCHER_PASSWORDS_FILE, "utf8");
-  const parsed = JSON.parse(raw || "{}");
+  const parsed = await readJsonFile(DISPATCHER_PASSWORDS_FILE, {});
   return normalizeDispatcherPasswords(parsed);
 }
 
 async function readDispatcherAccountantMappings() {
-  await ensureStorage();
-  const raw = await fs.readFile(DISPATCHER_PASSWORDS_FILE, "utf8");
-  const parsed = JSON.parse(raw || "{}");
+  const parsed = await readJsonFile(DISPATCHER_PASSWORDS_FILE, {});
   return normalizeDispatcherAccountantMappings(parsed);
 }
 
@@ -529,16 +528,12 @@ function normalizeDispatcherFullConfigs(rawConfigs) {
 }
 
 async function readDispatcherFullConfigs() {
-  await ensureStorage();
-  const raw = await fs.readFile(DISPATCHER_PASSWORDS_FILE, "utf8");
-  const parsed = JSON.parse(raw || "{}");
+  const parsed = await readJsonFile(DISPATCHER_PASSWORDS_FILE, {});
   return normalizeDispatcherFullConfigs(parsed);
 }
 
 async function readAccountantOperationLogs() {
-  await ensureStorage();
-  const raw = await fs.readFile(ACCOUNTANT_OPERATION_LOG_FILE, "utf8");
-  const parsed = JSON.parse(raw || "[]");
+  const parsed = await readJsonFile(ACCOUNTANT_OPERATION_LOG_FILE, []);
   return Array.isArray(parsed) ? parsed.map((entry) => normalizeAccountantOperationLogEntry(entry)).filter(Boolean) : [];
 }
 
@@ -568,34 +563,34 @@ function normalizeReminderEntry(rawEntry) {
 }
 
 async function readReminders() {
-  await ensureStorage();
-  const raw = await fs.readFile(REMINDERS_FILE, "utf8");
-  const parsed = JSON.parse(raw || "[]");
+  const parsed = await readJsonFile(REMINDERS_FILE, []);
   return Array.isArray(parsed) ? parsed.map((entry) => normalizeReminderEntry(entry)).filter(Boolean) : [];
 }
 
-async function writeRecords(records) {
+async function readJsonFile(filePath, fallbackValue) {
   await ensureStorage();
-  const tempFile = `${DATA_FILE}.tmp`;
-  const payload = `${JSON.stringify(records, null, 2)}\n`;
+  const raw = await fs.readFile(filePath, "utf8");
+  return JSON.parse(raw || JSON.stringify(fallbackValue));
+}
+
+async function writeJsonFileAtomic(filePath, value) {
+  await ensureStorage();
+  const tempFile = `${filePath}.tmp`;
+  const payload = `${JSON.stringify(value, null, 2)}\n`;
   await fs.writeFile(tempFile, payload, "utf8");
-  await fs.rename(tempFile, DATA_FILE);
+  await fs.rename(tempFile, filePath);
+}
+
+async function writeRecords(records) {
+  await writeJsonFileAtomic(DATA_FILE, records);
 }
 
 async function writeRecycleBin(recycleBinRecords) {
-  await ensureStorage();
-  const tempFile = `${RECYCLE_BIN_FILE}.tmp`;
-  const payload = `${JSON.stringify(recycleBinRecords, null, 2)}\n`;
-  await fs.writeFile(tempFile, payload, "utf8");
-  await fs.rename(tempFile, RECYCLE_BIN_FILE);
+  await writeJsonFileAtomic(RECYCLE_BIN_FILE, recycleBinRecords);
 }
 
 async function writeAccountants(accountants) {
-  await ensureStorage();
-  const tempFile = `${ACCOUNTANTS_FILE}.tmp`;
-  const payload = `${JSON.stringify(accountants, null, 2)}\n`;
-  await fs.writeFile(tempFile, payload, "utf8");
-  await fs.rename(tempFile, ACCOUNTANTS_FILE);
+  await writeJsonFileAtomic(ACCOUNTANTS_FILE, accountants);
 }
 
 async function writeDispatcherPasswords(passwords) {
@@ -628,26 +623,15 @@ async function writeDispatcherPasswords(passwords) {
       };
     }
   });
-  const tempFile = `${DISPATCHER_PASSWORDS_FILE}.tmp`;
-  const payload = `${JSON.stringify(mergedConfigs, null, 2)}\n`;
-  await fs.writeFile(tempFile, payload, "utf8");
-  await fs.rename(tempFile, DISPATCHER_PASSWORDS_FILE);
+  await writeJsonFileAtomic(DISPATCHER_PASSWORDS_FILE, mergedConfigs);
 }
 
 async function writeAccountantOperationLogs(logs) {
-  await ensureStorage();
-  const tempFile = `${ACCOUNTANT_OPERATION_LOG_FILE}.tmp`;
-  const payload = `${JSON.stringify(logs, null, 2)}\n`;
-  await fs.writeFile(tempFile, payload, "utf8");
-  await fs.rename(tempFile, ACCOUNTANT_OPERATION_LOG_FILE);
+  await writeJsonFileAtomic(ACCOUNTANT_OPERATION_LOG_FILE, logs);
 }
 
 async function writeReminders(reminders) {
-  await ensureStorage();
-  const tempFile = `${REMINDERS_FILE}.tmp`;
-  const payload = `${JSON.stringify(reminders, null, 2)}\n`;
-  await fs.writeFile(tempFile, payload, "utf8");
-  await fs.rename(tempFile, REMINDERS_FILE);
+  await writeJsonFileAtomic(REMINDERS_FILE, reminders);
 }
 
 function withWriteLock(task) {
@@ -863,31 +847,21 @@ function normalizeOptionalMoneyField(value) {
   return Number.isFinite(amount) ? amount : "";
 }
 
-function normalizeRecordSettlementState(value) {
+function normalizeStateFlag(value, extraTruthyValues = null) {
   if (value === true) return true;
   if (value === false) return false;
   if (typeof value === "number") return value === 1;
   const normalized = normalizeText(value, 32).toLowerCase();
-  return normalized === "true"
-    || normalized === "1"
-    || normalized === "yes"
-    || normalized === "已核对客户确认/待上传"
-    || normalized === "已上传"
-    || normalized === "已上传/待结算"
-    || normalized === "已结算";
+  return TRUTHY_STATE_TEXT_VALUES.has(normalized)
+    || Boolean(extraTruthyValues?.has(normalized));
+}
+
+function normalizeRecordSettlementState(value) {
+  return normalizeStateFlag(value, SETTLED_WORKFLOW_STATE_VALUES);
 }
 
 function normalizeMonthlySettlementState(value) {
-  if (value === true) return true;
-  if (value === false) return false;
-  if (typeof value === "number") return value === 1;
-  const normalized = normalizeText(value, 32).toLowerCase();
-  return normalized === "true"
-    || normalized === "1"
-    || normalized === "yes"
-    || normalized === "on"
-    || normalized === "是"
-    || normalized === "月结";
+  return normalizeStateFlag(value, MONTHLY_SETTLEMENT_STATE_VALUES);
 }
 
 function getNormalizedRecordSettlementFields(record) {
@@ -901,14 +875,7 @@ function getNormalizedRecordSettlementFields(record) {
 }
 
 function normalizeRecordSettlementPaidState(value) {
-  if (value === true) return true;
-  if (value === false) return false;
-  if (typeof value === "number") return value === 1;
-  const normalized = normalizeText(value, 32).toLowerCase();
-  return normalized === "true"
-    || normalized === "1"
-    || normalized === "yes"
-    || normalized === "已结算";
+  return normalizeStateFlag(value, PAID_WORKFLOW_STATE_VALUES);
 }
 
 function getNormalizedRecordSettlementPaymentFields(record) {

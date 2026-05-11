@@ -121,6 +121,12 @@
       openAnalysisModal();
     });
 
+    if (openDataModalBtn) {
+      openDataModalBtn.addEventListener("click", () => {
+        openPriceCompositionModal();
+      });
+    }
+
     if (openDispatcherModalBtn) {
       openDispatcherModalBtn.addEventListener("click", async () => {
         await openDispatcherModal();
@@ -227,10 +233,21 @@
       if (!thumb) return;
       if (!requireAccount()) return;
       const recordId = String(thumb.dataset.recordId || "").trim();
-      if (!recordId) return;
+      const previewImage = {
+        id: String(thumb.dataset.invoiceImageId || "").trim(),
+        name: String(thumb.dataset.invoiceImageName || "").trim(),
+        fileName: String(thumb.dataset.invoiceImageFileName || "").trim(),
+        url: String(thumb.dataset.invoiceImageUrl || "").trim()
+      };
+      if (!recordId && !previewImage.url && !previewImage.fileName) return;
       const targetRecord = records.find((item) => String(item?.id || "").trim() === recordId) || null;
-      if (!targetRecord || !getSettlementInvoiceImage(targetRecord)) return;
-      openInvoicePreviewModal(targetRecord);
+      if (!targetRecord && !previewImage.url && !previewImage.fileName) return;
+      openInvoicePreviewModal(targetRecord, {
+        ownerName: String(thumb.dataset.invoiceOwner || "").trim(),
+        uploadedBy: String(thumb.dataset.invoiceUploadedBy || "").trim(),
+        uploadedAt: String(thumb.dataset.invoiceUploadedAt || "").trim(),
+        image: previewImage
+      });
     }
 
     function bindSettlementDetailInvoiceThumbEvents(container) {
@@ -2113,7 +2130,9 @@
     });
 
     window.addEventListener("resize", () => {
-      scheduleStickyTableColumnWidthSync();
+      if (!document.body.classList.contains("modal-open")) {
+        scheduleStickyTableColumnWidthSync();
+      }
       resizeAnalysisTrendChart();
     });
 
@@ -2354,6 +2373,31 @@
         return;
       }
 
+      const zeroAccountantPriceFields = priceFields.filter((field) => (
+        (field.label === "会计价" || field.label === "会计结算价") &&
+        Number.isFinite(field.value) &&
+        field.value === 0
+      ));
+      if (zeroAccountantPriceFields.length) {
+        const confirmed = await openConfirmDialog({
+          title: "确认价格为0",
+          message: `${zeroAccountantPriceFields.map((field) => field.label).join("、")}为0，确认继续${editingRecordId ? "保存修改" : "提交"}？`,
+          confirmText: "确认继续",
+          cancelText: "返回修改",
+          tone: "primary"
+        });
+        if (!confirmed) {
+          const firstZeroField = zeroAccountantPriceFields[0];
+          showInlineFormError({
+            form: recordForm,
+            hintSetter: setRecordFormHint,
+            target: firstZeroField.input,
+            message: `${zeroAccountantPriceFields.map((field) => field.label).join("、")}为0，请确认后再提交。`
+          });
+          return;
+        }
+      }
+
       if (!item.accountant && !allowEmptyCreateFields) {
         showInlineFormError({
           form: recordForm,
@@ -2474,7 +2518,7 @@
 
       if (shouldSyncData) {
         await syncDataAfterLogin();
-      } else if (shouldFocusLogin) {
+      } else if (shouldFocusLogin && !shouldSkipLoginAutoFocus()) {
         loginCodeInput.focus();
       }
     }

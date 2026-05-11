@@ -445,7 +445,13 @@
     "realName": "",
     "phone": "18098236782",
     "loginPassword": "123456",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "刘阳",
+      "bankName": "中信银行",
+      "bankCardNo": "6217734804855971",
+      "idCardNo": "150403199510032526",
+      "declarationPhone": "18098236782"
+    }
   },
   {
     "username": "XiaoMiFeng",

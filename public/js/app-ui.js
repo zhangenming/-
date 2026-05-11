@@ -743,6 +743,7 @@
 
     function openPriceCompositionModal() {
       if (!priceCompositionModal || !priceCompositionModalCard) return;
+      updatePriceCompositionModal();
       priceCompositionModal.hidden = false;
       priceCompositionModal.classList.remove("modal-enter");
       priceCompositionModalCard.classList.remove("modal-enter");
@@ -750,6 +751,230 @@
       priceCompositionModal.classList.add("modal-enter");
       priceCompositionModalCard.classList.add("modal-enter");
       syncModalOpenState();
+    }
+
+    function formatPriceCompositionMoney(value) {
+      const amount = Number(value);
+      if (!Number.isFinite(amount)) return "0.00";
+      return amount.toLocaleString("zh-CN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function formatPriceCompositionValue(value, paymentTotal) {
+      const amount = Number(value);
+      const base = Number(paymentTotal);
+      const percent = Number.isFinite(amount) && Number.isFinite(base) && base !== 0
+        ? (amount / base) * 100
+        : 0;
+      return `${formatPriceCompositionMoney(amount)} [${percent.toFixed(1)}%]`;
+    }
+
+    function formatPriceCompositionPercent(value, paymentTotal) {
+      const amount = Number(value);
+      const base = Number(paymentTotal);
+      const percent = Number.isFinite(amount) && Number.isFinite(base) && base !== 0
+        ? (amount / base) * 100
+        : 0;
+      return `${percent.toFixed(1)}%`;
+    }
+
+    function getPriceCompositionWeight(value) {
+      return `${Math.max(Number(value) || 0, 0.0001)}fr`;
+    }
+
+    function getPriceCompositionPercent(value, paymentTotal) {
+      const amount = Number(value);
+      const base = Number(paymentTotal);
+      if (!Number.isFinite(amount) || !Number.isFinite(base) || base === 0) {
+        return 0;
+      }
+      return Math.max((amount / base) * 100, 0);
+    }
+
+    function getPriceCompositionRecords() {
+      if (typeof getFilteredRecords === "function") {
+        return getFilteredRecords();
+      }
+      return getVisibleRecords();
+    }
+
+    function updatePriceCompositionModal() {
+      if (!priceCompositionModal) return;
+      const sourceRecords = getPriceCompositionRecords();
+      const totals = (Array.isArray(sourceRecords) ? sourceRecords : []).reduce(
+        (summary, item) => {
+          const payment = Number(item?.paymentPrice);
+          const total = Number(item?.totalPrice);
+          const settlement = Number(item?.settlementPrice);
+          const premium = getPremiumValue(item);
+          if (Number.isFinite(payment)) summary.payment += payment;
+          if (Number.isFinite(total)) summary.total += total;
+          if (Number.isFinite(settlement)) summary.settlement += settlement;
+          if (Number.isFinite(premium)) summary.premium += premium;
+          return summary;
+        },
+        { payment: 0, premium: 0, total: 0, settlement: 0 },
+      );
+      const profitBreakdown = getProfitTotalBreakdown(sourceRecords);
+      const dispatcherProfit = Number.isFinite(profitBreakdown.totalProfit)
+        ? profitBreakdown.totalProfit
+        : 0;
+      const baseProfitAmount = Number.isFinite(profitBreakdown.totalBase)
+        ? profitBreakdown.totalBase
+        : 0;
+      const premiumReceptionAmount = Number.isFinite(profitBreakdown.premiumProfit)
+        ? profitBreakdown.premiumProfit
+        : 0;
+      const platformAmount = totals.payment - dispatcherProfit - totals.settlement;
+      const premiumPlatformAmount = totals.premium - premiumReceptionAmount;
+      const totalReceptionAmount = baseProfitAmount;
+      const totalPlatformAmount = platformAmount - premiumPlatformAmount;
+      const split = {
+        payment: totals.payment,
+        premium: totals.premium,
+        total: totals.total,
+        settlement: totals.settlement,
+        premiumPlatform: premiumPlatformAmount,
+        premiumReception: premiumReceptionAmount,
+        totalPlatform: totalPlatformAmount,
+        totalReception: totalReceptionAmount,
+        totalAccounting: totals.settlement,
+        platform: platformAmount,
+        reception: dispatcherProfit,
+        accounting: totals.settlement
+      };
+      const premiumPercent = getPriceCompositionPercent(split.premium, split.payment);
+      const totalPercent = getPriceCompositionPercent(split.total, split.payment);
+      const premiumWidth = Math.min(premiumPercent, 100);
+      const totalWidth = Math.min(totalPercent, 100);
+      const resultWidth = getPriceCompositionPercent(split.platform + split.reception + split.accounting, split.payment);
+      const layout = {
+        premiumLeft: 0,
+        premiumWidth,
+        premiumCenter: premiumWidth / 2,
+        totalLeft: premiumWidth,
+        totalWidth,
+        totalCenter: premiumWidth + (totalWidth / 2),
+        resultLeft: getPriceCompositionPercent(split.payment - split.platform - split.reception - split.accounting, split.payment),
+        resultWidth: Math.min(resultWidth, 100)
+      };
+      const allFieldsWithPercent = ["payment", "premium", "total", "premiumPlatform", "premiumReception", "totalPlatform", "totalReception", "totalAccounting", "platform", "reception", "accounting"];
+      Object.entries(split).forEach(([field, value]) => {
+        const node = priceCompositionModal.querySelector(
+          `[data-price-composition-field="${field}"]`,
+        );
+        if (!node) return;
+        const amountText = formatPriceCompositionMoney(value);
+        node.textContent = amountText;
+        if (allFieldsWithPercent.includes(field)) {
+          const percentNode = priceCompositionModal.querySelector(
+            `[data-price-composition-percent="${field}"]`,
+          );
+          if (percentNode) {
+            percentNode.textContent = formatPriceCompositionPercent(value, split.payment);
+          }
+        }
+      });
+      const chart = priceCompositionModal.querySelector(".price-composition-chart");
+      if (chart) {
+        chart.style.setProperty("--price-premium-left", `${layout.premiumLeft}%`);
+        chart.style.setProperty("--price-premium-width", `${layout.premiumWidth}%`);
+        chart.style.setProperty("--price-premium-center", `${layout.premiumCenter}%`);
+        chart.style.setProperty("--price-total-left", `${layout.totalLeft}%`);
+        chart.style.setProperty("--price-total-width", `${layout.totalWidth}%`);
+        chart.style.setProperty("--price-total-center", `${layout.totalCenter}%`);
+        chart.style.setProperty("--price-result-left", `${layout.resultLeft}%`);
+        chart.style.setProperty("--price-result-width", `${layout.resultWidth}%`);
+        chart.style.setProperty(
+          "--price-premium-columns",
+          [split.premiumPlatform, split.premiumReception].map(getPriceCompositionWeight).join(" "),
+        );
+        chart.style.setProperty(
+          "--price-total-columns",
+          [split.totalPlatform, split.totalReception, split.totalAccounting].map(getPriceCompositionWeight).join(" "),
+        );
+        chart.style.setProperty(
+          "--price-result-columns",
+          [split.platform, split.reception, split.accounting].map(getPriceCompositionWeight).join(" "),
+        );
+        const sumPositive = (values) => values.reduce((sum, value) => {
+          const amount = Number(value);
+          return sum + (Number.isFinite(amount) && amount > 0 ? amount : 0);
+        }, 0);
+        const getSegmentCenter = (left, width, values, index) => {
+          const total = sumPositive(values);
+          if (total <= 0 || width <= 0) return left + (width / 2);
+          const before = values.slice(0, index).reduce((sum, value) => {
+            const amount = Number(value);
+            return sum + (Number.isFinite(amount) && amount > 0 ? amount : 0);
+          }, 0);
+          const current = Math.max(Number(values[index]) || 0, 0);
+          return left + (width * ((before + (current / 2)) / total));
+        };
+        const toFlowX = (percent) => {
+          const value = Math.min(Math.max(Number(percent) || 0, 0), 100);
+          return Number((value * 10).toFixed(2));
+        };
+        const premiumValues = [split.premiumPlatform, split.premiumReception];
+        const totalValues = [split.totalPlatform, split.totalReception, split.totalAccounting];
+        const resultValues = [split.platform, split.reception, split.accounting];
+        const premiumPlatformX = toFlowX(getSegmentCenter(layout.premiumLeft, layout.premiumWidth, premiumValues, 0));
+        const premiumReceptionX = toFlowX(getSegmentCenter(layout.premiumLeft, layout.premiumWidth, premiumValues, 1));
+        const totalPlatformX = toFlowX(getSegmentCenter(layout.totalLeft, layout.totalWidth, totalValues, 0));
+        const totalReceptionX = toFlowX(getSegmentCenter(layout.totalLeft, layout.totalWidth, totalValues, 1));
+        const totalAccountingX = toFlowX(getSegmentCenter(layout.totalLeft, layout.totalWidth, totalValues, 2));
+        const resultPlatformX = toFlowX(getSegmentCenter(layout.resultLeft, layout.resultWidth, resultValues, 0));
+        const resultReceptionX = toFlowX(getSegmentCenter(layout.resultLeft, layout.resultWidth, resultValues, 1));
+        const resultAccountingX = toFlowX(getSegmentCenter(layout.resultLeft, layout.resultWidth, resultValues, 2));
+        const premiumSourceX = toFlowX(layout.premiumCenter);
+        const totalSourceX = toFlowX(layout.totalCenter);
+        const setSplitTrunk = (selector, sourceX, forkY) => {
+          const trunk = chart.querySelector(selector);
+          if (trunk) trunk.setAttribute("d", `M ${sourceX} 0 V ${forkY}`);
+        };
+        const setSplitPath = (selector, sourceX, targetX, forkY, bendY) => {
+          const line = chart.querySelector(selector);
+          if (line) line.setAttribute("d", `M ${sourceX} ${forkY} V ${bendY} H ${targetX} V 100`);
+        };
+        const setSplitArrow = (selector, targetX) => {
+          const arrow = chart.querySelector(selector);
+          if (arrow) arrow.setAttribute("d", `M ${targetX - 8} 98 L ${targetX} 118 L ${targetX + 8} 98 Z`);
+        };
+        setSplitTrunk(".price-split-trunk.premium", premiumSourceX, 44);
+        setSplitTrunk(".price-split-trunk.total", totalSourceX, 48);
+        setSplitPath(".price-split-line.platform.premium", premiumSourceX, premiumPlatformX, 44, 54);
+        setSplitPath(".price-split-line.reception.premium", premiumSourceX, premiumReceptionX, 44, 72);
+        setSplitPath(".price-split-line.platform.total", totalSourceX, totalPlatformX, 48, 40);
+        setSplitPath(".price-split-line.reception.total", totalSourceX, totalReceptionX, 48, 60);
+        setSplitPath(".price-split-line.accounting.total", totalSourceX, totalAccountingX, 48, 80);
+        setSplitArrow(".price-split-arrow.platform.premium", premiumPlatformX);
+        setSplitArrow(".price-split-arrow.reception.premium", premiumReceptionX);
+        setSplitArrow(".price-split-arrow.platform.total", totalPlatformX);
+        setSplitArrow(".price-split-arrow.reception.total", totalReceptionX);
+        setSplitArrow(".price-split-arrow.accounting.total", totalAccountingX);
+        const platformLines = chart.querySelectorAll(".price-flow-line.platform");
+        const receptionLines = chart.querySelectorAll(".price-flow-line.reception");
+        const accountingLine = chart.querySelector(".price-flow-line.accounting");
+        const platformArrow = chart.querySelector(".price-flow-arrow.platform");
+        const receptionArrow = chart.querySelector(".price-flow-arrow.reception");
+        const accountingArrow = chart.querySelector(".price-flow-arrow.accounting");
+        if (platformLines[0]) platformLines[0].setAttribute("d", `M ${premiumPlatformX} 0 V 64 H ${resultPlatformX} V 138`);
+        if (platformLines[1]) platformLines[1].setAttribute("d", `M ${totalPlatformX} 0 V 64 H ${resultPlatformX} V 138`);
+        if (receptionLines[0]) receptionLines[0].setAttribute("d", `M ${premiumReceptionX} 0 V 88 H ${resultReceptionX} V 138`);
+        if (receptionLines[1]) receptionLines[1].setAttribute("d", `M ${totalReceptionX} 0 V 88 H ${resultReceptionX} V 138`);
+        if (accountingLine) accountingLine.setAttribute("d", `M ${totalAccountingX} 0 V 138`);
+        if (platformArrow) platformArrow.setAttribute("d", `M ${resultPlatformX - 12} 136 L ${resultPlatformX} 158 L ${resultPlatformX + 12} 136 Z`);
+        if (receptionArrow) receptionArrow.setAttribute("d", `M ${resultReceptionX - 12} 136 L ${resultReceptionX} 158 L ${resultReceptionX + 12} 136 Z`);
+        if (accountingArrow) accountingArrow.setAttribute("d", `M ${resultAccountingX - 12} 136 L ${resultAccountingX} 158 L ${resultAccountingX + 12} 136 Z`);
+      }
+      if (chart) {
+        chart.setAttribute(
+          "aria-label",
+          `当前筛选${sourceRecords.length}条，付款价${formatPriceCompositionValue(split.payment, split.payment)}，溢价${formatPriceCompositionValue(split.premium, split.payment)}，会计价${formatPriceCompositionValue(split.total, split.payment)}，会计结算价${formatPriceCompositionValue(split.settlement, split.payment)}，平台${formatPriceCompositionValue(split.platform, split.payment)}，接待${formatPriceCompositionValue(split.reception, split.payment)}，会计${formatPriceCompositionValue(split.accounting, split.payment)}`,
+        );
+      }
     }
 
     function closePriceCompositionModal() {
@@ -1266,27 +1491,7 @@
         if (group.uploadedInvoices.length) {
           const invoiceList = document.createElement("div");
           invoiceList.className = "settlement-detail-invoice-list";
-          group.uploadedInvoices.slice(0, 2).forEach((item, index) => {
-            const thumb = document.createElement("button");
-            thumb.type = "button";
-            thumb.className = "settlement-detail-invoice-thumb";
-            thumb.dataset.recordId = String(item.firstRecord?.id || "").trim();
-            thumb.title = `${group.accountant} 发票 ${index + 1}，双击放大`;
-            thumb.setAttribute("aria-label", `${group.accountant} 发票 ${index + 1}，双击放大`);
-
-            const image = document.createElement("img");
-            image.src = item.image.url;
-            image.alt = item.image.name || "发票图片";
-            thumb.appendChild(image);
-
-            invoiceList.appendChild(thumb);
-          });
-          if (group.uploadedInvoices.length > 2) {
-            const more = document.createElement("span");
-            more.className = "settlement-detail-invoice-more";
-            more.textContent = `+${group.uploadedInvoices.length - 2}`;
-            invoiceList.appendChild(more);
-          }
+          invoiceList.appendChild(createSettlementDetailInvoiceThumb(group.uploadedInvoices[0], 0, group.accountant));
           invoiceTd.appendChild(invoiceList);
         } else {
           const pending = document.createElement("span");
@@ -1492,27 +1697,7 @@
         if (group.uploadedInvoices.length) {
           const invoiceList = document.createElement("div");
           invoiceList.className = "settlement-detail-invoice-list";
-          group.uploadedInvoices.slice(0, 2).forEach((item, index) => {
-            const thumb = document.createElement("button");
-            thumb.type = "button";
-            thumb.className = "settlement-detail-invoice-thumb";
-            thumb.dataset.recordId = String(item.firstRecord?.id || "").trim();
-            thumb.title = `${group.accountant} 发票 ${index + 1}，双击放大`;
-            thumb.setAttribute("aria-label", `${group.accountant} 发票 ${index + 1}，双击放大`);
-
-            const image = document.createElement("img");
-            image.src = item.image.url;
-            image.alt = item.image.name || "发票图片";
-            thumb.appendChild(image);
-
-            invoiceList.appendChild(thumb);
-          });
-          if (group.uploadedInvoices.length > 2) {
-            const more = document.createElement("span");
-            more.className = "settlement-detail-invoice-more";
-            more.textContent = `+${group.uploadedInvoices.length - 2}`;
-            invoiceList.appendChild(more);
-          }
+          invoiceList.appendChild(createSettlementDetailInvoiceThumb(group.uploadedInvoices[0], 0, group.accountant));
           invoiceTd.appendChild(invoiceList);
         }
 
@@ -2672,10 +2857,57 @@
       syncModalOpenState();
     }
 
-    function openInvoicePreviewModal(record) {
+    function setSettlementDetailInvoiceThumbPreviewData(thumb, item, ownerName = "") {
+      if (!thumb || !item || typeof item !== "object") return;
+      const image = item.image || {};
+      thumb.dataset.recordId = String(item.firstRecord?.id || "").trim();
+      thumb.dataset.invoiceOwner = String(ownerName || "").trim();
+      thumb.dataset.invoiceUploadedAt = String(item.uploadedAt || "").trim();
+      thumb.dataset.invoiceUploadedBy = String(item.uploadedBy || "").trim();
+      thumb.dataset.invoiceImageId = String(image.id || "").trim();
+      thumb.dataset.invoiceImageName = String(image.name || "").trim();
+      thumb.dataset.invoiceImageFileName = String(image.fileName || "").trim();
+      thumb.dataset.invoiceImageUrl = String(image.url || "").trim();
+    }
+
+    function createSettlementDetailInvoiceThumb(item, index, ownerName = "") {
+      const thumb = document.createElement("button");
+      thumb.type = "button";
+      thumb.className = "settlement-detail-invoice-thumb";
+      setSettlementDetailInvoiceThumbPreviewData(thumb, item, ownerName);
+      thumb.title = `${ownerName} 发票 ${index + 1}，双击放大`;
+      thumb.setAttribute("aria-label", `${ownerName} 发票 ${index + 1}，双击放大`);
+
+      const image = document.createElement("img");
+      image.src = item.image.url;
+      image.alt = item.image.name || "发票图片";
+      thumb.appendChild(image);
+
+      return thumb;
+    }
+
+    function normalizeInvoicePreviewImage(rawImage) {
+      if (!rawImage || typeof rawImage !== "object") return null;
+      const rawUrl = String(rawImage.url || "").trim();
+      const fileName = String(rawImage.fileName || "").trim();
+      const url = resolveStoredAssetUrl(
+        rawUrl || (fileName ? `/invoice-images/${encodeURIComponent(fileName)}` : "")
+      );
+      if (!url) return null;
+      return {
+        id: String(rawImage.id || "").trim(),
+        name: String(rawImage.name || "").trim() || fileName || "发票图片",
+        fileName,
+        url
+      };
+    }
+
+    function openInvoicePreviewModal(record, previewOptions = {}) {
       if (!invoicePreviewModal || !invoicePreviewModalCard || !invoicePreviewImage || !invoicePreviewMeta) return;
-      const image = getSettlementInvoiceImage(record);
+      const previewImage = normalizeInvoicePreviewImage(previewOptions?.image);
+      const image = previewImage || getSettlementInvoiceImage(record);
       if (!image) return;
+      const usesPreviewImage = Boolean(previewImage);
       const shouldStackOverSettlementDetail = Boolean(
         (bossSettlementDetailModal && !bossSettlementDetailModal.hidden)
           || (paidSettlementDetailModal && !paidSettlementDetailModal.hidden)
@@ -2704,9 +2936,9 @@
       closeSourcePicker();
       closePlatformShopPicker();
       const metaParts = [
-        String(record?.accountant || "").trim(),
-        String(record?.invoiceUploadedBy || "").trim(),
-        formatDateTimeDisplay(record?.invoiceUploadedAt)
+        String(previewOptions?.ownerName || record?.accountant || "").trim(),
+        String(usesPreviewImage ? previewOptions?.uploadedBy : record?.invoiceUploadedBy || "").trim(),
+        formatDateTimeDisplay(usesPreviewImage ? previewOptions?.uploadedAt : record?.invoiceUploadedAt)
       ].filter(Boolean);
       invoicePreviewMeta.textContent = metaParts.join(" · ");
       invoicePreviewImage.src = image.url;
@@ -3867,27 +4099,7 @@
         if (group.uploadedInvoices.length) {
           const invoiceList = document.createElement("div");
           invoiceList.className = "settlement-detail-invoice-list";
-          group.uploadedInvoices.slice(0, 2).forEach((item, index) => {
-            const thumb = document.createElement("button");
-            thumb.type = "button";
-            thumb.className = "settlement-detail-invoice-thumb";
-            thumb.dataset.recordId = String(item.firstRecord?.id || "").trim();
-            thumb.title = `${group.accountant} 发票 ${index + 1}，双击放大`;
-            thumb.setAttribute("aria-label", `${group.accountant} 发票 ${index + 1}，双击放大`);
-
-            const image = document.createElement("img");
-            image.src = item.image.url;
-            image.alt = item.image.name || "发票图片";
-            thumb.appendChild(image);
-
-            invoiceList.appendChild(thumb);
-          });
-          if (group.uploadedInvoices.length > 2) {
-            const more = document.createElement("span");
-            more.className = "settlement-detail-invoice-more";
-            more.textContent = `+${group.uploadedInvoices.length - 2}`;
-            invoiceList.appendChild(more);
-          }
+          invoiceList.appendChild(createSettlementDetailInvoiceThumb(group.uploadedInvoices[0], 0, group.accountant));
           invoiceTd.appendChild(invoiceList);
         } else {
           const pending = document.createElement("span");
@@ -4988,6 +5200,7 @@
         ? `account-role-badge ${isAccountant ? "accountant" : (isBoss ? "boss" : "dispatcher")}`
         : "account-role-badge";
       openCreateModalBtn.hidden = isAccountant;
+      if (openDataModalBtn) openDataModalBtn.hidden = !isBoss;
       openDispatcherModalBtn.hidden = !isBoss;
       openAnalysisModalBtn.hidden = !isBoss;
       openRecycleModalBtn.hidden = isAccountant;
@@ -5063,6 +5276,20 @@
       recordSubmitBtn.textContent = "保存数据";
     }
 
+    function shouldSkipRecordModalAutoFocus() {
+      return Boolean(
+        window.matchMedia
+          && window.matchMedia("(hover: none), (pointer: coarse), (max-width: 860px)").matches
+      );
+    }
+
+    function shouldSkipLoginAutoFocus() {
+      return Boolean(
+        window.matchMedia
+          && window.matchMedia("(hover: none), (pointer: coarse), (max-width: 860px)").matches
+      );
+    }
+
     function showRecordModal(initialFocusTarget = accountantPickerTrigger) {
       createModal.hidden = false;
       createModal.classList.remove("modal-enter");
@@ -5071,7 +5298,7 @@
       createModal.classList.add("modal-enter");
       createModalCard.classList.add("modal-enter");
       syncModalOpenState();
-      if (initialFocusTarget && typeof initialFocusTarget.focus === "function") {
+      if (!shouldSkipRecordModalAutoFocus() && initialFocusTarget && typeof initialFocusTarget.focus === "function") {
         initialFocusTarget.focus();
       }
     }
@@ -5079,7 +5306,9 @@
     function requireAccount() {
       if (hasAuthenticatedAccount()) return true;
       setPageMode(false);
-      loginCodeInput.focus();
+      if (!shouldSkipLoginAutoFocus()) {
+        loginCodeInput.focus();
+      }
       return false;
     }
 
@@ -5196,7 +5425,9 @@
       if (isQuickLoginDebugEnabled) {
         await loadSavedLoginEntries();
       }
-      loginCodeInput.focus();
+      if (!shouldSkipLoginAutoFocus()) {
+        loginCodeInput.focus();
+      }
     }
 
     async function openChangePasswordFlow() {

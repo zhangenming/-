@@ -39,7 +39,7 @@ const STORAGE_KEY_UPDATED_ROW_HIGHLIGHT_PREFIX =
 const DISPATCHER_LOGIN_PASSWORD = "11";
 const BOSS_LOGIN_ACCOUNT = "开心";
 const BOSS_LOGIN_LEGACY_ACCOUNT = "boss";
-const BOSS_LOGIN_ACCOUNTS = [BOSS_LOGIN_ACCOUNT, "管理员"];
+const BOSS_LOGIN_ACCOUNTS = [BOSS_LOGIN_ACCOUNT];
 const BOSS_LOGIN_ACCOUNT_SET = new Set(
   BOSS_LOGIN_ACCOUNTS.map((item) =>
     String(item || "")
@@ -50,8 +50,16 @@ const BOSS_LOGIN_ACCOUNT_SET = new Set(
 const BOSS_LOGIN_CODE_TO_ACCOUNT = {
   [BOSS_LOGIN_ACCOUNT.toLowerCase()]: BOSS_LOGIN_ACCOUNT,
   [BOSS_LOGIN_LEGACY_ACCOUNT]: BOSS_LOGIN_ACCOUNT,
-  管理员: "管理员",
 };
+const TRUTHY_STATE_TEXT_VALUES = new Set(["true", "1", "yes"]);
+const SETTLED_WORKFLOW_STATE_VALUES = new Set([
+  "已核对客户确认/待上传",
+  "已上传",
+  "已上传/待结算",
+  "已结算",
+]);
+const MONTHLY_SETTLEMENT_STATE_VALUES = new Set(["on", "是", "月结"]);
+const PAID_WORKFLOW_STATE_VALUES = new Set(["已结算"]);
 const SETTLEMENT_INVOICE_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const NON_SETTLEMENT_ACCOUNTANT_NAME = "不结算";
 const EXTERNAL_ACCOUNTANT_NAME = "外部人员";
@@ -167,6 +175,19 @@ function removePersistentStateItem(key) {
   persistentStateStorage.removeItem(key);
   legacyPersistentStateStorage.removeItem(key);
 }
+
+function normalizeStateFlag(value, extraTruthyValues = null) {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0) return false;
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  return (
+    TRUTHY_STATE_TEXT_VALUES.has(normalized) ||
+    Boolean(extraTruthyValues?.has(normalized))
+  );
+}
+
 const DISPATCHER_TAGS = ["1", "A", "C", "D", "E", "K", "1旧", "K旧"];
 const ACCOUNT_TO_DISPATCHER_TAG = {
   1: "1",
@@ -579,6 +600,7 @@ const headerAccountText = document.getElementById("headerAccountText");
 const headerAccountSubText = document.getElementById("headerAccountSubText");
 const accountRoleBadge = document.getElementById("accountRoleBadge");
 const openCreateModalBtn = document.getElementById("openCreateModalBtn");
+const openDataModalBtn = document.getElementById("openDataModalBtn");
 const openDispatcherModalBtn = document.getElementById(
   "openDispatcherModalBtn",
 );
@@ -2219,16 +2241,7 @@ function clearBossSettlementPayoutSelection() {
 }
 
 function normalizeRecordSettlementPaidState(value) {
-  if (value === true || value === 1) return true;
-  const normalized = String(value || "")
-    .trim()
-    .toLowerCase();
-  return (
-    normalized === "true" ||
-    normalized === "1" ||
-    normalized === "yes" ||
-    normalized === "已结算"
-  );
+  return normalizeStateFlag(value, PAID_WORKFLOW_STATE_VALUES);
 }
 
 function isRecordSettlementPaid(record) {
@@ -2306,35 +2319,14 @@ function getSelectedBossSettlementPayoutRecordIds() {
 
 function isRecordSettled(record) {
   if (!record || typeof record !== "object") return false;
-  if (record.isSettled === true || record.isSettled === 1) return true;
-  const normalized = String(record.isSettled || "")
-    .trim()
-    .toLowerCase();
-  return (
-    normalized === "true" ||
-    normalized === "1" ||
-    normalized === "yes" ||
-    normalized === "已核对客户确认/待上传" ||
-    normalized === "已上传" ||
-    normalized === "已上传/待结算" ||
-    normalized === "已结算"
-  );
+  return normalizeStateFlag(record.isSettled, SETTLED_WORKFLOW_STATE_VALUES);
 }
 
 function isMonthlySettlementRecord(record) {
   if (!record || typeof record !== "object") return false;
-  if (record.isMonthlySettlement === true || record.isMonthlySettlement === 1)
-    return true;
-  const normalized = String(record.isMonthlySettlement || "")
-    .trim()
-    .toLowerCase();
-  return (
-    normalized === "true" ||
-    normalized === "1" ||
-    normalized === "yes" ||
-    normalized === "on" ||
-    normalized === "是" ||
-    normalized === "月结"
+  return normalizeStateFlag(
+    record.isMonthlySettlement,
+    MONTHLY_SETTLEMENT_STATE_VALUES,
   );
 }
 

@@ -150,9 +150,24 @@
         <section id="mobileRecordList" class="mobile-record-list" aria-label="手机数据列表"></section>
       </div>
       <nav class="mobile-bottom-nav" aria-label="手机底部导航">
-        <button id="mobileNavDataBtn" class="mobile-nav-btn active" type="button"><span class="mobile-nav-icon">表</span><span>数据</span></button>
-        <button id="mobileNavCreateBtn" class="mobile-nav-btn" type="button"><span class="mobile-nav-icon">＋</span><span>新建</span></button>
-        <button id="mobileNavAccountBtn" class="mobile-nav-btn" type="button"><span class="mobile-nav-icon">我</span><span>账号</span></button>
+        <button id="mobileNavDataBtn" class="mobile-nav-btn active" type="button" aria-label="数据列表">
+          <span class="mobile-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M5 6.5h14M5 12h14M5 17.5h14"></path></svg>
+          </span>
+          <span class="mobile-nav-label">数据</span>
+        </button>
+        <button id="mobileNavCreateBtn" class="mobile-nav-btn" type="button" aria-label="指派订单">
+          <span class="mobile-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
+          </span>
+          <span class="mobile-nav-label">指派</span>
+        </button>
+        <button id="mobileNavAccountBtn" class="mobile-nav-btn" type="button" aria-label="账号">
+          <span class="mobile-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 12.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM5.5 19c1.15-2.35 3.35-3.6 6.5-3.6s5.35 1.25 6.5 3.6"></path></svg>
+          </span>
+          <span class="mobile-nav-label">账号</span>
+        </button>
       </nav>
     `;
 
@@ -234,39 +249,23 @@
     return node;
   }
 
-  function renderMobileRecord(record) {
-    const card = document.createElement("article");
-    const recordId = String(record?.id || "").trim();
-    const statusKey = getRecordWorkflowStatusKey(record);
-    const dispatcherTag = normalizeDispatcherTag(record?.dispatcher);
-    const isCurrentDispatcher = Boolean(getCurrentDispatcherTag() && dispatcherTag === getCurrentDispatcherTag());
-    const isExpanded = expandedMobileRecordIds.has(recordId);
-    card.className = `mobile-record-card mobile-record-row${isCurrentDispatcher ? " is-current" : ""}${selectedBossRecordIds.has(recordId) ? " is-selected" : ""}${isExpanded ? " is-expanded" : ""}`;
+  function createMobileStatus(statusKey, statusText) {
+    const status = document.createElement("span");
+    status.className = `mobile-status ${statusKey}`;
+    const statusParts = String(statusText || "").split("/").map((part) => part.trim()).filter(Boolean);
+    if (statusParts.length > 1) {
+      statusParts.forEach((part) => {
+        const line = document.createElement("span");
+        line.textContent = part;
+        status.appendChild(line);
+      });
+      return status;
+    }
+    status.textContent = statusText;
+    return status;
+  }
 
-    const head = document.createElement("button");
-    head.type = "button";
-    head.className = "mobile-record-head";
-    head.setAttribute("aria-expanded", isExpanded ? "true" : "false");
-    head.addEventListener("click", () => {
-      if (expandedMobileRecordIds.has(recordId)) {
-        expandedMobileRecordIds.delete(recordId);
-      } else {
-        expandedMobileRecordIds.add(recordId);
-      }
-      scheduleMobileRender();
-    });
-
-    const date = document.createElement("div");
-    date.className = "mobile-record-date";
-    date.textContent = formatDateDisplay(record?.date) || "-";
-    const main = document.createElement("div");
-    main.className = "mobile-record-main";
-    const title = document.createElement("div");
-    title.className = "mobile-record-title";
-    title.textContent = String(record?.customer || "未填客户").trim();
-    const sub = document.createElement("div");
-    sub.className = "mobile-record-sub";
-    sub.textContent = String(record?.summary || "").trim() || "未填写任务简介";
+  function createMobileRecordMoney(record) {
     const money = document.createElement("div");
     money.className = "mobile-record-money";
     const accountant = document.createElement("span");
@@ -276,26 +275,57 @@
     amount.className = "mobile-record-amount";
     amount.textContent = toMoney(record?.paymentPrice);
     money.append(accountant, amount);
-    const status = document.createElement("span");
-    status.className = `mobile-status ${statusKey}`;
-    const statusText = getRecordWorkflowStatusText(record);
-    const statusParts = String(statusText || "").split("/").map((part) => part.trim()).filter(Boolean);
-    if (statusParts.length > 1) {
-      statusParts.forEach((part) => {
-        const line = document.createElement("span");
-        line.textContent = part;
-        status.appendChild(line);
-      });
-    } else {
-      status.textContent = statusText;
-    }
+    return money;
+  }
+
+  function createMobileRecordMain(record) {
+    const main = document.createElement("div");
+    main.className = "mobile-record-main";
+    const title = document.createElement("div");
+    title.className = "mobile-record-title";
+    title.textContent = String(record?.customer || "未填客户").trim();
+    const sub = document.createElement("div");
+    sub.className = "mobile-record-sub";
+    sub.textContent = String(record?.summary || "").trim() || "未填写任务简介";
+    main.append(title, sub);
+    return main;
+  }
+
+  function createMobileRecordHead(record, { isExpanded, statusKey }) {
+    const recordId = String(record?.id || "").trim();
+    const head = document.createElement("button");
+    head.type = "button";
+    head.className = "mobile-record-head";
+    head.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+    head.addEventListener("click", () => {
+      const shouldCollapse = expandedMobileRecordIds.has(recordId);
+      expandedMobileRecordIds.clear();
+      if (!shouldCollapse) {
+        expandedMobileRecordIds.add(recordId);
+      }
+      syncMobileRecordExpansionDom();
+    });
+
+    const date = document.createElement("div");
+    date.className = "mobile-record-date";
+    date.textContent = formatDateDisplay(record?.date) || "-";
+
     const toggle = document.createElement("span");
     toggle.className = "mobile-record-toggle";
     toggle.setAttribute("aria-hidden", "true");
     toggle.textContent = "⌄";
-    main.append(title, sub);
-    head.append(date, money, main, status, toggle);
 
+    head.append(
+      date,
+      createMobileRecordMoney(record),
+      createMobileRecordMain(record),
+      createMobileStatus(statusKey, getRecordWorkflowStatusText(record)),
+      toggle,
+    );
+    return head;
+  }
+
+  function createMobileRecordFinance(record) {
     const finance = document.createElement("div");
     finance.className = "mobile-record-finance";
     finance.append(
@@ -304,7 +334,10 @@
       createMeta("会计价", toMoney(record?.totalPrice)),
       createMeta("结算价", formatSettlementPriceDisplay(record)),
     );
+    return finance;
+  }
 
+  function createMobileRecordMeta(record) {
     const meta = document.createElement("div");
     meta.className = "mobile-record-meta compact";
     meta.append(
@@ -313,16 +346,20 @@
       createMeta("平台", [record?.platform, record?.shopName].filter(Boolean).join("-")),
       createMeta("来源", record?.source),
     );
+    return meta;
+  }
 
+  function createMobileRecordSummary(record) {
     const summary = document.createElement("div");
     summary.className = "mobile-record-summary";
-    const summaryText = String(record?.summary || "").trim();
-    const remarkText = String(record?.remark || "").trim();
     summary.append(
-      createMeta("任务简介", summaryText || "未填写"),
-      createMeta("备注", remarkText || "无"),
+      createMeta("任务简介", String(record?.summary || "").trim() || "未填写"),
+      createMeta("备注", String(record?.remark || "").trim() || "无"),
     );
+    return summary;
+  }
 
+  function createMobileRecordActions(record) {
     const actions = document.createElement("div");
     actions.className = "mobile-record-actions";
     getMobileRecordActions(record).forEach((item) => {
@@ -332,15 +369,112 @@
         onClick: item.onClick || (() => callClick(item.button)),
       }));
     });
+    return actions;
+  }
 
+  function createMobileRecordDetails(record, isExpanded) {
     const details = document.createElement("div");
     details.className = "mobile-record-details";
-    details.hidden = !isExpanded;
-    details.append(finance, meta, summary);
-    if (actions.children.length) details.appendChild(actions);
+    details.setAttribute("aria-hidden", isExpanded ? "false" : "true");
+    if (isExpanded) {
+      details.style.maxHeight = "none";
+    }
+    const inner = document.createElement("div");
+    inner.className = "mobile-record-details-inner";
+    inner.append(
+      createMobileRecordFinance(record),
+      createMobileRecordMeta(record),
+      createMobileRecordSummary(record),
+    );
+    const actions = createMobileRecordActions(record);
+    if (actions.children.length) inner.appendChild(actions);
+    details.appendChild(inner);
+    return details;
+  }
 
-    card.append(head, details);
+  function animateMobileRecordDetails(details, shouldExpand) {
+    if (!details) return;
+    if (details.mobileExpandAnimation) {
+      details.mobileExpandAnimation.cancel();
+      details.mobileExpandAnimation = null;
+    }
+
+    const inner = details.querySelector(".mobile-record-details-inner");
+    const targetHeight = inner?.scrollHeight || details.scrollHeight || 0;
+    const startHeight = shouldExpand ? 0 : details.getBoundingClientRect().height;
+    const endHeight = shouldExpand ? targetHeight : 0;
+
+    details.style.overflow = "hidden";
+    details.style.maxHeight = `${startHeight}px`;
+
+    const animation = details.animate(
+      [
+        {
+          maxHeight: `${startHeight}px`,
+          opacity: shouldExpand ? 0 : 1,
+          transform: shouldExpand ? "translateY(-4px)" : "translateY(0)",
+        },
+        {
+          maxHeight: `${endHeight}px`,
+          opacity: shouldExpand ? 1 : 0,
+          transform: shouldExpand ? "translateY(0)" : "translateY(-4px)",
+        },
+      ],
+      {
+        duration: 240,
+        easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+        fill: "forwards",
+      },
+    );
+
+    details.mobileExpandAnimation = animation;
+    animation.onfinish = () => {
+      details.mobileExpandAnimation = null;
+      details.style.maxHeight = shouldExpand ? "none" : "0px";
+      details.style.opacity = shouldExpand ? "1" : "";
+      details.style.transform = shouldExpand ? "translateY(0)" : "";
+    };
+    animation.oncancel = () => {
+      details.mobileExpandAnimation = null;
+    };
+  }
+
+  function renderMobileRecord(record) {
+    const card = document.createElement("article");
+    const recordId = String(record?.id || "").trim();
+    const statusKey = getRecordWorkflowStatusKey(record);
+    const dispatcherTag = normalizeDispatcherTag(record?.dispatcher);
+    const isCurrentDispatcher = Boolean(getCurrentDispatcherTag() && dispatcherTag === getCurrentDispatcherTag());
+    const isExpanded = expandedMobileRecordIds.has(recordId);
+    card.className = `mobile-record-card mobile-record-row${isCurrentDispatcher ? " is-current" : ""}${selectedBossRecordIds.has(recordId) ? " is-selected" : ""}${isExpanded ? " is-expanded" : ""}`;
+    card.dataset.recordId = recordId;
+    card.append(
+      createMobileRecordHead(record, { isExpanded, statusKey }),
+      createMobileRecordDetails(record, isExpanded),
+    );
     return card;
+  }
+
+  function syncMobileRecordExpansionDom() {
+    if (!mobileList) return;
+    Array.from(mobileList.querySelectorAll(".mobile-record-card")).forEach((card) => {
+      const recordId = String(card.dataset.recordId || "").trim();
+      const isExpanded = expandedMobileRecordIds.has(recordId);
+      const wasExpanded = card.classList.contains("is-expanded");
+      const details = card.querySelector(".mobile-record-details");
+      const head = card.querySelector(".mobile-record-head");
+      if (!details) return;
+      if (wasExpanded === isExpanded) {
+        head?.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+        details.setAttribute("aria-hidden", isExpanded ? "false" : "true");
+        return;
+      }
+
+      card.classList.toggle("is-expanded", isExpanded);
+      head?.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+      details.setAttribute("aria-hidden", isExpanded ? "false" : "true");
+      animateMobileRecordDetails(details, isExpanded);
+    });
   }
 
   function renderMobileRecords() {
