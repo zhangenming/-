@@ -3084,7 +3084,6 @@
       );
 
       analysisContent.innerHTML = `
-        ${buildAnalysisAmountSummaryHtml(scopeRecords)}
         <section class="analysis-trend-card">
           <div class="analysis-trend-main">
             <div class="analysis-trend-head">

@@ -144,11 +144,11 @@ button:disabled {
 }
 
 .login-card {
-  order: 1;
+  order: 0;
 }
 
 .login-brief {
-  order: 2;
+  order: 1;
 }
 
 .login-brief,

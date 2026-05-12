@@ -133,7 +133,7 @@ function applyRuntimeEnvironment(rawEnvironment) {
   legacyPersistentStateStorage = isTabScopedPersistenceEnabled
     ? window.localStorage
     : window.sessionStorage;
-  isDevTodoEnabled = isDevelopmentEnvironment();
+  isDevTodoEnabled = isDevelopmentEnvironment() || isQuickLoginDebugEnabled;
   isQuickLoginEnabled = isDevelopmentEnvironment() || isQuickLoginDebugEnabled;
 }
 
@@ -762,6 +762,12 @@ const priceCompositionModal = document.getElementById("priceCompositionModal");
 const priceCompositionModalCard = priceCompositionModal
   ? priceCompositionModal.querySelector(".price-composition-modal-card")
   : null;
+const receptionDetailModal = document.getElementById("receptionDetailModal");
+const receptionDetailModalCard = receptionDetailModal
+  ? receptionDetailModal.querySelector(".paid-settlement-detail-modal-card")
+  : null;
+const receptionDetailMeta = document.getElementById("receptionDetailMeta");
+const receptionDetailList = document.getElementById("receptionDetailList");
 const reminderModal = document.getElementById("reminderModal");
 const reminderModalCard = reminderModal
   ? reminderModal.querySelector(".reminder-modal-card")

@@ -346,6 +346,91 @@
       XLSX.writeFile(wb, getTableExportFileName());
     }
 
+    function getSettlementPayoutExportFileName() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const date = String(now.getDate()).padStart(2, "0");
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const seconds = String(now.getSeconds()).padStart(2, "0");
+      return `打款数据导出_${year}${month}${date}_${hours}${minutes}${seconds}.xlsx`;
+    }
+
+    function exportSettlementPayout() {
+      if (!canCurrentAccountSettleRecords()) return;
+      const { groups } = getBossSettlementDetailSummary();
+      const payoutGroups = groups.filter((group) => {
+        const targets = Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds;
+        return Array.isArray(targets) && targets.length > 0;
+      });
+      if (!payoutGroups.length) {
+        showAppStatus("当前没有可打款的数据。");
+        return;
+      }
+
+      const headerRow = ["姓名", "证件类型", "证件号码", "工资账号", "收款机构编号", "金额", "手机号"];
+      const dataRows = [];
+
+      payoutGroups.forEach((group) => {
+        const profile = getAccountantProfileByLoginName(group.accountant);
+        const recipientInfo = normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo);
+        const realName = getAccountantRealNameByLoginName(group.accountant);
+        const amount = group.payableAmount;
+
+        dataRows.push([
+          realName || recipientInfo.name || group.accountant,
+          "身份证",
+          recipientInfo.idCardNo || "",
+          recipientInfo.bankCardNo || "",
+          recipientInfo.bankName || "",
+          getNumericValueForExport(amount),
+          recipientInfo.declarationPhone || (profile?.phone || "")
+        ]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
+
+      const headerStyle = {
+        fill: { patternType: "solid", fgColor: { rgb: "4472C4" } },
+        font: { color: { rgb: "FFFFFF" }, bold: true }
+      };
+
+      const range = XLSX.utils.decode_range(ws["!ref"]);
+      if (!ws["!cols"]) ws["!cols"] = [];
+
+      const amountColumnIndex = 5;
+
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const colLetter = XLSX.utils.encode_col(col);
+        const isAmountColumn = col === amountColumnIndex;
+
+        const headerCell = ws[`${colLetter}1`];
+        if (headerCell) {
+          headerCell.s = headerStyle;
+        }
+
+        let maxWidth = 10;
+        for (let row = range.s.r; row <= range.e.r; row++) {
+          const cell = ws[`${colLetter}${row + 1}`];
+          if (cell && cell.v !== undefined && cell.v !== null) {
+            const cellWidth = String(cell.v).length;
+            if (cellWidth > maxWidth) maxWidth = cellWidth;
+
+            if (isAmountColumn && cell.t === "n") {
+              cell.z = "0.00";
+            }
+          }
+        }
+        ws["!cols"][col] = { wch: Math.min(maxWidth + 2, 50) };
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "打款数据");
+
+      XLSX.writeFile(wb, getSettlementPayoutExportFileName());
+    }
+
     function getDateCellDisplayParts(rawDateTime, fallbackDateTime = "") {
       const dateText = formatDateDisplay(rawDateTime);
       const timeText = formatTimeDisplay(fallbackDateTime || rawDateTime);
@@ -780,6 +865,43 @@
       return `${percent.toFixed(1)}%`;
     }
 
+    function renderPriceCompositionPercent(node, paymentPercent, parentPercent, showParentPercent) {
+      if (!node) return;
+      const payment = Number.isFinite(paymentPercent) ? paymentPercent : 0;
+      const parent = Number.isFinite(parentPercent) ? parentPercent : 0;
+      node.textContent = showParentPercent
+        ? `${payment.toFixed(1)}% [${parent.toFixed(1)}%]`
+        : `${payment.toFixed(1)}%`;
+    }
+
+    function roundPercentages(values, total, decimals = 1) {
+      const multiplier = Math.pow(10, decimals);
+      const floors = values.map((v, index) => {
+        const percent = total > 0 ? (Number(v) / total) * 100 : 0;
+        return {
+          index,
+          value: v,
+          floor: Math.floor(percent * multiplier) / multiplier,
+          remainder: (percent * multiplier) % 1
+        };
+      });
+      const floorSum = floors.reduce((sum, item) => sum + item.floor, 0);
+      const targetSum = values.reduce((sum, v) => sum + (Number(v) || 0), 0) / total * 100;
+      const difference = Math.round((targetSum - floorSum) * multiplier) / multiplier;
+      const sorted = [...floors].sort((a, b) => b.remainder - a.remainder);
+      let remaining = difference;
+      for (const item of sorted) {
+        if (remaining <= 0) break;
+        item.floor += 1 / multiplier;
+        remaining -= 1 / multiplier;
+      }
+      const resultMap = new Map();
+      floors.forEach(item => {
+        resultMap.set(item.index, item.floor);
+      });
+      return resultMap;
+    }
+
     function getPriceCompositionWeight(value) {
       return `${Math.max(Number(value) || 0, 0.0001)}fr`;
     }
@@ -861,6 +983,56 @@
         resultWidth: Math.min(resultWidth, 100)
       };
       const allFieldsWithPercent = ["payment", "premium", "total", "premiumPlatform", "premiumReception", "totalPlatform", "totalReception", "totalAccounting", "platform", "reception", "accounting"];
+      const premiumGroupPercentMap = roundPercentages([split.premiumPlatform, split.premiumReception], split.payment);
+      const totalGroupPercentMap = roundPercentages([split.totalPlatform, split.totalReception, split.totalAccounting], split.payment);
+      const resultGroupPercentMap = roundPercentages([split.platform, split.reception, split.accounting], split.payment);
+      const resultParentTotal = split.platform + split.reception + split.accounting;
+      const premiumParentPercentMap = roundPercentages([split.premiumPlatform, split.premiumReception], split.premium);
+      const totalParentPercentMap = roundPercentages([split.totalPlatform, split.totalReception, split.totalAccounting], split.total);
+      const resultParentPercentMap = roundPercentages([split.platform, split.reception, split.accounting], resultParentTotal);
+      const fieldToIndexMap = {
+        premiumPlatform: 0,
+        premiumReception: 1,
+        totalPlatform: 0,
+        totalReception: 1,
+        totalAccounting: 2,
+        platform: 0,
+        reception: 1,
+        accounting: 2
+      };
+      const middleSplitFields = new Set([
+        "premiumPlatform",
+        "premiumReception",
+        "totalPlatform",
+        "totalReception",
+        "totalAccounting"
+      ]);
+      const getRoundedPercent = (field, value) => {
+        const index = fieldToIndexMap[field];
+        if (field === "premiumPlatform" || field === "premiumReception") {
+          return premiumGroupPercentMap.get(index);
+        }
+        if (field === "totalPlatform" || field === "totalReception" || field === "totalAccounting") {
+          return totalGroupPercentMap.get(index);
+        }
+        if (field === "platform" || field === "reception" || field === "accounting") {
+          return resultGroupPercentMap.get(index);
+        }
+        return getPriceCompositionPercent(value, split.payment);
+      };
+      const getRoundedParentPercent = (field, value) => {
+        const index = fieldToIndexMap[field];
+        if (field === "premiumPlatform" || field === "premiumReception") {
+          return premiumParentPercentMap.get(index);
+        }
+        if (field === "totalPlatform" || field === "totalReception" || field === "totalAccounting") {
+          return totalParentPercentMap.get(index);
+        }
+        if (field === "platform" || field === "reception" || field === "accounting") {
+          return resultParentPercentMap.get(index);
+        }
+        return getPriceCompositionPercent(value, split.payment);
+      };
       Object.entries(split).forEach(([field, value]) => {
         const node = priceCompositionModal.querySelector(
           `[data-price-composition-field="${field}"]`,
@@ -873,7 +1045,14 @@
             `[data-price-composition-percent="${field}"]`,
           );
           if (percentNode) {
-            percentNode.textContent = formatPriceCompositionPercent(value, split.payment);
+            const roundedPercent = getRoundedPercent(field, value);
+            const roundedParentPercent = getRoundedParentPercent(field, value);
+            renderPriceCompositionPercent(
+              percentNode,
+              roundedPercent,
+              roundedParentPercent,
+              middleSplitFields.has(field),
+            );
           }
         }
       });
@@ -930,25 +1109,28 @@
         const resultAccountingX = toFlowX(getSegmentCenter(layout.resultLeft, layout.resultWidth, resultValues, 2));
         const premiumSourceX = toFlowX(layout.premiumCenter);
         const totalSourceX = toFlowX(layout.totalCenter);
+        const premiumForkY = 44;
+        const totalForkY = 48;
+        const mergeY = 80;
         const setSplitTrunk = (selector, sourceX, forkY) => {
           const trunk = chart.querySelector(selector);
           if (trunk) trunk.setAttribute("d", `M ${sourceX} 0 V ${forkY}`);
         };
-        const setSplitPath = (selector, sourceX, targetX, forkY, bendY) => {
+        const setSplitPath = (selector, sourceX, targetX, forkY) => {
           const line = chart.querySelector(selector);
-          if (line) line.setAttribute("d", `M ${sourceX} ${forkY} V ${bendY} H ${targetX} V 100`);
+          if (line) line.setAttribute("d", `M ${sourceX} ${forkY} V ${mergeY} H ${targetX} V 100`);
         };
         const setSplitArrow = (selector, targetX) => {
           const arrow = chart.querySelector(selector);
           if (arrow) arrow.setAttribute("d", `M ${targetX - 8} 98 L ${targetX} 118 L ${targetX + 8} 98 Z`);
         };
-        setSplitTrunk(".price-split-trunk.premium", premiumSourceX, 44);
-        setSplitTrunk(".price-split-trunk.total", totalSourceX, 48);
-        setSplitPath(".price-split-line.platform.premium", premiumSourceX, premiumPlatformX, 44, 54);
-        setSplitPath(".price-split-line.reception.premium", premiumSourceX, premiumReceptionX, 44, 72);
-        setSplitPath(".price-split-line.platform.total", totalSourceX, totalPlatformX, 48, 40);
-        setSplitPath(".price-split-line.reception.total", totalSourceX, totalReceptionX, 48, 60);
-        setSplitPath(".price-split-line.accounting.total", totalSourceX, totalAccountingX, 48, 80);
+        setSplitTrunk(".price-split-trunk.premium", premiumSourceX, premiumForkY);
+        setSplitTrunk(".price-split-trunk.total", totalSourceX, totalForkY);
+        setSplitPath(".price-split-line.platform.premium", premiumSourceX, premiumPlatformX, premiumForkY);
+        setSplitPath(".price-split-line.reception.premium", premiumSourceX, premiumReceptionX, premiumForkY);
+        setSplitPath(".price-split-line.platform.total", totalSourceX, totalPlatformX, totalForkY);
+        setSplitPath(".price-split-line.reception.total", totalSourceX, totalReceptionX, totalForkY);
+        setSplitPath(".price-split-line.accounting.total", totalSourceX, totalAccountingX, totalForkY);
         setSplitArrow(".price-split-arrow.platform.premium", premiumPlatformX);
         setSplitArrow(".price-split-arrow.reception.premium", premiumReceptionX);
         setSplitArrow(".price-split-arrow.platform.total", totalPlatformX);
@@ -960,19 +1142,22 @@
         const platformArrow = chart.querySelector(".price-flow-arrow.platform");
         const receptionArrow = chart.querySelector(".price-flow-arrow.reception");
         const accountingArrow = chart.querySelector(".price-flow-arrow.accounting");
-        if (platformLines[0]) platformLines[0].setAttribute("d", `M ${premiumPlatformX} 0 V 64 H ${resultPlatformX} V 138`);
-        if (platformLines[1]) platformLines[1].setAttribute("d", `M ${totalPlatformX} 0 V 64 H ${resultPlatformX} V 138`);
-        if (receptionLines[0]) receptionLines[0].setAttribute("d", `M ${premiumReceptionX} 0 V 88 H ${resultReceptionX} V 138`);
-        if (receptionLines[1]) receptionLines[1].setAttribute("d", `M ${totalReceptionX} 0 V 88 H ${resultReceptionX} V 138`);
-        if (accountingLine) accountingLine.setAttribute("d", `M ${totalAccountingX} 0 V 138`);
-        if (platformArrow) platformArrow.setAttribute("d", `M ${resultPlatformX - 12} 136 L ${resultPlatformX} 158 L ${resultPlatformX + 12} 136 Z`);
-        if (receptionArrow) receptionArrow.setAttribute("d", `M ${resultReceptionX - 12} 136 L ${resultReceptionX} 158 L ${resultReceptionX + 12} 136 Z`);
-        if (accountingArrow) accountingArrow.setAttribute("d", `M ${resultAccountingX - 12} 136 L ${resultAccountingX} 158 L ${resultAccountingX + 12} 136 Z`);
+        const platformMergeY = 64;
+        const receptionMergeY = 88;
+        const trunkY = 138;
+        if (platformLines[0]) platformLines[0].setAttribute("d", `M ${premiumPlatformX} 0 V ${platformMergeY} H ${resultPlatformX} V ${trunkY}`);
+        if (platformLines[1]) platformLines[1].setAttribute("d", `M ${totalPlatformX} 0 V ${platformMergeY} H ${resultPlatformX} V ${trunkY}`);
+        if (receptionLines[0]) receptionLines[0].setAttribute("d", `M ${premiumReceptionX} 0 V ${receptionMergeY} H ${resultReceptionX} V ${trunkY}`);
+        if (receptionLines[1]) receptionLines[1].setAttribute("d", `M ${totalReceptionX} 0 V ${receptionMergeY} H ${resultReceptionX} V ${trunkY}`);
+        if (accountingLine) accountingLine.setAttribute("d", `M ${totalAccountingX} 0 V ${trunkY}`);
+        if (platformArrow) platformArrow.setAttribute("d", `M ${resultPlatformX - 12} ${trunkY - 2} L ${resultPlatformX} ${trunkY + 20} L ${resultPlatformX + 12} ${trunkY - 2} Z`);
+        if (receptionArrow) receptionArrow.setAttribute("d", `M ${resultReceptionX - 12} ${trunkY - 2} L ${resultReceptionX} ${trunkY + 20} L ${resultReceptionX + 12} ${trunkY - 2} Z`);
+        if (accountingArrow) accountingArrow.setAttribute("d", `M ${resultAccountingX - 12} ${trunkY - 2} L ${resultAccountingX} ${trunkY + 20} L ${resultAccountingX + 12} ${trunkY - 2} Z`);
       }
       if (chart) {
         chart.setAttribute(
           "aria-label",
-          `当前筛选${sourceRecords.length}条，付款价${formatPriceCompositionValue(split.payment, split.payment)}，溢价${formatPriceCompositionValue(split.premium, split.payment)}，会计价${formatPriceCompositionValue(split.total, split.payment)}，会计结算价${formatPriceCompositionValue(split.settlement, split.payment)}，平台${formatPriceCompositionValue(split.platform, split.payment)}，接待${formatPriceCompositionValue(split.reception, split.payment)}，会计${formatPriceCompositionValue(split.accounting, split.payment)}`,
+          `当前筛选${sourceRecords.length}条，付款价${formatPriceCompositionValue(split.payment, split.payment)}，溢价${formatPriceCompositionValue(split.premium, split.payment)}，会计价${formatPriceCompositionValue(split.total, split.payment)}，会计结算价${formatPriceCompositionValue(split.settlement, split.payment)}，平台${formatPriceCompositionValue(split.platform, split.payment)}，接待${formatPriceCompositionValue(split.reception, split.payment)}，会计${formatPriceCompositionValue(split.accounting, split.payment)}，拆分节点同时显示占父级比例`,
         );
       }
     }
@@ -983,6 +1168,186 @@
       priceCompositionModalCard.classList.remove("modal-enter");
       priceCompositionModal.hidden = true;
       syncModalOpenState();
+    }
+
+    function openReceptionDetailModal() {
+      if (!receptionDetailModal || !receptionDetailModalCard) return;
+      renderReceptionDetailModalContent();
+      receptionDetailModal.hidden = false;
+      receptionDetailModal.classList.remove("modal-enter");
+      receptionDetailModalCard.classList.remove("modal-enter");
+      void receptionDetailModal.offsetWidth;
+      receptionDetailModal.classList.add("modal-enter");
+      receptionDetailModalCard.classList.add("modal-enter");
+      syncModalOpenState();
+    }
+
+    function closeReceptionDetailModal() {
+      if (!receptionDetailModal || !receptionDetailModalCard) return;
+      receptionDetailModal.classList.remove("modal-enter");
+      receptionDetailModalCard.classList.remove("modal-enter");
+      receptionDetailModal.hidden = true;
+      syncModalOpenState();
+    }
+
+    function getReceptionProfitBreakdown(record) {
+      const profit = getProfitParts(record);
+      if (!profit) {
+        return {
+          baseProfit: 0,
+          premiumReceptionProfit: 0,
+          totalProfit: 0
+        };
+      }
+      const premiumBreakdown = getTieredPremiumProfitBreakdown(profit.premium);
+      const premiumReceptionProfit = premiumBreakdown ? premiumBreakdown.profit : 0;
+      return {
+        baseProfit: Number.isFinite(profit.baseProfit) ? profit.baseProfit : 0,
+        premiumReceptionProfit: Number.isFinite(premiumReceptionProfit) ? premiumReceptionProfit : 0,
+        totalProfit: Number.isFinite(profit.totalProfit) ? profit.totalProfit : 0
+      };
+    }
+
+    function renderReceptionDetailModalContent() {
+      if (!receptionDetailMeta || !receptionDetailList) return;
+      const sourceRecords = getFilteredRecords();
+      const records = Array.isArray(sourceRecords) ? sourceRecords : [];
+
+      let totalBaseProfit = 0;
+      let totalPremiumProfit = 0;
+      let totalProfit = 0;
+      const receptionRecords = [];
+
+      records.forEach((record) => {
+        const breakdown = getReceptionProfitBreakdown(record);
+        if (breakdown.totalProfit > 0) {
+          totalBaseProfit += breakdown.baseProfit;
+          totalPremiumProfit += breakdown.premiumReceptionProfit;
+          totalProfit += breakdown.totalProfit;
+          receptionRecords.push({
+            ...record,
+            baseProfit: breakdown.baseProfit,
+            premiumProfit: breakdown.premiumReceptionProfit,
+            totalProfit: breakdown.totalProfit
+          });
+        }
+      });
+
+      receptionDetailMeta.textContent = receptionRecords.length
+        ? `共 ${receptionRecords.length} 条记录 / 接待收益合计 ${toMoney(totalProfit)}（基础收益 ${toMoney(totalBaseProfit)} / 溢价收益 ${toMoney(totalPremiumProfit)}）`
+        : "暂无接待数据";
+      receptionDetailList.innerHTML = "";
+
+      if (!receptionRecords.length) {
+        const empty = document.createElement("div");
+        empty.className = "paid-settlement-detail-empty";
+        empty.textContent = "暂无接待收益数据。";
+        receptionDetailList.appendChild(empty);
+        return;
+      }
+
+      const tableWrap = document.createElement("div");
+      tableWrap.className = "settlement-detail-table-wrap settlement-detail-table-wrap-paid";
+
+      const table = document.createElement("table");
+      table.className = "settlement-detail-table settlement-detail-uploaded-table";
+
+      const colgroup = document.createElement("colgroup");
+      [
+        "dispatcher",
+        "date",
+        "order",
+        "accountant",
+        "money",
+        "money",
+        "money"
+      ].forEach((columnClass) => {
+        const col = document.createElement("col");
+        col.className = `settlement-detail-col-${columnClass}`;
+        colgroup.appendChild(col);
+      });
+      table.appendChild(colgroup);
+
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      const headerColumns = [
+        { label: "接待人", summary: "", align: "dispatcher" },
+        { label: "接单日期", summary: "", align: "date" },
+        { label: "订单号", summary: "", align: "order" },
+        { label: "会计", summary: "", align: "accountant" },
+        { label: "基础收益", summary: `合计 ${toMoney(totalBaseProfit)}`, align: "money" },
+        { label: "溢价收益", summary: `合计 ${toMoney(totalPremiumProfit)}`, align: "money" },
+        { label: "接待收益总计", summary: `合计 ${toMoney(totalProfit)}`, align: "money" }
+      ];
+      headerColumns.forEach((column) => {
+        const th = document.createElement("th");
+        th.scope = "col";
+        th.className = `settlement-detail-heading-cell ${column.align}`;
+
+        const label = document.createElement("span");
+        label.className = "settlement-detail-sort-label";
+        label.textContent = column.label;
+        th.appendChild(label);
+
+        const summary = document.createElement("span");
+        summary.className = "settlement-detail-sort-summary";
+        summary.textContent = column.summary;
+        th.appendChild(summary);
+
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      receptionRecords.forEach((record) => {
+        const row = document.createElement("tr");
+        row.className = "settlement-detail-row tone-payable";
+
+        const dispatcherTd = document.createElement("td");
+        dispatcherTd.className = "settlement-detail-accountant-cell settlement-detail-col-dispatcher";
+        const dispatcherName = document.createElement("strong");
+        dispatcherName.className = "settlement-detail-accountant";
+        dispatcherName.textContent = getDispatcherDisplayNameByTag(record.dispatcher) || record.dispatcher;
+        dispatcherTd.appendChild(dispatcherName);
+        row.appendChild(dispatcherTd);
+
+        const dateTd = document.createElement("td");
+        dateTd.className = "settlement-detail-name-cell settlement-detail-col-date";
+        dateTd.textContent = formatDateDisplay(record.date) || "-";
+        row.appendChild(dateTd);
+
+        const orderTd = document.createElement("td");
+        orderTd.className = "settlement-detail-name-cell settlement-detail-col-order";
+        orderTd.textContent = record.orderNo || "-";
+        row.appendChild(orderTd);
+
+        const accountantTd = document.createElement("td");
+        accountantTd.className = "settlement-detail-name-cell settlement-detail-col-accountant";
+        accountantTd.textContent = record.accountant || "-";
+        row.appendChild(accountantTd);
+
+        const baseTd = document.createElement("td");
+        baseTd.className = "settlement-detail-money settlement-detail-col-money";
+        baseTd.textContent = toMoney(record.baseProfit);
+        row.appendChild(baseTd);
+
+        const premiumTd = document.createElement("td");
+        premiumTd.className = "settlement-detail-money settlement-detail-col-money";
+        premiumTd.textContent = toMoney(record.premiumProfit);
+        row.appendChild(premiumTd);
+
+        const totalTd = document.createElement("td");
+        totalTd.className = "settlement-detail-money settlement-detail-col-money";
+        totalTd.textContent = toMoney(record.totalProfit);
+        row.appendChild(totalTd);
+
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+
+      tableWrap.appendChild(table);
+      receptionDetailList.appendChild(tableWrap);
     }
 
     function getTodayDateKey() {
@@ -3954,6 +4319,13 @@
           ? "打款中"
           : (selectedPayoutRecordIds.length > 0 ? `批量打款（${selectedPayoutRecordIds.length}）` : "批量打款");
         payoutToolbar.appendChild(payoutToolbarBtn);
+
+        const exportBtn = document.createElement("button");
+        exportBtn.type = "button";
+        exportBtn.className = "btn-secondary table-export-btn settlement-detail-payout-export-btn";
+        exportBtn.dataset.settlementPayoutExport = "true";
+        exportBtn.textContent = "导出";
+        payoutToolbar.appendChild(exportBtn);
 
         sectionHeading.appendChild(payoutToolbar);
       }

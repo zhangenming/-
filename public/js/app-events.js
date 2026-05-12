@@ -1950,6 +1950,9 @@
         if (event.target === bossSettlementDetailModal) {
           closeBossSettlementDetailModal();
         }
+        if (event.target.dataset.settlementPayoutExport !== undefined) {
+          exportSettlementPayout();
+        }
       });
     }
 
@@ -1999,6 +2002,35 @@
       priceCompositionModal.addEventListener("click", (event) => {
         if (event.target === priceCompositionModal) {
           closePriceCompositionModal();
+        }
+      });
+    }
+
+    const priceSegmentPremiumReception = document.getElementById("priceSegmentPremiumReception");
+    if (priceSegmentPremiumReception) {
+      priceSegmentPremiumReception.addEventListener("click", () => {
+        openReceptionDetailModal();
+      });
+    }
+
+    const priceSegmentTotalReception = document.getElementById("priceSegmentTotalReception");
+    if (priceSegmentTotalReception) {
+      priceSegmentTotalReception.addEventListener("click", () => {
+        openReceptionDetailModal();
+      });
+    }
+
+    const priceSegmentResultReception = document.getElementById("priceSegmentResultReception");
+    if (priceSegmentResultReception) {
+      priceSegmentResultReception.addEventListener("click", () => {
+        openReceptionDetailModal();
+      });
+    }
+
+    if (receptionDetailModal) {
+      receptionDetailModal.addEventListener("click", (event) => {
+        if (event.target === receptionDetailModal) {
+          closeReceptionDetailModal();
         }
       });
     }

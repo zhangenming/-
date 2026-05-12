@@ -821,9 +821,14 @@
       }
 
       .login-brief {
+        order: 2;
         padding: 24px 22px;
         gap: 20px;
         background: linear-gradient(160deg, rgba(11, 94, 77, 0.96), rgba(18, 120, 98, 0.92));
+      }
+
+      .login-card {
+        order: 1;
       }
 
       .login-brief::after {
@@ -6391,7 +6396,7 @@
     .price-percent {
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum" 1;
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 760;
       line-height: 1;
       opacity: 0.86;
@@ -6420,7 +6425,7 @@
 
     .price-node-premium .price-percent,
     .price-split-premium .price-percent {
-      font-size: 12px;
+      font-size: 9px;
     }
 
     .price-node {
@@ -6457,7 +6462,8 @@
     }
 
     .price-split-trunk,
-    .price-split-line {
+    .price-split-line,
+    .price-split-trunk-line {
       fill: none;
       stroke-width: 2.6;
       stroke-linecap: round;
@@ -6474,7 +6480,8 @@
       opacity: 0.9;
     }
 
-    .price-split-line.platform {
+    .price-split-line.platform,
+    .price-split-trunk-line.platform {
       stroke: var(--platform-color);
     }
 
@@ -6482,7 +6489,8 @@
       fill: var(--platform-color);
     }
 
-    .price-split-line.reception {
+    .price-split-line.reception,
+    .price-split-trunk-line.reception {
       stroke: var(--reception-color);
     }
 
@@ -6490,7 +6498,8 @@
       fill: var(--reception-color);
     }
 
-    .price-split-line.accounting {
+    .price-split-line.accounting,
+    .price-split-trunk-line.accounting {
       stroke: var(--accounting-color);
     }
 
@@ -6534,6 +6543,16 @@
       background: linear-gradient(180deg, var(--reception-color), var(--reception-deep));
     }
 
+    .price-segment-clickable {
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .price-segment-clickable:hover {
+      transform: translateY(-2px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32), inset 0 -1px 0 rgba(0, 0, 0, 0.16), 0 12px 24px rgba(31, 75, 62, 0.2);
+    }
+
     .price-segment.accounting {
       background: linear-gradient(180deg, var(--accounting-color), var(--accounting-deep));
     }
@@ -6546,7 +6565,8 @@
       overflow: visible;
     }
 
-    .price-flow-line {
+    .price-flow-line,
+    .price-flow-trunk {
       fill: none;
       stroke-width: 3;
       stroke-linecap: round;
@@ -6558,7 +6578,8 @@
       opacity: 0.9;
     }
 
-    .price-flow-line.platform {
+    .price-flow-line.platform,
+    .price-flow-trunk.platform {
       stroke: var(--platform-color);
     }
 
@@ -6566,7 +6587,8 @@
       fill: var(--platform-color);
     }
 
-    .price-flow-line.reception {
+    .price-flow-line.reception,
+    .price-flow-trunk.reception {
       stroke: var(--reception-color);
     }
 

@@ -1094,13 +1094,13 @@
         <div class="price-node price-node-total"><span class="price-label">会计价</span><strong data-price-composition-field="total">0.00</strong><span class="price-percent" data-price-composition-percent="total">100.0%</span></div>
 
         <svg class="price-split-map" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true">
-          <path class="price-split-trunk premium" d="M 0 0 V 48"></path>
-          <path class="price-split-line platform premium" d="M 0 48 H 0 V 100"></path>
-          <path class="price-split-line reception premium" d="M 0 48 H 0 V 100"></path>
-          <path class="price-split-trunk total" d="M 0 0 V 54"></path>
-          <path class="price-split-line platform total" d="M 0 54 H 0 V 100"></path>
-          <path class="price-split-line reception total" d="M 0 54 H 0 V 100"></path>
-          <path class="price-split-line accounting total" d="M 0 54 H 0 V 100"></path>
+          <path class="price-split-trunk premium" d="M 0 0 V 44"></path>
+          <path class="price-split-trunk total" d="M 0 0 V 48"></path>
+          <path class="price-split-line platform premium" d="M 0 44 V 80 H 0 V 100"></path>
+          <path class="price-split-line reception premium" d="M 0 44 V 80 H 0 V 100"></path>
+          <path class="price-split-line platform total" d="M 0 48 V 80 H 0 V 100"></path>
+          <path class="price-split-line reception total" d="M 0 48 V 80 H 0 V 100"></path>
+          <path class="price-split-line accounting total" d="M 0 48 V 80 H 0 V 100"></path>
           <path class="price-split-arrow platform premium" d="M -8 98 L 0 118 L 8 98 Z"></path>
           <path class="price-split-arrow reception premium" d="M -8 98 L 0 118 L 8 98 Z"></path>
           <path class="price-split-arrow platform total" d="M -8 98 L 0 118 L 8 98 Z"></path>
@@ -1110,11 +1110,11 @@
 
         <div class="price-split price-split-premium">
           <span class="price-segment platform"><span class="price-label">平台</span><strong data-price-composition-field="premiumPlatform">0.00</strong><span class="price-percent" data-price-composition-percent="premiumPlatform">100.0%</span></span>
-          <span class="price-segment reception"><span class="price-label">接待</span><strong data-price-composition-field="premiumReception">0.00</strong><span class="price-percent" data-price-composition-percent="premiumReception">100.0%</span></span>
+          <span class="price-segment reception price-segment-clickable" id="priceSegmentPremiumReception" title="点击查看接待详细数据"><span class="price-label">接待</span><strong data-price-composition-field="premiumReception">0.00</strong><span class="price-percent" data-price-composition-percent="premiumReception">100.0%</span></span>
         </div>
         <div class="price-split price-split-total">
           <span class="price-segment platform"><span class="price-label">平台</span><strong data-price-composition-field="totalPlatform">0.00</strong><span class="price-percent" data-price-composition-percent="totalPlatform">100.0%</span></span>
-          <span class="price-segment reception"><span class="price-label">接待</span><strong data-price-composition-field="totalReception">0.00</strong><span class="price-percent" data-price-composition-percent="totalReception">100.0%</span></span>
+          <span class="price-segment reception price-segment-clickable" id="priceSegmentTotalReception" title="点击查看接待详细数据"><span class="price-label">接待</span><strong data-price-composition-field="totalReception">0.00</strong><span class="price-percent" data-price-composition-percent="totalReception">100.0%</span></span>
           <span class="price-segment accounting"><span class="price-label">会计结算价</span><strong data-price-composition-field="totalAccounting">0.00</strong><span class="price-percent" data-price-composition-percent="totalAccounting">100.0%</span></span>
         </div>
 
@@ -1131,10 +1131,22 @@
 
         <div class="price-result">
           <span class="price-segment platform"><span class="price-label">平台</span><strong data-price-composition-field="platform">0.00</strong><span class="price-percent" data-price-composition-percent="platform">100.0%</span></span>
-          <span class="price-segment reception"><span class="price-label">接待</span><strong data-price-composition-field="reception">0.00</strong><span class="price-percent" data-price-composition-percent="reception">100.0%</span></span>
+          <span class="price-segment reception price-segment-clickable" id="priceSegmentResultReception" title="点击查看接待详细数据"><span class="price-label">接待</span><strong data-price-composition-field="reception">0.00</strong><span class="price-percent" data-price-composition-percent="reception">100.0%</span></span>
           <span class="price-segment accounting"><span class="price-label">会计</span><strong data-price-composition-field="accounting">0.00</strong><span class="price-percent" data-price-composition-percent="accounting">100.0%</span></span>
         </div>
       </div>
+    </section>
+  </div>
+
+  <div id="receptionDetailModal" class="modal-overlay modal-stacked" hidden>
+    <section class="card modal-card paid-settlement-detail-modal-card" tabindex="-1">
+      <div class="paid-settlement-detail-top">
+        <div>
+          <h2 class="paid-settlement-detail-title">接待详细数据</h2>
+          <p id="receptionDetailMeta" class="paid-settlement-detail-meta"></p>
+        </div>
+      </div>
+      <div id="receptionDetailList" class="paid-settlement-detail-list"></div>
     </section>
   </div>
 
