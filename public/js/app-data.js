@@ -1826,7 +1826,8 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           image: source.image || source.invoiceImage || source.settlementInvoiceImage || source,
-          invoiceRecipientInfo: source.invoiceRecipientInfo || source.recipientInfo || {}
+          invoiceRecipientInfo: source.invoiceRecipientInfo || source.recipientInfo || {},
+          replaceRecordIds: Array.isArray(source.replaceRecordIds) ? source.replaceRecordIds : []
         })
       }, {
         successMessage: "上传发票",
@@ -1910,6 +1911,62 @@
       }
       return {
         paidRecordIds: Array.isArray(body.paidRecordIds) ? body.paidRecordIds : [],
+        skippedRecordIds: Array.isArray(body.skippedRecordIds) ? body.skippedRecordIds : []
+      };
+    }
+
+    async function revokeSettlementPayoutByIds(recordIds) {
+      const normalizedPayoutTargets = Array.from(
+        new Set(
+          (Array.isArray(recordIds) ? recordIds : [])
+            .map((item) => String(item || "").trim())
+            .filter(Boolean)
+        )
+      );
+      if (!normalizedPayoutTargets.length) {
+        throw new Error("请选择要撤销打款的数据。");
+      }
+
+      const response = await fetchWithClientLog(API_ENDPOINT_RECORDS_PAYOUT_REVOKE, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recordIds: normalizedPayoutTargets, payoutTargets: normalizedPayoutTargets })
+      }, {
+        successMessage: "撤销打款",
+        errorMessage: "撤销打款"
+      });
+
+      if (!response.ok) {
+        let message = `撤销打款失败（${response.status}）`;
+        try {
+          const body = await response.json();
+          if (body.error) message = body.error;
+        } catch (error) {
+          console.error(error);
+        }
+        throw new Error(message);
+      }
+
+      const body = await response.json();
+      const nextRecords = Array.isArray(body.records) ? body.records : records;
+      syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: true });
+      records = nextRecords;
+      syncBossSettlementPayoutSelection(records);
+      renderTable();
+      if (bossSettlementDetailModal && !bossSettlementDetailModal.hidden) {
+        renderBossSettlementDetailModalContent();
+      }
+      if (paidSettlementDetailModal && !paidSettlementDetailModal.hidden) {
+        renderPaidSettlementDetailModalContent();
+      }
+      if (!analysisModal.hidden) {
+        renderAnalysisPanel();
+      }
+      if (!accountantModal.hidden) {
+        renderAccountantList();
+      }
+      return {
+        revokedRecordIds: Array.isArray(body.revokedRecordIds) ? body.revokedRecordIds : [],
         skippedRecordIds: Array.isArray(body.skippedRecordIds) ? body.skippedRecordIds : []
       };
     }

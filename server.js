@@ -242,8 +242,12 @@ function appendVersionToStaticAssetUrl(rawUrl, assetVersion) {
   const hashIndex = normalizedUrl.indexOf("#");
   const beforeHash = hashIndex >= 0 ? normalizedUrl.slice(0, hashIndex) : normalizedUrl;
   const hash = hashIndex >= 0 ? normalizedUrl.slice(hashIndex) : "";
-  const separator = beforeHash.includes("?") ? "&" : "?";
-  return `${beforeHash}${separator}v=${encodeURIComponent(normalizedVersion)}${hash}`;
+  const [pathPart, queryPart = ""] = beforeHash.split("?");
+  const params = new URLSearchParams(queryPart);
+  params.delete("v");
+  params.set("v", normalizedVersion);
+  const query = params.toString();
+  return `${pathPart}${query ? `?${query}` : ""}${hash}`;
 }
 
 function withStaticAssetVersion(html, assetVersion) {
@@ -1738,7 +1742,7 @@ function sanitizeRecordHistoryEntryForAccountant(rawEntry) {
     return field === "settlementInvoiceImage" && normalizeText(change?.after, 1000);
   });
 
-  if (entry.actionKey === "invoice_uploaded" && hasInvoiceUploadChange && !changes.some((change) => change.field === "isSettled")) {
+  if ((entry.actionKey === "invoice_uploaded" || entry.actionKey === "invoice_reuploaded") && hasInvoiceUploadChange && !changes.some((change) => change.field === "isSettled")) {
     changes.push({
       field: "isSettled",
       label: "结算",
@@ -2262,6 +2266,7 @@ const RECORD_HISTORY_ACTION_LABELS = {
   returned: "退单",
   settled: "结算",
   invoice_uploaded: "上传发票",
+  invoice_reuploaded: "修改发票",
   settlement_paid: "打款"
 };
 
@@ -2381,13 +2386,13 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
     kind: "text",
     getValue: (record) => normalizeAccountantDisplayName(record?.accountant)
   },
-  { field: "platform", label: "平台", kind: "text" },
-  { field: "shopName", label: "店铺", kind: "text" },
-  { field: "source", label: "来源", kind: "text" },
-  { field: "orderNo", label: "订单号", kind: "text" },
   { field: "customer", label: "客户", kind: "text" },
   { field: "summary", label: "任务简介", kind: "text" },
   { field: "remark", label: "备注", kind: "text" },
+  { field: "source", label: "来源", kind: "text" },
+  { field: "platform", label: "平台", kind: "text" },
+  { field: "shopName", label: "店铺", kind: "text" },
+  { field: "orderNo", label: "订单号", kind: "text" },
   { field: "completedAt", label: "完工时间", kind: "datetime" },
   { field: "customerFeedback", label: "客户反馈", kind: "text" }
 ];
@@ -3480,7 +3485,7 @@ async function serveRecordInvoiceUpload(req, res) {
     return;
   }
 
-  const session = await requireAuthSession(req, res, ["dispatcher", "accountant"]);
+  const session = await requireAuthSession(req, res, ["accountant"]);
   if (!session) return;
 
   if (req.method !== "PATCH") {
@@ -3491,6 +3496,15 @@ async function serveRecordInvoiceUpload(req, res) {
   try {
     const body = await parseBody(req);
     const rawImage = body?.image || body?.invoiceImage || body?.settlementInvoiceImage;
+    const replaceRecordIds = Array.from(
+      new Set(
+        (Array.isArray(body?.replaceRecordIds) ? body.replaceRecordIds : [])
+          .map((item) => normalizeText(item, 120))
+          .filter(Boolean)
+      )
+    );
+    const isReplaceMode = replaceRecordIds.length > 0;
+    const replaceRecordIdSet = new Set(replaceRecordIds);
     const uploadedAt = getCurrentBeijingDateTime();
     const uploadedByUsername = session.role === "accountant"
       ? normalizeAccountantUsername(session.account)
@@ -3535,14 +3549,18 @@ async function serveRecordInvoiceUpload(req, res) {
         const current = item && typeof item === "object" ? item : {};
         if (!canUploadInvoiceToRecord(session, current, accessOptions)) return;
         const settlementFields = getNormalizedRecordSettlementFields(current);
-        if (!settlementFields.isSettled) return;
         const invoiceFields = getNormalizedRecordInvoiceFields(current);
         const dispatcherInvoiceFields = getNormalizedRecordDispatcherInvoiceFields(current);
         const uploadFieldScope = getInvoiceUploadFieldScopeForRecord(session, current, accessOptions);
+        if (uploadFieldScope !== "dispatcher" && !settlementFields.isSettled) return;
         const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
+        const recordId = normalizeText(current.id, 120);
+        if (isReplaceMode && (!recordId || !replaceRecordIdSet.has(recordId))) return;
+        const hasTargetInvoice = uploadFieldScope === "dispatcher"
+          ? dispatcherInvoiceFields.dispatcherSettlementInvoiceImage
+          : invoiceFields.settlementInvoiceImage;
         if (!uploadFieldScope
-          || (uploadFieldScope === "accountant" && invoiceFields.settlementInvoiceImage)
-          || (uploadFieldScope === "dispatcher" && dispatcherInvoiceFields.dispatcherSettlementInvoiceImage)
+          || (isReplaceMode ? !hasTargetInvoice : hasTargetInvoice)
           || !isCompletedCheckStatus(checkStatus)) return;
         targetIndexes.push(index);
       });
@@ -3616,8 +3634,10 @@ async function serveRecordInvoiceUpload(req, res) {
           beforeRecord,
           afterRecord: nextRecord,
           session,
-          actionKey: "invoice_uploaded",
-          actionLabel: RECORD_HISTORY_ACTION_LABELS.invoice_uploaded,
+          actionKey: isReplaceMode ? "invoice_reuploaded" : "invoice_uploaded",
+          actionLabel: isReplaceMode
+            ? RECORD_HISTORY_ACTION_LABELS.invoice_reuploaded
+            : RECORD_HISTORY_ACTION_LABELS.invoice_uploaded,
           operatedAt: uploadedAt,
           operatedBy: uploadedBy
         }));
@@ -3640,7 +3660,11 @@ async function serveRecordInvoiceUpload(req, res) {
     }
 
     if (result.empty) {
-      sendJson(res, 400, { error: `当前没有${getRecordWorkflowStatusLabelByKey("settled")}数据可上传发票。` });
+      sendJson(res, 400, {
+        error: isReplaceMode
+          ? "当前没有可修改的已上传发票记录。"
+          : `当前没有${getRecordWorkflowStatusLabelByKey("settled")}数据可上传发票。`
+      });
       return;
     }
 
@@ -3797,6 +3821,101 @@ async function serveRecordSettlementPayout(req, res) {
     });
   } catch (error) {
     sendJson(res, 400, { error: error.message || "打款失败" });
+  }
+}
+
+async function serveRecordSettlementPayoutRevoke(req, res) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const session = await requireAuthSession(req, res, ["boss"]);
+  if (!session) return;
+
+  if (req.method !== "PATCH") {
+    sendJson(res, 405, { error: "方法不支持" });
+    return;
+  }
+
+  try {
+    const body = await parseBody(req);
+    const payoutTargets = normalizePayoutTargets(body?.payoutTargets, body?.recordIds);
+    if (!payoutTargets.length) {
+      sendJson(res, 400, { error: "请选择要撤销打款的数据。" });
+      return;
+    }
+
+    const targetRecordIds = new Set(payoutTargets.map((target) => target.recordId).filter(Boolean));
+
+    const result = await withWriteLock(async () => {
+      const all = await readRecords();
+      const migration = ensureRecordIds(all);
+      const revokedRecordIds = [];
+      const skippedRecordIds = [];
+      const foundRecordIds = new Set();
+
+      const nextRecords = migration.records.map((item) => {
+        const current = item && typeof item === "object" ? item : {};
+        const recordId = normalizeText(current.id, 120);
+        const settlementFields = getNormalizedRecordSettlementFields(current);
+        const invoiceFields = getNormalizedRecordInvoiceFields(current);
+        const paymentFields = getNormalizedRecordSettlementPaymentFields(current);
+        const normalizedRecord = {
+          ...current,
+          ...settlementFields,
+          ...invoiceFields,
+          ...paymentFields
+        };
+        if (!recordId || !targetRecordIds.has(recordId)) {
+          return normalizedRecord;
+        }
+
+        foundRecordIds.add(recordId);
+        if (!canAccessRecord(session, current) || !paymentFields.isSettlementPaid) {
+          skippedRecordIds.push(recordId);
+          return normalizedRecord;
+        }
+
+        const operationHistory = normalizeOperationHistory(current.operationHistory)
+          .filter((entry) => normalizeText(entry?.actionKey, 32).toLowerCase() !== "settlement_paid");
+        revokedRecordIds.push(recordId);
+        return {
+          ...normalizedRecord,
+          isSettlementPaid: false,
+          settlementPaidAt: "",
+          settlementPaidBy: "",
+          operationHistory
+        };
+      });
+
+      payoutTargets.forEach((target) => {
+        if (!foundRecordIds.has(target.recordId)) {
+          skippedRecordIds.push(target.key);
+        }
+      });
+
+      if (migration.changed || revokedRecordIds.length > 0) {
+        await writeRecords(nextRecords);
+      }
+
+      return {
+        records: scopeRecordsBySession(session, nextRecords),
+        revokedRecordIds,
+        skippedRecordIds
+      };
+    });
+
+    sendJson(res, 200, {
+      ok: true,
+      records: result.records,
+      revokedRecordIds: result.revokedRecordIds,
+      skippedRecordIds: result.skippedRecordIds
+    });
+  } catch (error) {
+    sendJson(res, 400, { error: error.message || "撤销打款失败" });
   }
 }
 
@@ -4365,6 +4484,14 @@ async function serveDispatchers(req, res) {
       if (dispatcherTag && linkedName) {
         linkedDispatcherAccountants = { [dispatcherTag]: linkedName };
       }
+    } else if (session.role === "accountant") {
+      const linkedTags = getDispatcherTagsLinkedToSessionAccountant(session, dispatcherAccountantMappings);
+      const currentAccountantName = getSessionAccountantDisplayName(session);
+      linkedDispatcherAccountants = Object.fromEntries(
+        linkedTags
+          .filter(Boolean)
+          .map((dispatcherTag) => [dispatcherTag, currentAccountantName])
+      );
     }
     sendJson(res, 200, {
       dispatchers: session.role === "boss" ? buildDispatcherManagementRows(records, dispatcherPasswords) : [],
@@ -5049,6 +5176,11 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === "/api/records/payout") {
       await serveRecordSettlementPayout(req, res);
+      return;
+    }
+
+    if (pathname === "/api/records/payout/revoke") {
+      await serveRecordSettlementPayoutRevoke(req, res);
       return;
     }
 

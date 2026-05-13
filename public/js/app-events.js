@@ -207,14 +207,6 @@
       });
     }
 
-    if (bossSettlementSummaryBtn) {
-      bossSettlementSummaryBtn.addEventListener("click", () => {
-        if (!requireAccount()) return;
-        if (!isBossLogin()) return;
-        openBossSettlementDetailModal();
-      });
-    }
-
     if (bossSettlementDetailBtn) {
       bossSettlementDetailBtn.addEventListener("click", () => {
         openBossSettlementDetailModal();
@@ -1608,14 +1600,21 @@
               name: String(file.name || "").trim(),
               dataUrl
             },
-            invoiceRecipientInfo: info
+            invoiceRecipientInfo: info,
+            replaceRecordIds: invoiceUploadReplaceRecordIds
           }));
           const count = result.uploadedRecordIds.length;
+          const isReplaceMode = invoiceUploadReplaceRecordIds.length > 0;
+          if (!isReplaceMode) {
+            hasUploadedSettlementInvoiceThisSession = true;
+          }
           closeInvoiceUploadModal();
           showAppStatus(
             count
-              ? `发票已上传，已更新 ${count} 条状态为${getRecordWorkflowStatusLabelByKey("uploaded")}的数据。`
-              : "发票已上传。",
+              ? (isReplaceMode
+                  ? `发票已修改，已更新 ${count} 条数据。`
+                  : `发票已上传，已更新 ${count} 条状态为${getRecordWorkflowStatusLabelByKey("uploaded")}的数据。`)
+              : (isReplaceMode ? "发票已修改。" : "发票已上传。"),
             "ok"
           );
         } catch (error) {
@@ -1710,6 +1709,12 @@
           return;
         }
 
+        const payoutStatusFilterBtn = event.target.closest("[data-detail-payout-status-filter]");
+        if (payoutStatusFilterBtn) {
+          setBossSettlementDetailPayoutStatusFilter(payoutStatusFilterBtn.dataset.detailPayoutStatusFilter || "");
+          return;
+        }
+
         const payoutSelectedBtn = event.target.closest("[data-settlement-payout-selected]");
         if (payoutSelectedBtn) {
           if (!requireAccount()) return;
@@ -1756,6 +1761,19 @@
           return;
         }
 
+        const revokeBtn = event.target.closest(".settlement-detail-payout-revoke-btn");
+        if (revokeBtn) {
+          if (!requireAccount()) return;
+          if (revokeBtn.disabled) return;
+          hideTableHoverTooltip();
+          const recordIds = String(revokeBtn.dataset.recordIds || "")
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean);
+          await submitBossSettlementPayoutRevoke(recordIds);
+          return;
+        }
+
         const invoiceThumb = event.target.closest(".settlement-detail-invoice-thumb");
         if (invoiceThumb) return;
       });
@@ -1775,6 +1793,88 @@
 
     bindSettlementDetailInvoiceThumbEvents(paidSettlementDetailList);
     bindSettlementDetailInvoiceThumbEvents(uploadedSettlementDetailList);
+
+    const handleSettlementInvoiceReplaceClick = async (event, container) => {
+      const replaceBtn = event.target.closest("[data-invoice-replace-record-ids]");
+      if (!replaceBtn || !container || !container.contains(replaceBtn)) return false;
+      if (!requireAccount()) return true;
+      if (replaceBtn.disabled) return true;
+      const recordIds = String(replaceBtn.dataset.invoiceReplaceRecordIds || "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+      if (!recordIds.length) {
+        showAppStatus("当前发票记录已刷新，请重新打开明细。", "error");
+        return true;
+      }
+      await openInvoiceUploadModal({ replaceRecordIds: recordIds });
+      return true;
+    };
+
+    if (bossSettlementDetailList) {
+      bossSettlementDetailList.addEventListener("click", async (event) => {
+        await handleSettlementInvoiceReplaceClick(event, bossSettlementDetailList);
+      });
+    }
+
+    if (paidSettlementDetailList) {
+      paidSettlementDetailList.addEventListener("click", async (event) => {
+        await handleSettlementInvoiceReplaceClick(event, paidSettlementDetailList);
+      });
+    }
+
+    if (uploadedSettlementDetailList) {
+      uploadedSettlementDetailList.addEventListener("click", async (event) => {
+        await handleSettlementInvoiceReplaceClick(event, uploadedSettlementDetailList);
+      });
+    }
+
+    if (paidSettlementDetailList) {
+      paidSettlementDetailList.addEventListener("mouseover", (event) => {
+        const tooltipTarget = event.target.closest("[data-table-tooltip]");
+        if (!tooltipTarget || !paidSettlementDetailList.contains(tooltipTarget)) {
+          hideTableHoverTooltip();
+          return;
+        }
+        if (event.relatedTarget instanceof Node && tooltipTarget.contains(event.relatedTarget)) return;
+        showTableHoverTooltip(tooltipTarget, event);
+      });
+
+      paidSettlementDetailList.addEventListener("mousemove", (event) => {
+        const tooltipTarget = event.target.closest("[data-table-tooltip]");
+        if (!tooltipTarget || !paidSettlementDetailList.contains(tooltipTarget)) {
+          hideTableHoverTooltip();
+          return;
+        }
+        if (tableHoverTooltip.hidden) {
+          showTableHoverTooltip(tooltipTarget, event);
+        }
+      });
+
+      paidSettlementDetailList.addEventListener("mouseout", (event) => {
+        const tooltipTarget = event.target.closest("[data-table-tooltip]");
+        if (!tooltipTarget) return;
+        if (event.relatedTarget instanceof Node && tooltipTarget.contains(event.relatedTarget)) return;
+        hideTableHoverTooltip();
+      });
+
+      paidSettlementDetailList.addEventListener("mouseleave", () => {
+        hideTableHoverTooltip();
+      });
+
+      paidSettlementDetailList.addEventListener("click", async (event) => {
+        const revokeBtn = event.target.closest(".settlement-detail-payout-revoke-btn");
+        if (!revokeBtn) return;
+        if (!requireAccount()) return;
+        if (revokeBtn.disabled) return;
+        hideTableHoverTooltip();
+        const recordIds = String(revokeBtn.dataset.recordIds || "")
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+        await submitBossSettlementPayoutRevoke(recordIds);
+      });
+    }
 
     if (settlementDetailTabAccountant && settlementDetailTabDispatcher) {
       settlementDetailTabAccountant.addEventListener("click", () => {
@@ -2009,21 +2109,28 @@
     const priceSegmentPremiumReception = document.getElementById("priceSegmentPremiumReception");
     if (priceSegmentPremiumReception) {
       priceSegmentPremiumReception.addEventListener("click", () => {
-        openReceptionDetailModal();
+        openReceptionDetailModal("premium");
       });
     }
 
     const priceSegmentTotalReception = document.getElementById("priceSegmentTotalReception");
     if (priceSegmentTotalReception) {
       priceSegmentTotalReception.addEventListener("click", () => {
-        openReceptionDetailModal();
+        openReceptionDetailModal("total");
       });
     }
 
     const priceSegmentResultReception = document.getElementById("priceSegmentResultReception");
     if (priceSegmentResultReception) {
       priceSegmentResultReception.addEventListener("click", () => {
-        openReceptionDetailModal();
+        openReceptionDetailModal("result");
+      });
+    }
+
+    const priceSegmentAccounting = document.getElementById("priceSegmentAccounting");
+    if (priceSegmentAccounting) {
+      priceSegmentAccounting.addEventListener("click", () => {
+        openAccountantDetailModal();
       });
     }
 
@@ -2031,6 +2138,14 @@
       receptionDetailModal.addEventListener("click", (event) => {
         if (event.target === receptionDetailModal) {
           closeReceptionDetailModal();
+        }
+      });
+    }
+
+    if (accountantDetailModal) {
+      accountantDetailModal.addEventListener("click", (event) => {
+        if (event.target === accountantDetailModal) {
+          closeAccountantDetailModal();
         }
       });
     }

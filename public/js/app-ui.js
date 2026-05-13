@@ -32,6 +32,20 @@
       });
     }
 
+    function getBossSettlementDetailOwnOrderCount(group) {
+      const { own } = getBossSettlementDetailOrderParts(group);
+      return own;
+    }
+
+    function getBossSettlementDetailOwnOrderTotal(groups) {
+      const source = Array.isArray(groups) ? groups : [];
+      return source.reduce((sum, group) => sum + getBossSettlementDetailOwnOrderCount(group), 0);
+    }
+
+    function formatSettlementHeaderOrderCount(groups) {
+      return `${getBossSettlementDetailOwnOrderTotal(groups)}单`;
+    }
+
     function renderRecycleBinTable() {
       renderRecycleBinTableHead();
       recycleTableBody.innerHTML = "";
@@ -72,10 +86,6 @@
       { label: "接单日期", getValue: (item) => String(item?.date || "").trim() },
       { label: "完工时间", getValue: (item) => formatDateTimeDisplay(item?.completedAt) },
       { label: "接待人", getValue: (item) => getDispatcherDisplayNameByTag(item?.dispatcher) },
-      { label: "来源", getValue: (item) => String(item?.source || "").trim() },
-      { label: "平台", getValue: (item) => String(item?.platform || "").trim() },
-      { label: "店铺名", getValue: (item) => String(item?.shopName || "").trim() },
-      { label: "订单号", getValue: (item) => String(item?.orderNo || "").trim() },
       { label: "会计", getValue: (item) => String(item?.accountant || "").trim() },
       { label: "客户", getValue: (item) => String(item?.customer || "").trim() },
       { label: "任务简介", getValue: (item) => String(item?.summary || "").trim() },
@@ -85,6 +95,10 @@
       { label: "接待收益", getValue: (item) => formatProfitDisplay(item), visible: () => shouldShowProfitColumn() },
       { label: "会计价", getValue: (item) => toMoney(item?.totalPrice) },
       { label: "会计结算价", getValue: (item) => toMoney(item?.settlementPrice) },
+      { label: "来源", getValue: (item) => String(item?.source || "").trim() },
+      { label: "平台", getValue: (item) => String(item?.platform || "").trim() },
+      { label: "店铺名", getValue: (item) => String(item?.shopName || "").trim() },
+      { label: "订单号", getValue: (item) => String(item?.orderNo || "").trim() },
       { label: "状态", getValue: (item) => getRecordStatusWithSettlementText(item) }
     ];
 
@@ -99,6 +113,17 @@
       const percent = (premium / payment) * 100;
       if (percent === 0) return toMoney(premium);
       return `${toMoney(premium)} (${formatTrimmedPercent(percent)})`;
+    }
+
+    function formatCompactMoneyExpression(value) {
+      return String(value || "").replace(/\s*([+=])\s*/g, "$1").trim();
+    }
+
+    function appendMoneyCellText(cell, value) {
+      const text = document.createElement("span");
+      text.className = "money-cell-text";
+      text.textContent = formatCompactMoneyExpression(value);
+      cell.appendChild(text);
     }
 
     function getHorizontalPadding(node) {
@@ -241,6 +266,77 @@
       return num;
     }
 
+    function getExcelStyles() {
+      return {
+        header: {
+          fill: { patternType: "solid", fgColor: { rgb: "4472C4" } },
+          font: { color: { rgb: "FFFFFF" }, bold: true }
+        },
+        total: {
+          fill: { patternType: "solid", fgColor: { rgb: "D9E2F3" } },
+          font: { bold: true }
+        }
+      };
+    }
+
+    function applyColumnStylesAndWidths(ws, options = {}) {
+      const { numericColumnIndices = [], hasTotalRow = false } = options;
+      const styles = getExcelStyles();
+      const range = XLSX.utils.decode_range(ws["!ref"]);
+      
+      if (!ws["!cols"]) ws["!cols"] = [];
+
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const colLetter = XLSX.utils.encode_col(col);
+        const isNumericColumn = numericColumnIndices.includes(col);
+
+        const headerCell = ws[`${colLetter}1`];
+        if (headerCell) {
+          headerCell.s = styles.header;
+        }
+
+        if (hasTotalRow) {
+          const totalCell = ws[`${colLetter}2`];
+          if (totalCell) {
+            totalCell.s = styles.total;
+            if (isNumericColumn && totalCell.t === "n") {
+              totalCell.z = "0.00";
+            }
+          }
+        }
+
+        let maxWidth = 10;
+        for (let row = range.s.r; row <= range.e.r; row++) {
+          const cell = ws[`${colLetter}${row + 1}`];
+          if (cell && cell.v !== undefined && cell.v !== null) {
+            const cellWidth = String(cell.v).length;
+            if (cellWidth > maxWidth) maxWidth = cellWidth;
+
+            if (isNumericColumn && cell.t === "n") {
+              cell.z = "0.00";
+            }
+          }
+        }
+        ws["!cols"][col] = { wch: Math.min(maxWidth + 2, 50) };
+      }
+    }
+
+    function exportToExcel(data, options = {}) {
+      const { 
+        fileName = "export.xlsx", 
+        sheetName = "Sheet1", 
+        numericColumnIndices = [],
+        hasTotalRow = false 
+      } = options;
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      applyColumnStylesAndWidths(ws, { numericColumnIndices, hasTotalRow });
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      XLSX.writeFile(wb, fileName);
+    }
+
     function exportCurrentTableRecords() {
       if (!canCurrentAccountExportTableRecords()) return;
       const exportRecords = getSortedRecords(getFilteredRecords());
@@ -290,60 +386,19 @@
         return column.getValue(item);
       }));
 
-      const ws = XLSX.utils.aoa_to_sheet([headerRow, totalRow, ...dataRows]);
-
-      const headerStyle = {
-        fill: { patternType: "solid", fgColor: { rgb: "4472C4" } },
-        font: { color: { rgb: "FFFFFF" }, bold: true }
-      };
-      const totalStyle = {
-        fill: { patternType: "solid", fgColor: { rgb: "D9E2F3" } },
-        font: { bold: true }
-      };
-
-      const range = XLSX.utils.decode_range(ws["!ref"]);
-      if (!ws["!cols"]) ws["!cols"] = [];
-
       const numericColumnIndices = exportColumns
         .map((col, index) => numericColumnLabels.includes(col.label) ? index : -1)
         .filter((index) => index >= 0);
 
-      for (let col = range.s.c; col <= range.e.c; col++) {
-        const colLetter = XLSX.utils.encode_col(col);
-        const isNumericColumn = numericColumnIndices.includes(col);
-
-        const headerCell = ws[`${colLetter}1`];
-        if (headerCell) {
-          headerCell.s = headerStyle;
+      exportToExcel(
+        [headerRow, totalRow, ...dataRows],
+        {
+          fileName: getTableExportFileName(),
+          sheetName: "数据表",
+          numericColumnIndices,
+          hasTotalRow: true
         }
-
-        const totalCell = ws[`${colLetter}2`];
-        if (totalCell) {
-          totalCell.s = totalStyle;
-          if (isNumericColumn && totalCell.t === "n") {
-            totalCell.z = "0.00";
-          }
-        }
-
-        let maxWidth = 10;
-        for (let row = range.s.r; row <= range.e.r; row++) {
-          const cell = ws[`${colLetter}${row + 1}`];
-          if (cell && cell.v !== undefined && cell.v !== null) {
-            const cellWidth = String(cell.v).length;
-            if (cellWidth > maxWidth) maxWidth = cellWidth;
-
-            if (isNumericColumn && cell.t === "n") {
-              cell.z = "0.00";
-            }
-          }
-        }
-        ws["!cols"][col] = { wch: Math.min(maxWidth + 2, 50) };
-      }
-
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "数据表");
-
-      XLSX.writeFile(wb, getTableExportFileName());
+      );
     }
 
     function getSettlementPayoutExportFileName() {
@@ -389,46 +444,15 @@
         ]);
       });
 
-      const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
-
-      const headerStyle = {
-        fill: { patternType: "solid", fgColor: { rgb: "4472C4" } },
-        font: { color: { rgb: "FFFFFF" }, bold: true }
-      };
-
-      const range = XLSX.utils.decode_range(ws["!ref"]);
-      if (!ws["!cols"]) ws["!cols"] = [];
-
-      const amountColumnIndex = 5;
-
-      for (let col = range.s.c; col <= range.e.c; col++) {
-        const colLetter = XLSX.utils.encode_col(col);
-        const isAmountColumn = col === amountColumnIndex;
-
-        const headerCell = ws[`${colLetter}1`];
-        if (headerCell) {
-          headerCell.s = headerStyle;
+      exportToExcel(
+        [headerRow, ...dataRows],
+        {
+          fileName: getSettlementPayoutExportFileName(),
+          sheetName: "打款数据",
+          numericColumnIndices: [5],
+          hasTotalRow: false
         }
-
-        let maxWidth = 10;
-        for (let row = range.s.r; row <= range.e.r; row++) {
-          const cell = ws[`${colLetter}${row + 1}`];
-          if (cell && cell.v !== undefined && cell.v !== null) {
-            const cellWidth = String(cell.v).length;
-            if (cellWidth > maxWidth) maxWidth = cellWidth;
-
-            if (isAmountColumn && cell.t === "n") {
-              cell.z = "0.00";
-            }
-          }
-        }
-        ws["!cols"][col] = { wch: Math.min(maxWidth + 2, 50) };
-      }
-
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "打款数据");
-
-      XLSX.writeFile(wb, getSettlementPayoutExportFileName());
+      );
     }
 
     function getDateCellDisplayParts(rawDateTime, fallbackDateTime = "") {
@@ -922,9 +946,32 @@
       return getVisibleRecords();
     }
 
+    function renderPriceCompositionStats(sourceRecords) {
+      if (!priceCompositionModal) return;
+      const records = Array.isArray(sourceRecords) ? sourceRecords : [];
+      const people = new Set();
+      records.forEach((record) => {
+        const accountantName = normalizeText(record?.accountant, 80);
+        if (accountantName) {
+          people.add(accountantName);
+        }
+      });
+      const statValues = {
+        people: people.size,
+        orders: records.length
+      };
+      Object.entries(statValues).forEach(([field, value]) => {
+        const node = priceCompositionModal.querySelector(
+          `[data-price-composition-stat="${field}"]`,
+        );
+        if (node) node.textContent = String(value);
+      });
+    }
+
     function updatePriceCompositionModal() {
       if (!priceCompositionModal) return;
       const sourceRecords = getPriceCompositionRecords();
+      renderPriceCompositionStats(sourceRecords);
       const totals = (Array.isArray(sourceRecords) ? sourceRecords : []).reduce(
         (summary, item) => {
           const payment = Number(item?.paymentPrice);
@@ -1157,7 +1204,7 @@
       if (chart) {
         chart.setAttribute(
           "aria-label",
-          `当前筛选${sourceRecords.length}条，付款价${formatPriceCompositionValue(split.payment, split.payment)}，溢价${formatPriceCompositionValue(split.premium, split.payment)}，会计价${formatPriceCompositionValue(split.total, split.payment)}，会计结算价${formatPriceCompositionValue(split.settlement, split.payment)}，平台${formatPriceCompositionValue(split.platform, split.payment)}，接待${formatPriceCompositionValue(split.reception, split.payment)}，会计${formatPriceCompositionValue(split.accounting, split.payment)}，拆分节点同时显示占父级比例`,
+          `当前筛选${sourceRecords.length}订单，付款价${formatPriceCompositionValue(split.payment, split.payment)}，溢价${formatPriceCompositionValue(split.premium, split.payment)}，会计价${formatPriceCompositionValue(split.total, split.payment)}，会计结算价${formatPriceCompositionValue(split.settlement, split.payment)}，平台${formatPriceCompositionValue(split.platform, split.payment)}，接待${formatPriceCompositionValue(split.reception, split.payment)}，会计${formatPriceCompositionValue(split.accounting, split.payment)}，拆分节点同时显示占父级比例`,
         );
       }
     }
@@ -1170,8 +1217,11 @@
       syncModalOpenState();
     }
 
-    function openReceptionDetailModal() {
+    let receptionDetailType = "result";
+
+    function openReceptionDetailModal(type = "result") {
       if (!receptionDetailModal || !receptionDetailModalCard) return;
+      receptionDetailType = type;
       renderReceptionDetailModalContent();
       receptionDetailModal.hidden = false;
       receptionDetailModal.classList.remove("modal-enter");
@@ -1208,37 +1258,121 @@
       };
     }
 
+    let receptionDetailSort = { key: "percent", direction: "desc" };
+
+    function sortReceptionDetailList(list, sortKey, direction, totalProfit) {
+      return [...list].sort((a, b) => {
+        let valueA, valueB;
+        switch (sortKey) {
+          case "name":
+            const aIsOld = a.name.includes("旧");
+            const bIsOld = b.name.includes("旧");
+            if (aIsOld && !bIsOld) return 1;
+            if (!aIsOld && bIsOld) return -1;
+            valueA = a.name;
+            valueB = b.name;
+            return direction === "asc" ? valueA.localeCompare(valueB, "zh-CN") : valueB.localeCompare(valueA, "zh-CN");
+          case "orderCount":
+            valueA = a.orderCount;
+            valueB = b.orderCount;
+            break;
+          case "percent":
+            valueA = totalProfit > 0 ? (a.totalProfit / totalProfit) : 0;
+            valueB = totalProfit > 0 ? (b.totalProfit / totalProfit) : 0;
+            break;
+          case "totalProfit":
+          default:
+            valueA = a.totalProfit;
+            valueB = b.totalProfit;
+            break;
+        }
+        return direction === "asc" ? valueA - valueB : valueB - valueA;
+      });
+    }
+
     function renderReceptionDetailModalContent() {
       if (!receptionDetailMeta || !receptionDetailList) return;
       const sourceRecords = getFilteredRecords();
       const records = Array.isArray(sourceRecords) ? sourceRecords : [];
 
-      let totalBaseProfit = 0;
-      let totalPremiumProfit = 0;
-      let totalProfit = 0;
-      const receptionRecords = [];
+      const profitBreakdown = getProfitTotalBreakdown(sourceRecords);
+      const totalBaseProfit = Number.isFinite(profitBreakdown.totalBase) ? profitBreakdown.totalBase : 0;
+      const totalPremiumProfit = Number.isFinite(profitBreakdown.premiumProfit) ? profitBreakdown.premiumProfit : 0;
+      let dispatcherTotal;
+
+      const dispatcherMap = new Map();
+      let totalPayment = 0;
+      let totalTotalPrice = 0;
+      let totalSettlement = 0;
 
       records.forEach((record) => {
-        const breakdown = getReceptionProfitBreakdown(record);
-        if (breakdown.totalProfit > 0) {
-          totalBaseProfit += breakdown.baseProfit;
-          totalPremiumProfit += breakdown.premiumReceptionProfit;
-          totalProfit += breakdown.totalProfit;
-          receptionRecords.push({
-            ...record,
-            baseProfit: breakdown.baseProfit,
-            premiumProfit: breakdown.premiumReceptionProfit,
-            totalProfit: breakdown.totalProfit
+        const profit = getProfitParts(record);
+        const baseProfit = profit && Number.isFinite(profit.baseProfit) ? profit.baseProfit : 0;
+        const premiumValue = getPremiumValue(record);
+
+        const dispatcherTag = normalizeDispatcherTag(record.dispatcher);
+        const dispatcherName = getDispatcherDisplayNameByTag(dispatcherTag) || dispatcherTag;
+
+        if (!dispatcherMap.has(dispatcherName)) {
+          dispatcherMap.set(dispatcherName, {
+            name: dispatcherName,
+            orderCount: 0,
+            baseProfit: 0,
+            premiumValues: [],
+            totalProfit: 0,
+            paymentPrice: 0,
+            totalPrice: 0,
+            settlementPrice: 0
           });
         }
+
+        const dispatcherData = dispatcherMap.get(dispatcherName);
+        dispatcherData.orderCount += 1;
+        dispatcherData.baseProfit += baseProfit;
+        dispatcherData.premiumValues.push(premiumValue);
+        dispatcherData.paymentPrice += Number(record.paymentPrice) || 0;
+        dispatcherData.totalPrice += Number(record.totalPrice) || 0;
+        dispatcherData.settlementPrice += Number(record.settlementPrice) || 0;
+
+        totalPayment += Number(record.paymentPrice) || 0;
+        totalTotalPrice += Number(record.totalPrice) || 0;
+        totalSettlement += Number(record.settlementPrice) || 0;
       });
 
-      receptionDetailMeta.textContent = receptionRecords.length
-        ? `共 ${receptionRecords.length} 条记录 / 接待收益合计 ${toMoney(totalProfit)}（基础收益 ${toMoney(totalBaseProfit)} / 溢价收益 ${toMoney(totalPremiumProfit)}）`
-        : "暂无接待数据";
+      const allPremiumValues = records.map((r) => getPremiumValue(r));
+      const totalPremiumAll = allPremiumValues.reduce((sum, v) => sum + v, 0);
+      const allPremiumBreakdown = getTieredPremiumProfitBreakdown(totalPremiumAll);
+      const allPremiumProfit = allPremiumBreakdown ? allPremiumBreakdown.profit : 0;
+
+      const dispatcherListRaw = Array.from(dispatcherMap.values()).map((data) => {
+        let displayProfit;
+        const premiumShare = totalBaseProfit > 0 ? (data.baseProfit / totalBaseProfit) : 0;
+
+        if (receptionDetailType === "premium") {
+          displayProfit = allPremiumProfit * premiumShare;
+        } else if (receptionDetailType === "total") {
+          displayProfit = data.baseProfit;
+        } else {
+          displayProfit = data.baseProfit + (allPremiumProfit * premiumShare);
+        }
+        return {
+          ...data,
+          totalProfit: displayProfit
+        };
+      });
+      dispatcherTotal = dispatcherListRaw.reduce((sum, item) => sum + item.totalProfit, 0);
+
+      const dispatcherList = sortReceptionDetailList(
+        dispatcherListRaw,
+        receptionDetailSort.key,
+        receptionDetailSort.direction,
+        dispatcherTotal
+      );
+
+      receptionDetailMeta.textContent = "";
       receptionDetailList.innerHTML = "";
 
-      if (!receptionRecords.length) {
+      if (!dispatcherList.length) {
         const empty = document.createElement("div");
         empty.className = "paid-settlement-detail-empty";
         empty.textContent = "暂无接待收益数据。";
@@ -1248,51 +1382,77 @@
 
       const tableWrap = document.createElement("div");
       tableWrap.className = "settlement-detail-table-wrap settlement-detail-table-wrap-paid";
+      tableWrap.style.overflow = "visible";
+      tableWrap.style.minWidth = "auto";
+      tableWrap.style.maxHeight = "none";
 
       const table = document.createElement("table");
       table.className = "settlement-detail-table settlement-detail-uploaded-table";
+      table.style.minWidth = "460px";
 
       const colgroup = document.createElement("colgroup");
-      [
-        "dispatcher",
-        "date",
-        "order",
-        "accountant",
-        "money",
-        "money",
-        "money"
-      ].forEach((columnClass) => {
+      const columns = [
+        { class: "dispatcher", width: "180px" },
+        { class: "count", width: "80px" },
+        { class: "money", width: "120px" },
+        { class: "money", width: "80px" }
+      ];
+      columns.forEach((column) => {
         const col = document.createElement("col");
-        col.className = `settlement-detail-col-${columnClass}`;
+        col.className = `settlement-detail-col-${column.class}`;
+        col.style.width = column.width;
         colgroup.appendChild(col);
       });
       table.appendChild(colgroup);
 
+      const titlePrefix = receptionDetailType === "premium" ? "溢价" : receptionDetailType === "total" ? "会计价" : "";
+      const titleLabel = `${titlePrefix}接待收益`;
+
       const thead = document.createElement("thead");
       const headRow = document.createElement("tr");
       const headerColumns = [
-        { label: "接待人", summary: "", align: "dispatcher" },
-        { label: "接单日期", summary: "", align: "date" },
-        { label: "订单号", summary: "", align: "order" },
-        { label: "会计", summary: "", align: "accountant" },
-        { label: "基础收益", summary: `合计 ${toMoney(totalBaseProfit)}`, align: "money" },
-        { label: "溢价收益", summary: `合计 ${toMoney(totalPremiumProfit)}`, align: "money" },
-        { label: "接待收益总计", summary: `合计 ${toMoney(totalProfit)}`, align: "money" }
+        { label: "接待人", key: "name", align: "dispatcher", total: `共 ${dispatcherList.length} 位接待` },
+        { label: "订单数", key: "orderCount", align: "count", total: `共 ${records.length} 条` },
+        { label: titleLabel, key: "totalProfit", align: "money", total: `合计 ${toMoney(dispatcherTotal)}` },
+        { label: "占比", key: "percent", align: "money", total: "" }
       ];
       headerColumns.forEach((column) => {
         const th = document.createElement("th");
         th.scope = "col";
         th.className = `settlement-detail-heading-cell ${column.align}`;
+        th.style.cursor = "pointer";
+        th.style.userSelect = "none";
 
-        const label = document.createElement("span");
+        const label = document.createElement("div");
         label.className = "settlement-detail-sort-label";
         label.textContent = column.label;
+        label.style.marginBottom = "4px";
         th.appendChild(label);
 
-        const summary = document.createElement("span");
-        summary.className = "settlement-detail-sort-summary";
-        summary.textContent = column.summary;
-        th.appendChild(summary);
+        if (receptionDetailSort.key === column.key) {
+          const arrow = document.createElement("span");
+          arrow.textContent = receptionDetailSort.direction === "asc" ? " ↑" : " ↓";
+          arrow.style.fontSize = "12px";
+          arrow.style.marginLeft = "4px";
+          label.appendChild(arrow);
+        }
+
+        const total = document.createElement("div");
+        total.style.fontSize = "12px";
+        total.style.fontWeight = "400";
+        total.style.color = column.key === "totalProfit" ? "#16a34a" : "#6b7280";
+        total.textContent = column.total;
+        th.appendChild(total);
+
+        th.addEventListener("click", () => {
+          if (receptionDetailSort.key === column.key) {
+            receptionDetailSort.direction = receptionDetailSort.direction === "asc" ? "desc" : "asc";
+          } else {
+            receptionDetailSort.key = column.key;
+            receptionDetailSort.direction = "desc";
+          }
+          renderReceptionDetailModalContent();
+        });
 
         headRow.appendChild(th);
       });
@@ -1300,7 +1460,7 @@
       table.appendChild(thead);
 
       const tbody = document.createElement("tbody");
-      receptionRecords.forEach((record) => {
+      dispatcherList.forEach((data) => {
         const row = document.createElement("tr");
         row.className = "settlement-detail-row tone-payable";
 
@@ -1308,46 +1468,651 @@
         dispatcherTd.className = "settlement-detail-accountant-cell settlement-detail-col-dispatcher";
         const dispatcherName = document.createElement("strong");
         dispatcherName.className = "settlement-detail-accountant";
-        dispatcherName.textContent = getDispatcherDisplayNameByTag(record.dispatcher) || record.dispatcher;
+        dispatcherName.textContent = data.name;
         dispatcherTd.appendChild(dispatcherName);
         row.appendChild(dispatcherTd);
 
-        const dateTd = document.createElement("td");
-        dateTd.className = "settlement-detail-name-cell settlement-detail-col-date";
-        dateTd.textContent = formatDateDisplay(record.date) || "-";
-        row.appendChild(dateTd);
-
-        const orderTd = document.createElement("td");
-        orderTd.className = "settlement-detail-name-cell settlement-detail-col-order";
-        orderTd.textContent = record.orderNo || "-";
-        row.appendChild(orderTd);
-
-        const accountantTd = document.createElement("td");
-        accountantTd.className = "settlement-detail-name-cell settlement-detail-col-accountant";
-        accountantTd.textContent = record.accountant || "-";
-        row.appendChild(accountantTd);
-
-        const baseTd = document.createElement("td");
-        baseTd.className = "settlement-detail-money settlement-detail-col-money";
-        baseTd.textContent = toMoney(record.baseProfit);
-        row.appendChild(baseTd);
-
-        const premiumTd = document.createElement("td");
-        premiumTd.className = "settlement-detail-money settlement-detail-col-money";
-        premiumTd.textContent = toMoney(record.premiumProfit);
-        row.appendChild(premiumTd);
+        const countTd = document.createElement("td");
+        countTd.className = "settlement-detail-name-cell settlement-detail-col-count";
+        countTd.textContent = data.orderCount;
+        row.appendChild(countTd);
 
         const totalTd = document.createElement("td");
         totalTd.className = "settlement-detail-money settlement-detail-col-money";
-        totalTd.textContent = toMoney(record.totalProfit);
+        totalTd.textContent = toMoney(data.totalProfit);
         row.appendChild(totalTd);
+
+        const percentTd = document.createElement("td");
+        percentTd.className = "settlement-detail-money settlement-detail-col-money";
+        const percent = dispatcherTotal > 0 ? (data.totalProfit / dispatcherTotal) * 100 : 0;
+        percentTd.textContent = `${percent.toFixed(1)}%`;
+        row.appendChild(percentTd);
 
         tbody.appendChild(row);
       });
       table.appendChild(tbody);
 
       tableWrap.appendChild(table);
-      receptionDetailList.appendChild(tableWrap);
+
+      const contentRow = document.createElement("div");
+      contentRow.style.display = "flex";
+      contentRow.style.gap = "24px";
+      contentRow.style.alignItems = "flex-start";
+
+      const tableContainer = document.createElement("div");
+      tableContainer.style.flex = "1";
+      tableContainer.style.minWidth = "0";
+      tableContainer.appendChild(tableWrap);
+      contentRow.appendChild(tableContainer);
+
+      const chartContainer = document.createElement("div");
+      chartContainer.style.width = "480px";
+      chartContainer.style.flexShrink = "0";
+
+      const chartTitle = document.createElement("div");
+      chartTitle.textContent = "收益占比分布";
+      chartTitle.style.fontWeight = "600";
+      chartTitle.style.marginBottom = "16px";
+      chartTitle.style.color = "#1f2937";
+      chartTitle.style.textAlign = "center";
+      chartContainer.appendChild(chartTitle);
+
+      const chartDom = document.createElement("div");
+      chartDom.style.width = "100%";
+      chartDom.style.height = "340px";
+      chartDom.style.position = "relative";
+      chartContainer.appendChild(chartDom);
+
+      contentRow.appendChild(chartContainer);
+      receptionDetailList.appendChild(contentRow);
+
+      const loadEcharts = () => {
+        if (window.echarts) {
+          return Promise.resolve(window.echarts);
+        }
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "./public/vendor/echarts.min.js";
+          script.async = true;
+          script.onload = () => resolve(window.echarts);
+          script.onerror = () => reject(new Error("图表库加载失败"));
+          document.head.appendChild(script);
+        });
+      };
+
+      loadEcharts().then(() => {
+        const chart = window.echarts.init(chartDom, null, { renderer: "canvas" });
+        const colors = [
+          "#4ade80", "#2dd4bf", "#22d3ee", "#60a5fa",
+          "#818cf8", "#a78bfa", "#c084fc", "#e879f9",
+          "#f472b6", "#fb7185", "#38bdf8", "#6366f1",
+          "#8b5cf6", "#a855f7", "#d946ef", "#ec4899"
+        ];
+
+        const chartData = dispatcherList.map((data, index) => ({
+          value: data.totalProfit,
+          name: data.name,
+          originalIndex: index,
+          itemStyle: { color: colors[index % colors.length] }
+        }));
+
+        const sortedData = [...chartData].sort((a, b) => b.value - a.value);
+        
+        sortedData.forEach((item, index) => {
+          item.itemStyle.color = colors[index % colors.length];
+        });
+
+        chart.setOption({
+          tooltip: {
+            trigger: "item",
+            formatter: "{b}: {c} ({d}%)",
+            backgroundColor: "rgba(255, 255, 255, 0.96)",
+            borderColor: "#d1e7dd",
+            borderWidth: 1,
+            padding: 8,
+            textStyle: {
+              color: "#1f2937",
+              fontSize: 12
+            },
+            extraCssText: "box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-radius: 8px;"
+          },
+          legend: {
+            show: false
+          },
+          series: [
+            {
+              name: "收益占比",
+              type: "pie",
+              radius: ["42%", "72%"],
+              center: ["50%", "50%"],
+              avoidLabelOverlap: true,
+              minAngle: 2,
+              stillShowZeroSum: true,
+              itemStyle: {
+                borderRadius: 3,
+                borderColor: "#fff",
+                borderWidth: 2
+              },
+              label: {
+                show: true,
+                position: "outside",
+                formatter: (params) => {
+                  const name = params.name.length > 8 ? params.name.slice(0, 8) + "..." : params.name;
+                  return `${name}\n${params.percent.toFixed(1)}%`;
+                },
+                fontSize: 10,
+                lineHeight: 13,
+                minMargin: 8,
+                padding: [2, 3],
+                overflow: "truncate",
+                alignTo: "none",
+                edgeDistance: 8
+              },
+              labelLine: {
+                show: true,
+                length: 10,
+                length2: 55,
+                maxSurfaceAngle: 80,
+                smooth: true,
+                minTurnAngle: 25
+              },
+              emphasis: {
+                label: {
+                  show: true,
+                  fontSize: 12,
+                  fontWeight: "bold"
+                },
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: "rgba(0, 0, 0, 0.3)"
+                }
+              },
+              data: sortedData
+            }
+          ]
+        });
+
+        chart.on("mouseover", (params) => {
+          const originalIndex = params.data?.originalIndex;
+          if (originalIndex >= 0) {
+            const rows = table.querySelectorAll("tbody tr");
+            rows.forEach((row, i) => {
+              if (i === originalIndex) {
+                row.style.transform = "translateY(-2px)";
+                row.style.boxShadow = "0 0 0 3px #0e7c66, 0 8px 24px rgba(14, 124, 102, 0.4)";
+                row.style.zIndex = "10";
+                row.style.position = "relative";
+                row.style.transition = "all 0.15s ease-out";
+                const cells = row.querySelectorAll("td");
+                cells.forEach((cell, cellIndex) => {
+                  cell.style.backgroundColor = "#0e7c66";
+                  cell.style.color = "#ffffff";
+                  cell.style.fontWeight = "700";
+                  cell.style.borderBottomColor = "#0a5d4d";
+                  if (cellIndex === 0) {
+                    cell.style.boxShadow = "inset 6px 0 0 #ffd700";
+                  }
+                });
+              }
+            });
+          }
+        });
+
+        chart.on("mouseout", () => {
+          const rows = table.querySelectorAll("tbody tr");
+          rows.forEach((row) => {
+            row.style.transform = "";
+            row.style.boxShadow = "none";
+            row.style.zIndex = "";
+            const cells = row.querySelectorAll("td");
+            cells.forEach((cell) => {
+              cell.style.backgroundColor = "";
+              cell.style.color = "";
+              cell.style.fontWeight = "";
+              cell.style.borderBottomColor = "";
+              cell.style.boxShadow = "none";
+            });
+          });
+          chart.dispatchAction({
+            type: "downplay",
+            seriesIndex: 0
+          });
+        });
+
+        const rows = table.querySelectorAll("tbody tr");
+        rows.forEach((row, index) => {
+          row.style.cursor = "pointer";
+          row.addEventListener("mouseenter", () => {
+            row.style.transform = "translateY(-2px)";
+            row.style.boxShadow = "0 0 0 3px #0e7c66, 0 8px 24px rgba(14, 124, 102, 0.4)";
+            row.style.zIndex = "10";
+            row.style.position = "relative";
+            row.style.transition = "all 0.15s ease-out";
+            const cells = row.querySelectorAll("td");
+            cells.forEach((cell, cellIndex) => {
+              cell.style.backgroundColor = "#0e7c66";
+              cell.style.color = "#ffffff";
+              cell.style.fontWeight = "700";
+              cell.style.borderBottomColor = "#0a5d4d";
+              if (cellIndex === 0) {
+                cell.style.boxShadow = "inset 6px 0 0 #ffd700";
+              }
+            });
+            chart.dispatchAction({
+              type: "highlight",
+              seriesIndex: 0,
+              dataIndex: index
+            });
+          });
+          row.addEventListener("mouseleave", () => {
+            row.style.transform = "";
+            row.style.boxShadow = "";
+            row.style.zIndex = "";
+            row.style.position = "";
+            const cells = row.querySelectorAll("td");
+            cells.forEach((cell) => {
+              cell.style.backgroundColor = "";
+              cell.style.color = "";
+              cell.style.fontWeight = "";
+              cell.style.borderBottomColor = "";
+              cell.style.boxShadow = "";
+            });
+            chart.dispatchAction({
+              type: "downplay",
+              seriesIndex: 0,
+              dataIndex: index
+            });
+          });
+        });
+
+        window.addEventListener("resize", () => {
+          chart.resize();
+        });
+      }).catch(() => {
+        chartDom.textContent = "图表加载失败";
+      });
+    }
+
+    function openAccountantDetailModal() {
+      if (!accountantDetailModal || !accountantDetailModalCard) return;
+      renderAccountantDetailModalContent();
+      accountantDetailModal.hidden = false;
+      accountantDetailModal.classList.remove("modal-enter");
+      accountantDetailModalCard.classList.remove("modal-enter");
+      void accountantDetailModal.offsetWidth;
+      accountantDetailModal.classList.add("modal-enter");
+      accountantDetailModalCard.classList.add("modal-enter");
+      syncModalOpenState();
+    }
+
+    function closeAccountantDetailModal() {
+      if (!accountantDetailModal || !accountantDetailModalCard) return;
+      accountantDetailModal.classList.remove("modal-enter");
+      accountantDetailModalCard.classList.remove("modal-enter");
+      accountantDetailModal.hidden = true;
+      syncModalOpenState();
+    }
+
+    function renderAccountantDetailModalContent() {
+      if (!accountantDetailMeta || !accountantDetailList) return;
+      const sourceRecords = getFilteredRecords();
+      const records = Array.isArray(sourceRecords) ? sourceRecords : [];
+
+      const accountantMap = new Map();
+      let totalSettlement = 0;
+
+      records.forEach((record) => {
+        const accountantName = normalizeText(record.accountant, 80) || "未知会计";
+
+        if (!accountantMap.has(accountantName)) {
+          accountantMap.set(accountantName, {
+            name: accountantName,
+            orderCount: 0,
+            settlementPrice: 0
+          });
+        }
+
+        const accountantData = accountantMap.get(accountantName);
+        accountantData.orderCount += 1;
+        accountantData.settlementPrice += Number(record.settlementPrice) || 0;
+        totalSettlement += Number(record.settlementPrice) || 0;
+      });
+
+      const accountantList = [...accountantMap.values()].sort((a, b) => b.settlementPrice - a.settlementPrice);
+
+      accountantDetailMeta.textContent = "";
+      accountantDetailList.innerHTML = "";
+
+      if (!accountantList.length) {
+        const empty = document.createElement("div");
+        empty.className = "paid-settlement-detail-empty";
+        empty.textContent = "暂无会计结算数据。";
+        accountantDetailList.appendChild(empty);
+        return;
+      }
+
+      const tableWrap = document.createElement("div");
+      tableWrap.className = "settlement-detail-table-wrap settlement-detail-table-wrap-paid";
+      tableWrap.style.overflow = "visible";
+      tableWrap.style.minWidth = "auto";
+      tableWrap.style.maxHeight = "none";
+
+      const table = document.createElement("table");
+      table.className = "settlement-detail-table settlement-detail-uploaded-table";
+      table.style.minWidth = "460px";
+
+      const colgroup = document.createElement("colgroup");
+      const columns = [
+        { class: "dispatcher", width: "180px" },
+        { class: "count", width: "80px" },
+        { class: "money", width: "120px" },
+        { class: "money", width: "80px" }
+      ];
+      columns.forEach((column) => {
+        const col = document.createElement("col");
+        col.className = `settlement-detail-col-${column.class}`;
+        col.style.width = column.width;
+        colgroup.appendChild(col);
+      });
+      table.appendChild(colgroup);
+
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      const headerColumns = [
+        { label: "会计", key: "name", total: `共 ${accountantList.length} 位会计` },
+        { label: "订单数", key: "orderCount", total: `共 ${records.length} 条` },
+        { label: "会计结算价", key: "settlement", total: `合计 ${toMoney(totalSettlement)}` },
+        { label: "占比", key: "percent", total: "" }
+      ];
+      headerColumns.forEach((column) => {
+        const th = document.createElement("th");
+        th.scope = "col";
+        th.className = "settlement-detail-heading-cell";
+        th.style.cursor = "pointer";
+        th.style.userSelect = "none";
+
+        const label = document.createElement("div");
+        label.className = "settlement-detail-sort-label";
+        label.textContent = column.label;
+        label.style.marginBottom = "4px";
+        th.appendChild(label);
+
+        const total = document.createElement("div");
+        total.style.fontSize = "12px";
+        total.style.fontWeight = "400";
+        total.style.color = column.key === "settlement" ? "#16a34a" : "#6b7280";
+        total.textContent = column.total;
+        th.appendChild(total);
+
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      accountantList.forEach((data) => {
+        const row = document.createElement("tr");
+        row.className = "settlement-detail-row tone-payable";
+
+        const nameTd = document.createElement("td");
+        nameTd.className = "settlement-detail-accountant-cell settlement-detail-col-dispatcher";
+        const name = document.createElement("strong");
+        name.className = "settlement-detail-accountant";
+        name.textContent = data.name;
+        nameTd.appendChild(name);
+        row.appendChild(nameTd);
+
+        const countTd = document.createElement("td");
+        countTd.className = "settlement-detail-name-cell settlement-detail-col-count";
+        countTd.textContent = data.orderCount;
+        row.appendChild(countTd);
+
+        const totalTd = document.createElement("td");
+        totalTd.className = "settlement-detail-money settlement-detail-col-money";
+        totalTd.textContent = toMoney(data.settlementPrice);
+        row.appendChild(totalTd);
+
+        const percentTd = document.createElement("td");
+        percentTd.className = "settlement-detail-money settlement-detail-col-money";
+        const percent = totalSettlement > 0 ? (data.settlementPrice / totalSettlement) * 100 : 0;
+        percentTd.textContent = `${percent.toFixed(1)}%`;
+        row.appendChild(percentTd);
+
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+
+      tableWrap.appendChild(table);
+
+      const contentRow = document.createElement("div");
+      contentRow.style.display = "flex";
+      contentRow.style.gap = "24px";
+      contentRow.style.alignItems = "flex-start";
+
+      const tableContainer = document.createElement("div");
+      tableContainer.style.flex = "1";
+      tableContainer.style.minWidth = "0";
+      tableContainer.appendChild(tableWrap);
+      contentRow.appendChild(tableContainer);
+
+      const chartContainer = document.createElement("div");
+      chartContainer.style.width = "480px";
+      chartContainer.style.flexShrink = "0";
+
+      const chartTitle = document.createElement("div");
+      chartTitle.textContent = "结算占比分布";
+      chartTitle.style.fontWeight = "600";
+      chartTitle.style.marginBottom = "16px";
+      chartTitle.style.color = "#1f2937";
+      chartTitle.style.textAlign = "center";
+      chartContainer.appendChild(chartTitle);
+
+      const chartDom = document.createElement("div");
+      chartDom.style.width = "100%";
+      chartDom.style.height = "340px";
+      chartDom.style.position = "relative";
+      chartContainer.appendChild(chartDom);
+
+      contentRow.appendChild(chartContainer);
+      accountantDetailList.appendChild(contentRow);
+
+      const loadEcharts = () => {
+        if (window.echarts) {
+          return Promise.resolve(window.echarts);
+        }
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "./public/vendor/echarts.min.js";
+          script.async = true;
+          script.onload = () => resolve(window.echarts);
+          script.onerror = () => reject(new Error("图表库加载失败"));
+          document.head.appendChild(script);
+        });
+      };
+
+      loadEcharts().then(() => {
+        const chart = window.echarts.init(chartDom, null, { renderer: "canvas" });
+        const colors = [
+          "#f59e0b", "#ef4444", "#f97316", "#ea580c",
+          "#dc2626", "#b91c1c", "#991b1b", "#7f1d1d",
+          "#fbbf24", "#f59e0b", "#d97706", "#b45309",
+          "#92400e", "#78350f", "#57534e", "#44403c"
+        ];
+
+        const chartData = accountantList.map((data, index) => ({
+          value: data.settlementPrice,
+          name: data.name,
+          originalIndex: index,
+          itemStyle: { color: colors[index % colors.length] }
+        }));
+
+        const sortedData = [...chartData].sort((a, b) => b.value - a.value);
+        
+        sortedData.forEach((item, index) => {
+          item.itemStyle.color = colors[index % colors.length];
+        });
+
+        chart.setOption({
+          tooltip: {
+            trigger: "item",
+            formatter: "{b}: {c} ({d}%)",
+            backgroundColor: "rgba(255, 255, 255, 0.96)",
+            borderColor: "#d1d5db",
+            borderWidth: 1,
+            padding: 8,
+            textStyle: {
+              color: "#1f2937",
+              fontSize: 12
+            },
+            extraCssText: "box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border-radius: 8px;"
+          },
+          legend: {
+            show: false
+          },
+          series: [
+            {
+              name: "会计结算价",
+              type: "pie",
+              radius: ["38%", "62%"],
+              center: ["50%", "50%"],
+              avoidLabelOverlap: true,
+              minAngle: 2,
+              stillShowZeroSum: true,
+              itemStyle: {
+                borderRadius: 3,
+                borderColor: "#fff",
+                borderWidth: 2
+              },
+              label: {
+                show: true,
+                position: "outside",
+                formatter: (params) => {
+                  const name = params.name.length > 8 ? params.name.slice(0, 8) + "..." : params.name;
+                  return `${name}\n${params.percent.toFixed(1)}%`;
+                },
+                fontSize: 10,
+                lineHeight: 13,
+                minMargin: 8,
+                padding: [2, 3],
+                overflow: "truncate",
+                alignTo: "none",
+                edgeDistance: 8
+              },
+              labelLine: {
+                show: true,
+                length: 12,
+                length2: 55,
+                maxSurfaceAngle: 80,
+                smooth: true,
+                minTurnAngle: 25
+              },
+              emphasis: {
+                label: {
+                  show: true,
+                  fontSize: 12,
+                  fontWeight: "bold"
+                },
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: "rgba(0, 0, 0, 0.3)"
+                }
+              },
+              data: sortedData
+            }
+          ]
+        });
+
+        chart.on("mouseover", (params) => {
+          const originalIndex = params.data?.originalIndex;
+          if (originalIndex >= 0) {
+            const rows = table.querySelectorAll("tbody tr");
+            rows.forEach((row, i) => {
+              if (i === originalIndex) {
+                row.style.transform = "translateY(-1px)";
+                row.style.transition = "all 0.2s ease-out";
+                row.style.boxShadow = "0 0 0 3px rgba(245, 158, 11, 0.35)";
+                row.style.zIndex = "2";
+                row.style.position = "relative";
+                const cells = row.querySelectorAll("td");
+                cells.forEach((cell) => {
+                  cell.style.backgroundColor = "#fef3c7";
+                  cell.style.fontWeight = "700";
+                  cell.style.borderBottomColor = "#fcd34d";
+                });
+              }
+            });
+          }
+        });
+
+        chart.on("mouseout", () => {
+          const rows = table.querySelectorAll("tbody tr");
+          rows.forEach((row) => {
+            row.style.transform = "";
+            row.style.boxShadow = "none";
+            row.style.zIndex = "";
+            row.style.position = "";
+            const cells = row.querySelectorAll("td");
+            cells.forEach((cell) => {
+              cell.style.backgroundColor = "";
+              cell.style.fontWeight = "";
+              cell.style.borderBottomColor = "";
+              cell.style.boxShadow = "none";
+            });
+          });
+          chart.dispatchAction({
+            type: "downplay",
+            seriesIndex: 0
+          });
+        });
+
+        const rows = table.querySelectorAll("tbody tr");
+        rows.forEach((row, index) => {
+          row.style.cursor = "pointer";
+          row.addEventListener("mouseenter", () => {
+            row.style.transform = "translateY(-1px)";
+            row.style.transition = "all 0.2s ease-out";
+            row.style.boxShadow = "0 0 0 3px rgba(245, 158, 11, 0.35)";
+            row.style.zIndex = "2";
+            row.style.position = "relative";
+            const cells = row.querySelectorAll("td");
+            cells.forEach((cell) => {
+              cell.style.backgroundColor = "#fef3c7";
+              cell.style.fontWeight = "700";
+              cell.style.borderBottomColor = "#fcd34d";
+            });
+            chart.dispatchAction({
+              type: "highlight",
+              seriesIndex: 0,
+              dataIndex: index
+            });
+          });
+          row.addEventListener("mouseleave", () => {
+            row.style.transform = "";
+            row.style.boxShadow = "none";
+            row.style.zIndex = "";
+            row.style.position = "";
+            const cells = row.querySelectorAll("td");
+            cells.forEach((cell) => {
+              cell.style.backgroundColor = "";
+              cell.style.fontWeight = "";
+              cell.style.borderBottomColor = "";
+              cell.style.boxShadow = "none";
+            });
+            chart.dispatchAction({
+              type: "downplay",
+              seriesIndex: 0
+            });
+          });
+        });
+
+        window.addEventListener("resize", () => {
+          chart.resize();
+        });
+      }).catch(() => {
+        chartDom.textContent = "图表加载失败";
+      });
     }
 
     function getTodayDateKey() {
@@ -1657,9 +2422,9 @@
     function appendLinkedDispatcherInvoiceFormula(cell, accountantValue, dispatcherValue, totalValue) {
       const fragments = [
         { text: toMoney(accountantValue) },
-        { text: " + " },
+        { text: "+" },
         { text: toMoney(dispatcherValue), className: "settlement-detail-money-dispatcher-part" },
-        { text: " = " },
+        { text: "=" },
         { text: toMoney(totalValue) }
       ];
       fragments.forEach((fragment) => {
@@ -1744,12 +2509,13 @@
       const paidColgroup = document.createElement("colgroup");
       [
         "accountant",
-        "name",
+        "order",
         "money",
         "money",
         "money",
         "invoice",
-        "payout"
+        "payout",
+        "action"
       ].forEach((columnClass) => {
         const col = document.createElement("col");
         col.className = `settlement-detail-col-${columnClass}`;
@@ -1760,13 +2526,14 @@
       const paidThead = document.createElement("thead");
       const paidHeadRow = document.createElement("tr");
       const paidHeaderColumns = [
-        { key: "accountant", label: "会计", summary: `${paidTableTotals.accountantCount}位/${paidTableTotals.recordCount || 0}单`, align: "accountant" },
-        { key: "realName", label: "姓名", summary: "", align: "name" },
+        { key: "accountant", label: "会计", summary: `${paidTableTotals.accountantCount}位`, align: "accountant" },
+        { key: "orderCount", label: "订单", summary: formatSettlementHeaderOrderCount(sortedPaidGroups), align: "order" },
         { key: "invoiceAmount", label: "开票金额", summary: `合计 ${toMoney(paidTableTotals.totalInvoiceAmount)}`, align: "money" },
         { key: "taxAmount", label: "个税", summary: `合计 ${toMoney(paidTableTotals.totalTaxAmount)}`, align: "money" },
         { key: "payableAmount", label: "应打款金额", summary: `合计 ${toMoney(paidTableTotals.totalPayableAmount)}`, align: "money" },
         { key: "invoiceCount", label: "上传的发票", summary: `${paidTableTotals.uploadedAccountantCount}人已上传`, align: "invoice" },
-        { key: "payout", label: "打款状态", summary: `已结算 ${paidTableTotals.paidRecordCount || 0}单`, align: "payout" }
+        { key: "payout", label: "打款状态", summary: `已结算 ${paidTableTotals.paidRecordCount || 0}单`, align: "payout" },
+        { key: "action", label: "操作", summary: "", align: "action" }
       ];
       paidHeaderColumns.forEach((column) => {
         const th = document.createElement("th");
@@ -1821,10 +2588,7 @@
         const accountantTd = document.createElement("td");
         accountantTd.className = "settlement-detail-accountant-cell settlement-detail-col-accountant";
 
-        const accountantName = document.createElement("strong");
-        accountantName.className = "settlement-detail-accountant";
-        accountantName.textContent = group.accountant;
-        accountantTd.appendChild(accountantName);
+        appendBossSettlementDetailAccountantName(accountantTd, group);
 
         if (group.hasLinkedDispatcher) {
           const dispatcherBadge = document.createElement("span");
@@ -1834,17 +2598,9 @@
           accountantTd.appendChild(dispatcherBadge);
         }
 
-        const accountantMeta = document.createElement("span");
-        accountantMeta.className = "settlement-detail-accountant-meta";
-        accountantMeta.textContent = `${group.recordCount}单`;
-        accountantTd.appendChild(accountantMeta);
         row.appendChild(accountantTd);
 
-        const realNameTd = document.createElement("td");
-        realNameTd.className = "settlement-detail-name-cell settlement-detail-col-name";
-        const realName = getAccountantRealNameByLoginName(group.accountant);
-        realNameTd.textContent = realName || "-";
-        row.appendChild(realNameTd);
+        row.appendChild(createBossSettlementDetailOrderCell(group));
 
         row.appendChild(createPaidMoneyCell(group, "invoiceAmount"));
         row.appendChild(createPaidMoneyCell(group, "taxAmount"));
@@ -1856,7 +2612,10 @@
         if (group.uploadedInvoices.length) {
           const invoiceList = document.createElement("div");
           invoiceList.className = "settlement-detail-invoice-list";
-          invoiceList.appendChild(createSettlementDetailInvoiceThumb(group.uploadedInvoices[0], 0, group.accountant));
+          const invoiceItem = group.uploadedInvoices[0];
+          invoiceList.appendChild(createSettlementDetailInvoiceThumb(invoiceItem, 0, group.accountant));
+          const replaceBtn = createSettlementInvoiceReplaceButton(invoiceItem.recordIds || group.recordIds);
+          if (replaceBtn) invoiceList.appendChild(replaceBtn);
           invoiceTd.appendChild(invoiceList);
         } else {
           const pending = document.createElement("span");
@@ -1881,6 +2640,23 @@
         payoutTd.appendChild(payoutState);
 
         row.appendChild(payoutTd);
+
+        const actionTd = document.createElement("td");
+        actionTd.className = "settlement-detail-action-cell settlement-detail-col-action";
+        const revokeBtn = document.createElement("button");
+        revokeBtn.type = "button";
+        revokeBtn.className = "settlement-detail-payout-revoke-btn";
+        revokeBtn.dataset.recordIds = group.recordIds.join(",");
+        revokeBtn.dataset.tableTooltip = group.recordIds.length
+          ? `撤销 ${group.recordIds.length} 条打款状态和打款记录`
+          : "";
+        revokeBtn.dataset.tableTooltipMode = "always";
+        revokeBtn.dataset.tableTooltipVariant = "compact";
+        revokeBtn.disabled = isBossSettlementPayoutSubmitting || !group.recordIds.length;
+        revokeBtn.textContent = isBossSettlementPayoutSubmitting ? "处理中" : "撤销";
+        revokeBtn.setAttribute("aria-label", revokeBtn.dataset.tableTooltip || "撤销打款");
+        actionTd.appendChild(revokeBtn);
+        row.appendChild(actionTd);
         paidTbody.appendChild(row);
       });
 
@@ -1913,7 +2689,10 @@
     }
 
     function getUploadedPendingSettlementDetailGroups(sourceRecords = records) {
-      const { groups } = getBossSettlementDetailSummary(sourceRecords);
+      const detailSourceRecords = isAccountantLogin()
+        ? getInvoiceUploadSourceRecords(sourceRecords)
+        : sourceRecords;
+      const { groups } = getBossSettlementDetailSummary(detailSourceRecords);
       return getSortedBossSettlementDetailGroups(
         groups.filter((group) => {
           const targets = Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds;
@@ -1922,11 +2701,33 @@
       );
     }
 
+    function getCurrentAccountantUploadedPendingSummary(sourceRecords = records) {
+      if (!isAccountantLogin()) {
+        return { uploadedGroups: [], uploadedTotals: getBossSettlementDetailGroupTotals([]) };
+      }
+      const detailSourceRecords = getInvoiceUploadSourceRecords(sourceRecords);
+      const accountantName = getCurrentInvoiceUploadAccountantName();
+      const uploadedGroups = getUploadedPendingSettlementDetailGroups(detailSourceRecords)
+        .filter((group) => String(group?.accountant || "").trim() === accountantName);
+      return {
+        uploadedGroups,
+        uploadedTotals: getBossSettlementDetailGroupTotals(uploadedGroups)
+      };
+    }
+
     function renderUploadedSettlementDetailModalContent() {
       if (!uploadedSettlementDetailMeta || !uploadedSettlementDetailList) return;
-      const sourceRecords = isAccountantLogin() ? getVisibleRecords() : records;
-      const sortedUploadedGroups = getUploadedPendingSettlementDetailGroups(sourceRecords);
-      const uploadedTableTotals = getBossSettlementDetailGroupTotals(sortedUploadedGroups);
+      const fallbackUploadedGroups = isAccountantLogin()
+        ? []
+        : getUploadedPendingSettlementDetailGroups(records);
+      const { uploadedGroups, uploadedTotals } = isAccountantLogin()
+        ? getCurrentAccountantUploadedPendingSummary(records)
+        : {
+            uploadedGroups: fallbackUploadedGroups,
+            uploadedTotals: getBossSettlementDetailGroupTotals(fallbackUploadedGroups)
+          };
+      const sortedUploadedGroups = uploadedGroups;
+      const uploadedTableTotals = uploadedTotals;
 
       uploadedSettlementDetailMeta.textContent = sortedUploadedGroups.length
         ? `已上传/待结算 ${uploadedTableTotals.uploadedRecordCount || 0}单 / ${uploadedTableTotals.accountantCount}位会计`
@@ -1950,12 +2751,13 @@
       const colgroup = document.createElement("colgroup");
       [
         "accountant",
-        "name",
+        "order",
         "money",
         "money",
         "money",
         "invoice",
-        "payout"
+        "payout",
+        "action"
       ].forEach((columnClass) => {
         const col = document.createElement("col");
         col.className = `settlement-detail-col-${columnClass}`;
@@ -1966,8 +2768,8 @@
       const thead = document.createElement("thead");
       const headRow = document.createElement("tr");
       const headerColumns = [
-        { label: "会计", summary: `${uploadedTableTotals.accountantCount}位/${uploadedTableTotals.recordCount || 0}单`, align: "accountant" },
-        { label: "姓名", summary: "", align: "name" },
+        { label: "会计", summary: `${uploadedTableTotals.accountantCount}位`, align: "accountant" },
+        { label: "订单", summary: formatSettlementHeaderOrderCount(sortedUploadedGroups), align: "order" },
         { label: "开票金额", summary: `合计 ${toMoney(uploadedTableTotals.totalInvoiceAmount)}`, align: "money" },
         { label: "个税", summary: `合计 ${toMoney(uploadedTableTotals.totalTaxAmount)}`, align: "money" },
         { label: "应打款金额", summary: `合计 ${toMoney(uploadedTableTotals.totalPayableAmount)}`, align: "money" },
@@ -2027,10 +2829,7 @@
         const accountantTd = document.createElement("td");
         accountantTd.className = "settlement-detail-accountant-cell settlement-detail-col-accountant";
 
-        const accountantName = document.createElement("strong");
-        accountantName.className = "settlement-detail-accountant";
-        accountantName.textContent = group.accountant;
-        accountantTd.appendChild(accountantName);
+        appendBossSettlementDetailAccountantName(accountantTd, group);
 
         if (group.hasLinkedDispatcher) {
           const dispatcherBadge = document.createElement("span");
@@ -2040,17 +2839,9 @@
           accountantTd.appendChild(dispatcherBadge);
         }
 
-        const accountantMeta = document.createElement("span");
-        accountantMeta.className = "settlement-detail-accountant-meta";
-        accountantMeta.textContent = `${group.recordCount}单`;
-        accountantTd.appendChild(accountantMeta);
         row.appendChild(accountantTd);
 
-        const realNameTd = document.createElement("td");
-        realNameTd.className = "settlement-detail-name-cell settlement-detail-col-name";
-        const realName = getAccountantRealNameByLoginName(group.accountant);
-        realNameTd.textContent = realName || "-";
-        row.appendChild(realNameTd);
+        row.appendChild(createBossSettlementDetailOrderCell(group));
 
         row.appendChild(createUploadedMoneyCell(group, "invoiceAmount"));
         row.appendChild(createUploadedMoneyCell(group, "taxAmount"));
@@ -2062,7 +2853,10 @@
         if (group.uploadedInvoices.length) {
           const invoiceList = document.createElement("div");
           invoiceList.className = "settlement-detail-invoice-list";
-          invoiceList.appendChild(createSettlementDetailInvoiceThumb(group.uploadedInvoices[0], 0, group.accountant));
+          const invoiceItem = group.uploadedInvoices[0];
+          invoiceList.appendChild(createSettlementDetailInvoiceThumb(invoiceItem, 0, group.accountant));
+          const replaceBtn = createSettlementInvoiceReplaceButton(invoiceItem.recordIds || group.payoutTargets || group.payoutRecordIds);
+          if (replaceBtn) invoiceList.appendChild(replaceBtn);
           invoiceTd.appendChild(invoiceList);
         }
 
@@ -2644,13 +3438,13 @@
       "isMonthlySettlement",
       "dispatcher",
       "accountant",
-      "platform",
-      "shopName",
-      "source",
-      "orderNo",
       "customer",
       "summary",
       "remark",
+      "source",
+      "platform",
+      "shopName",
+      "orderNo",
       "completedAt",
       "customerFeedback"
     ];
@@ -3251,6 +4045,25 @@
       return thumb;
     }
 
+    function createSettlementInvoiceReplaceButton(recordIds = []) {
+      const normalizedIds = Array.from(
+        new Set(
+          (Array.isArray(recordIds) ? recordIds : [])
+            .map((item) => String(item || "").trim())
+            .filter(Boolean)
+        )
+      );
+      if (!normalizedIds.length || !canCurrentAccountUploadSettlementInvoice()) return null;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "settlement-detail-invoice-replace-btn";
+      button.dataset.invoiceReplaceRecordIds = normalizedIds.join(",");
+      button.textContent = "修改";
+      button.title = "重新上传发票";
+      button.setAttribute("aria-label", "重新上传发票");
+      return button;
+    }
+
     function normalizeInvoicePreviewImage(rawImage) {
       if (!rawImage || typeof rawImage !== "object") return null;
       const rawUrl = String(rawImage.url || "").trim();
@@ -3528,12 +4341,44 @@
       return false;
     }
 
-    async function openInvoiceUploadModal() {
+    function setInvoiceUploadReplaceRecordIds(recordIds = []) {
+      invoiceUploadReplaceRecordIds = Array.from(
+        new Set(
+          (Array.isArray(recordIds) ? recordIds : [])
+            .map((item) => String(item || "").trim())
+            .filter(Boolean)
+        )
+      );
+    }
+
+    function clearInvoiceUploadReplaceMode() {
+      setInvoiceUploadReplaceRecordIds([]);
+    }
+
+    function getInvoiceUploadReplaceRecords(sourceRecords = records) {
+      const replaceIdSet = new Set(invoiceUploadReplaceRecordIds);
+      if (!replaceIdSet.size) return [];
+      return (Array.isArray(sourceRecords) ? sourceRecords : []).filter((record) => (
+        replaceIdSet.has(String(record?.id || "").trim())
+      ));
+    }
+
+    async function openInvoiceUploadModal(options = {}) {
       if (!invoiceUploadModal || !invoiceUploadModalCard || !invoiceUploadForm) return;
       if (!canCurrentAccountUploadSettlementInvoice()) return;
       if (!(await requireInvoiceRecipientInfoBeforeUpload())) return;
-      const summary = getAccountantInvoiceUploadSummary(records);
-      if (!Number(summary.uploadableCount || 0)) {
+      const replaceRecordIds = Array.isArray(options?.replaceRecordIds) ? options.replaceRecordIds : [];
+      setInvoiceUploadReplaceRecordIds(replaceRecordIds);
+      const isReplaceMode = invoiceUploadReplaceRecordIds.length > 0;
+      const replaceRecords = isReplaceMode ? getInvoiceUploadReplaceRecords(records) : [];
+      const summary = isReplaceMode ? null : getAccountantInvoiceUploadSummary(records);
+      if (isReplaceMode && !replaceRecords.length) {
+        clearInvoiceUploadReplaceMode();
+        showAppStatus("当前发票记录已刷新，请重新打开明细。", "error");
+        return;
+      }
+      if (!isReplaceMode && !Number(summary.uploadableCount || 0)) {
+        clearInvoiceUploadReplaceMode();
         updateAccountantInvoiceUploadControls();
         return;
       }
@@ -3556,14 +4401,31 @@
       resetInvoiceUploadImageName();
       clearInvoiceUploadImagePreview();
       resetInlineFormState(invoiceUploadForm, setInvoiceUploadFormHint);
+      if (invoiceUploadModal) {
+        invoiceUploadModal.classList.toggle("is-replace-mode", isReplaceMode);
+      }
+      const titleNode = invoiceUploadModalCard.querySelector(".return-price-title");
+      if (titleNode) {
+        titleNode.textContent = isReplaceMode ? "修改发票" : "上传发票";
+      }
+      if (invoiceUploadSubmitBtn) {
+        invoiceUploadSubmitBtn.textContent = isReplaceMode ? "确认修改" : "确认上传";
+      }
+      if (invoiceUploadImageName) {
+        invoiceUploadImageName.textContent = isReplaceMode ? "选择新图片重新上传" : "选择图片上传发票";
+      }
       if (invoiceUploadModalMeta) {
         invoiceUploadModalMeta.innerHTML = "";
-        const countItem = { label: "待上传订单", value: `${summary.count || summary.uploadableCount || 0}`, unit: "条" };
-        const moneyItems = [
-          { label: "开票金额", value: toMoney(summary.invoiceAmount), tone: "amount" },
-          { label: "个税", value: toMoney(summary.taxAmount), tone: "tax" },
-          { label: "应打款", value: toMoney(summary.payableAmount), tone: "payable" }
-        ];
+        const countItem = isReplaceMode
+          ? { label: "修改范围", value: `${replaceRecords.length}`, unit: "条" }
+          : { label: "待上传订单", value: `${summary.count || summary.uploadableCount || 0}`, unit: "条" };
+        const moneyItems = isReplaceMode
+          ? [{ label: "操作类型", value: "重新上传", tone: "amount" }]
+          : [
+              { label: "开票金额", value: toMoney(summary.invoiceAmount), tone: "amount" },
+              { label: "个税", value: toMoney(summary.taxAmount), tone: "tax" },
+              { label: "应打款", value: toMoney(summary.payableAmount), tone: "payable" }
+            ];
         const appendMetaItem = (item, parentNode) => {
           const itemNode = document.createElement("span");
           itemNode.className = item.tone
@@ -3598,7 +4460,6 @@
       invoiceUploadModal.classList.add("modal-enter");
       invoiceUploadModalCard.classList.add("modal-enter");
       syncModalOpenState();
-      accountantInvoiceImageInput?.focus();
     }
 
     function closeInvoiceUploadModal() {
@@ -3610,12 +4471,19 @@
       resetInvoiceUploadImageName();
       clearInvoiceUploadImagePreview();
       if (invoiceUploadModalMeta) invoiceUploadModalMeta.textContent = "";
+      if (invoiceUploadModal) invoiceUploadModal.classList.remove("is-replace-mode");
+      if (invoiceUploadSubmitBtn) invoiceUploadSubmitBtn.textContent = "确认上传";
+      if (invoiceUploadImageName) invoiceUploadImageName.textContent = "选择图片上传发票";
+      clearInvoiceUploadReplaceMode();
       resetInlineFormState(invoiceUploadForm, setInvoiceUploadFormHint);
       syncModalOpenState();
     }
 
     async function maybeShowInvoiceUploadReminder() {
       if (!canCurrentAccountUploadSettlementInvoice()) {
+        return;
+      }
+      if (hasUploadedSettlementInvoiceThisSession) {
         return;
       }
       if (maybeShowMissingInvoiceRecipientInfoModal()) {
@@ -3760,6 +4628,7 @@
       if (key === "taxAmount") return Number(group.taxAmount) || 0;
       if (key === "payableAmount") return Number(group.payableAmount) || 0;
       if (key === "invoiceCount") return Array.isArray(group.uploadedInvoices) ? group.uploadedInvoices.length : 0;
+      if (key === "orderCount") return Number(group.recordCount) || 0;
       if (key === "payout") {
         const paidAtTime = parseDateTimeValue(group.latestPaidAt);
         if (!Number.isNaN(paidAtTime)) return paidAtTime;
@@ -3790,11 +4659,23 @@
       });
     }
 
+    function getBossSettlementDetailSpecialGroupRank(group) {
+      const accountant = String(group?.accountant || "").trim();
+      if (accountant === "不结算") return 1;
+      if (accountant === "外部人员") return 2;
+      return 99;
+    }
+
     function getSortedBossSettlementDetailGroups(groups) {
       const source = Array.isArray(groups) ? groups : [];
       const sortKey = String(bossSettlementDetailSortState.key || "accountant").trim();
       const direction = bossSettlementDetailSortState.direction === "desc" ? -1 : 1;
-      return [...source].sort((left, right) => compareBossSettlementDetailGroups(left, right, sortKey) * direction);
+      return [...source].sort((left, right) => {
+        const specialRankDiff = getBossSettlementDetailSpecialGroupRank(left)
+          - getBossSettlementDetailSpecialGroupRank(right);
+        if (specialRankDiff) return specialRankDiff;
+        return compareBossSettlementDetailGroups(left, right, sortKey) * direction;
+      });
     }
 
     function updateBossSettlementDetailSort(key) {
@@ -3807,6 +4688,71 @@
         bossSettlementDetailSortState.direction = normalizedKey === "accountant" ? "asc" : "desc";
       }
       renderBossSettlementDetailModalContent();
+    }
+
+    function getBossSettlementDetailPayoutStatusKey(group) {
+      if (!group || typeof group !== "object") return "pending_invoice";
+      if (Number(group.recordCount) > 0 && Number(group.paidCount) >= Number(group.recordCount)) return "paid";
+      const payoutTargets = Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds;
+      if (Array.isArray(payoutTargets) && payoutTargets.length > 0) return "payable";
+      return "pending_invoice";
+    }
+
+    function getBossSettlementDetailPayoutStatusLabel(statusKey) {
+      if (statusKey === "paid") return "已结算";
+      if (statusKey === "payable") return "待结算";
+      return "待上传";
+    }
+
+    function setBossSettlementDetailPayoutStatusFilter(statusKey) {
+      bossSettlementDetailPayoutStatusFilter = String(statusKey || "").trim();
+      renderBossSettlementDetailModalContent();
+    }
+
+    function hasCompleteInvoiceRecipientInfoForAccountant(accountantName) {
+      const profile = getAccountantProfileByLoginName(accountantName);
+      const recipientInfo = normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo);
+      return Object.values(recipientInfo).every(Boolean);
+    }
+
+    function getBossSettlementDetailDisplayName(accountantName) {
+      return getAccountantSettlementNameByLoginName(accountantName) || "-";
+    }
+
+    function appendBossSettlementDetailAccountantName(accountantTd, group) {
+      const accountantName = document.createElement("strong");
+      accountantName.className = "settlement-detail-accountant";
+      accountantName.classList.toggle(
+        "missing-recipient-info",
+        !hasCompleteInvoiceRecipientInfoForAccountant(group.accountant)
+      );
+      accountantName.textContent = group.accountant;
+      accountantTd.appendChild(accountantName);
+
+      const realName = document.createElement("span");
+      realName.className = "settlement-detail-accountant-real-name";
+      realName.textContent = getBossSettlementDetailDisplayName(group.accountant);
+      accountantTd.appendChild(realName);
+    }
+
+    function getBossSettlementDetailOrderParts(group) {
+      const total = Number(group?.recordCount) || 0;
+      const dispatcher = Math.max(0, Number(group?.dispatcherRecordCount) || 0);
+      const own = Math.max(0, total - dispatcher);
+      return { own, dispatcher, total };
+    }
+
+    function getBossSettlementDetailOrderLabel(group) {
+      const { own, dispatcher, total } = getBossSettlementDetailOrderParts(group);
+      if (group?.hasLinkedDispatcher) return `${own}+${dispatcher}=${total}`;
+      return `${total}单`;
+    }
+
+    function createBossSettlementDetailOrderCell(group) {
+      const orderTd = document.createElement("td");
+      orderTd.className = "settlement-detail-order-cell settlement-detail-col-order";
+      orderTd.textContent = getBossSettlementDetailOrderLabel(group);
+      return orderTd;
     }
 
     function getBossSettlementDetailGroupTotals(groups) {
@@ -4221,10 +5167,17 @@
         payoutRecordCount: rawPayoutRecordCount
       } = getBossSettlementDetailSummary();
       syncBossSettlementPayoutSelection(records);
-      const sortedGroups = getSortedBossSettlementDetailGroups(groups);
-      const sortedPaidGroups = getSortedBossSettlementDetailGroups(paidGroups);
+      const allDetailGroups = groups.concat(paidGroups).map((group) => ({
+        ...group,
+        payoutStatusKey: getBossSettlementDetailPayoutStatusKey(group),
+        payoutStatusLabel: getBossSettlementDetailPayoutStatusLabel(getBossSettlementDetailPayoutStatusKey(group))
+      }));
+      const payoutStatusFilter = String(bossSettlementDetailPayoutStatusFilter || "").trim();
+      const visibleGroups = payoutStatusFilter
+        ? allDetailGroups.filter((group) => group.payoutStatusKey === payoutStatusFilter)
+        : allDetailGroups;
+      const sortedGroups = getSortedBossSettlementDetailGroups(visibleGroups);
       const activeTableTotals = getBossSettlementDetailGroupTotals(sortedGroups);
-      const paidTableTotals = getBossSettlementDetailGroupTotals(sortedPaidGroups);
       const canPayoutSettlementRecords = canCurrentAccountPayoutSettlementRecords();
       const allPayoutTargets = Array.from(
         new Set(groups.flatMap((group) => {
@@ -4253,7 +5206,6 @@
         return;
       }
 
-      if (sortedGroups.length) {
       const section = document.createElement("section");
       section.className = "settlement-detail-section";
 
@@ -4262,20 +5214,10 @@
 
       const sectionTitle = document.createElement("h3");
       sectionTitle.className = "settlement-detail-section-title";
-      sectionTitle.textContent = "待结算";
+      sectionTitle.textContent = "结算明细";
       sectionHeading.appendChild(sectionTitle);
 
       section.appendChild(sectionHeading);
-
-      const sortedUploadedGroups = getUploadedPendingSettlementDetailGroups();
-      if (sortedUploadedGroups.length > 0) {
-        const uploadedDetailBtn = document.createElement("button");
-        uploadedDetailBtn.type = "button";
-        uploadedDetailBtn.className = "settlement-detail-uploaded-btn";
-        uploadedDetailBtn.dataset.settlementUploadedRecords = "true";
-        uploadedDetailBtn.textContent = "已上传/待结算详细";
-        sectionHeading.appendChild(uploadedDetailBtn);
-      }
 
       const tableWrap = document.createElement("div");
       tableWrap.className = "settlement-detail-table-wrap";
@@ -4283,15 +5225,6 @@
       if (canPayoutSettlementRecords && (payoutRecordCount > 0 || rawPayoutRecordCount > 0)) {
         const payoutToolbar = document.createElement("div");
         payoutToolbar.className = "settlement-detail-payout-toolbar";
-
-        if (sortedPaidGroups.length > 0) {
-          const paidBtn = document.createElement("button");
-          paidBtn.type = "button";
-          paidBtn.className = "settlement-detail-paid-btn";
-          paidBtn.dataset.settlementPaidRecords = "true";
-          paidBtn.textContent = `已结算 ${sortedPaidGroups.length}单`;
-          payoutToolbar.appendChild(paidBtn);
-        }
 
         const payoutToolbarText = document.createElement("span");
         payoutToolbarText.className = "settlement-detail-payout-toolbar-text";
@@ -4336,7 +5269,7 @@
       const colgroup = document.createElement("colgroup");
       [
         "accountant",
-        "name",
+        "order",
         "money",
         "money",
         "money",
@@ -4352,13 +5285,14 @@
       const thead = document.createElement("thead");
       const headRow = document.createElement("tr");
       const headerColumns = [
-        { key: "accountant", label: "会计", summary: `${activeTableTotals.accountantCount}位/${activeTableTotals.recordCount || 0}单`, align: "accountant" },
-        { key: "realName", label: "姓名", summary: "", align: "name", hideSummary: true },
+        { key: "accountant", label: "会计", summary: `${activeTableTotals.accountantCount}位`, align: "accountant" },
+        { key: "orderCount", label: "订单", summary: formatSettlementHeaderOrderCount(sortedGroups), align: "order" },
         { key: "invoiceAmount", label: "开票金额", summary: `合计 ${toMoney(activeTableTotals.totalInvoiceAmount)}`, align: "money" },
         { key: "taxAmount", label: "个税", summary: `合计 ${toMoney(activeTableTotals.totalTaxAmount)}`, align: "money" },
         { key: "payableAmount", label: "应打款金额", summary: `合计 ${toMoney(activeTableTotals.totalPayableAmount)}`, align: "money" },
         { key: "invoiceCount", label: "上传的发票", summary: `${activeTableTotals.uploadedAccountantCount}人已上传 / ${activeTableTotals.pendingAccountantCount}人未上传`, align: "invoice" },
-        { key: "payout", label: "打款", align: "payout", hideSummary: true }
+        { key: "payout", label: "打款状态", align: "payout", hideSummary: true, filterable: true },
+        { key: "action", label: "操作", align: "action", hideSummary: true }
       ];
       headerColumns.forEach((column) => {
         const th = document.createElement("th");
@@ -4398,12 +5332,42 @@
         }
 
         th.appendChild(button);
+        if (column.filterable) {
+          const filterWrap = document.createElement("div");
+          filterWrap.className = "settlement-detail-status-filter";
+
+          [
+            { key: "", label: "全部" },
+            { key: "pending_invoice", label: "待上传" },
+            { key: "payable", label: "待结算" },
+            { key: "paid", label: "已结算" }
+          ].forEach((option) => {
+            const optionBtn = document.createElement("button");
+            optionBtn.type = "button";
+            optionBtn.className = "settlement-detail-status-filter-btn";
+            optionBtn.dataset.detailPayoutStatusFilter = option.key;
+            optionBtn.textContent = option.label;
+            optionBtn.setAttribute("aria-pressed", payoutStatusFilter === option.key ? "true" : "false");
+            filterWrap.appendChild(optionBtn);
+          });
+
+          th.appendChild(filterWrap);
+        }
         headRow.appendChild(th);
       });
       thead.appendChild(headRow);
       table.appendChild(thead);
 
       const tbody = document.createElement("tbody");
+      if (!sortedGroups.length) {
+        const row = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = headerColumns.length;
+        td.className = "settlement-detail-empty-cell";
+        td.textContent = "当前筛选下暂无结算明细。";
+        row.appendChild(td);
+        tbody.appendChild(row);
+      }
       const createMoneyCell = (group, amountType) => {
         const td = document.createElement("td");
         td.className = "settlement-detail-money settlement-detail-col-money";
@@ -4431,15 +5395,12 @@
 
       sortedGroups.forEach((group) => {
         const row = document.createElement("tr");
-        row.className = `settlement-detail-row ${group.statusKey} tone-${group.rowToneKey}`;
+        row.className = `settlement-detail-row ${group.statusKey} tone-${group.rowToneKey} payout-${group.payoutStatusKey}`;
 
         const accountantTd = document.createElement("td");
         accountantTd.className = "settlement-detail-accountant-cell settlement-detail-col-accountant";
 
-        const accountantName = document.createElement("strong");
-        accountantName.className = "settlement-detail-accountant";
-        accountantName.textContent = group.accountant;
-        accountantTd.appendChild(accountantName);
+        appendBossSettlementDetailAccountantName(accountantTd, group);
 
         if (group.hasLinkedDispatcher) {
           const dispatcherBadge = document.createElement("span");
@@ -4449,17 +5410,9 @@
           accountantTd.appendChild(dispatcherBadge);
         }
 
-        const accountantMeta = document.createElement("span");
-        accountantMeta.className = "settlement-detail-accountant-meta";
-        accountantMeta.textContent = `${group.recordCount}单`;
-        accountantTd.appendChild(accountantMeta);
         row.appendChild(accountantTd);
 
-        const realNameTd = document.createElement("td");
-        realNameTd.className = "settlement-detail-name-cell settlement-detail-col-name";
-        const realName = getAccountantRealNameByLoginName(group.accountant);
-        realNameTd.textContent = realName || "-";
-        row.appendChild(realNameTd);
+        row.appendChild(createBossSettlementDetailOrderCell(group));
 
         row.appendChild(createMoneyCell(group, "invoiceAmount"));
         row.appendChild(createMoneyCell(group, "taxAmount"));
@@ -4471,7 +5424,10 @@
         if (group.uploadedInvoices.length) {
           const invoiceList = document.createElement("div");
           invoiceList.className = "settlement-detail-invoice-list";
-          invoiceList.appendChild(createSettlementDetailInvoiceThumb(group.uploadedInvoices[0], 0, group.accountant));
+          const invoiceItem = group.uploadedInvoices[0];
+          invoiceList.appendChild(createSettlementDetailInvoiceThumb(invoiceItem, 0, group.accountant));
+          const replaceBtn = createSettlementInvoiceReplaceButton(invoiceItem.recordIds || group.recordIds);
+          if (replaceBtn) invoiceList.appendChild(replaceBtn);
           invoiceTd.appendChild(invoiceList);
         } else {
           const pending = document.createElement("span");
@@ -4487,9 +5443,26 @@
 
         const groupPayoutRecordIds = Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds;
 
-        if (canPayoutSettlementRecords && groupPayoutRecordIds.length > 0) {
-          const payoutWrap = document.createElement("div");
-          payoutWrap.className = "settlement-detail-payout-actions";
+        const payoutState = document.createElement("span");
+        payoutState.className = `settlement-detail-payout-state ${group.payoutStatusKey}`;
+        const paidDate = formatSettlementPaidDateDisplay(group.latestPaidAt);
+        payoutState.textContent = group.payoutStatusKey === "paid" && paidDate
+          ? `已结算 ${paidDate}`
+          : group.payoutStatusLabel;
+        const paidTooltip = group.payoutStatusKey === "paid" ? getSettlementPaidTimeTooltip(group) : "";
+        if (paidTooltip) {
+          payoutState.title = paidTooltip;
+        }
+        payoutTd.appendChild(payoutState);
+
+        row.appendChild(payoutTd);
+
+        const actionTd = document.createElement("td");
+        actionTd.className = "settlement-detail-action-cell settlement-detail-col-action";
+
+        if (canPayoutSettlementRecords && group.payoutStatusKey === "payable" && groupPayoutRecordIds.length > 0) {
+          const actionWrap = document.createElement("div");
+          actionWrap.className = "settlement-detail-payout-actions";
 
           const payoutSelectLabel = document.createElement("label");
           payoutSelectLabel.className = "settlement-detail-payout-select";
@@ -4505,25 +5478,34 @@
           const payoutSelectText = document.createElement("span");
           payoutSelectText.textContent = "选择";
           payoutSelectLabel.appendChild(payoutSelectText);
-          payoutWrap.appendChild(payoutSelectLabel);
+          actionWrap.appendChild(payoutSelectLabel);
 
           const payoutBtn = document.createElement("button");
           payoutBtn.type = "button";
           payoutBtn.className = "settlement-detail-payout-btn";
           payoutBtn.dataset.recordIds = groupPayoutRecordIds.join(",");
           payoutBtn.disabled = isBossSettlementPayoutSubmitting;
-          payoutBtn.textContent = isBossSettlementPayoutSubmitting ? "打款中" : "打款";
-          payoutWrap.appendChild(payoutBtn);
+          payoutBtn.textContent = isBossSettlementPayoutSubmitting ? "打款中" : "结算";
+          actionWrap.appendChild(payoutBtn);
 
-          payoutTd.appendChild(payoutWrap);
-        } else if (group.uploadedCount > 0 && group.paidCount >= group.uploadedCount) {
-          const payoutState = document.createElement("span");
-          payoutState.className = "settlement-detail-payout-state paid";
-          payoutState.textContent = "已结算";
-          payoutTd.appendChild(payoutState);
+          actionTd.appendChild(actionWrap);
+        } else if (canPayoutSettlementRecords && group.payoutStatusKey === "paid") {
+          const revokeBtn = document.createElement("button");
+          revokeBtn.type = "button";
+          revokeBtn.className = "settlement-detail-payout-revoke-btn";
+          revokeBtn.dataset.recordIds = group.recordIds.join(",");
+          revokeBtn.dataset.tableTooltip = group.recordIds.length
+            ? `撤销 ${group.recordIds.length} 条打款状态和打款记录`
+            : "";
+          revokeBtn.dataset.tableTooltipMode = "always";
+          revokeBtn.dataset.tableTooltipVariant = "compact";
+          revokeBtn.disabled = isBossSettlementPayoutSubmitting || !group.recordIds.length;
+          revokeBtn.textContent = isBossSettlementPayoutSubmitting ? "处理中" : "撤销";
+          revokeBtn.setAttribute("aria-label", revokeBtn.dataset.tableTooltip || "撤销打款");
+          actionTd.appendChild(revokeBtn);
         }
 
-        row.appendChild(payoutTd);
+        row.appendChild(actionTd);
         tbody.appendChild(row);
       });
 
@@ -4531,7 +5513,6 @@
       tableWrap.appendChild(table);
       section.appendChild(tableWrap);
       bossSettlementDetailList.appendChild(section);
-      }
     }
 
     function renderDispatcherSettlementDetail() {
@@ -4694,20 +5675,19 @@
       }
     }
 
-    function updateAccountantUploadedSettlementDetailControls() {
+    function updateAccountantUploadedSettlementDetailControls(sourceRecords = records) {
       if (!accountantUploadedSettlementDetailBtn) return;
       const isAccountant = isAccountantLogin();
-      const uploadedGroups = isAccountant ? getUploadedPendingSettlementDetailGroups(getVisibleRecords()) : [];
-      const uploadedTotals = getBossSettlementDetailGroupTotals(uploadedGroups);
-      const uploadSummary = isAccountant ? getAccountantInvoiceUploadSummary(getVisibleRecords()) : null;
-      const hasPendingInvoiceUploads = Number(uploadSummary?.uploadableCount || 0) > 0;
-      const shouldShow = isAccountant && !hasPendingInvoiceUploads && uploadedTotals.uploadedRecordCount > 0;
+      const { uploadedTotals } = getCurrentAccountantUploadedPendingSummary(sourceRecords);
+      const { uploadableCount } = getAccountantInvoiceUploadSummary(sourceRecords);
+      const hasUploadedRecords = uploadedTotals.uploadedRecordCount > 0;
+      const shouldShow = isAccountant && hasUploadedRecords && Number(uploadableCount || 0) <= 0;
 
       accountantUploadedSettlementDetailBtn.hidden = !shouldShow;
       accountantUploadedSettlementDetailBtn.disabled = !shouldShow;
-      accountantUploadedSettlementDetailBtn.textContent = "已上传/待结算详细";
+      accountantUploadedSettlementDetailBtn.textContent = "已上传";
       accountantUploadedSettlementDetailBtn.title = shouldShow
-        ? `查看 ${uploadedTotals.uploadedRecordCount} 条已上传/待结算数据`
+        ? `查看 ${uploadedTotals.uploadedRecordCount} 条已上传数据`
         : "";
 
       if (!shouldShow && uploadedSettlementDetailModal && !uploadedSettlementDetailModal.hidden) {
@@ -4729,13 +5709,18 @@
         dispatcherCommissionTerms,
         dispatcherPremiumAmount,
         dispatcherCommissionAmount,
-        hasIncomeBreakdown
+        hasIncomeBreakdown,
+        hasDispatcherIncomeBreakdown
       } = getAccountantInvoiceUploadSummary(sourceRecords);
       const activeUploadableCount = Number(uploadableCount) || 0;
+      const { uploadedTotals } = getCurrentAccountantUploadedPendingSummary(sourceRecords);
+      const hasUploadedRecords = uploadedTotals.uploadedRecordCount > 0;
       const shouldShow = canCurrentAccountUploadSettlementInvoice() && activeUploadableCount > 0;
+      const shouldShowUploadedDetail = hasUploadedRecords && activeUploadableCount <= 0;
       const shouldShowRecipientInfoEntry = canCurrentAccountManageInvoiceRecipientInfo();
       const shouldShowIncomeBreakdown = Boolean(
         hasIncomeBreakdown &&
+        hasDispatcherIncomeBreakdown &&
         isAccountantLogin() &&
         isAccountantLinkedToDispatcher(getCurrentAccountantDisplayName())
       );
@@ -4752,6 +5737,10 @@
       }
       accountantInvoiceUploadBtn.hidden = !shouldShow;
       accountantInvoiceUploadBtn.disabled = !shouldShow || isInvoiceUploadSubmitting;
+      if (accountantUploadedSettlementDetailBtn) {
+        accountantUploadedSettlementDetailBtn.hidden = !shouldShowUploadedDetail;
+        accountantUploadedSettlementDetailBtn.disabled = !shouldShowUploadedDetail;
+      }
       accountantInvoiceUploadBtn.replaceChildren();
       if (accountantInvoiceUploadSummary) {
         accountantInvoiceUploadSummary.hidden = !shouldShow;
@@ -4778,17 +5767,18 @@
       if (activeUploadableCount > 0 && accountantInvoiceUploadSummary) {
         const summaryTitle = document.createElement("span");
         summaryTitle.className = "invoice-upload-summary-title";
-        summaryTitle.textContent = `上传发票（${count}）`;
+        summaryTitle.textContent = "上传发票";
         accountantInvoiceUploadSummary.appendChild(summaryTitle);
 
         const stats = document.createElement("span");
         stats.className = "invoice-upload-btn-stats";
         const statRows = [
+          ["待上传订单数", count, "count"],
           ["开票金额", invoiceAmount, "invoiceAmount"],
           ["个税", taxAmount],
           ["应打款金额", payableAmount]
         ];
-        statRows.forEach(([labelText, value]) => {
+        statRows.forEach(([labelText, value, key]) => {
           const row = document.createElement("span");
           row.className = "invoice-upload-btn-stat";
 
@@ -4798,7 +5788,7 @@
 
           const amount = document.createElement("strong");
           amount.className = "invoice-upload-btn-value";
-          amount.textContent = `${toMoney(value)}`;
+          amount.textContent = key === "count" ? String(value) : `${toMoney(value)}`;
 
           row.appendChild(label);
           row.appendChild(amount);
@@ -5032,6 +6022,58 @@
       } finally {
         isBossSettlementPayoutSubmitting = false;
         renderBossSettlementDetailModalContent();
+      }
+    }
+
+    async function submitBossSettlementPayoutRevoke(recordIds) {
+      if (!isBossLogin()) return;
+      if (isBossSettlementPayoutSubmitting) return;
+      const normalizedRecordIds = Array.from(
+        new Set(
+          (Array.isArray(recordIds) ? recordIds : [])
+            .map((item) => String(item || "").trim())
+            .filter(Boolean)
+        )
+      );
+      if (!normalizedRecordIds.length) {
+        showAppStatus("请先选择要撤销打款的数据。");
+        return;
+      }
+
+      const confirmed = await openConfirmDialog({
+        title: "撤销打款",
+        message: `确认撤销 ${normalizedRecordIds.length} 条数据的打款状态和打款记录？`,
+        confirmText: "确认撤销",
+        cancelText: "取消",
+        tone: "danger"
+      });
+      if (!confirmed) return;
+
+      isBossSettlementPayoutSubmitting = true;
+      try {
+        renderPaidSettlementDetailModalContent();
+        const { revokedRecordIds, skippedRecordIds } = await withLoading(
+          {
+            region: paidSettlementDetailList,
+            regionText: "正在撤销打款..."
+          },
+          () => revokeSettlementPayoutByIds(normalizedRecordIds)
+        );
+        const messageParts = [];
+        if (revokedRecordIds.length) {
+          messageParts.push(`已撤销 ${revokedRecordIds.length} 条`);
+        }
+        if (skippedRecordIds.length) {
+          messageParts.push(`跳过 ${skippedRecordIds.length} 条`);
+        }
+        showAppStatus(messageParts.length ? `${messageParts.join("，")}。` : "未处理任何数据。", revokedRecordIds.length ? "ok" : "error");
+      } catch (error) {
+        console.error(error);
+        showAppStatus(error.message || "撤销打款失败，请稍后重试。");
+      } finally {
+        isBossSettlementPayoutSubmitting = false;
+        renderBossSettlementDetailModalContent();
+        renderPaidSettlementDetailModalContent();
       }
     }
 
@@ -5584,10 +6626,6 @@
       if (exportTableBtn) {
         exportTableBtn.hidden = !canCurrentAccountExportTableRecords();
       }
-      if (bossSettlementSummaryBtn) {
-        bossSettlementSummaryBtn.hidden = !isBoss;
-      }
-      updateAccountantUploadedSettlementDetailControls();
       changePasswordBtn.hidden = !(isLoggedIn && isDispatcher);
       if (editProfileBtn) {
         editProfileBtn.hidden = !(isLoggedIn && isAccountant);
@@ -5600,6 +6638,7 @@
       }
       const scopedRecords = getVisibleRecords();
       updateAccountantInvoiceUploadControls(scopedRecords);
+      updateAccountantUploadedSettlementDetailControls(scopedRecords);
       filterDispatcherBtn.disabled = false;
       if (isDispatcher) {
         syncDispatcherSelfViewState();
@@ -5872,7 +6911,7 @@
           : "";
       }
       updateAccountantInvoiceUploadControls(scopedRecords);
-      updateAccountantUploadedSettlementDetailControls();
+      updateAccountantUploadedSettlementDetailControls(scopedRecords);
       updateSortHeaderUI(filteredRecords);
       updateBossSettlementControls(sortedRecords);
       updateBossSettlementDetailControls();
@@ -5929,29 +6968,32 @@
           selectTd.appendChild(selectCheckbox);
           tr.appendChild(selectTd);
         }
-        const values = [
-          getDateCellDisplayParts(item.date).dateText,
-          [getDateCellDisplayParts(item.completedAt).dateText, getRecordCompletionDurationText(item)].filter(Boolean).join(""),
-          String(item.source || ""),
-          String(item.platform || ""),
-          String(item.shopName || ""),
-          String(item.orderNo || ""),
-          getDispatcherDisplayNameByTag(dispatcherTag),
-          String(item.accountant || ""),
-          String(item.customer || ""),
-          String(item.summary || ""),
-          String(item.remark || ""),
-          toMoney(item.paymentPrice),
-          formatPremiumWithPercent(item),
-          toMoney(item.totalPrice),
-          formatSettlementPriceDisplay(item),
-          getRecordWorkflowStatusText(item)
+        const cells = [
+          { key: "date", value: getDateCellDisplayParts(item.date).dateText },
+          {
+            key: "completedAt",
+            value: [getDateCellDisplayParts(item.completedAt).dateText, getRecordCompletionDurationText(item)].filter(Boolean).join("")
+          },
+          { key: "dispatcher", value: getDispatcherDisplayNameByTag(dispatcherTag) },
+          { key: "accountant", value: String(item.accountant || "") },
+          { key: "customer", value: String(item.customer || "") },
+          { key: "summary", value: String(item.summary || "") },
+          { key: "remark", value: String(item.remark || "") },
+          { key: "paymentPrice", value: toMoney(item.paymentPrice) },
+          { key: "premiumPrice", value: formatPremiumWithPercent(item) },
+          { key: "totalPrice", value: toMoney(item.totalPrice) },
+          { key: "settlementPrice", value: formatSettlementPriceDisplay(item) },
+          { key: "source", value: String(item.source || "") },
+          { key: "platform", value: String(item.platform || "") },
+          { key: "shopName", value: String(item.shopName || "") },
+          { key: "orderNo", value: String(item.orderNo || "") },
+          { key: "status", value: getRecordWorkflowStatusText(item) }
         ];
-        values.forEach((value, index) => {
+        cells.forEach(({ key, value }) => {
           const td = document.createElement("td");
           let tooltipText = String(value || "").trim();
           let tooltipMode = "";
-          if (index === 0) {
+          if (key === "date") {
             td.classList.add("data-col-date");
             const dateTooltipText = getRecordDateTooltipText(item);
             if (dateTooltipText) {
@@ -5975,7 +7017,7 @@
             if (dateTooltipText) {
               td.setAttribute("aria-label", `${String(value || "").trim()}，${dateTooltipText}`);
             }
-          } else if (index === 1) {
+          } else if (key === "completedAt") {
             td.classList.add("data-col-completed-at");
             td.textContent = value;
             const completedAtTooltip = getDateCellDisplayParts(item.completedAt).timeText;
@@ -5984,25 +7026,25 @@
               tooltipMode = "always";
               td.setAttribute("aria-label", `${String(value || "").trim()}，${completedAtTooltip}`);
             }
-          } else if (index === 2) {
-            td.classList.add("data-col-source");
-            td.textContent = value;
-          } else if (index === 3) {
-            td.classList.add("data-col-platform");
-            td.textContent = value;
-          } else if (index === 4) {
-            td.classList.add("data-col-shop");
-            td.textContent = value;
-          } else if (index === 5) {
-            td.classList.add("data-col-order");
-            td.textContent = value;
-          } else if (index === 6) {
+          } else if (key === "dispatcher") {
             td.classList.add("data-col-dispatcher");
             const chip = document.createElement("span");
             chip.className = "dispatcher-chip";
             chip.textContent = value;
             td.appendChild(chip);
-          } else if (index === 15) {
+          } else if (key === "source") {
+            td.classList.add("data-col-source");
+            td.textContent = value;
+          } else if (key === "platform") {
+            td.classList.add("data-col-platform");
+            td.textContent = value;
+          } else if (key === "shopName") {
+            td.classList.add("data-col-shop");
+            td.textContent = value;
+          } else if (key === "orderNo") {
+            td.classList.add("data-col-order");
+            td.textContent = value;
+          } else if (key === "status") {
             td.classList.add("data-col-status");
             const statusWrap = document.createElement("div");
             statusWrap.className = "row-status-cell";
@@ -6039,6 +7081,8 @@
               );
             }
             td.appendChild(statusWrap);
+          } else if (["paymentPrice", "premiumPrice", "totalPrice", "settlementPrice"].includes(key)) {
+            appendMoneyCellText(td, value);
           } else {
             td.textContent = value;
           }
@@ -6048,13 +7092,13 @@
           if (tooltipMode) {
             td.dataset.tableTooltipMode = tooltipMode;
           }
-          if (index === 7) td.classList.add("data-col-accountant");
-          if (index === 9) td.classList.add("summary");
-          if (index === 10) td.classList.add("remark", "data-col-remark");
-          if (index === 11) td.classList.add("data-col-payment");
-          if (index === 12) td.classList.add("data-col-premium");
-          if (index === 13) td.classList.add("data-col-total");
-          if (index === 14) td.classList.add("data-col-settlement");
+          if (key === "accountant") td.classList.add("data-col-accountant");
+          if (key === "summary") td.classList.add("summary");
+          if (key === "remark") td.classList.add("remark", "data-col-remark");
+          if (key === "paymentPrice") td.classList.add("data-col-payment");
+          if (key === "premiumPrice") td.classList.add("data-col-premium");
+          if (key === "totalPrice") td.classList.add("data-col-total");
+          if (key === "settlementPrice") td.classList.add("data-col-settlement");
           tr.appendChild(td);
         });
 

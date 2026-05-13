@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>派单结算录入</title>
-  <link rel="stylesheet" href="./public/css/app.css?v=22.20.338" />
+  <link rel="stylesheet" href="./public/css/app.css" />
 </head>
 <body class="app-booting">
   <button id="devTodoLauncher" class="btn-secondary dev-todo-launcher" type="button" hidden>Todo</button>
@@ -297,7 +297,6 @@
           <div id="accountantInvoiceUploadSummary" class="table-invoice-upload-summary" hidden aria-hidden="true"></div>
           <button id="accountantUploadedSettlementDetailBtn" class="btn-secondary table-uploaded-detail-btn" type="button" hidden>已上传/待结算详细</button>
           <button id="bossSettlementBtn" class="btn-secondary table-settlement-btn" type="button" hidden disabled>结算</button>
-          <button id="bossSettlementSummaryBtn" class="btn-secondary table-settlement-summary-btn" type="button" hidden>结算详细</button>
           <button id="bossSettlementDetailBtn" class="btn-secondary table-settlement-detail-btn" type="button" hidden disabled>打款</button>
         </div>
       </div>
@@ -309,10 +308,6 @@
             <col class="col-date" />
             <col class="col-completed-at" />
             <col class="col-dispatcher" />
-            <col class="col-source" />
-            <col class="col-platform" />
-            <col class="col-shop" />
-            <col class="col-order" />
             <col class="col-accountant" />
             <col class="col-customer" />
             <col class="col-summary" />
@@ -321,6 +316,10 @@
             <col class="col-premium" />
             <col class="col-total" />
             <col class="col-settlement" />
+            <col class="col-source" />
+            <col class="col-platform" />
+            <col class="col-shop" />
+            <col class="col-order" />
             <col class="col-status" />
             <col class="col-action" />
           </colgroup>
@@ -430,6 +429,45 @@
                   </div>
                 </div>
               </th>
+              <th class="data-col-dispatcher">
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="dispatcher" data-label="接待人">接待人</button>
+                  <span id="filterDispatcherIndicator" class="filter-indicator-wrap">
+                    <span id="filterDispatcherValue" class="filter-value-chip" hidden></span>
+                    <button id="filterDispatcherBtn" class="filter-icon-btn" type="button" aria-label="筛选接待人" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterDispatcherPopover" class="filter-popover" hidden>
+                    <div id="filterDispatcherList" class="filter-options"></div>
+                  </div>
+                </div>
+              </th>
+              <th class="data-col-accountant">
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="accountant" data-label="会计">会计</button>
+                  <span id="filterAccountantIndicator" class="filter-indicator-wrap">
+                    <span id="filterAccountantValue" class="filter-value-chip" hidden></span>
+                    <button id="filterAccountantBtn" class="filter-icon-btn" type="button" aria-label="筛选会计" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterAccountantPopover" class="filter-popover" hidden>
+                    <div id="filterAccountantList" class="filter-options"></div>
+                  </div>
+                </div>
+              </th>
+              <th><button class="sort-btn" type="button" data-key="customer" data-label="客户">客户</button></th>
+              <th><button class="sort-btn" type="button" data-key="summary" data-label="任务简介">任务简介</button></th>
+              <th class="data-col-remark"><button class="sort-btn" type="button" data-key="remark" data-label="备注">备注</button></th>
+              <th class="data-col-payment"><button class="sort-btn" type="button" data-key="paymentPrice" data-label="付款价">付款价</button></th>
+              <th class="data-col-premium"><button class="sort-btn" type="button" data-key="premiumPrice" data-label="溢价">溢价</button></th>
+              <th class="data-col-total"><button class="sort-btn" type="button" data-key="totalPrice" data-label="会计价">会计价</button></th>
+              <th class="data-col-settlement"><button class="sort-btn" type="button" data-key="settlementPrice" data-label="会计结算价">会计结算价</button></th>
               <th class="data-col-source">
                 <div class="th-inner">
                   <button class="sort-btn" type="button" data-key="source" data-label="来源">来源</button>
@@ -505,45 +543,6 @@
                   </div>
                 </div>
               </th>
-              <th class="data-col-dispatcher">
-                <div class="th-inner">
-                  <button class="sort-btn" type="button" data-key="dispatcher" data-label="接待人">接待人</button>
-                  <span id="filterDispatcherIndicator" class="filter-indicator-wrap">
-                    <span id="filterDispatcherValue" class="filter-value-chip" hidden></span>
-                    <button id="filterDispatcherBtn" class="filter-icon-btn" type="button" aria-label="筛选接待人" aria-expanded="false">
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
-                      </svg>
-                    </button>
-                  </span>
-                  <div id="filterDispatcherPopover" class="filter-popover" hidden>
-                    <div id="filterDispatcherList" class="filter-options"></div>
-                  </div>
-                </div>
-              </th>
-              <th class="data-col-accountant">
-                <div class="th-inner">
-                  <button class="sort-btn" type="button" data-key="accountant" data-label="会计">会计</button>
-                  <span id="filterAccountantIndicator" class="filter-indicator-wrap">
-                    <span id="filterAccountantValue" class="filter-value-chip" hidden></span>
-                    <button id="filterAccountantBtn" class="filter-icon-btn" type="button" aria-label="筛选会计" aria-expanded="false">
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
-                      </svg>
-                    </button>
-                  </span>
-                  <div id="filterAccountantPopover" class="filter-popover" hidden>
-                    <div id="filterAccountantList" class="filter-options"></div>
-                  </div>
-                </div>
-              </th>
-              <th><button class="sort-btn" type="button" data-key="customer" data-label="客户">客户</button></th>
-              <th><button class="sort-btn" type="button" data-key="summary" data-label="任务简介">任务简介</button></th>
-              <th class="data-col-remark"><button class="sort-btn" type="button" data-key="remark" data-label="备注">备注</button></th>
-              <th class="data-col-payment"><button class="sort-btn" type="button" data-key="paymentPrice" data-label="付款价">付款价</button></th>
-              <th class="data-col-premium"><button class="sort-btn" type="button" data-key="premiumPrice" data-label="溢价">溢价</button></th>
-              <th class="data-col-total"><button class="sort-btn" type="button" data-key="totalPrice" data-label="会计价">会计价</button></th>
-              <th class="data-col-settlement"><button class="sort-btn" type="button" data-key="settlementPrice" data-label="会计结算价">会计结算价</button></th>
               <th class="data-col-status">
                 <div class="th-inner status-th-inner">
                   <button class="sort-btn" type="button" data-key="checkStatus" data-label="状态">状态</button>
@@ -937,15 +936,14 @@
       </div>
       <p id="invoiceUploadFormHint" class="login-request-hint form-request-hint idle" aria-live="polite" hidden></p>
       <form id="invoiceUploadForm" class="invoice-upload-form" autocomplete="off" novalidate>
-        <label class="invoice-upload-image-field" for="accountantInvoiceImageInput">
+        <div class="invoice-upload-image-field">
           <span class="invoice-upload-image-label">发票图片</span>
           <strong id="invoiceUploadImageName" class="invoice-upload-image-name">选择图片上传发票</strong>
-          <span class="invoice-upload-image-action">选择图片</span>
           <span id="invoiceUploadImagePreviewWrap" class="invoice-upload-image-preview-wrap" hidden>
             <img id="invoiceUploadImagePreview" class="invoice-upload-image-preview" alt="已选择的发票图片" />
           </span>
-          <input id="accountantInvoiceImageInput" name="invoiceImage" type="file" accept="image/*" required />
-        </label>
+          <input id="accountantInvoiceImageInput" class="invoice-upload-file-input" name="invoiceImage" type="file" accept="image/*" required />
+        </div>
         <div class="row form-actions invoice-upload-actions">
           <button id="invoiceUploadCancelBtn" class="btn-secondary" type="button">取消</button>
           <button id="invoiceUploadSubmitBtn" class="btn-primary" type="submit">确认上传</button>
@@ -1089,7 +1087,7 @@
         <h2 class="price-composition-title">价格组成</h2>
       </div>
       <div class="price-composition-chart" role="img" aria-label="价格组成按当前筛选数据动态汇总">
-        <div class="price-bracket price-bracket-left"><span class="price-bracket-content"><span class="price-label">付款价</span><strong data-price-composition-field="payment">0.00</strong></span></div>
+        <div class="price-bracket price-bracket-left"><span class="price-bracket-content"><span class="price-label">付款价</span><strong data-price-composition-field="payment">0.00</strong><span class="price-composition-stats" aria-label="当前筛选统计"><span><strong data-price-composition-stat="people">0</strong>人</span><span><strong data-price-composition-stat="orders">0</strong>订单</span></span></span></div>
         <div class="price-node price-node-premium"><span class="price-label">溢价</span><strong data-price-composition-field="premium">0.00</strong><span class="price-percent" data-price-composition-percent="premium">100.0%</span></div>
         <div class="price-node price-node-total"><span class="price-label">会计价</span><strong data-price-composition-field="total">0.00</strong><span class="price-percent" data-price-composition-percent="total">100.0%</span></div>
 
@@ -1132,7 +1130,7 @@
         <div class="price-result">
           <span class="price-segment platform"><span class="price-label">平台</span><strong data-price-composition-field="platform">0.00</strong><span class="price-percent" data-price-composition-percent="platform">100.0%</span></span>
           <span class="price-segment reception price-segment-clickable" id="priceSegmentResultReception" title="点击查看接待详细数据"><span class="price-label">接待</span><strong data-price-composition-field="reception">0.00</strong><span class="price-percent" data-price-composition-percent="reception">100.0%</span></span>
-          <span class="price-segment accounting"><span class="price-label">会计</span><strong data-price-composition-field="accounting">0.00</strong><span class="price-percent" data-price-composition-percent="accounting">100.0%</span></span>
+          <span class="price-segment accounting price-segment-clickable" id="priceSegmentAccounting" title="点击查看会计详细数据"><span class="price-label">会计</span><strong data-price-composition-field="accounting">0.00</strong><span class="price-percent" data-price-composition-percent="accounting">100.0%</span></span>
         </div>
       </div>
     </section>
@@ -1147,6 +1145,18 @@
         </div>
       </div>
       <div id="receptionDetailList" class="paid-settlement-detail-list"></div>
+    </section>
+  </div>
+
+  <div id="accountantDetailModal" class="modal-overlay modal-stacked" hidden>
+    <section class="card modal-card paid-settlement-detail-modal-card" tabindex="-1">
+      <div class="paid-settlement-detail-top">
+        <div>
+          <h2 class="paid-settlement-detail-title">会计详细数据</h2>
+          <p id="accountantDetailMeta" class="paid-settlement-detail-meta"></p>
+        </div>
+      </div>
+      <div id="accountantDetailList" class="paid-settlement-detail-list"></div>
     </section>
   </div>
 
@@ -1475,10 +1485,10 @@
   </div>
 
   <script src="https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-  <script src="./public/js/app-core.js?v=22.20.338"></script>
-  <script src="./public/js/app-data.js?v=22.20.338"></script>
-  <script src="./public/js/app-table-analysis.js?v=22.20.338"></script>
-  <script src="./public/js/app-ui.js?v=22.20.338"></script>
-  <script src="./public/js/app-events.js?v=22.20.338"></script>
+  <script src="./public/js/app-core.js"></script>
+  <script src="./public/js/app-data.js"></script>
+  <script src="./public/js/app-table-analysis.js"></script>
+  <script src="./public/js/app-ui.js"></script>
+  <script src="./public/js/app-events.js"></script>
 </body>
 </html>

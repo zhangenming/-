@@ -5,6 +5,7 @@ const API_ENDPOINT_RECORDS = `${API_BASE}/api/records`;
 const API_ENDPOINT_RECORDS_SETTLE = `${API_ENDPOINT_RECORDS}/settle`;
 const API_ENDPOINT_RECORDS_INVOICE = `${API_ENDPOINT_RECORDS}/invoice`;
 const API_ENDPOINT_RECORDS_PAYOUT = `${API_ENDPOINT_RECORDS}/payout`;
+const API_ENDPOINT_RECORDS_PAYOUT_REVOKE = `${API_ENDPOINT_RECORDS}/payout/revoke`;
 const API_ENDPOINT_ACCOUNTANTS = `${API_BASE}/api/accountants`;
 const API_ENDPOINT_DISPATCHERS = `${API_BASE}/api/dispatchers`;
 const API_ENDPOINT_RECYCLE_BIN = `${API_BASE}/api/recycle-bin`;
@@ -377,7 +378,12 @@ function getLinkedDispatcherSettlementAmount(
     typeof options === "object" &&
     Object.prototype.hasOwnProperty.call(options, "paid");
   const paidFilter = Boolean(options?.paid);
-  const detailRecords = getBossSettlementDetailRecords(sourceRecords);
+  const includeUnsettled = Boolean(options?.includeUnsettled);
+  const detailRecords = includeUnsettled
+    ? (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) =>
+        isRecordCompletionStatus(item),
+      )
+    : getBossSettlementDetailRecords(sourceRecords);
   let totalRawPremium = 0;
   let totalDispatcherPrice = 0;
   const dispatcherCommissionMap = new Map();
@@ -768,6 +774,12 @@ const receptionDetailModalCard = receptionDetailModal
   : null;
 const receptionDetailMeta = document.getElementById("receptionDetailMeta");
 const receptionDetailList = document.getElementById("receptionDetailList");
+const accountantDetailModal = document.getElementById("accountantDetailModal");
+const accountantDetailModalCard = accountantDetailModal
+  ? accountantDetailModal.querySelector(".paid-settlement-detail-modal-card")
+  : null;
+const accountantDetailMeta = document.getElementById("accountantDetailMeta");
+const accountantDetailList = document.getElementById("accountantDetailList");
 const reminderModal = document.getElementById("reminderModal");
 const reminderModalCard = reminderModal
   ? reminderModal.querySelector(".reminder-modal-card")
@@ -1177,6 +1189,7 @@ let isSettlementScheduleCollapsed = false;
 let savedLoginEntries = [];
 let highlightedAccountantUsername = "";
 let accountantRegisterReturnTarget = "";
+let hasUploadedSettlementInvoiceThisSession = false;
 let pendingConfirmResolve = null;
 let editingAccountantUsername = "";
 let accountantEditMode = "admin";
@@ -1188,10 +1201,12 @@ let selectedBossSettlementPayoutRecordIds = new Set();
 let isBossSettlementSubmitting = false;
 let isBossSettlementPayoutSubmitting = false;
 let isInvoiceUploadSubmitting = false;
+let invoiceUploadReplaceRecordIds = [];
 const bossSettlementDetailSortState = {
   key: "accountant",
   direction: "asc",
 };
+let bossSettlementDetailPayoutStatusFilter = "";
 let settlementDetailActiveTab = "accountant";
 const sortState = {
   key: "date",
@@ -1796,6 +1811,12 @@ function getAccountantRealNameByLoginName(loginNameRaw) {
     currentAccountRealName = realName;
   }
   return realName;
+}
+
+function getAccountantSettlementNameByLoginName(loginNameRaw) {
+  const profile = getAccountantProfileByLoginName(loginNameRaw);
+  const recipientInfo = normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo);
+  return String(recipientInfo.name || profile?.realName || "").trim();
 }
 
 function getCurrentAccountantRealName() {
@@ -2660,7 +2681,7 @@ function getCurrentInvoiceUploadSettlementGroup(sourceRecords = records) {
 function getAccountantInvoiceUploadSummary(sourceRecords = records) {
   const uploadSourceRecords = getInvoiceUploadSourceRecords(sourceRecords);
   const targetRecords = getAccountantInvoiceUploadTargetRecords(uploadSourceRecords);
-  const settlementGroup = getCurrentInvoiceUploadSettlementGroup(targetRecords);
+  const settlementGroup = getCurrentInvoiceUploadSettlementGroup(uploadSourceRecords);
   if (settlementGroup) {
     const invoiceAmount = Number(settlementGroup.invoiceAmount) || 0;
     const taxAmount =
@@ -2695,6 +2716,8 @@ function getAccountantInvoiceUploadSummary(sourceRecords = records) {
         Number(settlementGroup.dispatcherCommissionAmount) || 0,
       hasIncomeBreakdown: true,
       hasLinkedDispatcher: Boolean(settlementGroup.hasLinkedDispatcher),
+      hasDispatcherIncomeBreakdown:
+        Number(settlementGroup.dispatcherInvoiceAmount) > 0,
     };
   }
 
@@ -2736,6 +2759,7 @@ function getAccountantInvoiceUploadSummary(sourceRecords = records) {
   } else if (isAccountantLogin()) {
     const currentAccountant = getCurrentAccountantDisplayName();
     accountantInvoiceAmount = targetRecords.reduce((sum, item) => {
+      if (isLinkedDispatcherRecordForCurrentAccount(item)) return sum;
       if (String(item?.accountant || "").trim() !== currentAccountant)
         return sum;
       const settlement = Number(item?.settlementPrice);
@@ -2743,14 +2767,28 @@ function getAccountantInvoiceUploadSummary(sourceRecords = records) {
     }, 0);
     const linkedDispatcherAmount = getLinkedDispatcherSettlementAmount(
       currentAccountant,
-      targetRecords,
+      uploadSourceRecords,
       {
         paid: false,
       },
     );
+    const activeLinkedDispatcherAmount = linkedDispatcherAmount;
     dispatcherInvoiceAmount =
-      Number(linkedDispatcherAmount?.invoiceAmount) || 0;
+      Number(activeLinkedDispatcherAmount?.invoiceAmount) || 0;
     invoiceAmount = accountantInvoiceAmount + dispatcherInvoiceAmount;
+    var dispatcherPremiumSegments = Array.isArray(
+      activeLinkedDispatcherAmount?.premiumBreakdown?.segments,
+    )
+      ? activeLinkedDispatcherAmount.premiumBreakdown.segments
+      : [];
+    var dispatcherCommissionTerms = Array.isArray(
+      activeLinkedDispatcherAmount?.dispatcherCommissionTerms,
+    )
+      ? activeLinkedDispatcherAmount.dispatcherCommissionTerms
+      : [];
+    var dispatcherPremiumAmount = Number(activeLinkedDispatcherAmount?.premium) || 0;
+    var dispatcherCommissionAmount =
+      Number(activeLinkedDispatcherAmount?.dispatcherPrice) || 0;
   }
 
   const taxAmount = getSettlementTaxAmount(invoiceAmount);
@@ -2763,8 +2801,17 @@ function getAccountantInvoiceUploadSummary(sourceRecords = records) {
     payableAmount: invoiceAmount - taxAmount,
     accountantInvoiceAmount,
     dispatcherInvoiceAmount,
+    dispatcherPremiumSegments: Array.isArray(dispatcherPremiumSegments)
+      ? dispatcherPremiumSegments
+      : [],
+    dispatcherCommissionTerms: Array.isArray(dispatcherCommissionTerms)
+      ? dispatcherCommissionTerms
+      : [],
+    dispatcherPremiumAmount: Number(dispatcherPremiumAmount) || 0,
+    dispatcherCommissionAmount: Number(dispatcherCommissionAmount) || 0,
     hasIncomeBreakdown: true,
     hasLinkedDispatcher: dispatcherInvoiceAmount > 0,
+    hasDispatcherIncomeBreakdown: dispatcherInvoiceAmount > 0,
   };
 }
 
@@ -3342,6 +3389,7 @@ function getUpdatedRecordIndicatorLabel(record) {
   if (actionKey === "returned") return "已退单";
   if (actionKey === "settled") return "已核对客户确认";
   if (actionKey === "invoice_uploaded") return "发票已上传";
+  if (actionKey === "invoice_reuploaded") return "发票已修改";
   if (actionKey === "updated") return "信息更新";
   return normalizeText(latestEntry?.actionLabel, 32) || "信息更新";
 }
@@ -4122,19 +4170,29 @@ function shouldShowTableTooltipCell(cell) {
   return isTableTooltipCellOverflowing(cell);
 }
 
-function placeTableHoverTooltip(event) {
-  if (!(event instanceof MouseEvent) || tableHoverTooltip.hidden) return;
+function placeTableHoverTooltip(source) {
+  if (tableHoverTooltip.hidden) return;
   const margin = 14;
   const offset = 16;
   const rect = tableHoverTooltip.getBoundingClientRect();
-  let left = event.clientX + offset;
-  let top = event.clientY + offset;
+  const isElementSource = source instanceof HTMLElement;
+  const sourceRect = isElementSource ? source.getBoundingClientRect() : null;
+  const sourceX = sourceRect ? sourceRect.left + sourceRect.width / 2 : source?.clientX;
+  const sourceY = sourceRect ? sourceRect.top : source?.clientY;
+  let left = sourceRect ? sourceRect.left + sourceRect.width / 2 - rect.width / 2 : sourceX + offset;
+  let top = sourceRect ? sourceRect.top - rect.height - 10 : sourceY + offset;
 
   if (left + rect.width + margin > window.innerWidth) {
-    left = event.clientX - rect.width - offset;
+    left = sourceRect ? window.innerWidth - rect.width - margin : sourceX - rect.width - offset;
+  }
+  if (left < margin) {
+    left = margin;
   }
   if (top + rect.height + margin > window.innerHeight) {
-    top = event.clientY - rect.height - offset;
+    top = sourceRect ? sourceRect.bottom + 10 : sourceY - rect.height - offset;
+  }
+  if (top < margin && sourceRect) {
+    top = sourceRect.bottom + 10;
   }
 
   tableHoverTooltip.style.left = `${Math.max(margin, Math.round(left))}px`;
@@ -4149,6 +4207,7 @@ function showTableHoverTooltip(source, event) {
   const imageAlt = isElementSource
     ? String(source.dataset.tableTooltipImageAlt || "").trim()
     : "";
+  const isCompact = isElementSource && source.dataset.tableTooltipVariant === "compact";
   const normalizedText = String(
     isElementSource ? source.dataset.tableTooltip : source || "",
   ).trim();
@@ -4157,6 +4216,7 @@ function showTableHoverTooltip(source, event) {
     return;
   }
   tableHoverTooltip.classList.toggle("image", Boolean(imageUrl));
+  tableHoverTooltip.classList.toggle("compact", isCompact);
   tableHoverTooltip.innerHTML = "";
   if (imageUrl) {
     const image = document.createElement("img");
@@ -4176,7 +4236,7 @@ function showTableHoverTooltip(source, event) {
   }
   tableHoverTooltip.hidden = false;
   tableHoverTooltip.classList.add("visible");
-  placeTableHoverTooltip(event);
+  placeTableHoverTooltip(isCompact && isElementSource ? source : event);
 }
 
 function moveTableHoverTooltip(event) {
@@ -4186,6 +4246,7 @@ function moveTableHoverTooltip(event) {
 function hideTableHoverTooltip() {
   tableHoverTooltip.classList.remove("visible");
   tableHoverTooltip.classList.remove("image");
+  tableHoverTooltip.classList.remove("compact");
   tableHoverTooltip.hidden = true;
   tableHoverTooltip.innerHTML = "";
 }
