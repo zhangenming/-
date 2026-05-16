@@ -7086,7 +7086,6 @@
       updateFilterOptions();
       saveViewState();
       syncBossRecordSelection(records);
-      const canEditRecords = !isAccountantLogin();
       const canCheckRecords = isAccountantLogin();
       const isBoss = isBossLogin();
       const canSettleRecords = canCurrentAccountSettleRecords();
@@ -7376,15 +7375,14 @@
               openRefundModal(item);
             });
             actionWrap.appendChild(refundBtn);
-          } else if (!hasRecordAccountantConfirmation(item)) {
+          }
+          if (canCurrentAccountEditRecord(item)) {
             const editBtn = document.createElement("button");
             editBtn.type = "button";
             editBtn.className = "row-edit-btn";
             editBtn.dataset.recordId = recordId;
             editBtn.textContent = "修改";
-            if (canEditRecords) {
-              actionWrap.appendChild(editBtn);
-            }
+            actionWrap.appendChild(editBtn);
           }
         }
         if (recordId && canCurrentAccountDeleteRecord(item)) {

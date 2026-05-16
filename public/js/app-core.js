@@ -2281,6 +2281,21 @@ function canCurrentAccountDeleteRecord(record) {
   return false;
 }
 
+const DISPATCHER_EDITABLE_WORKFLOW_STATUS_KEYS = new Set([
+  "pending",
+  "checked",
+  "completed"
+]);
+
+function canCurrentAccountEditRecord(record) {
+  if (!record || typeof record !== "object") return false;
+  if (isBossLogin()) return true;
+  if (isDispatcherLogin()) {
+    return DISPATCHER_EDITABLE_WORKFLOW_STATUS_KEYS.has(getRecordWorkflowStatusKey(record));
+  }
+  return false;
+}
+
 function shouldShowProfitColumn(accountName = currentAccount) {
   return isDispatcherLogin(accountName);
 }
@@ -2635,8 +2650,7 @@ function isRecordCompletionStatus(record) {
 }
 
 function isRecordRefundable(record) {
-  const statusKey = getRecordWorkflowStatusKey(record);
-  return statusKey === "checked" || statusKey === "completed";
+  return false;
 }
 
 function hasRecordAccountantConfirmation(record) {

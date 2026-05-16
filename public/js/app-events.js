@@ -1919,7 +1919,7 @@
         if (!recordId) return;
         const targetRecord = records.find((item) => String(item.id || "").trim() === recordId) || null;
         if (!targetRecord) return;
-        if (hasRecordAccountantConfirmation(targetRecord)) return;
+        if (!canCurrentAccountEditRecord(targetRecord)) return;
         openEditModal(targetRecord);
         return;
       }

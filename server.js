@@ -1658,6 +1658,22 @@ function canDeleteRecord(session, record) {
   return false;
 }
 
+const DISPATCHER_EDITABLE_WORKFLOW_STATUS_KEYS = new Set([
+  "pending",
+  "checked",
+  "completed"
+]);
+
+function canEditRecord(session, record) {
+  if (!session || !record || typeof record !== "object") return false;
+  if (session.role === "boss") return true;
+  if (session.role === "dispatcher") {
+    return DISPATCHER_EDITABLE_WORKFLOW_STATUS_KEYS.has(getRecordWorkflowStatusKey(record));
+  }
+  if (session.role === "accountant") return true;
+  return false;
+}
+
 function canUploadInvoiceToRecord(session, record, options = {}) {
   if (!session || !record || typeof record !== "object") return false;
   if (session.role === "accountant") {
@@ -4107,6 +4123,12 @@ async function serveRecordById(req, res, recordIdRaw) {
           : {};
         const currentSettlementFields = getNormalizedRecordSettlementFields(current);
         if (!canAccessRecord(session, current)) {
+          if (migration.changed) {
+            await writeRecords(migration.records);
+          }
+          return { forbidden: true };
+        }
+        if (!canEditRecord(session, current)) {
           if (migration.changed) {
             await writeRecords(migration.records);
           }
