@@ -1017,6 +1017,88 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
   z-index: 120;
 }
 
+#confirmModal .confirm-modal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.confirm-modal-math {
+  display: grid;
+  gap: 8px;
+}
+
+.confirm-modal-content[hidden] {
+  display: none;
+}
+
+.confirm-modal-revoke-table-wrap {
+  max-height: min(42vh, 360px);
+  margin: 0;
+  overflow: auto;
+  border-right: 0;
+  border-left: 0;
+  border-radius: 0;
+}
+
+.confirm-modal-revoke-table {
+  min-width: 880px;
+}
+
+.confirm-modal-revoke-table th,
+.confirm-modal-revoke-table td {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.confirm-modal-revoke-table .settlement-detail-invoice-list {
+  justify-content: center;
+  overflow: visible;
+  flex-wrap: nowrap;
+}
+
+.confirm-modal-revoke-table .settlement-detail-invoice-thumb {
+  width: 58px;
+  height: 44px;
+  flex: 0 0 58px;
+}
+
+.confirm-modal-math[hidden],
+.confirm-modal-math-hint[hidden] {
+  display: none;
+}
+
+.confirm-modal-math-label {
+  color: var(--m-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.confirm-modal-math-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--m-border-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--m-text);
+  font-size: 16px;
+  outline: none;
+}
+
+.confirm-modal-math-input:focus {
+  border-color: var(--m-accent);
+  box-shadow: 0 0 0 3px rgba(21, 126, 98, 0.14);
+}
+
+.confirm-modal-math-hint {
+  margin: 0;
+  color: #b8452b;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .modal-card {
   width: 100%;
   max-height: min(92vh, 820px);
@@ -1190,6 +1272,33 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
   justify-content: space-between;
   gap: 10px;
   text-align: left;
+}
+
+.filter-option-btn.filter-option-special-accountant {
+  order: -2;
+  border-color: #f4a261;
+  background: #fff4e6;
+  color: #8a3f00;
+  box-shadow: inset 3px 0 0 #f97316;
+}
+
+.filter-option-btn.filter-option-special-accountant + .filter-option-special-accountant {
+  order: -1;
+}
+
+.filter-option-btn.filter-option-multi::before {
+  content: "";
+  width: 6px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  opacity: 0;
+  transform: translateY(-1px) rotate(40deg);
+}
+
+.filter-option-btn.filter-option-multi.active::before {
+  opacity: 1;
 }
 
 .price-hint,
@@ -1771,14 +1880,8 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
   align-items: stretch;
 }
 
-.settlement-detail-payout-toolbar-text {
-  grid-column: 1 / -1;
-  padding: 9px 10px;
-  border-radius: var(--m-radius);
-  background: var(--m-blue-soft);
-  color: oklch(40% 0.072 238);
-  font-size: 12px;
-  font-weight: 800;
+.settlement-detail-payout-batch-btn {
+  white-space: normal;
 }
 
 .settlement-detail-row.tone-paid,
@@ -2060,6 +2163,22 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
   display: inline-block;
   max-width: 100%;
   overflow-wrap: anywhere;
+}
+
+.accountant-sort-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  margin-left: 5px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--m-accent-soft);
+  color: var(--m-accent-strong);
+  font-size: 11px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
 }
 
 .accountant-item-count {

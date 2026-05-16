@@ -6,9 +6,9 @@
   const FILTER_BUTTONS = [
     { key: "month", label: "接单日期", button: () => filterMonthBtn, value: () => getDateFilterSummary(filterState.month, filterState.dateStart, filterState.dateEnd) },
     { key: "completedAt", label: "完工日期", button: () => filterCompletedAtBtn, value: () => getDateFilterSummary(filterState.completedAtMonth, filterState.completedAtStart, filterState.completedAtEnd) },
-    { key: "dispatcher", label: "接待人", button: () => filterDispatcherBtn, value: () => filterState.dispatcher ? getDispatcherDisplayNameByTag(filterState.dispatcher) : "" },
+    { key: "dispatcher", label: "接待人", button: () => filterDispatcherBtn, value: () => getSelectedDispatcherFilters().map((item) => getDispatcherDisplayNameByTag(item)).join("、") },
     { key: "orderNo", label: "订单号", button: () => filterOrderBtn, value: () => filterState.orderNo },
-    { key: "accountant", label: "会计", button: () => filterAccountantBtn, value: () => filterState.accountant },
+    { key: "accountant", label: "会计", button: () => filterAccountantBtn, value: () => getSelectedAccountantFilters().join("、") },
     { key: "platform", label: "平台", button: () => filterPlatformBtn, value: () => filterState.platform },
     { key: "shopName", label: "店铺名", button: () => filterShopBtn, value: () => filterState.shopName },
     { key: "source", label: "来源", button: () => filterSourceBtn, value: () => filterState.source },
@@ -353,6 +353,7 @@
     summary.className = "mobile-record-summary";
     summary.append(
       createMeta("任务简介", String(record?.summary || "").trim() || "未填写"),
+      createMeta("客户反馈", String(record?.customerFeedback || "").trim() || "无"),
       createMeta("备注", String(record?.remark || "").trim() || "无"),
     );
     return summary;
@@ -517,6 +518,7 @@
       platform: "平台",
       shopName: "店铺名",
       orderNo: "订单号",
+      customerFeedback: "客户反馈",
       accountant: "会计",
       customer: "客户",
       paymentPrice: "付款价",
@@ -646,6 +648,7 @@
       { key: "platform", label: "平台" },
       { key: "shopName", label: "店铺名" },
       { key: "orderNo", label: "订单号" },
+      { key: "customerFeedback", label: "客户反馈" },
       { key: "checkStatus", label: "状态" },
     ].forEach((item) => {
       const active = sortState.key === item.key;

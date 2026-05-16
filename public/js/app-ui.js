@@ -46,6 +46,13 @@
       return `${getBossSettlementDetailOwnOrderTotal(groups)}单`;
     }
 
+    function formatSettlementHeaderMoneyFormula(accountantValue, dispatcherValue, totalValue) {
+      const accountantAmount = Number(accountantValue) || 0;
+      const dispatcherAmount = Number(dispatcherValue) || 0;
+      const totalAmount = Number(totalValue) || 0;
+      return `合计 ${toMoney(accountantAmount)}+${toMoney(dispatcherAmount)}=${toMoney(totalAmount)}`;
+    }
+
     function renderRecycleBinTable() {
       renderRecycleBinTableHead();
       recycleTableBody.innerHTML = "";
@@ -99,6 +106,7 @@
       { label: "平台", getValue: (item) => String(item?.platform || "").trim() },
       { label: "店铺名", getValue: (item) => String(item?.shopName || "").trim() },
       { label: "订单号", getValue: (item) => String(item?.orderNo || "").trim() },
+      { label: "客户反馈", getValue: (item) => String(item?.customerFeedback || "").trim() },
       { label: "状态", getValue: (item) => getRecordStatusWithSettlementText(item) }
     ];
 
@@ -414,20 +422,19 @@
 
     function exportSettlementPayout() {
       if (!canCurrentAccountSettleRecords()) return;
-      const { groups } = getBossSettlementDetailSummary();
-      const payoutGroups = groups.filter((group) => {
-        const targets = Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds;
-        return Array.isArray(targets) && targets.length > 0;
-      });
-      if (!payoutGroups.length) {
-        showAppStatus("当前没有可打款的数据。");
+      const visibleGroups = getSortedBossSettlementDetailGroups(
+        getFilteredBossSettlementDetailGroups()
+          .filter((group) => !isExcludedBossSettlementDetailExportGroup(group))
+      );
+      if (!visibleGroups.length) {
+        showAppStatus("当前筛选下没有可导出的打款数据。");
         return;
       }
 
       const headerRow = ["姓名", "证件类型", "证件号码", "工资账号", "收款机构编号", "金额", "手机号"];
       const dataRows = [];
 
-      payoutGroups.forEach((group) => {
+      visibleGroups.forEach((group) => {
         const profile = getAccountantProfileByLoginName(group.accountant);
         const recipientInfo = normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo);
         const realName = getAccountantRealNameByLoginName(group.accountant);
@@ -2528,9 +2535,9 @@
       const paidHeaderColumns = [
         { key: "accountant", label: "会计", summary: `${paidTableTotals.accountantCount}位`, align: "accountant" },
         { key: "orderCount", label: "订单", summary: formatSettlementHeaderOrderCount(sortedPaidGroups), align: "order" },
-        { key: "invoiceAmount", label: "开票金额", summary: `合计 ${toMoney(paidTableTotals.totalInvoiceAmount)}`, align: "money" },
-        { key: "taxAmount", label: "个税", summary: `合计 ${toMoney(paidTableTotals.totalTaxAmount)}`, align: "money" },
-        { key: "payableAmount", label: "应打款金额", summary: `合计 ${toMoney(paidTableTotals.totalPayableAmount)}`, align: "money" },
+        { key: "invoiceAmount", label: "开票金额", summary: formatSettlementHeaderMoneyFormula(paidTableTotals.accountantInvoiceAmount, paidTableTotals.dispatcherInvoiceAmount, paidTableTotals.totalInvoiceAmount), align: "money" },
+        { key: "taxAmount", label: "个税", summary: formatSettlementHeaderMoneyFormula(paidTableTotals.accountantTaxAmount, paidTableTotals.dispatcherTaxAmount, paidTableTotals.totalTaxAmount), align: "money" },
+        { key: "payableAmount", label: "应打款金额", summary: formatSettlementHeaderMoneyFormula(paidTableTotals.accountantPayableAmount, paidTableTotals.dispatcherPayableAmount, paidTableTotals.totalPayableAmount), align: "money" },
         { key: "invoiceCount", label: "上传的发票", summary: `${paidTableTotals.uploadedAccountantCount}人已上传`, align: "invoice" },
         { key: "payout", label: "打款状态", summary: `已结算 ${paidTableTotals.paidRecordCount || 0}单`, align: "payout" },
         { key: "action", label: "操作", summary: "", align: "action" }
@@ -2643,16 +2650,17 @@
 
         const actionTd = document.createElement("td");
         actionTd.className = "settlement-detail-action-cell settlement-detail-col-action";
+        const revokeTargets = Array.isArray(group.revokeTargets) ? group.revokeTargets : group.recordIds;
         const revokeBtn = document.createElement("button");
         revokeBtn.type = "button";
         revokeBtn.className = "settlement-detail-payout-revoke-btn";
-        revokeBtn.dataset.recordIds = group.recordIds.join(",");
-        revokeBtn.dataset.tableTooltip = group.recordIds.length
-          ? `撤销 ${group.recordIds.length} 条打款状态和打款记录`
+        revokeBtn.dataset.recordIds = revokeTargets.join(",");
+        revokeBtn.dataset.tableTooltip = revokeTargets.length
+          ? `撤销 ${revokeTargets.length} 条打款状态和打款记录`
           : "";
         revokeBtn.dataset.tableTooltipMode = "always";
         revokeBtn.dataset.tableTooltipVariant = "compact";
-        revokeBtn.disabled = isBossSettlementPayoutSubmitting || !group.recordIds.length;
+        revokeBtn.disabled = isBossSettlementPayoutSubmitting || !revokeTargets.length;
         revokeBtn.textContent = isBossSettlementPayoutSubmitting ? "处理中" : "撤销";
         revokeBtn.setAttribute("aria-label", revokeBtn.dataset.tableTooltip || "撤销打款");
         actionTd.appendChild(revokeBtn);
@@ -2770,9 +2778,9 @@
       const headerColumns = [
         { label: "会计", summary: `${uploadedTableTotals.accountantCount}位`, align: "accountant" },
         { label: "订单", summary: formatSettlementHeaderOrderCount(sortedUploadedGroups), align: "order" },
-        { label: "开票金额", summary: `合计 ${toMoney(uploadedTableTotals.totalInvoiceAmount)}`, align: "money" },
-        { label: "个税", summary: `合计 ${toMoney(uploadedTableTotals.totalTaxAmount)}`, align: "money" },
-        { label: "应打款金额", summary: `合计 ${toMoney(uploadedTableTotals.totalPayableAmount)}`, align: "money" },
+        { label: "开票金额", summary: formatSettlementHeaderMoneyFormula(uploadedTableTotals.accountantInvoiceAmount, uploadedTableTotals.dispatcherInvoiceAmount, uploadedTableTotals.totalInvoiceAmount), align: "money" },
+        { label: "个税", summary: formatSettlementHeaderMoneyFormula(uploadedTableTotals.accountantTaxAmount, uploadedTableTotals.dispatcherTaxAmount, uploadedTableTotals.totalTaxAmount), align: "money" },
+        { label: "应打款金额", summary: formatSettlementHeaderMoneyFormula(uploadedTableTotals.accountantPayableAmount, uploadedTableTotals.dispatcherPayableAmount, uploadedTableTotals.totalPayableAmount), align: "money" },
         { label: "上传的发票", summary: `${uploadedTableTotals.uploadedAccountantCount}人已上传`, align: "invoice" },
         { label: "打款状态", summary: `待结算 ${uploadedTableTotals.payoutRecordCount || 0}单`, align: "payout" }
       ];
@@ -2902,7 +2910,7 @@
 
     function syncDispatcherSelfViewState() {
       if (!isDispatcherLogin()) return;
-      filterState.dispatcher = "";
+      setDispatcherFilterValues([]);
       filterDispatcherPopover.hidden = true;
       if (sortState.key === "dispatcher") {
         sortState.key = "date";
@@ -4704,6 +4712,27 @@
       return "待上传";
     }
 
+    function getFilteredBossSettlementDetailGroups(sourceRecords = records) {
+      const { groups, paidGroups } = getBossSettlementDetailSummary(sourceRecords);
+      const allDetailGroups = groups.concat(paidGroups).map((group) => {
+        const payoutStatusKey = getBossSettlementDetailPayoutStatusKey(group);
+        return {
+          ...group,
+          payoutStatusKey,
+          payoutStatusLabel: getBossSettlementDetailPayoutStatusLabel(payoutStatusKey)
+        };
+      });
+      const payoutStatusFilter = String(bossSettlementDetailPayoutStatusFilter || "").trim();
+      return payoutStatusFilter
+        ? allDetailGroups.filter((group) => group.payoutStatusKey === payoutStatusFilter)
+        : allDetailGroups;
+    }
+
+    function isExcludedBossSettlementDetailExportGroup(group) {
+      const accountant = String(group?.accountant || "").trim();
+      return accountant === "不结算" || accountant === "外部人员";
+    }
+
     function setBossSettlementDetailPayoutStatusFilter(statusKey) {
       bossSettlementDetailPayoutStatusFilter = String(statusKey || "").trim();
       renderBossSettlementDetailModalContent();
@@ -4744,7 +4773,7 @@
 
     function getBossSettlementDetailOrderLabel(group) {
       const { own, dispatcher, total } = getBossSettlementDetailOrderParts(group);
-      if (group?.hasLinkedDispatcher) return `${own}+${dispatcher}=${total}`;
+      if (group?.hasLinkedDispatcher) return `${own}+${dispatcher}=${total}单`;
       return `${total}单`;
     }
 
@@ -4760,8 +4789,14 @@
       return {
         accountantCount: source.length,
         recordCount: source.reduce((sum, item) => sum + (Number(item.recordCount) || 0), 0),
+        accountantInvoiceAmount: source.reduce((sum, item) => sum + (Number(item.accountantInvoiceAmount) || 0), 0),
+        dispatcherInvoiceAmount: source.reduce((sum, item) => sum + (Number(item.dispatcherInvoiceAmount) || 0), 0),
         totalInvoiceAmount: source.reduce((sum, item) => sum + (Number(item.invoiceAmount) || 0), 0),
+        accountantTaxAmount: source.reduce((sum, item) => sum + (Number(item.accountantTaxAmount) || 0), 0),
+        dispatcherTaxAmount: source.reduce((sum, item) => sum + (Number(item.dispatcherTaxAmount) || 0), 0),
         totalTaxAmount: source.reduce((sum, item) => sum + (Number(item.taxAmount) || 0), 0),
+        accountantPayableAmount: source.reduce((sum, item) => sum + (Number(item.accountantPayableAmount) || 0), 0),
+        dispatcherPayableAmount: source.reduce((sum, item) => sum + (Number(item.dispatcherPayableAmount) || 0), 0),
         totalPayableAmount: source.reduce((sum, item) => sum + (Number(item.payableAmount) || 0), 0),
         uploadedAccountantCount: source.filter((item) => Number(item.uploadedCount) > 0).length,
         pendingAccountantCount: source.filter((item) => Number(item.uploadedCount) <= 0).length,
@@ -4772,6 +4807,24 @@
           return sum + (Array.isArray(targets) ? targets.length : 0);
         }, 0)
       };
+    }
+
+    function getSelectedBossSettlementPayoutPayableAmount(groups, selectedTargetSet) {
+      const source = Array.isArray(groups) ? groups : [];
+      if (!(selectedTargetSet instanceof Set) || selectedTargetSet.size === 0) return 0;
+
+      return source.reduce((sum, group) => {
+        const targets = Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds;
+        if (!Array.isArray(targets) || targets.length === 0) return sum;
+
+        const selectedCount = targets.filter((target) => selectedTargetSet.has(target)).length;
+        if (selectedCount === 0) return sum;
+
+        const payableAmount = Number(group.payableAmount) || 0;
+        if (selectedCount >= targets.length) return sum + payableAmount;
+
+        return sum + (payableAmount * selectedCount / targets.length);
+      }, 0);
     }
 
     function formatSettlementPaidDateDisplay(rawDateTime) {
@@ -4787,6 +4840,159 @@
       );
       if (!values.length) return "";
       return `打款时间：${values.join(" / ")}`;
+    }
+
+    function getBossSettlementPayoutRevokeConfirmGroups(recordIds) {
+      const targetIds = new Set(
+        (Array.isArray(recordIds) ? recordIds : [])
+          .map((item) => String(item || "").trim())
+          .filter(Boolean)
+      );
+      const { paidGroups } = getBossSettlementDetailSummary();
+      return getSortedBossSettlementDetailGroups(paidGroups)
+        .filter((group) => {
+          const targets = Array.isArray(group.revokeTargets) ? group.revokeTargets : group.recordIds;
+          return Array.isArray(targets) && targets.some((recordId) => targetIds.has(String(recordId || "").trim()));
+        });
+    }
+
+    function createBossSettlementPayoutRevokeConfirmTable(recordIds) {
+      const matchedGroups = getBossSettlementPayoutRevokeConfirmGroups(recordIds);
+      if (!matchedGroups.length) return null;
+
+      const tableWrap = document.createElement("div");
+      tableWrap.className = "settlement-detail-table-wrap settlement-detail-table-wrap-paid confirm-modal-revoke-table-wrap";
+
+      const table = document.createElement("table");
+      table.className = "settlement-detail-table settlement-detail-paid-table confirm-modal-revoke-table";
+
+      const colgroup = document.createElement("colgroup");
+      [
+        ["accountant", "16%"],
+        ["order", "10%"],
+        ["money", "14%"],
+        ["money", "13%"],
+        ["money", "15%"],
+        ["invoice", "150px"],
+        ["payout", "150px"]
+      ].forEach(([columnClass, width]) => {
+        const col = document.createElement("col");
+        col.className = `settlement-detail-col-${columnClass}`;
+        col.style.width = width;
+        colgroup.appendChild(col);
+      });
+      table.appendChild(colgroup);
+
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      [
+        { label: "会计", align: "accountant" },
+        { label: "订单", align: "order" },
+        { label: "开票金额", align: "money" },
+        { label: "个税", align: "money" },
+        { label: "应打款金额", align: "money" },
+        { label: "上传的发票", align: "invoice" },
+        { label: "打款状态", align: "payout" }
+      ].forEach((column) => {
+        const th = document.createElement("th");
+        th.scope = "col";
+        th.className = `settlement-detail-heading-cell ${column.align}`;
+        th.textContent = column.label;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const createPaidMoneyCell = (group, amountType) => {
+        const td = document.createElement("td");
+        td.className = "settlement-detail-money settlement-detail-col-money";
+
+        if (amountType === "invoiceAmount") {
+          const totalValue = group.invoiceAmount;
+          const accountantValue = group.accountantInvoiceAmount;
+          const dispatcherValue = group.dispatcherInvoiceAmount;
+
+          if (group.hasLinkedDispatcher) {
+            td.classList.add("settlement-detail-money-formula");
+            appendLinkedDispatcherInvoiceFormula(td, accountantValue, dispatcherValue, totalValue);
+            td.tabIndex = 0;
+            attachLinkedDispatcherInvoicePopover(td, accountantValue, group);
+          } else {
+            td.textContent = `${toMoney(totalValue)}`;
+          }
+        } else {
+          const totalValue = amountType === "taxAmount" ? group.taxAmount : group.payableAmount;
+          td.textContent = `${toMoney(totalValue)}`;
+        }
+
+        return td;
+      };
+
+      const tbody = document.createElement("tbody");
+      matchedGroups.forEach((group) => {
+        const row = document.createElement("tr");
+        row.className = `settlement-detail-row ${group.statusKey} tone-paid`;
+
+        const accountantTd = document.createElement("td");
+        accountantTd.className = "settlement-detail-accountant-cell settlement-detail-col-accountant";
+        appendBossSettlementDetailAccountantName(accountantTd, group);
+        if (group.hasLinkedDispatcher) {
+          const dispatcherBadge = document.createElement("span");
+          dispatcherBadge.className = "settlement-detail-dispatcher-badge";
+          const tags = group.linkedDispatcherTags || [];
+          dispatcherBadge.textContent = tags.length > 0 ? tags.join("/") : "";
+          accountantTd.appendChild(dispatcherBadge);
+        }
+        row.appendChild(accountantTd);
+
+        row.appendChild(createBossSettlementDetailOrderCell(group));
+
+        row.appendChild(createPaidMoneyCell(group, "invoiceAmount"));
+        row.appendChild(createPaidMoneyCell(group, "taxAmount"));
+        row.appendChild(createPaidMoneyCell(group, "payableAmount"));
+
+        const invoiceTd = document.createElement("td");
+        invoiceTd.className = "settlement-detail-invoice-cell settlement-detail-col-invoice";
+        if (group.uploadedInvoices.length) {
+          const invoiceList = document.createElement("div");
+          invoiceList.className = "settlement-detail-invoice-list";
+          const invoiceItem = group.uploadedInvoices[0];
+          invoiceList.appendChild(createSettlementDetailInvoiceThumb(invoiceItem, 0, group.accountant));
+          invoiceTd.appendChild(invoiceList);
+        } else {
+          const pending = document.createElement("span");
+          pending.className = "settlement-detail-invoice-pending";
+          pending.textContent = "待上传";
+          invoiceTd.appendChild(pending);
+        }
+        row.appendChild(invoiceTd);
+
+        const payoutTd = document.createElement("td");
+        payoutTd.className = "settlement-detail-payout-cell settlement-detail-col-payout";
+        const payoutState = document.createElement("span");
+        payoutState.className = "settlement-detail-payout-state paid";
+        const paidDate = formatSettlementPaidDateDisplay(group.latestPaidAt);
+        payoutState.textContent = paidDate ? `已结算 ${paidDate}` : "已结算";
+        const paidTooltip = getSettlementPaidTimeTooltip(group);
+        if (paidTooltip) {
+          payoutState.title = paidTooltip;
+        }
+        payoutTd.appendChild(payoutState);
+        row.appendChild(payoutTd);
+
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+      tableWrap.appendChild(table);
+      return tableWrap;
+    }
+
+    function getBossSettlementPayoutRevokeConfirmMessage(recordIds) {
+      const targetCount = (Array.isArray(recordIds) ? recordIds : [])
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+        .length;
+      return `确认撤销 ${targetCount} 条数据的打款状态和打款记录？`;
     }
 
     function getAccountantUploadIdentitySet(accountantName) {
@@ -4884,19 +5090,6 @@
         }
         if (isUploaded) {
           current.uploadedCount += 1;
-          if (isPaid) {
-            current.paidCount += 1;
-            if (paidAt) {
-              const normalizedPaidAtTime = Number.isNaN(paidAtTime) ? 0 : paidAtTime;
-              current.paidAtValues.push(paidAt);
-              if (!current.latestPaidAt || normalizedPaidAtTime >= current.latestPaidAtTime) {
-                current.latestPaidAt = paidAt;
-                current.latestPaidAtTime = normalizedPaidAtTime;
-              }
-            }
-          } else if (recordId) {
-            current.payoutRecordIds.push(recordId);
-          }
           const currentUploadedAtTime = parseDateTimeValue(current.latestUploadedAt);
           if (!current.latestUploadedAt || uploadedAtTime >= currentUploadedAtTime) {
             current.latestUploadedAt = uploadedAt;
@@ -4927,6 +5120,19 @@
           }
         } else {
           current.pendingCount += 1;
+        }
+        if (isPaid) {
+          current.paidCount += 1;
+          if (paidAt) {
+            const normalizedPaidAtTime = Number.isNaN(paidAtTime) ? 0 : paidAtTime;
+            current.paidAtValues.push(paidAt);
+            if (!current.latestPaidAt || normalizedPaidAtTime >= current.latestPaidAtTime) {
+              current.latestPaidAt = paidAt;
+              current.latestPaidAtTime = normalizedPaidAtTime;
+            }
+          }
+        } else if (recordId) {
+          current.payoutRecordIds.push(recordId);
         }
         if (settledAt && settledAtTime >= latestSettledAtTime) {
           latestSettledAt = settledAt;
@@ -4970,9 +5176,10 @@
                 paidCount: linkedDispatcherAmount.paidCount,
                 payoutRecordIds: linkedDispatcherAmount.payoutRecordIds,
                 payoutTargets: linkedDispatcherAmount.payoutTargets,
-                paidAtValues: [],
-                latestPaidAt: "",
-                latestPaidAtTime: 0,
+                revokeTargets: linkedDispatcherAmount.revokeTargets || [],
+                paidAtValues: linkedDispatcherAmount.paidAtValues || [],
+                latestPaidAt: linkedDispatcherAmount.latestPaidAt || "",
+                latestPaidAtTime: linkedDispatcherAmount.latestPaidAtTime || 0,
                 invoiceAmount: 0,
                 isLinkedDispatcherOnly: true,
                 latestUploadedAt: "",
@@ -5043,6 +5250,19 @@
             ...(Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds),
             ...(shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.payoutTargets || linkedDispatcherAmount?.payoutRecordIds || []) : [])
           ]));
+          const combinedRevokeTargets = Array.from(new Set([
+            ...(Array.isArray(group.revokeTargets) ? group.revokeTargets : group.recordIds),
+            ...(shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.revokeTargets || []) : [])
+          ]));
+          const combinedPaidAtValues = Array.from(new Set([
+            ...(Array.isArray(group.paidAtValues) ? group.paidAtValues : []),
+            ...(shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.paidAtValues || []) : [])
+          ].filter(Boolean)));
+          const linkedLatestPaidAt = shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.latestPaidAt || "") : "";
+          const combinedLatestPaidAt = linkedLatestPaidAt
+            && parseDateTimeValue(linkedLatestPaidAt) >= parseDateTimeValue(group.latestPaidAt)
+              ? linkedLatestPaidAt
+              : group.latestPaidAt;
           const combinedInvoiceMap = new Map(group.invoiceMap);
           if (linkedDispatcherAmount?.invoiceMap) {
             linkedDispatcherAmount.invoiceMap.forEach((item, key) => {
@@ -5075,8 +5295,9 @@
             paidCount: combinedPaidCount,
             payoutRecordIds: combinedPayoutRecordIds,
             payoutTargets: combinedPayoutTargets,
-            paidAtValues: group.paidAtValues,
-            latestPaidAt: group.latestPaidAt,
+            revokeTargets: combinedRevokeTargets,
+            paidAtValues: combinedPaidAtValues,
+            latestPaidAt: combinedLatestPaidAt,
 
             accountantInvoiceAmount,
             accountantTaxAmount,
@@ -5167,15 +5388,8 @@
         payoutRecordCount: rawPayoutRecordCount
       } = getBossSettlementDetailSummary();
       syncBossSettlementPayoutSelection(records);
-      const allDetailGroups = groups.concat(paidGroups).map((group) => ({
-        ...group,
-        payoutStatusKey: getBossSettlementDetailPayoutStatusKey(group),
-        payoutStatusLabel: getBossSettlementDetailPayoutStatusLabel(getBossSettlementDetailPayoutStatusKey(group))
-      }));
       const payoutStatusFilter = String(bossSettlementDetailPayoutStatusFilter || "").trim();
-      const visibleGroups = payoutStatusFilter
-        ? allDetailGroups.filter((group) => group.payoutStatusKey === payoutStatusFilter)
-        : allDetailGroups;
+      const visibleGroups = getFilteredBossSettlementDetailGroups(records);
       const sortedGroups = getSortedBossSettlementDetailGroups(visibleGroups);
       const activeTableTotals = getBossSettlementDetailGroupTotals(sortedGroups);
       const canPayoutSettlementRecords = canCurrentAccountPayoutSettlementRecords();
@@ -5194,6 +5408,10 @@
       const selectedPayoutRecordIds = selectedPayoutTargets;
       const selectedPayoutTargetSet = new Set(selectedPayoutTargets);
       const selectedPayoutRecordIdSet = selectedPayoutTargetSet;
+      const selectedPayoutPayableAmount = getSelectedBossSettlementPayoutPayableAmount(
+        groups,
+        selectedPayoutTargetSet
+      );
       const payoutRecordCount = allPayoutTargets.length;
       const areAllPayoutRecordsSelected = allPayoutTargets.length > 0
         && allPayoutTargets.every((target) => selectedPayoutTargetSet.has(target));
@@ -5226,13 +5444,6 @@
         const payoutToolbar = document.createElement("div");
         payoutToolbar.className = "settlement-detail-payout-toolbar";
 
-        const payoutToolbarText = document.createElement("span");
-        payoutToolbarText.className = "settlement-detail-payout-toolbar-text";
-        payoutToolbarText.textContent = selectedPayoutRecordIds.length > 0
-          ? `已选 ${selectedPayoutRecordIds.length}单`
-          : `可打款 ${payoutRecordCount}单`;
-        payoutToolbar.appendChild(payoutToolbarText);
-
         const payoutSelectAllBtn = document.createElement("button");
         payoutSelectAllBtn.type = "button";
         payoutSelectAllBtn.className = "settlement-detail-payout-select-all-btn";
@@ -5250,7 +5461,9 @@
         payoutToolbarBtn.disabled = selectedPayoutRecordIds.length === 0 || isBossSettlementPayoutSubmitting;
         payoutToolbarBtn.textContent = isBossSettlementPayoutSubmitting
           ? "打款中"
-          : (selectedPayoutRecordIds.length > 0 ? `批量打款（${selectedPayoutRecordIds.length}）` : "批量打款");
+          : (selectedPayoutRecordIds.length > 0
+            ? `批量打款（当前选中的应打款金额 ${toMoney(selectedPayoutPayableAmount)}）`
+            : "批量打款（当前选中的应打款金额 0.00）");
         payoutToolbar.appendChild(payoutToolbarBtn);
 
         const exportBtn = document.createElement("button");
@@ -5287,9 +5500,9 @@
       const headerColumns = [
         { key: "accountant", label: "会计", summary: `${activeTableTotals.accountantCount}位`, align: "accountant" },
         { key: "orderCount", label: "订单", summary: formatSettlementHeaderOrderCount(sortedGroups), align: "order" },
-        { key: "invoiceAmount", label: "开票金额", summary: `合计 ${toMoney(activeTableTotals.totalInvoiceAmount)}`, align: "money" },
-        { key: "taxAmount", label: "个税", summary: `合计 ${toMoney(activeTableTotals.totalTaxAmount)}`, align: "money" },
-        { key: "payableAmount", label: "应打款金额", summary: `合计 ${toMoney(activeTableTotals.totalPayableAmount)}`, align: "money" },
+        { key: "invoiceAmount", label: "开票金额", summary: formatSettlementHeaderMoneyFormula(activeTableTotals.accountantInvoiceAmount, activeTableTotals.dispatcherInvoiceAmount, activeTableTotals.totalInvoiceAmount), align: "money" },
+        { key: "taxAmount", label: "个税", summary: formatSettlementHeaderMoneyFormula(activeTableTotals.accountantTaxAmount, activeTableTotals.dispatcherTaxAmount, activeTableTotals.totalTaxAmount), align: "money" },
+        { key: "payableAmount", label: "应打款金额", summary: formatSettlementHeaderMoneyFormula(activeTableTotals.accountantPayableAmount, activeTableTotals.dispatcherPayableAmount, activeTableTotals.totalPayableAmount), align: "money" },
         { key: "invoiceCount", label: "上传的发票", summary: `${activeTableTotals.uploadedAccountantCount}人已上传 / ${activeTableTotals.pendingAccountantCount}人未上传`, align: "invoice" },
         { key: "payout", label: "打款状态", align: "payout", hideSummary: true, filterable: true },
         { key: "action", label: "操作", align: "action", hideSummary: true }
@@ -5490,16 +5703,17 @@
 
           actionTd.appendChild(actionWrap);
         } else if (canPayoutSettlementRecords && group.payoutStatusKey === "paid") {
+          const revokeTargets = Array.isArray(group.revokeTargets) ? group.revokeTargets : group.recordIds;
           const revokeBtn = document.createElement("button");
           revokeBtn.type = "button";
           revokeBtn.className = "settlement-detail-payout-revoke-btn";
-          revokeBtn.dataset.recordIds = group.recordIds.join(",");
-          revokeBtn.dataset.tableTooltip = group.recordIds.length
-            ? `撤销 ${group.recordIds.length} 条打款状态和打款记录`
+          revokeBtn.dataset.recordIds = revokeTargets.join(",");
+          revokeBtn.dataset.tableTooltip = revokeTargets.length
+            ? `撤销 ${revokeTargets.length} 条打款状态和打款记录`
             : "";
           revokeBtn.dataset.tableTooltipMode = "always";
           revokeBtn.dataset.tableTooltipVariant = "compact";
-          revokeBtn.disabled = isBossSettlementPayoutSubmitting || !group.recordIds.length;
+          revokeBtn.disabled = isBossSettlementPayoutSubmitting || !revokeTargets.length;
           revokeBtn.textContent = isBossSettlementPayoutSubmitting ? "处理中" : "撤销";
           revokeBtn.setAttribute("aria-label", revokeBtn.dataset.tableTooltip || "撤销打款");
           actionTd.appendChild(revokeBtn);
@@ -6040,14 +6254,18 @@
         return;
       }
 
-      const confirmed = await openConfirmDialog({
-        title: "撤销打款",
-        message: `确认撤销 ${normalizedRecordIds.length} 条数据的打款状态和打款记录？`,
-        confirmText: "确认撤销",
-        cancelText: "取消",
-        tone: "danger"
-      });
-      if (!confirmed) return;
+      if (!isQuickLoginDebugEnabled) {
+        const confirmed = await openConfirmDialog({
+          title: "撤销打款",
+          message: getBossSettlementPayoutRevokeConfirmMessage(normalizedRecordIds),
+          content: createBossSettlementPayoutRevokeConfirmTable(normalizedRecordIds),
+          confirmText: "确认撤销",
+          cancelText: "取消",
+          tone: "danger",
+          requireMathChallenge: true
+        });
+        if (!confirmed) return;
+      }
 
       isBossSettlementPayoutSubmitting = true;
       try {
@@ -6164,6 +6382,10 @@
         dateStart: filterState.completedAtStart,
         dateEnd: filterState.completedAtEnd
       });
+      const selectedDispatcherFilters = getSelectedDispatcherFilters();
+      const hasDispatcherFilter = selectedDispatcherFilters.length > 0;
+      const selectedAccountantFilters = getSelectedAccountantFilters();
+      const hasAccountantFilter = selectedAccountantFilters.length > 0;
       const dateFilterChip = getDateFilterChipMeta();
       const completedAtFilterChip = getDateFilterChipMeta(
         filterState.completedAtMonth,
@@ -6172,9 +6394,9 @@
       );
       filterMonthBtn.classList.toggle("active", hasDateFilter);
       filterCompletedAtBtn.classList.toggle("active", hasCompletedAtFilter);
-      filterDispatcherBtn.classList.toggle("active", Boolean(filterState.dispatcher));
+      filterDispatcherBtn.classList.toggle("active", hasDispatcherFilter);
       filterOrderBtn.classList.toggle("active", Boolean(filterState.orderNo));
-      filterAccountantBtn.classList.toggle("active", Boolean(filterState.accountant));
+      filterAccountantBtn.classList.toggle("active", hasAccountantFilter);
       filterPlatformBtn.classList.toggle("active", Boolean(filterState.platform));
       filterShopBtn.classList.toggle("active", Boolean(filterState.shopName));
       filterSourceBtn.classList.toggle("active", Boolean(filterState.source));
@@ -6184,9 +6406,9 @@
       filterSettledBtn.classList.toggle("active", Boolean(filterState.settled));
       if (filterMonthIndicator) filterMonthIndicator.classList.toggle("active", hasDateFilter);
       if (filterCompletedAtIndicator) filterCompletedAtIndicator.classList.toggle("active", hasCompletedAtFilter);
-      if (filterDispatcherIndicator) filterDispatcherIndicator.classList.toggle("active", Boolean(filterState.dispatcher));
+      if (filterDispatcherIndicator) filterDispatcherIndicator.classList.toggle("active", hasDispatcherFilter);
       if (filterOrderIndicator) filterOrderIndicator.classList.toggle("active", Boolean(filterState.orderNo));
-      if (filterAccountantIndicator) filterAccountantIndicator.classList.toggle("active", Boolean(filterState.accountant));
+      if (filterAccountantIndicator) filterAccountantIndicator.classList.toggle("active", hasAccountantFilter);
       if (filterPlatformIndicator) filterPlatformIndicator.classList.toggle("active", Boolean(filterState.platform));
       if (filterShopIndicator) filterShopIndicator.classList.toggle("active", Boolean(filterState.shopName));
       if (filterSourceIndicator) filterSourceIndicator.classList.toggle("active", Boolean(filterState.source));
@@ -6204,9 +6426,9 @@
       filterSettledBtn.setAttribute("aria-expanded", String(!filterSettledPopover.hidden));
       syncFilterIconButton(filterMonthBtn, hasDateFilter, FILTER_ICON_PATH, "清空日期筛选", "筛选日期");
       syncFilterIconButton(filterCompletedAtBtn, hasCompletedAtFilter, FILTER_ICON_PATH, "清空完工日期筛选", "筛选完工日期");
-      syncFilterIconButton(filterDispatcherBtn, Boolean(filterState.dispatcher), FILTER_ICON_PATH, "清空接待人筛选", "筛选接待人");
+      syncFilterIconButton(filterDispatcherBtn, hasDispatcherFilter, FILTER_ICON_PATH, "清空接待人筛选", "筛选接待人");
       syncFilterIconButton(filterOrderBtn, Boolean(filterState.orderNo), SEARCH_ICON_PATH, "清空订单号查询", "查询订单号");
-      syncFilterIconButton(filterAccountantBtn, Boolean(filterState.accountant), FILTER_ICON_PATH, "清空会计筛选", "筛选会计");
+      syncFilterIconButton(filterAccountantBtn, hasAccountantFilter, FILTER_ICON_PATH, "清空会计筛选", "筛选会计");
       syncFilterIconButton(filterPlatformBtn, Boolean(filterState.platform), FILTER_ICON_PATH, "清空平台筛选", "筛选平台");
       syncFilterIconButton(filterShopBtn, Boolean(filterState.shopName), FILTER_ICON_PATH, "清空店铺名筛选", "筛选店铺名");
       syncFilterIconButton(filterSourceBtn, Boolean(filterState.source), FILTER_ICON_PATH, "清空来源筛选", "筛选来源");
@@ -6246,12 +6468,19 @@
         filterCompletedAtValue.title = "";
       }
 
-      if (filterState.dispatcher) {
+      if (hasDispatcherFilter) {
+        const dispatcherNames = selectedDispatcherFilters.map((value) => getDispatcherDisplayNameByTag(value));
+        const dispatcherText = dispatcherNames.join("、");
+        const dispatcherDisplayText = dispatcherNames.length > 1
+          ? `(${dispatcherNames.length}) ${dispatcherText}`
+          : dispatcherText;
         filterDispatcherValue.hidden = false;
-        filterDispatcherValue.textContent = getDispatcherDisplayNameByTag(filterState.dispatcher);
+        filterDispatcherValue.textContent = dispatcherDisplayText;
+        filterDispatcherValue.title = dispatcherText;
       } else {
         filterDispatcherValue.hidden = true;
         filterDispatcherValue.textContent = "";
+        filterDispatcherValue.title = "";
       }
 
       if (filterState.orderNo) {
@@ -6271,10 +6500,14 @@
         filterOrderValue.title = "";
       }
 
-      if (filterState.accountant) {
+      if (hasAccountantFilter) {
+        const accountantText = selectedAccountantFilters.join("、");
+        const accountantDisplayText = selectedAccountantFilters.length > 1
+          ? `(${selectedAccountantFilters.length}) ${accountantText}`
+          : accountantText;
         filterAccountantValue.hidden = false;
-        filterAccountantValue.textContent = filterState.accountant;
-        filterAccountantValue.title = filterState.accountant;
+        filterAccountantValue.textContent = accountantDisplayText;
+        filterAccountantValue.title = accountantText;
       } else {
         filterAccountantValue.hidden = true;
         filterAccountantValue.textContent = "";
@@ -6889,9 +7122,9 @@
           dateStart: filterState.completedAtStart,
           dateEnd: filterState.completedAtEnd
         })
-        || filterState.dispatcher
+        || hasDispatcherFilterSelected()
         || filterState.orderNo
-        || filterState.accountant
+        || hasAccountantFilterSelected()
         || filterState.platform
         || filterState.shopName
         || filterState.source
@@ -6987,6 +7220,7 @@
           { key: "platform", value: String(item.platform || "") },
           { key: "shopName", value: String(item.shopName || "") },
           { key: "orderNo", value: String(item.orderNo || "") },
+          { key: "customerFeedback", value: String(item.customerFeedback || "") },
           { key: "status", value: getRecordWorkflowStatusText(item) }
         ];
         cells.forEach(({ key, value }) => {
@@ -7043,6 +7277,9 @@
             td.textContent = value;
           } else if (key === "orderNo") {
             td.classList.add("data-col-order");
+            td.textContent = value;
+          } else if (key === "customerFeedback") {
+            td.classList.add("data-col-feedback");
             td.textContent = value;
           } else if (key === "status") {
             td.classList.add("data-col-status");

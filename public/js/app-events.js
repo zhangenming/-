@@ -543,12 +543,12 @@
       if (key === "completedAt") {
         clearCompletedAtFilterState();
       }
-      if (key === "dispatcher") filterState.dispatcher = "";
+      if (key === "dispatcher") setDispatcherFilterValues([]);
       if (key === "orderNo") {
         filterState.orderNo = "";
         if (filterOrderInput) filterOrderInput.value = "";
       }
-      if (key === "accountant") filterState.accountant = "";
+      if (key === "accountant") setAccountantFilterValues([]);
       if (key === "platform") filterState.platform = "";
       if (key === "shopName") filterState.shopName = "";
       if (key === "source") filterState.source = "";
@@ -565,9 +565,9 @@
         dateStart: filterState.completedAtStart,
         dateEnd: filterState.completedAtEnd
       });
-      if (key === "dispatcher") return Boolean(filterState.dispatcher);
+      if (key === "dispatcher") return hasDispatcherFilterSelected();
       if (key === "orderNo") return Boolean(filterState.orderNo);
-      if (key === "accountant") return Boolean(filterState.accountant);
+      if (key === "accountant") return hasAccountantFilterSelected();
       if (key === "platform") return Boolean(filterState.platform);
       if (key === "shopName") return Boolean(filterState.shopName);
       if (key === "source") return Boolean(filterState.source);
@@ -778,8 +778,7 @@
       const target = event.target.closest(".filter-option-btn");
       if (!target) return;
       const selected = target.dataset.filterValue || "";
-      filterState.dispatcher = filterState.dispatcher === selected ? "" : selected;
-      closeAllFilterPopovers();
+      toggleDispatcherFilterValue(selected);
       renderTable();
     });
 
@@ -821,8 +820,7 @@
       const target = event.target.closest(".filter-option-btn");
       if (!target) return;
       const selected = target.dataset.filterValue || "";
-      filterState.accountant = filterState.accountant === selected ? "" : selected;
-      closeAllFilterPopovers();
+      toggleAccountantFilterValue(selected);
       renderTable();
     });
 
@@ -874,9 +872,9 @@
     clearFilterBtn.addEventListener("click", () => {
       clearDateFilterState();
       clearCompletedAtFilterState();
-      filterState.dispatcher = "";
+      setDispatcherFilterValues([]);
       filterState.orderNo = "";
-      filterState.accountant = "";
+      setAccountantFilterValues([]);
       filterState.platform = "";
       filterState.shopName = "";
       filterState.source = "";
@@ -2255,6 +2253,7 @@
           closeConfirmDialog(false);
         }
       });
+      bindSettlementDetailInvoiceThumbEvents(confirmModal);
     }
 
     if (confirmModalCancelBtn) {
@@ -2265,6 +2264,22 @@
 
     if (confirmModalConfirmBtn) {
       confirmModalConfirmBtn.addEventListener("click", () => {
+        if (!confirmDialogMathChallengePassed()) return;
+        closeConfirmDialog(true);
+      });
+    }
+
+    if (confirmModalMathInput) {
+      confirmModalMathInput.addEventListener("input", () => {
+        if (confirmModalMathHint) {
+          confirmModalMathHint.textContent = "";
+          confirmModalMathHint.hidden = true;
+        }
+      });
+      confirmModalMathInput.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        if (!confirmDialogMathChallengePassed()) return;
         closeConfirmDialog(true);
       });
     }

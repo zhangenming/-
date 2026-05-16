@@ -268,6 +268,16 @@
     "invoiceRecipientInfo": null
   },
   {
+    "username": "无",
+    "displayName": "蜜糖",
+    "name": "蜜糖",
+    "alias": "蜜糖",
+    "realName": "",
+    "phone": "无",
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": null
+  },
+  {
     "username": "Min",
     "displayName": "敏",
     "name": "敏",
@@ -325,7 +335,13 @@
     "realName": "刘秋菊",
     "phone": "19923803560",
     "loginPassword": "123456",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "刘秋菊",
+      "bankName": "中信银行重庆分行营业部",
+      "bankCardNo": "6217681213746855",
+      "idCardNo": "500239199608154100zhongx",
+      "declarationPhone": "19923803560"
+    }
   },
   {
     "username": "QinYanCaiShui",
@@ -345,7 +361,13 @@
     "realName": "梁艳",
     "phone": "13637738305",
     "loginPassword": "123456",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "梁艳",
+      "bankName": "中国银行",
+      "bankCardNo": "6216613200000990995",
+      "idCardNo": "51021119750510342X",
+      "declarationPhone": "13637738305"
+    }
   },
   {
     "username": "ShanDeKaoBei",
@@ -417,7 +439,13 @@
     "realName": "",
     "phone": "13280908662",
     "loginPassword": "123456",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "宋楠楠",
+      "bankName": "中信银行",
+      "bankCardNo": "6217682601458046",
+      "idCardNo": "370682199605221124",
+      "declarationPhone": "13280908662"
+    }
   },
   {
     "username": "WangDongMei",
@@ -647,7 +675,13 @@
     "realName": "",
     "phone": "17857683560",
     "loginPassword": "123456",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "悠悠我心",
+      "bankName": "招商银行",
+      "bankCardNo": "6214836216642559",
+      "idCardNo": "420322199512262746",
+      "declarationPhone": "17857683560"
+    }
   },
   {
     "username": "TongTong",

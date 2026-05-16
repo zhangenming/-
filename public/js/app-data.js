@@ -475,9 +475,10 @@
     }
 
     function renderAccountantList() {
-      renderAccountantSortHeaderUI();
       accountantList.innerHTML = "";
-      const showRecipientColumn = accountants.some((profile) =>
+      const orderCountByAccountant = getAccountantOrderCountMap();
+      renderAccountantSortHeaderUI(accountants, orderCountByAccountant);
+      const showRecipientColumn = !isDispatcherLogin() && accountants.some((profile) =>
         Object.values(normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo)).every(Boolean)
       );
       const recipientHeader = document.querySelector(".accountant-col-recipient");
@@ -490,7 +491,6 @@
       }
       accountantEmptyState.style.display = "none";
 
-      const orderCountByAccountant = getAccountantOrderCountMap();
       const sortedProfiles = getSortedAccountantProfiles(accountants, orderCountByAccountant);
 
       sortedProfiles.forEach((profile) => {
@@ -620,7 +620,9 @@
         row.appendChild(phoneCell);
         row.appendChild(passwordCell);
         row.appendChild(displayNameCell);
-        row.appendChild(recipientCell);
+        if (showRecipientColumn) {
+          row.appendChild(recipientCell);
+        }
         row.appendChild(countCell);
         row.appendChild(actionCell);
         accountantList.appendChild(row);
@@ -692,7 +694,17 @@
         .map((entry) => entry.profile);
     }
 
-    function renderAccountantSortHeaderUI() {
+    function renderAccountantSortHeaderUI(sourceProfiles = accountants, orderCountByAccountant = getAccountantOrderCountMap()) {
+      const profileList = Array.isArray(sourceProfiles) ? sourceProfiles : [];
+      const totalAccountantCount = profileList.length;
+      const activeAccountantCount = profileList.reduce((count, profile) => {
+        const displayName = String(profile?.displayName || profile?.name || "").trim();
+        return count + ((orderCountByAccountant.get(displayName) || 0) > 0 ? 1 : 0);
+      }, 0);
+      const totalOrderCount = profileList.reduce((count, profile) => {
+        const displayName = String(profile?.displayName || profile?.name || "").trim();
+        return count + (orderCountByAccountant.get(displayName) || 0);
+      }, 0);
       accountantSortableHeaders.forEach((button) => {
         const key = String(button?.dataset?.key || "").trim();
         const label = String(button?.dataset?.label || "").trim();
@@ -704,7 +716,16 @@
         const labelNode = document.createElement("span");
         labelNode.className = "sort-btn-label";
         labelNode.textContent = `${label}${arrow}`;
-        button.replaceChildren(labelNode);
+        if (key === "displayName" || key === "orderCount") {
+          const countNode = document.createElement("span");
+          countNode.className = "accountant-sort-count";
+          countNode.textContent = key === "displayName"
+            ? `${activeAccountantCount}/${totalAccountantCount}`
+            : `${totalOrderCount}单`;
+          button.replaceChildren(labelNode, countNode);
+        } else {
+          button.replaceChildren(labelNode);
+        }
       });
     }
 
@@ -1061,12 +1082,10 @@
         const rightMeta = document.createElement("span");
         rightMeta.className = "accountant-picker-option-meta";
 
-        if (!isBuiltInOption) {
-          const countBadge = document.createElement("span");
-          countBadge.className = "accountant-picker-option-count";
-          countBadge.textContent = `${accountantPickerOrderCountMap.get(name) || 0} 单`;
-          rightMeta.appendChild(countBadge);
-        }
+        const countBadge = document.createElement("span");
+        countBadge.className = "accountant-picker-option-count";
+        countBadge.textContent = `${accountantPickerOrderCountMap.get(name) || 0} 单`;
+        rightMeta.appendChild(countBadge);
 
         if (isBuiltInOption) {
           const systemBadge = document.createElement("span");
@@ -1601,8 +1620,16 @@
       }
       syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: true });
       records = nextRecords;
-      if (filterState.accountant === String(payload.previousDisplayName || "").trim()) {
-        filterState.accountant = String(payload.nextDisplayName || "").trim();
+      {
+        const previousDisplayName = String(payload.previousDisplayName || "").trim();
+        const nextDisplayName = String(payload.nextDisplayName || "").trim();
+        if (previousDisplayName && nextDisplayName) {
+          setAccountantFilterValues(
+            getSelectedAccountantFilters().map((value) => (
+              value === previousDisplayName ? nextDisplayName : value
+            ))
+          );
+        }
       }
       syncAccountantsFromRecords();
       renderAccountantList();
@@ -1634,8 +1661,13 @@
       const nextAccountants = Array.isArray(payload.accountants) ? payload.accountants : accountants;
       accountants = mergeAccountantProfiles(nextAccountants);
       syncAccountantsFromRecords();
-      if (filterState.accountant === String(payload.deletedDisplayName || "").trim()) {
-        filterState.accountant = "";
+      {
+        const deletedDisplayName = String(payload.deletedDisplayName || "").trim();
+        if (deletedDisplayName) {
+          setAccountantFilterValues(
+            getSelectedAccountantFilters().filter((value) => value !== deletedDisplayName)
+          );
+        }
       }
       renderAccountantList();
       renderAccountantSelectOptions();
@@ -2291,9 +2323,9 @@
           completedAtMonth: filterState.completedAtMonth,
           completedAtStart: filterState.completedAtStart,
           completedAtEnd: filterState.completedAtEnd,
-          dispatcher: filterState.dispatcher,
+          dispatcher: getSelectedDispatcherFilters(),
           orderNo: filterState.orderNo,
-          accountant: filterState.accountant,
+          accountant: getSelectedAccountantFilters(),
           platform: filterState.platform,
           shopName: filterState.shopName,
           source: filterState.source,
@@ -2330,9 +2362,9 @@
         const persistedCompletedAtMonth = String(parsedFilter.completedAtMonth || "").trim();
         const persistedCompletedAtStart = String(parsedFilter.completedAtStart || "").trim();
         const persistedCompletedAtEnd = String(parsedFilter.completedAtEnd || "").trim();
-        const persistedDispatcher = String(parsedFilter.dispatcher || "").trim();
+        const persistedDispatcher = normalizeDispatcherFilterValues(parsedFilter.dispatcher);
         const persistedOrderNo = String(parsedFilter.orderNo || "").trim();
-        const persistedAccountant = String(parsedFilter.accountant || "").trim();
+        const persistedAccountant = normalizeAccountantFilterValues(parsedFilter.accountant);
         const persistedPlatform = String(parsedFilter.platform || "").trim();
         const persistedShopName = String(parsedFilter.shopName || "").trim();
         const persistedSource = String(parsedFilter.source || "").trim();
@@ -2359,10 +2391,10 @@
         filterState.completedAtMonth = persistedCompletedAtMonth;
         filterState.completedAtStart = normalizedCompletedAtRange.start;
         filterState.completedAtEnd = normalizedCompletedAtRange.end;
-        filterState.dispatcher = persistedDispatcher;
+        setDispatcherFilterValues(persistedDispatcher);
         filterState.orderNo = persistedOrderNo;
         if (filterOrderInput) filterOrderInput.value = persistedOrderNo || "";
-        filterState.accountant = persistedAccountant;
+        setAccountantFilterValues(persistedAccountant);
         filterState.platform = persistedPlatform;
         filterState.shopName = persistedShopName;
         filterState.source = persistedSource;

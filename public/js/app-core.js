@@ -395,6 +395,10 @@ function getLinkedDispatcherSettlementAmount(
   let paidCount = 0;
   const payoutRecordIds = [];
   const payoutTargets = [];
+  const revokeTargets = [];
+  const paidAtValues = [];
+  let latestPaidAt = "";
+  let latestPaidAtTime = 0;
   const invoiceMap = new Map();
   let latestUploadedAt = "";
   let latestUploadedBy = "";
@@ -402,7 +406,7 @@ function getLinkedDispatcherSettlementAmount(
   detailRecords.forEach((record) => {
     const dispatcher = normalizeDispatcherTag(record?.dispatcher);
     if (!dispatcherTags.includes(dispatcher)) return;
-    if (hasPaidFilter && isRecordSettlementPaid(record) !== paidFilter) return;
+    if (hasPaidFilter && isRecordDispatcherSettlementPaid(record) !== paidFilter) return;
 
     const recordId = String(record?.id || "").trim();
     if (recordId && !recordIds.includes(recordId)) {
@@ -430,7 +434,10 @@ function getLinkedDispatcherSettlementAmount(
     ).trim();
     const uploadedAtTime = parseDateTimeValue(uploadedAt);
     const invoiceImage = getDispatcherSettlementInvoiceImage(record);
-    const isPaid = isRecordSettlementPaid(record);
+    const isPaid = isRecordDispatcherSettlementPaid(record);
+    const paidAt = String(record?.dispatcherSettlementPaidAt || "").trim();
+    const paidAtTime = parseDateTimeValue(paidAt);
+    const payoutTarget = recordId ? `dispatcher:${recordId}` : "";
 
     if (isUploaded) {
       uploadedCount += 1;
@@ -471,14 +478,26 @@ function getLinkedDispatcherSettlementAmount(
         }
         invoiceMap.set(invoiceKey, invoiceItem);
       }
-      if (isPaid) {
-        paidCount += 1;
-      } else if (recordId) {
-        payoutRecordIds.push(recordId);
-        payoutTargets.push(recordId);
-      }
     } else {
       pendingCount += 1;
+    }
+
+    if (isPaid) {
+      paidCount += 1;
+      if (payoutTarget) {
+        revokeTargets.push(payoutTarget);
+      }
+      if (paidAt) {
+        const normalizedPaidAtTime = Number.isNaN(paidAtTime) ? 0 : paidAtTime;
+        paidAtValues.push(paidAt);
+        if (!latestPaidAt || normalizedPaidAtTime >= latestPaidAtTime) {
+          latestPaidAt = paidAt;
+          latestPaidAtTime = normalizedPaidAtTime;
+        }
+      }
+    } else if (payoutTarget) {
+      payoutRecordIds.push(recordId);
+      payoutTargets.push(payoutTarget);
     }
 
     const premium = getPremiumValue(record);
@@ -527,6 +546,10 @@ function getLinkedDispatcherSettlementAmount(
     paidCount,
     payoutRecordIds,
     payoutTargets,
+    revokeTargets,
+    paidAtValues,
+    latestPaidAt,
+    latestPaidAtTime,
     latestUploadedAt,
     latestUploadedBy,
     invoiceMap,
@@ -891,6 +914,13 @@ const confirmModalCard = confirmModal
   : null;
 const confirmModalTitle = document.getElementById("confirmModalTitle");
 const confirmModalMessage = document.getElementById("confirmModalMessage");
+const confirmModalContent = document.getElementById("confirmModalContent");
+const confirmModalMathChallenge = document.getElementById(
+  "confirmModalMathChallenge",
+);
+const confirmModalMathLabel = document.getElementById("confirmModalMathLabel");
+const confirmModalMathInput = document.getElementById("confirmModalMathInput");
+const confirmModalMathHint = document.getElementById("confirmModalMathHint");
 const confirmModalCancelBtn = document.getElementById("confirmModalCancelBtn");
 const confirmModalConfirmBtn = document.getElementById(
   "confirmModalConfirmBtn",
@@ -1191,6 +1221,7 @@ let highlightedAccountantUsername = "";
 let accountantRegisterReturnTarget = "";
 let hasUploadedSettlementInvoiceThisSession = false;
 let pendingConfirmResolve = null;
+let pendingConfirmMathAnswer = null;
 let editingAccountantUsername = "";
 let accountantEditMode = "admin";
 let recentBossSettlementRecordIds = [];
@@ -1228,9 +1259,9 @@ const filterState = {
   completedAtMonth: "",
   completedAtStart: "",
   completedAtEnd: "",
-  dispatcher: "",
+  dispatcher: [],
   orderNo: "",
-  accountant: "",
+  accountant: [],
   platform: "",
   shopName: "",
   source: "",
@@ -1238,7 +1269,7 @@ const filterState = {
   settled: "",
 };
 
-function normalizeStatusFilterValues(rawValue) {
+function normalizeMultiFilterValues(rawValue) {
   const values = Array.isArray(rawValue)
     ? rawValue
     : rawValue
@@ -1252,6 +1283,10 @@ function normalizeStatusFilterValues(rawValue) {
       seen.add(value);
       return true;
     });
+}
+
+function normalizeStatusFilterValues(rawValue) {
+  return normalizeMultiFilterValues(rawValue);
 }
 
 function setStatusFilterValues(values) {
@@ -1282,6 +1317,76 @@ function toggleStatusFilterValue(value) {
   if (!selectedValue) return;
   const selectedValues = getSelectedStatusFilters();
   setStatusFilterValues(
+    selectedValues.includes(selectedValue)
+      ? selectedValues.filter((item) => item !== selectedValue)
+      : [...selectedValues, selectedValue],
+  );
+}
+
+function normalizeAccountantFilterValues(rawValue) {
+  return normalizeMultiFilterValues(rawValue);
+}
+
+function setAccountantFilterValues(values) {
+  filterState.accountant = normalizeAccountantFilterValues(values);
+}
+
+function getSelectedAccountantFilters() {
+  const normalizedValues = normalizeAccountantFilterValues(filterState.accountant);
+  if (
+    !Array.isArray(filterState.accountant) ||
+    normalizedValues.length !== filterState.accountant.length
+  ) {
+    filterState.accountant = normalizedValues;
+  }
+  return normalizedValues;
+}
+
+function hasAccountantFilterSelected() {
+  return getSelectedAccountantFilters().length > 0;
+}
+
+function toggleAccountantFilterValue(value) {
+  const selectedValue = String(value || "").trim();
+  if (!selectedValue) return;
+  const selectedValues = getSelectedAccountantFilters();
+  setAccountantFilterValues(
+    selectedValues.includes(selectedValue)
+      ? selectedValues.filter((item) => item !== selectedValue)
+      : [...selectedValues, selectedValue],
+  );
+}
+
+function normalizeDispatcherFilterValues(rawValue) {
+  return normalizeMultiFilterValues(rawValue)
+    .map((value) => normalizeDispatcherTag(value))
+    .filter(Boolean);
+}
+
+function setDispatcherFilterValues(values) {
+  filterState.dispatcher = normalizeDispatcherFilterValues(values);
+}
+
+function getSelectedDispatcherFilters() {
+  const normalizedValues = normalizeDispatcherFilterValues(filterState.dispatcher);
+  if (
+    !Array.isArray(filterState.dispatcher) ||
+    normalizedValues.length !== filterState.dispatcher.length
+  ) {
+    filterState.dispatcher = normalizedValues;
+  }
+  return normalizedValues;
+}
+
+function hasDispatcherFilterSelected() {
+  return getSelectedDispatcherFilters().length > 0;
+}
+
+function toggleDispatcherFilterValue(value) {
+  const selectedValue = normalizeDispatcherTag(value);
+  if (!selectedValue) return;
+  const selectedValues = getSelectedDispatcherFilters();
+  setDispatcherFilterValues(
     selectedValues.includes(selectedValue)
       ? selectedValues.filter((item) => item !== selectedValue)
       : [...selectedValues, selectedValue],
@@ -1579,8 +1684,9 @@ function isBuiltInAccountantName(value) {
   return BUILT_IN_ACCOUNTANT_NAMES.includes(String(value || "").trim());
 }
 
-function getAccountantOrderCountMap() {
-  return records.reduce((map, item) => {
+function getAccountantOrderCountMap(sourceRecords = getVisibleRecords()) {
+  const list = Array.isArray(sourceRecords) ? sourceRecords : [];
+  return list.reduce((map, item) => {
     const key = String(item.accountant || "").trim();
     if (!key) return map;
     map.set(key, (map.get(key) || 0) + 1);
@@ -2292,30 +2398,45 @@ function isRecordDispatcherSettlementPaid(record) {
 function isBossSettlementPayoutRecordSelectable(record) {
   if (!canCurrentAccountPayoutSettlementRecords()) return false;
   if (!isRecordCompleted(record)) return false;
-  return (
-    isRecordInvoiceUploadedByRecordAccountant(record) &&
-    !isRecordSettlementPaid(record)
-  );
+  return isRecordSettled(record) && !isRecordSettlementPaid(record);
+}
+
+function getBossSettlementPayoutTargetsForRecord(record) {
+  if (!canCurrentAccountPayoutSettlementRecords()) return [];
+  if (!isRecordCompleted(record)) return [];
+  const recordId = String(record?.id || "").trim();
+  if (!recordId) return [];
+
+  const targets = [];
+  if (isRecordSettled(record) && !isRecordSettlementPaid(record)) {
+    targets.push(recordId);
+  }
+
+  const dispatcher = normalizeDispatcherTag(record?.dispatcher);
+  const linkedAccountant = dispatcher
+    ? getLinkedAccountantDisplayNameByTag(dispatcher)
+    : "";
+  if (
+    linkedAccountant &&
+    isRecordSettled(record) &&
+    !isRecordDispatcherSettlementPaid(record)
+  ) {
+    targets.push(`dispatcher:${recordId}`);
+  }
+
+  return targets;
 }
 
 function syncBossSettlementPayoutSelection(sourceRecords = records) {
   const validRecordIds = new Set();
   (Array.isArray(sourceRecords) ? sourceRecords : [])
-    .filter((item) => isBossSettlementPayoutRecordSelectable(item))
     .forEach((item) => {
-      const recordId = String(item?.id || "").trim();
-      if (!recordId) return;
-      if (
-        isRecordInvoiceUploadedByRecordAccountant(item) &&
-        !isRecordSettlementPaid(item)
-      ) {
-        validRecordIds.add(recordId);
-      }
+      getBossSettlementPayoutTargetsForRecord(item).forEach((target) => validRecordIds.add(target));
     });
   selectedBossSettlementPayoutRecordIds = new Set(
     Array.from(selectedBossSettlementPayoutRecordIds)
-      .map((recordId) => String(recordId || "").replace(/^dispatcher:/, ""))
-      .filter((recordId) => validRecordIds.has(recordId)),
+      .map((target) => String(target || "").trim())
+      .filter((target) => validRecordIds.has(target)),
   );
 }
 
@@ -3968,6 +4089,11 @@ function setHintState(node, className, text, state = "idle") {
   node.hidden = !normalizedText;
 }
 
+function mountAppStatusHint() {
+  if (!appStatusHint || appStatusHint.parentElement === document.body) return;
+  document.body.appendChild(appStatusHint);
+}
+
 function getElementFormControls(root) {
   if (!(root instanceof HTMLElement)) return [];
   return Array.from(
@@ -4619,10 +4745,8 @@ function getAccountantEditErrorTarget(message, mode = accountantEditMode) {
 }
 
 function showAppStatus(text, state = "error") {
+  mountAppStatusHint();
   setAppStatusHint(text, state);
-  if (appStatusHint) {
-    appStatusHint.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }
 }
 
 function showSettlementSummaryStatus(text, state = "error") {
@@ -4661,9 +4785,11 @@ function openConfirmDialog(options = {}) {
   const {
     title = "请确认",
     message = "",
+    content = null,
     confirmText = "确认",
     cancelText = "取消",
     tone = "danger",
+    requireMathChallenge = false,
   } = options;
   if (pendingConfirmResolve) {
     const previousResolve = pendingConfirmResolve;
@@ -4674,6 +4800,32 @@ function openConfirmDialog(options = {}) {
     confirmModalTitle.textContent = String(title || "").trim() || "请确认";
   if (confirmModalMessage)
     confirmModalMessage.textContent = String(message || "").trim();
+  if (confirmModalContent) {
+    confirmModalContent.innerHTML = "";
+    if (content instanceof Node) {
+      confirmModalContent.appendChild(content);
+      confirmModalContent.hidden = false;
+    } else {
+      confirmModalContent.hidden = true;
+    }
+  }
+  pendingConfirmMathAnswer = null;
+  if (confirmModalMathChallenge) {
+    confirmModalMathChallenge.hidden = !requireMathChallenge;
+  }
+  if (confirmModalMathInput) {
+    confirmModalMathInput.value = "";
+  }
+  if (confirmModalMathHint) {
+    confirmModalMathHint.textContent = "";
+    confirmModalMathHint.hidden = true;
+  }
+  if (requireMathChallenge && confirmModalMathLabel) {
+    const addendA = Math.floor(Math.random() * 90) + 10;
+    const addendB = Math.floor(Math.random() * 90) + 10;
+    pendingConfirmMathAnswer = addendA + addendB;
+    confirmModalMathLabel.textContent = `请输入 ${addendA} + ${addendB} 的结果`;
+  }
   confirmModalCancelBtn.textContent = String(cancelText || "").trim() || "取消";
   confirmModalConfirmBtn.textContent =
     String(confirmText || "").trim() || "确认";
@@ -4686,10 +4838,32 @@ function openConfirmDialog(options = {}) {
   confirmModal.classList.add("modal-enter");
   confirmModalCard.classList.add("modal-enter");
   syncModalOpenState();
-  window.requestAnimationFrame(() => confirmModalCancelBtn.focus());
+  window.requestAnimationFrame(() => {
+    if (requireMathChallenge && confirmModalMathInput) {
+      confirmModalMathInput.focus();
+      return;
+    }
+    confirmModalCancelBtn.focus();
+  });
   return new Promise((resolve) => {
     pendingConfirmResolve = resolve;
   });
+}
+
+function confirmDialogMathChallengePassed() {
+  if (pendingConfirmMathAnswer === null) return true;
+  if (!confirmModalMathInput) return false;
+  const value = Number(String(confirmModalMathInput.value || "").trim());
+  if (Number.isFinite(value) && value === pendingConfirmMathAnswer) {
+    return true;
+  }
+  if (confirmModalMathHint) {
+    confirmModalMathHint.textContent = "口算结果有误，请重新输入。";
+    confirmModalMathHint.hidden = false;
+  }
+  confirmModalMathInput.focus();
+  confirmModalMathInput.select();
+  return false;
 }
 
 function closeConfirmDialog(result = false) {
@@ -4704,6 +4878,21 @@ function closeConfirmDialog(result = false) {
   confirmModal.classList.remove("modal-enter");
   confirmModalCard.classList.remove("modal-enter");
   confirmModal.hidden = true;
+  if (confirmModalContent) {
+    confirmModalContent.innerHTML = "";
+    confirmModalContent.hidden = true;
+  }
+  pendingConfirmMathAnswer = null;
+  if (confirmModalMathChallenge) {
+    confirmModalMathChallenge.hidden = true;
+  }
+  if (confirmModalMathInput) {
+    confirmModalMathInput.value = "";
+  }
+  if (confirmModalMathHint) {
+    confirmModalMathHint.textContent = "";
+    confirmModalMathHint.hidden = true;
+  }
   syncModalOpenState();
   if (pendingConfirmResolve) {
     const resolve = pendingConfirmResolve;

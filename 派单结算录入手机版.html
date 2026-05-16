@@ -320,6 +320,7 @@
             <col class="col-platform" />
             <col class="col-shop" />
             <col class="col-order" />
+            <col class="col-feedback" />
             <col class="col-status" />
             <col class="col-action" />
           </colgroup>
@@ -543,6 +544,7 @@
                   </div>
                 </div>
               </th>
+              <th class="data-col-feedback"><button class="sort-btn" type="button" data-key="customerFeedback" data-label="客户反馈">客户反馈</button></th>
               <th class="data-col-status">
                 <div class="th-inner status-th-inner">
                   <button class="sort-btn" type="button" data-key="checkStatus" data-label="状态">状态</button>
@@ -1453,6 +1455,12 @@
         <h2 id="confirmModalTitle" class="confirm-modal-title">请确认</h2>
       </div>
       <p id="confirmModalMessage" class="confirm-modal-message"></p>
+      <div id="confirmModalContent" class="confirm-modal-content" hidden></div>
+      <div id="confirmModalMathChallenge" class="confirm-modal-math" hidden>
+        <label id="confirmModalMathLabel" class="confirm-modal-math-label" for="confirmModalMathInput"></label>
+        <input id="confirmModalMathInput" class="confirm-modal-math-input" type="number" inputmode="numeric" autocomplete="off" />
+        <p id="confirmModalMathHint" class="confirm-modal-math-hint" role="alert" hidden></p>
+      </div>
       <div class="confirm-modal-actions">
         <button id="confirmModalCancelBtn" class="btn-secondary" type="button">取消</button>
         <button id="confirmModalConfirmBtn" class="btn-danger" type="button">确认</button>

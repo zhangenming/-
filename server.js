@@ -2209,7 +2209,7 @@ function normalizePayoutTarget(rawTarget) {
   const recordId = normalizeText(source.slice(separatorIndex + 1), 120);
   if (!recordId) return null;
   if (type === "dispatcher") {
-    return { key: recordId, type: "accountant", recordId };
+    return { key: `dispatcher:${recordId}`, type: "dispatcher", recordId };
   }
   return { key: recordId, type: "accountant", recordId };
 }
@@ -2226,7 +2226,7 @@ function normalizePayoutTargets(rawTargets, fallbackRecordIds = []) {
   return Array.from(targetMap.values());
 }
 
-function isDispatcherPayoutTargetUploadedForLinkedAccountant(record, options = {}) {
+function isDispatcherPayoutTargetLinkedToAccountant(record, options = {}) {
   const accountants = Array.isArray(options.accountants) ? options.accountants : [];
   const dispatcherAccountantMappings = options.dispatcherAccountantMappings || {};
   const recordTag = normalizeDispatcherTag(record?.dispatcher);
@@ -2236,11 +2236,7 @@ function isDispatcherPayoutTargetUploadedForLinkedAccountant(record, options = {
     dispatcherAccountantMappings,
     accountants
   );
-  if (!linkedAccountantName) return false;
-  return isDispatcherInvoiceUploadedByAccountantOrLinkedDispatcher(record, linkedAccountantName, {
-    dispatcherAccountantMappings,
-    accountants
-  });
+  return Boolean(linkedAccountantName);
 }
 function generateId(prefix = "rec") {
   const ts = Date.now().toString(36);
@@ -2367,6 +2363,14 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
   },
   { field: "settlementPaidAt", label: "打款时间", kind: "datetime" },
   { field: "settlementPaidBy", label: "打款人", kind: "text" },
+  {
+    field: "isDispatcherSettlementPaid",
+    label: "接待打款",
+    kind: "text",
+    getValue: (record) => getNormalizedRecordDispatcherSettlementPaymentFields(record).isDispatcherSettlementPaid ? "已结算" : ""
+  },
+  { field: "dispatcherSettlementPaidAt", label: "接待打款时间", kind: "datetime" },
+  { field: "dispatcherSettlementPaidBy", label: "接待打款人", kind: "text" },
   { field: "date", label: "接单日期", kind: "text" },
   {
     field: "isMonthlySettlement",
@@ -3731,40 +3735,57 @@ async function serveRecordSettlementPayout(req, res) {
         const recordTargets = recordId ? (targetMapByRecordId.get(recordId) || []) : [];
         const settlementFields = getNormalizedRecordSettlementFields(current);
         const invoiceFields = getNormalizedRecordInvoiceFields(current);
+        const dispatcherInvoiceFields = getNormalizedRecordDispatcherInvoiceFields(current);
         const paymentFields = getNormalizedRecordSettlementPaymentFields(current);
+        const dispatcherPaymentFields = getNormalizedRecordDispatcherSettlementPaymentFields(current);
         if (!recordId || !recordTargets.length) {
           return {
             ...current,
             ...settlementFields,
             ...invoiceFields,
-            ...paymentFields
+            ...dispatcherInvoiceFields,
+            ...paymentFields,
+            ...dispatcherPaymentFields
           };
         }
 
         foundRecordIds.add(recordId);
         const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
-        const isUploadedByRecordAccountant = isRecordInvoiceUploadedByRecordAccountantOrLinkedDispatcher({
-          ...current,
-          ...invoiceFields
-        }, {
-          dispatcherAccountantMappings,
-          accountants
-        });
         const canPayBaseRecord = canAccessRecord(session, current)
           && settlementFields.isSettled
           && isCompletedCheckStatus(checkStatus);
         const canPayAccountantTarget = canPayBaseRecord
-          && invoiceFields.settlementInvoiceImage
-          && isUploadedByRecordAccountant
           && !paymentFields.isSettlementPaid;
         const shouldPayAccountantTarget = recordTargets.some((target) => target.type === "accountant");
-        if (!shouldPayAccountantTarget || !canPayAccountantTarget) {
-          recordTargets.forEach((target) => skippedRecordIds.push(target.key));
+        const canPayDispatcherTarget = canPayBaseRecord
+          && isDispatcherPayoutTargetLinkedToAccountant({
+            ...current,
+            ...dispatcherInvoiceFields
+          }, {
+            dispatcherAccountantMappings,
+            accountants
+          })
+          && !dispatcherPaymentFields.isDispatcherSettlementPaid;
+        const shouldPayDispatcherTarget = recordTargets.some((target) => target.type === "dispatcher");
+        if (
+          (!shouldPayAccountantTarget || !canPayAccountantTarget)
+          && (!shouldPayDispatcherTarget || !canPayDispatcherTarget)
+        ) {
+          recordTargets.forEach((target) => {
+            if (
+              (target.type === "accountant" && !canPayAccountantTarget)
+              || (target.type === "dispatcher" && !canPayDispatcherTarget)
+            ) {
+              skippedRecordIds.push(target.key);
+            }
+          });
           return {
             ...current,
             ...settlementFields,
             ...invoiceFields,
-            ...paymentFields
+            ...dispatcherInvoiceFields,
+            ...paymentFields,
+            ...dispatcherPaymentFields
           };
         }
 
@@ -3772,7 +3793,9 @@ async function serveRecordSettlementPayout(req, res) {
           ...current,
           ...settlementFields,
           ...invoiceFields,
-          ...paymentFields
+          ...dispatcherInvoiceFields,
+          ...paymentFields,
+          ...dispatcherPaymentFields
         };
         const nextRecord = {
           ...beforeRecord
@@ -3784,6 +3807,14 @@ async function serveRecordSettlementPayout(req, res) {
           paidRecordIds.push(recordId);
         } else if (shouldPayAccountantTarget) {
           skippedRecordIds.push(recordId);
+        }
+        if (shouldPayDispatcherTarget && canPayDispatcherTarget) {
+          nextRecord.isDispatcherSettlementPaid = true;
+          nextRecord.dispatcherSettlementPaidAt = paidAt;
+          nextRecord.dispatcherSettlementPaidBy = paidBy;
+          paidRecordIds.push(`dispatcher:${recordId}`);
+        } else if (shouldPayDispatcherTarget) {
+          skippedRecordIds.push(`dispatcher:${recordId}`);
         }
         return appendRecordHistory(nextRecord, buildRecordHistoryEntry({
           beforeRecord,
@@ -3848,7 +3879,12 @@ async function serveRecordSettlementPayoutRevoke(req, res) {
       return;
     }
 
-    const targetRecordIds = new Set(payoutTargets.map((target) => target.recordId).filter(Boolean));
+      const targetMapByRecordId = payoutTargets.reduce((map, target) => {
+        const list = map.get(target.recordId) || [];
+        list.push(target);
+        map.set(target.recordId, list);
+        return map;
+      }, new Map());
 
     const result = await withWriteLock(async () => {
       const all = await readRecords();
@@ -3862,31 +3898,70 @@ async function serveRecordSettlementPayoutRevoke(req, res) {
         const recordId = normalizeText(current.id, 120);
         const settlementFields = getNormalizedRecordSettlementFields(current);
         const invoiceFields = getNormalizedRecordInvoiceFields(current);
+        const dispatcherInvoiceFields = getNormalizedRecordDispatcherInvoiceFields(current);
         const paymentFields = getNormalizedRecordSettlementPaymentFields(current);
+        const dispatcherPaymentFields = getNormalizedRecordDispatcherSettlementPaymentFields(current);
         const normalizedRecord = {
           ...current,
           ...settlementFields,
           ...invoiceFields,
-          ...paymentFields
+          ...dispatcherInvoiceFields,
+          ...paymentFields,
+          ...dispatcherPaymentFields
         };
-        if (!recordId || !targetRecordIds.has(recordId)) {
+        const recordTargets = recordId ? (targetMapByRecordId.get(recordId) || []) : [];
+        if (!recordId || !recordTargets.length) {
           return normalizedRecord;
         }
 
         foundRecordIds.add(recordId);
-        if (!canAccessRecord(session, current) || !paymentFields.isSettlementPaid) {
+        if (!canAccessRecord(session, current)) {
+          recordTargets.forEach((target) => skippedRecordIds.push(target.key));
+          return normalizedRecord;
+        }
+
+        const shouldRevokeAccountantTarget = recordTargets.some((target) => target.type === "accountant");
+        const shouldRevokeDispatcherTarget = recordTargets.some((target) => target.type === "dispatcher");
+        const fieldsToRemoveFromHistory = new Set();
+        const nextRecord = {
+          ...normalizedRecord
+        };
+
+        if (shouldRevokeAccountantTarget && paymentFields.isSettlementPaid) {
+          nextRecord.isSettlementPaid = false;
+          nextRecord.settlementPaidAt = "";
+          nextRecord.settlementPaidBy = "";
+          revokedRecordIds.push(recordId);
+          ["isSettled", "isSettlementPaid", "settlementPaidAt", "settlementPaidBy"].forEach((field) => fieldsToRemoveFromHistory.add(field));
+        } else if (shouldRevokeAccountantTarget) {
           skippedRecordIds.push(recordId);
+        }
+
+        if (shouldRevokeDispatcherTarget && dispatcherPaymentFields.isDispatcherSettlementPaid) {
+          nextRecord.isDispatcherSettlementPaid = false;
+          nextRecord.dispatcherSettlementPaidAt = "";
+          nextRecord.dispatcherSettlementPaidBy = "";
+          revokedRecordIds.push(`dispatcher:${recordId}`);
+          ["isDispatcherSettlementPaid", "dispatcherSettlementPaidAt", "dispatcherSettlementPaidBy"].forEach((field) => fieldsToRemoveFromHistory.add(field));
+        } else if (shouldRevokeDispatcherTarget) {
+          skippedRecordIds.push(`dispatcher:${recordId}`);
+        }
+
+        if (!fieldsToRemoveFromHistory.size) {
           return normalizedRecord;
         }
 
         const operationHistory = normalizeOperationHistory(current.operationHistory)
-          .filter((entry) => normalizeText(entry?.actionKey, 32).toLowerCase() !== "settlement_paid");
-        revokedRecordIds.push(recordId);
+          .map((entry) => {
+            if (normalizeText(entry?.actionKey, 32).toLowerCase() !== "settlement_paid") return entry;
+            const changes = (Array.isArray(entry.changes) ? entry.changes : [])
+              .filter((change) => !fieldsToRemoveFromHistory.has(normalizeText(change?.field, 64)));
+            return changes.length ? { ...entry, changes } : null;
+          })
+          .filter(Boolean);
+
         return {
-          ...normalizedRecord,
-          isSettlementPaid: false,
-          settlementPaidAt: "",
-          settlementPaidBy: "",
+          ...nextRecord,
           operationHistory
         };
       });

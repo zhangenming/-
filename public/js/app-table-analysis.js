@@ -662,18 +662,41 @@
       });
     }
 
+    function getBuiltInAccountantFilterRank(value) {
+      const index = BUILT_IN_ACCOUNTANT_NAMES.indexOf(String(value || "").trim());
+      return index >= 0 ? index : BUILT_IN_ACCOUNTANT_NAMES.length;
+    }
+
+    function sortAccountantFilterValues(values, countMap) {
+      return [...values].sort((left, right) => {
+        const rankGap = getBuiltInAccountantFilterRank(left) - getBuiltInAccountantFilterRank(right);
+        if (rankGap !== 0) return rankGap;
+        const countGap = (countMap.get(right) || 0) - (countMap.get(left) || 0);
+        if (countGap !== 0) return countGap;
+        return left.localeCompare(right, "zh-CN", { numeric: true, sensitivity: "base" });
+      });
+    }
+
     function buildFilterOptionList(listElement, values, type, selectedValue, countMap) {
       listElement.innerHTML = "";
       const selectedValues = type === "status"
         ? getSelectedStatusFilters()
-        : normalizeStatusFilterValues(selectedValue);
+        : type === "accountant"
+          ? getSelectedAccountantFilters()
+          : type === "dispatcher"
+            ? getSelectedDispatcherFilters()
+          : normalizeStatusFilterValues(selectedValue);
 
       values.forEach((value) => {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "filter-option-btn";
-        if (type === "status") {
+        if (type === "status" || type === "accountant" || type === "dispatcher") {
           button.classList.add("filter-option-multi");
+        }
+        if (type === "accountant" && isBuiltInAccountantName(value)) {
+          button.classList.add("filter-option-special-accountant");
+          button.style.order = String(getBuiltInAccountantFilterRank(value) - BUILT_IN_ACCOUNTANT_NAMES.length);
         }
         if (type === "status" && (value === "部分退款" || value === "退单")) {
           button.classList.add("refund-filter-option", value === "退单" ? "refund-returned" : "refund-partial");
@@ -740,9 +763,7 @@
       if (filterState.completedAtMonth && !completedAtMonthValues.includes(filterState.completedAtMonth)) {
         filterState.completedAtMonth = "";
       }
-      if (filterState.dispatcher && !dispatcherValues.includes(filterState.dispatcher)) {
-        filterState.dispatcher = "";
-      }
+      setDispatcherFilterValues(getSelectedDispatcherFilters().filter((value) => dispatcherValues.includes(value)));
       if (filterState.platform && !rawPlatformValues.includes(filterState.platform)) {
         filterState.platform = "";
       }
@@ -765,10 +786,16 @@
       const filterMatchers = {
         month: (item) => isDateFilterMatched(item.date, filterState.month, filterState.dateStart, filterState.dateEnd),
         completedAt: (item) => isDateFilterMatched(item.completedAt, filterState.completedAtMonth, filterState.completedAtStart, filterState.completedAtEnd),
-        dispatcher: (item) => !filterState.dispatcher
-          || normalizeDispatcherTag(item.dispatcher) === filterState.dispatcher,
-        accountant: (item) => !filterState.accountant
-          || String(item.accountant || "").trim() === filterState.accountant,
+        dispatcher: (item) => {
+          const selectedDispatchers = getSelectedDispatcherFilters();
+          return selectedDispatchers.length === 0
+            || selectedDispatchers.includes(normalizeDispatcherTag(item.dispatcher));
+        },
+        accountant: (item) => {
+          const selectedAccountants = getSelectedAccountantFilters();
+          return selectedAccountants.length === 0
+            || selectedAccountants.includes(String(item.accountant || "").trim());
+        },
         platform: (item) => !filterState.platform || getPlatformFilterValue(item) === filterState.platform,
         shopName: (item) => !filterState.shopName || getShopNameFilterValue(item) === filterState.shopName,
         source: (item) => !filterState.source || getSourceFilterValue(item) === filterState.source,
@@ -834,14 +861,12 @@
         settledScopedRecords,
         (item) => getRecordSettlementFilterLabel(item)
       );
-      const accountantValues = sortFilterValuesByCount(rawAccountantValues, accountantCountMap);
+      const accountantValues = sortAccountantFilterValues(rawAccountantValues, accountantCountMap);
       const platformValues = sortFilterValuesByCount(rawPlatformValues, platformCountMap);
       const shopValues = sortFilterValuesByCount(rawShopValues, shopCountMap);
       const sourceValues = sortFilterValuesByCount(rawSourceValues, sourceCountMap);
 
-      if (filterState.accountant && !accountantValues.includes(filterState.accountant)) {
-        filterState.accountant = "";
-      }
+      setAccountantFilterValues(getSelectedAccountantFilters().filter((value) => accountantValues.includes(value)));
 
       buildFilterOptionList(
         filterMonthList,
@@ -914,8 +939,9 @@
       return scopedRecords.filter((item) => {
         const monthMatched = isDateFilterMatched(item.date, filterState.month, filterState.dateStart, filterState.dateEnd);
         const completedAtMatched = isDateFilterMatched(item.completedAt, filterState.completedAtMonth, filterState.completedAtStart, filterState.completedAtEnd);
-        const dispatcherMatched = !filterState.dispatcher
-          || normalizeDispatcherTag(item.dispatcher) === filterState.dispatcher;
+        const selectedDispatchers = getSelectedDispatcherFilters();
+        const dispatcherMatched = selectedDispatchers.length === 0
+          || selectedDispatchers.includes(normalizeDispatcherTag(item.dispatcher));
         const orderNoQuery = String(filterState.orderNo || "").trim().toLowerCase();
         const orderNoList = orderNoQuery
           .split(/[\n\r]+/)
@@ -923,8 +949,9 @@
           .filter(s => s.length > 0);
         const orderNoMatched = orderNoList.length === 0
           || orderNoList.some(query => String(item.orderNo || "").toLowerCase().trim() === query);
-        const accountantMatched = !filterState.accountant
-          || String(item.accountant || "").trim() === filterState.accountant;
+        const selectedAccountants = getSelectedAccountantFilters();
+        const accountantMatched = selectedAccountants.length === 0
+          || selectedAccountants.includes(String(item.accountant || "").trim());
         const platformMatched = !filterState.platform || getPlatformFilterValue(item) === filterState.platform;
         const shopMatched = !filterState.shopName || getShopNameFilterValue(item) === filterState.shopName;
         const sourceMatched = !filterState.source || getSourceFilterValue(item) === filterState.source;
@@ -2803,23 +2830,13 @@
         .map((text) => `<span class="analysis-tag">${escapeHtml(text)}</span>`)
         .join("");
 
-      const accountantTotal = pendingCustomerConfirmationAmountRows.accountantRows.reduce(
-        (acc, row) => ({
-          count: acc.count + row.count,
-          amount: acc.amount + row.amount
-        }),
-        { count: 0, amount: 0 }
-      );
-
       const pendingCustomerConfirmationAccountantColumns = [
         "会计",
         {
-          label: "待核对客户确认单量",
-          total: `合计 ${formatCount(accountantTotal.count)}`
+          label: "待核对客户确认单量"
         },
         {
-          label: "会计待核对客户确认金额",
-          total: `合计 ${formatCurrency(accountantTotal.amount)}`
+          label: "会计待核对客户确认金额"
         }
       ];
 
@@ -2832,23 +2849,13 @@
         ])
       );
 
-      const dispatcherTotal = pendingCustomerConfirmationAmountRows.dispatcherRows.reduce(
-        (acc, row) => ({
-          count: acc.count + row.count,
-          amount: acc.amount + row.amount
-        }),
-        { count: 0, amount: 0 }
-      );
-
       const pendingCustomerConfirmationDispatcherColumns = [
         "接待人",
         {
-          label: "待核对客户确认单量",
-          total: `合计 ${formatCount(dispatcherTotal.count)}`
+          label: "待核对客户确认单量"
         },
         {
-          label: "接待待核对客户确认金额",
-          total: `合计 ${formatCurrency(dispatcherTotal.amount)}`
+          label: "接待待核对客户确认金额"
         }
       ];
 
