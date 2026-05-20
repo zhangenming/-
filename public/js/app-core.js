@@ -134,7 +134,7 @@ function applyRuntimeEnvironment(rawEnvironment) {
   legacyPersistentStateStorage = isTabScopedPersistenceEnabled
     ? window.localStorage
     : window.sessionStorage;
-  isDevTodoEnabled = isDevelopmentEnvironment() || isQuickLoginDebugEnabled;
+  isDevTodoEnabled = isDevelopmentEnvironment();
   isQuickLoginEnabled = isDevelopmentEnvironment() || isQuickLoginDebugEnabled;
 }
 
@@ -378,12 +378,7 @@ function getLinkedDispatcherSettlementAmount(
     typeof options === "object" &&
     Object.prototype.hasOwnProperty.call(options, "paid");
   const paidFilter = Boolean(options?.paid);
-  const includeUnsettled = Boolean(options?.includeUnsettled);
-  const detailRecords = includeUnsettled
-    ? (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) =>
-        isRecordCompletionStatus(item),
-      )
-    : getBossSettlementDetailRecords(sourceRecords);
+  const detailRecords = getBossSettlementDetailRecords(sourceRecords);
   let totalRawPremium = 0;
   let totalDispatcherPrice = 0;
   const dispatcherCommissionMap = new Map();
@@ -395,10 +390,6 @@ function getLinkedDispatcherSettlementAmount(
   let paidCount = 0;
   const payoutRecordIds = [];
   const payoutTargets = [];
-  const revokeTargets = [];
-  const paidAtValues = [];
-  let latestPaidAt = "";
-  let latestPaidAtTime = 0;
   const invoiceMap = new Map();
   let latestUploadedAt = "";
   let latestUploadedBy = "";
@@ -406,7 +397,7 @@ function getLinkedDispatcherSettlementAmount(
   detailRecords.forEach((record) => {
     const dispatcher = normalizeDispatcherTag(record?.dispatcher);
     if (!dispatcherTags.includes(dispatcher)) return;
-    if (hasPaidFilter && isRecordDispatcherSettlementPaid(record) !== paidFilter) return;
+    if (hasPaidFilter && isRecordSettlementPaid(record) !== paidFilter) return;
 
     const recordId = String(record?.id || "").trim();
     if (recordId && !recordIds.includes(recordId)) {
@@ -434,10 +425,7 @@ function getLinkedDispatcherSettlementAmount(
     ).trim();
     const uploadedAtTime = parseDateTimeValue(uploadedAt);
     const invoiceImage = getDispatcherSettlementInvoiceImage(record);
-    const isPaid = isRecordDispatcherSettlementPaid(record);
-    const paidAt = String(record?.dispatcherSettlementPaidAt || "").trim();
-    const paidAtTime = parseDateTimeValue(paidAt);
-    const payoutTarget = recordId ? `dispatcher:${recordId}` : "";
+    const isPaid = isRecordSettlementPaid(record);
 
     if (isUploaded) {
       uploadedCount += 1;
@@ -478,26 +466,14 @@ function getLinkedDispatcherSettlementAmount(
         }
         invoiceMap.set(invoiceKey, invoiceItem);
       }
+      if (isPaid) {
+        paidCount += 1;
+      } else if (recordId) {
+        payoutRecordIds.push(recordId);
+        payoutTargets.push(recordId);
+      }
     } else {
       pendingCount += 1;
-    }
-
-    if (isPaid) {
-      paidCount += 1;
-      if (payoutTarget) {
-        revokeTargets.push(payoutTarget);
-      }
-      if (paidAt) {
-        const normalizedPaidAtTime = Number.isNaN(paidAtTime) ? 0 : paidAtTime;
-        paidAtValues.push(paidAt);
-        if (!latestPaidAt || normalizedPaidAtTime >= latestPaidAtTime) {
-          latestPaidAt = paidAt;
-          latestPaidAtTime = normalizedPaidAtTime;
-        }
-      }
-    } else if (payoutTarget) {
-      payoutRecordIds.push(recordId);
-      payoutTargets.push(payoutTarget);
     }
 
     const premium = getPremiumValue(record);
@@ -546,10 +522,6 @@ function getLinkedDispatcherSettlementAmount(
     paidCount,
     payoutRecordIds,
     payoutTargets,
-    revokeTargets,
-    paidAtValues,
-    latestPaidAt,
-    latestPaidAtTime,
     latestUploadedAt,
     latestUploadedBy,
     invoiceMap,
@@ -588,6 +560,8 @@ const loginCodeInput = document.getElementById("loginCodeInput");
 const loginPasswordInput = document.getElementById("loginPasswordInput");
 const loginRequestHint = document.getElementById("loginRequestHint");
 const appStatusHint = document.getElementById("appStatusHint");
+const globalToast = document.getElementById("globalToast");
+let globalToastTimer = null;
 const openAccountantRegisterBtn = document.getElementById(
   "openAccountantRegisterBtn",
 );
@@ -615,6 +589,21 @@ const accountantRegisterAliasInput = document.getElementById(
 const accountantRegisterPhoneInput = document.getElementById(
   "accountantRegisterPhoneInput",
 );
+const accountantRegisterRealNameInput = document.getElementById(
+  "accountantRegisterRealNameInput",
+);
+const accountantRegisterIdCardInput = document.getElementById(
+  "accountantRegisterIdCardInput",
+);
+const accountantRegisterBankNameInput = document.getElementById(
+  "accountantRegisterBankNameInput",
+);
+const accountantRegisterBankCardInput = document.getElementById(
+  "accountantRegisterBankCardInput",
+);
+const accountantRegisterDeclarationPhoneInput = document.getElementById(
+  "accountantRegisterDeclarationPhoneInput",
+);
 const accountantRegisterSubmitBtn = document.getElementById(
   "accountantRegisterSubmitBtn",
 );
@@ -639,9 +628,14 @@ const openAccountantModalBtn = document.getElementById(
   "openAccountantModalBtn",
 );
 const openReminderModalBtn = document.getElementById("openReminderModalBtn");
+const openCustomerFeedbackModalBtn = document.getElementById(
+  "openCustomerFeedbackModalBtn",
+);
 const accountantSortableHeaders = Array.from(
   document.querySelectorAll(".accountant-sort-btn"),
 );
+const accountantSearchInput = document.getElementById("accountantSearchInput");
+const accountantSearchClearBtn = document.getElementById("accountantSearchClearBtn");
 const dispatcherSortableHeaders = Array.from(
   document.querySelectorAll(".dispatcher-sort-btn"),
 );
@@ -747,6 +741,14 @@ const settlementDetailTabDispatcher = document.getElementById(
 const analysisModal = document.getElementById("analysisModal");
 const analysisModalCard = analysisModal.querySelector(".analysis-modal-card");
 const analysisContent = document.getElementById("analysisContent");
+const customerFeedbackModal = document.getElementById("customerFeedbackModal");
+const customerFeedbackModalCard = customerFeedbackModal
+  ? customerFeedbackModal.querySelector(".customer-feedback-modal-card")
+  : null;
+const customerFeedbackModalMeta = document.getElementById(
+  "customerFeedbackModalMeta",
+);
+const customerFeedbackList = document.getElementById("customerFeedbackList");
 const openOperationRecordsBtn = document.getElementById(
   "openOperationRecordsBtn",
 );
@@ -756,34 +758,6 @@ const operationRecordsModalCard = operationRecordsModal
   : null;
 const operationRecordsMeta = document.getElementById("operationRecordsMeta");
 const operationRecordsList = document.getElementById("operationRecordsList");
-const paidSettlementDetailModal = document.getElementById(
-  "paidSettlementDetailModal",
-);
-const paidSettlementDetailModalCard = paidSettlementDetailModal
-  ? paidSettlementDetailModal.querySelector(
-      ".paid-settlement-detail-modal-card",
-    )
-  : null;
-const paidSettlementDetailMeta = document.getElementById(
-  "paidSettlementDetailMeta",
-);
-const paidSettlementDetailList = document.getElementById(
-  "paidSettlementDetailList",
-);
-const uploadedSettlementDetailModal = document.getElementById(
-  "uploadedSettlementDetailModal",
-);
-const uploadedSettlementDetailModalCard = uploadedSettlementDetailModal
-  ? uploadedSettlementDetailModal.querySelector(
-      ".uploaded-settlement-detail-modal-card",
-    )
-  : null;
-const uploadedSettlementDetailMeta = document.getElementById(
-  "uploadedSettlementDetailMeta",
-);
-const uploadedSettlementDetailList = document.getElementById(
-  "uploadedSettlementDetailList",
-);
 const openPriceCompositionBtn = document.getElementById(
   "openPriceCompositionBtn",
 );
@@ -928,6 +902,8 @@ const confirmModalConfirmBtn = document.getElementById(
 
 const dateInput = document.getElementById("date");
 const monthlySettlementCheckbox = document.getElementById("monthlySettlement");
+const recordReminderDateField = document.getElementById("reminderDateField");
+const recordReminderDateInput = document.getElementById("reminderDate");
 const dispatcherInput = document.getElementById("dispatcher");
 const dispatcherTagButtons = Array.from(
   document.querySelectorAll(".dispatcher-tag-btn"),
@@ -1219,7 +1195,6 @@ let isSettlementScheduleCollapsed = false;
 let savedLoginEntries = [];
 let highlightedAccountantUsername = "";
 let accountantRegisterReturnTarget = "";
-let hasUploadedSettlementInvoiceThisSession = false;
 let pendingConfirmResolve = null;
 let pendingConfirmMathAnswer = null;
 let editingAccountantUsername = "";
@@ -1232,6 +1207,7 @@ let selectedBossSettlementPayoutRecordIds = new Set();
 let isBossSettlementSubmitting = false;
 let isBossSettlementPayoutSubmitting = false;
 let isInvoiceUploadSubmitting = false;
+let hasUploadedSettlementInvoiceThisSession = false;
 let invoiceUploadReplaceRecordIds = [];
 const bossSettlementDetailSortState = {
   key: "accountant",
@@ -1285,38 +1261,34 @@ function normalizeMultiFilterValues(rawValue) {
     });
 }
 
-function normalizeStatusFilterValues(rawValue) {
-  return normalizeMultiFilterValues(rawValue);
+function normalizeDispatcherFilterValues(rawValue) {
+  return normalizeMultiFilterValues(rawValue).map((value) => normalizeDispatcherTag(value)).filter(Boolean);
 }
 
-function setStatusFilterValues(values) {
-  filterState.status = normalizeStatusFilterValues(values);
+function setDispatcherFilterValues(values) {
+  filterState.dispatcher = normalizeDispatcherFilterValues(values);
 }
 
-function getSelectedStatusFilters() {
-  const normalizedValues = normalizeStatusFilterValues(filterState.status);
+function getSelectedDispatcherFilters() {
+  const normalizedValues = normalizeDispatcherFilterValues(filterState.dispatcher);
   if (
-    !Array.isArray(filterState.status) ||
-    normalizedValues.length !== filterState.status.length
+    !Array.isArray(filterState.dispatcher) ||
+    normalizedValues.length !== filterState.dispatcher.length
   ) {
-    filterState.status = normalizedValues;
+    filterState.dispatcher = normalizedValues;
   }
   return normalizedValues;
 }
 
-function hasStatusFilterSelected() {
-  return getSelectedStatusFilters().length > 0;
+function hasDispatcherFilterSelected() {
+  return getSelectedDispatcherFilters().length > 0;
 }
 
-function isStatusFilterValueSelected(value) {
-  return getSelectedStatusFilters().includes(String(value || "").trim());
-}
-
-function toggleStatusFilterValue(value) {
-  const selectedValue = String(value || "").trim();
+function toggleDispatcherFilterValue(value) {
+  const selectedValue = normalizeDispatcherTag(value);
   if (!selectedValue) return;
-  const selectedValues = getSelectedStatusFilters();
-  setStatusFilterValues(
+  const selectedValues = getSelectedDispatcherFilters();
+  setDispatcherFilterValues(
     selectedValues.includes(selectedValue)
       ? selectedValues.filter((item) => item !== selectedValue)
       : [...selectedValues, selectedValue],
@@ -1357,36 +1329,38 @@ function toggleAccountantFilterValue(value) {
   );
 }
 
-function normalizeDispatcherFilterValues(rawValue) {
-  return normalizeMultiFilterValues(rawValue)
-    .map((value) => normalizeDispatcherTag(value))
-    .filter(Boolean);
+function normalizeStatusFilterValues(rawValue) {
+  return normalizeMultiFilterValues(rawValue);
 }
 
-function setDispatcherFilterValues(values) {
-  filterState.dispatcher = normalizeDispatcherFilterValues(values);
+function setStatusFilterValues(values) {
+  filterState.status = normalizeStatusFilterValues(values);
 }
 
-function getSelectedDispatcherFilters() {
-  const normalizedValues = normalizeDispatcherFilterValues(filterState.dispatcher);
+function getSelectedStatusFilters() {
+  const normalizedValues = normalizeStatusFilterValues(filterState.status);
   if (
-    !Array.isArray(filterState.dispatcher) ||
-    normalizedValues.length !== filterState.dispatcher.length
+    !Array.isArray(filterState.status) ||
+    normalizedValues.length !== filterState.status.length
   ) {
-    filterState.dispatcher = normalizedValues;
+    filterState.status = normalizedValues;
   }
   return normalizedValues;
 }
 
-function hasDispatcherFilterSelected() {
-  return getSelectedDispatcherFilters().length > 0;
+function hasStatusFilterSelected() {
+  return getSelectedStatusFilters().length > 0;
 }
 
-function toggleDispatcherFilterValue(value) {
-  const selectedValue = normalizeDispatcherTag(value);
+function isStatusFilterValueSelected(value) {
+  return getSelectedStatusFilters().includes(String(value || "").trim());
+}
+
+function toggleStatusFilterValue(value) {
+  const selectedValue = String(value || "").trim();
   if (!selectedValue) return;
-  const selectedValues = getSelectedDispatcherFilters();
-  setDispatcherFilterValues(
+  const selectedValues = getSelectedStatusFilters();
+  setStatusFilterValues(
     selectedValues.includes(selectedValue)
       ? selectedValues.filter((item) => item !== selectedValue)
       : [...selectedValues, selectedValue],
@@ -1427,6 +1401,16 @@ function getSuggestionGuardInputs() {
   });
 }
 
+function isIOSLikeBrowser() {
+  const userAgent = String(navigator.userAgent || "");
+  const platform = String(navigator.platform || "");
+  return /iPad|iPhone|iPod/i.test(userAgent) || (platform === "MacIntel" && Number(navigator.maxTouchPoints || 0) > 1);
+}
+
+function shouldLockSuggestionGuardFields() {
+  return !isIOSLikeBrowser();
+}
+
 function applyAutocompleteDisabledAttributes(field) {
   if (
     !(field instanceof HTMLInputElement) &&
@@ -1463,6 +1447,7 @@ function getSuggestionGuardField(target) {
 }
 
 function lockSuggestionGuardField(field) {
+  if (!shouldLockSuggestionGuardFields()) return;
   if (
     !(field instanceof HTMLInputElement) &&
     !(field instanceof HTMLTextAreaElement)
@@ -1684,9 +1669,16 @@ function isBuiltInAccountantName(value) {
   return BUILT_IN_ACCOUNTANT_NAMES.includes(String(value || "").trim());
 }
 
-function getAccountantOrderCountMap(sourceRecords = getVisibleRecords()) {
-  const list = Array.isArray(sourceRecords) ? sourceRecords : [];
-  return list.reduce((map, item) => {
+function isInvoiceOptionalSettlementAccountantName(value) {
+  return isBuiltInAccountantName(value);
+}
+
+function isRecordInvoiceOptionalForPayout(record) {
+  return isInvoiceOptionalSettlementAccountantName(record?.accountant);
+}
+
+function getAccountantOrderCountMap() {
+  return records.reduce((map, item) => {
     const key = String(item.accountant || "").trim();
     if (!key) return map;
     map.set(key, (map.get(key) || 0) + 1);
@@ -2413,45 +2405,36 @@ function isRecordDispatcherSettlementPaid(record) {
 function isBossSettlementPayoutRecordSelectable(record) {
   if (!canCurrentAccountPayoutSettlementRecords()) return false;
   if (!isRecordCompleted(record)) return false;
-  return isRecordSettled(record) && !isRecordSettlementPaid(record);
-}
-
-function getBossSettlementPayoutTargetsForRecord(record) {
-  if (!canCurrentAccountPayoutSettlementRecords()) return [];
-  if (!isRecordCompleted(record)) return [];
-  const recordId = String(record?.id || "").trim();
-  if (!recordId) return [];
-
-  const targets = [];
-  if (isRecordSettled(record) && !isRecordSettlementPaid(record)) {
-    targets.push(recordId);
-  }
-
-  const dispatcher = normalizeDispatcherTag(record?.dispatcher);
-  const linkedAccountant = dispatcher
-    ? getLinkedAccountantDisplayNameByTag(dispatcher)
-    : "";
-  if (
-    linkedAccountant &&
-    isRecordSettled(record) &&
-    !isRecordDispatcherSettlementPaid(record)
-  ) {
-    targets.push(`dispatcher:${recordId}`);
-  }
-
-  return targets;
+  return (
+    (
+      isRecordInvoiceUploadedByRecordAccountant(record) ||
+      isRecordInvoiceOptionalForPayout(record)
+    ) &&
+    !isRecordSettlementPaid(record)
+  );
 }
 
 function syncBossSettlementPayoutSelection(sourceRecords = records) {
   const validRecordIds = new Set();
   (Array.isArray(sourceRecords) ? sourceRecords : [])
+    .filter((item) => isBossSettlementPayoutRecordSelectable(item))
     .forEach((item) => {
-      getBossSettlementPayoutTargetsForRecord(item).forEach((target) => validRecordIds.add(target));
+      const recordId = String(item?.id || "").trim();
+      if (!recordId) return;
+      if (
+        (
+          isRecordInvoiceUploadedByRecordAccountant(item) ||
+          isRecordInvoiceOptionalForPayout(item)
+        ) &&
+        !isRecordSettlementPaid(item)
+      ) {
+        validRecordIds.add(recordId);
+      }
     });
   selectedBossSettlementPayoutRecordIds = new Set(
     Array.from(selectedBossSettlementPayoutRecordIds)
-      .map((target) => String(target || "").trim())
-      .filter((target) => validRecordIds.has(target)),
+      .map((recordId) => String(recordId || "").replace(/^dispatcher:/, ""))
+      .filter((recordId) => validRecordIds.has(recordId)),
   );
 }
 
@@ -2816,7 +2799,7 @@ function getCurrentInvoiceUploadSettlementGroup(sourceRecords = records) {
 function getAccountantInvoiceUploadSummary(sourceRecords = records) {
   const uploadSourceRecords = getInvoiceUploadSourceRecords(sourceRecords);
   const targetRecords = getAccountantInvoiceUploadTargetRecords(uploadSourceRecords);
-  const settlementGroup = getCurrentInvoiceUploadSettlementGroup(uploadSourceRecords);
+  const settlementGroup = getCurrentInvoiceUploadSettlementGroup(targetRecords);
   if (settlementGroup) {
     const invoiceAmount = Number(settlementGroup.invoiceAmount) || 0;
     const taxAmount =
@@ -2851,8 +2834,6 @@ function getAccountantInvoiceUploadSummary(sourceRecords = records) {
         Number(settlementGroup.dispatcherCommissionAmount) || 0,
       hasIncomeBreakdown: true,
       hasLinkedDispatcher: Boolean(settlementGroup.hasLinkedDispatcher),
-      hasDispatcherIncomeBreakdown:
-        Number(settlementGroup.dispatcherInvoiceAmount) > 0,
     };
   }
 
@@ -2894,7 +2875,6 @@ function getAccountantInvoiceUploadSummary(sourceRecords = records) {
   } else if (isAccountantLogin()) {
     const currentAccountant = getCurrentAccountantDisplayName();
     accountantInvoiceAmount = targetRecords.reduce((sum, item) => {
-      if (isLinkedDispatcherRecordForCurrentAccount(item)) return sum;
       if (String(item?.accountant || "").trim() !== currentAccountant)
         return sum;
       const settlement = Number(item?.settlementPrice);
@@ -2902,28 +2882,14 @@ function getAccountantInvoiceUploadSummary(sourceRecords = records) {
     }, 0);
     const linkedDispatcherAmount = getLinkedDispatcherSettlementAmount(
       currentAccountant,
-      uploadSourceRecords,
+      targetRecords,
       {
         paid: false,
       },
     );
-    const activeLinkedDispatcherAmount = linkedDispatcherAmount;
     dispatcherInvoiceAmount =
-      Number(activeLinkedDispatcherAmount?.invoiceAmount) || 0;
+      Number(linkedDispatcherAmount?.invoiceAmount) || 0;
     invoiceAmount = accountantInvoiceAmount + dispatcherInvoiceAmount;
-    var dispatcherPremiumSegments = Array.isArray(
-      activeLinkedDispatcherAmount?.premiumBreakdown?.segments,
-    )
-      ? activeLinkedDispatcherAmount.premiumBreakdown.segments
-      : [];
-    var dispatcherCommissionTerms = Array.isArray(
-      activeLinkedDispatcherAmount?.dispatcherCommissionTerms,
-    )
-      ? activeLinkedDispatcherAmount.dispatcherCommissionTerms
-      : [];
-    var dispatcherPremiumAmount = Number(activeLinkedDispatcherAmount?.premium) || 0;
-    var dispatcherCommissionAmount =
-      Number(activeLinkedDispatcherAmount?.dispatcherPrice) || 0;
   }
 
   const taxAmount = getSettlementTaxAmount(invoiceAmount);
@@ -2936,17 +2902,8 @@ function getAccountantInvoiceUploadSummary(sourceRecords = records) {
     payableAmount: invoiceAmount - taxAmount,
     accountantInvoiceAmount,
     dispatcherInvoiceAmount,
-    dispatcherPremiumSegments: Array.isArray(dispatcherPremiumSegments)
-      ? dispatcherPremiumSegments
-      : [],
-    dispatcherCommissionTerms: Array.isArray(dispatcherCommissionTerms)
-      ? dispatcherCommissionTerms
-      : [],
-    dispatcherPremiumAmount: Number(dispatcherPremiumAmount) || 0,
-    dispatcherCommissionAmount: Number(dispatcherCommissionAmount) || 0,
     hasIncomeBreakdown: true,
     hasLinkedDispatcher: dispatcherInvoiceAmount > 0,
-    hasDispatcherIncomeBreakdown: dispatcherInvoiceAmount > 0,
   };
 }
 
@@ -3524,7 +3481,6 @@ function getUpdatedRecordIndicatorLabel(record) {
   if (actionKey === "returned") return "已退单";
   if (actionKey === "settled") return "已核对客户确认";
   if (actionKey === "invoice_uploaded") return "发票已上传";
-  if (actionKey === "invoice_reuploaded") return "发票已修改";
   if (actionKey === "updated") return "信息更新";
   return normalizeText(latestEntry?.actionLabel, 32) || "信息更新";
 }
@@ -4103,11 +4059,6 @@ function setHintState(node, className, text, state = "idle") {
   node.hidden = !normalizedText;
 }
 
-function mountAppStatusHint() {
-  if (!appStatusHint || appStatusHint.parentElement === document.body) return;
-  document.body.appendChild(appStatusHint);
-}
-
 function getElementFormControls(root) {
   if (!(root instanceof HTMLElement)) return [];
   return Array.from(
@@ -4310,29 +4261,19 @@ function shouldShowTableTooltipCell(cell) {
   return isTableTooltipCellOverflowing(cell);
 }
 
-function placeTableHoverTooltip(source) {
-  if (tableHoverTooltip.hidden) return;
+function placeTableHoverTooltip(event) {
+  if (!(event instanceof MouseEvent) || tableHoverTooltip.hidden) return;
   const margin = 14;
   const offset = 16;
   const rect = tableHoverTooltip.getBoundingClientRect();
-  const isElementSource = source instanceof HTMLElement;
-  const sourceRect = isElementSource ? source.getBoundingClientRect() : null;
-  const sourceX = sourceRect ? sourceRect.left + sourceRect.width / 2 : source?.clientX;
-  const sourceY = sourceRect ? sourceRect.top : source?.clientY;
-  let left = sourceRect ? sourceRect.left + sourceRect.width / 2 - rect.width / 2 : sourceX + offset;
-  let top = sourceRect ? sourceRect.top - rect.height - 10 : sourceY + offset;
+  let left = event.clientX + offset;
+  let top = event.clientY + offset;
 
   if (left + rect.width + margin > window.innerWidth) {
-    left = sourceRect ? window.innerWidth - rect.width - margin : sourceX - rect.width - offset;
-  }
-  if (left < margin) {
-    left = margin;
+    left = event.clientX - rect.width - offset;
   }
   if (top + rect.height + margin > window.innerHeight) {
-    top = sourceRect ? sourceRect.bottom + 10 : sourceY - rect.height - offset;
-  }
-  if (top < margin && sourceRect) {
-    top = sourceRect.bottom + 10;
+    top = event.clientY - rect.height - offset;
   }
 
   tableHoverTooltip.style.left = `${Math.max(margin, Math.round(left))}px`;
@@ -4347,7 +4288,6 @@ function showTableHoverTooltip(source, event) {
   const imageAlt = isElementSource
     ? String(source.dataset.tableTooltipImageAlt || "").trim()
     : "";
-  const isCompact = isElementSource && source.dataset.tableTooltipVariant === "compact";
   const normalizedText = String(
     isElementSource ? source.dataset.tableTooltip : source || "",
   ).trim();
@@ -4356,7 +4296,6 @@ function showTableHoverTooltip(source, event) {
     return;
   }
   tableHoverTooltip.classList.toggle("image", Boolean(imageUrl));
-  tableHoverTooltip.classList.toggle("compact", isCompact);
   tableHoverTooltip.innerHTML = "";
   if (imageUrl) {
     const image = document.createElement("img");
@@ -4376,7 +4315,7 @@ function showTableHoverTooltip(source, event) {
   }
   tableHoverTooltip.hidden = false;
   tableHoverTooltip.classList.add("visible");
-  placeTableHoverTooltip(isCompact && isElementSource ? source : event);
+  placeTableHoverTooltip(event);
 }
 
 function moveTableHoverTooltip(event) {
@@ -4386,7 +4325,6 @@ function moveTableHoverTooltip(event) {
 function hideTableHoverTooltip() {
   tableHoverTooltip.classList.remove("visible");
   tableHoverTooltip.classList.remove("image");
-  tableHoverTooltip.classList.remove("compact");
   tableHoverTooltip.hidden = true;
   tableHoverTooltip.innerHTML = "";
 }
@@ -4725,7 +4663,7 @@ function getAccountantRegisterErrorTarget(message) {
   if (messageIncludesAnyKeyword(message, ["账号", "手机号"])) {
     return accountantRegisterPhoneInput;
   }
-  if (messageIncludesAnyKeyword(message, ["别名", "显示名"])) {
+  if (messageIncludesAnyKeyword(message, ["微信名", "显示名"])) {
     return accountantRegisterAliasInput;
   }
   if (messageIncludesAnyKeyword(message, ["密码"])) {
@@ -4745,7 +4683,7 @@ function getAccountantEditErrorTarget(message, mode = accountantEditMode) {
   if (canEditSensitiveFields && messageIncludesAnyKeyword(message, ["密码"])) {
     return accountantEditPasswordInput;
   }
-  if (messageIncludesAnyKeyword(message, ["别名", "显示名"])) {
+  if (messageIncludesAnyKeyword(message, ["微信名", "显示名"])) {
     return accountantEditAliasInput;
   }
   if (canEditSensitiveFields) {
@@ -4758,9 +4696,29 @@ function getAccountantEditErrorTarget(message, mode = accountantEditMode) {
   return accountantEditAliasInput || accountantEditPhoneInput;
 }
 
+function showGlobalToast(text, state = "error", duration = 3000) {
+  if (!globalToast) return;
+  const normalizedText = String(text || "").trim();
+  if (!normalizedText) {
+    globalToast.hidden = true;
+    return;
+  }
+  globalToast.textContent = normalizedText;
+  globalToast.className = `global-toast ${state}`;
+  globalToast.hidden = false;
+  if (globalToastTimer) {
+    clearTimeout(globalToastTimer);
+  }
+  if (duration > 0) {
+    globalToastTimer = setTimeout(() => {
+      globalToast.hidden = true;
+      globalToastTimer = null;
+    }, duration);
+  }
+}
+
 function showAppStatus(text, state = "error") {
-  mountAppStatusHint();
-  setAppStatusHint(text, state);
+  showGlobalToast(text, state);
 }
 
 function showSettlementSummaryStatus(text, state = "error") {

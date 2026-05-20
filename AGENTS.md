@@ -1,7 +1,7 @@
 # 项目级说明
 
-<!-- - 不要自动执行npm run build, 由我手动执行 -->
-- 现在每次buildNumber新增时  自动执行npm run build
+- 不要自动执行npm run build, 由我手动执行
+<!-- - 现在每次buildNumber新增时  自动执行npm run build -->
 
 - 生产数据在 `data/` 目录，操作时要谨慎。
 - 测试和开发优先使用 `data-dev/`。
@@ -9,7 +9,7 @@
 - 修改数据持久化逻辑时，要兼容已有 JSON 记录。
 
 版本号逻辑 ：
-- 每次新增新功能： x + 1 1
+- 每次新增新功能： x + 1, y不清零
 - 每次修复或优化： y + 1
 - 每次 build： buildNumber （z） + 1
 - x/y和任务相关, z和build相关

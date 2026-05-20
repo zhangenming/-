@@ -108,6 +108,7 @@
         || !bossSettlementSummaryModal.hidden
         || (bossSettlementDetailModal && !bossSettlementDetailModal.hidden)
         || !analysisModal.hidden
+        || (customerFeedbackModal && !customerFeedbackModal.hidden)
         || (operationRecordsModal && !operationRecordsModal.hidden)
         || (reminderModal && !reminderModal.hidden)
         || !dispatcherModal.hidden
@@ -474,11 +475,50 @@
       renderReminderModalContent();
     }
 
+    function getAccountantSearchTerms() {
+      return String(accountantSearchInput?.value || "")
+        .split(/\r?\n/)
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean);
+    }
+
+    function getAccountantSearchFields(profile) {
+      const invoiceRecipientInfo = normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo);
+      return [
+        profile?.phone,
+        profile?.username,
+        profile?.displayName,
+        profile?.alias,
+        profile?.name,
+        profile?.realName,
+        invoiceRecipientInfo.name,
+        invoiceRecipientInfo.declarationPhone
+      ]
+        .map((item) => String(item || "").trim().toLowerCase())
+        .filter(Boolean);
+    }
+
+    function doesAccountantMatchSearch(profile, terms) {
+      if (!terms.length) return true;
+      const fields = getAccountantSearchFields(profile);
+      const compactFields = fields.map((item) => item.replace(/\s+/g, ""));
+      return terms.some((term) => {
+        const compactTerm = term.replace(/\s+/g, "");
+        return fields.some((field) => field.includes(term))
+          || compactFields.some((field) => field.includes(compactTerm));
+      });
+    }
+
     function renderAccountantList() {
       accountantList.innerHTML = "";
       const orderCountByAccountant = getAccountantOrderCountMap();
-      renderAccountantSortHeaderUI(accountants, orderCountByAccountant);
-      const showRecipientColumn = !isDispatcherLogin() && accountants.some((profile) =>
+      const searchTerms = getAccountantSearchTerms();
+      const filteredAccountants = accountants.filter((profile) => doesAccountantMatchSearch(profile, searchTerms));
+      if (accountantSearchClearBtn) {
+        accountantSearchClearBtn.hidden = !searchTerms.length;
+      }
+      renderAccountantSortHeaderUI(filteredAccountants, orderCountByAccountant);
+      const showRecipientColumn = !isDispatcherLogin() && filteredAccountants.some((profile) =>
         Object.values(normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo)).every(Boolean)
       );
       const recipientHeader = document.querySelector(".accountant-col-recipient");
@@ -486,12 +526,18 @@
         recipientHeader.hidden = !showRecipientColumn;
       }
       if (!accountants.length) {
+        accountantEmptyState.textContent = "暂无会计资料。";
+        accountantEmptyState.style.display = "block";
+        return;
+      }
+      if (!filteredAccountants.length) {
+        accountantEmptyState.textContent = "暂无匹配会计资料。";
         accountantEmptyState.style.display = "block";
         return;
       }
       accountantEmptyState.style.display = "none";
 
-      const sortedProfiles = getSortedAccountantProfiles(accountants, orderCountByAccountant);
+      const sortedProfiles = getSortedAccountantProfiles(filteredAccountants, orderCountByAccountant);
 
       sortedProfiles.forEach((profile) => {
         const setNodeText = (node, text, fallback = "—") => {
@@ -529,7 +575,7 @@
 
         const displayNameCell = document.createElement("td");
         displayNameCell.className = "accountant-col-display";
-        displayNameCell.dataset.label = "别名";
+        displayNameCell.dataset.label = "微信名";
         const displayNameSpan = document.createElement("span");
         displayNameSpan.className = "accountant-item-sub";
         setNodeText(displayNameSpan, displayName);
@@ -837,7 +883,7 @@
 
         const linkedAccountantAliasCell = document.createElement("td");
         linkedAccountantAliasCell.className = "dispatcher-col-linked-accountant-alias";
-        linkedAccountantAliasCell.dataset.label = "关联会计别名";
+        linkedAccountantAliasCell.dataset.label = "关联会计微信名";
         linkedAccountantAliasCell.textContent = linkedAccountantAlias || "—";
         linkedAccountantAliasCell.title = linkedAccountantAlias;
 
@@ -1987,9 +2033,6 @@
       renderTable();
       if (bossSettlementDetailModal && !bossSettlementDetailModal.hidden) {
         renderBossSettlementDetailModalContent();
-      }
-      if (paidSettlementDetailModal && !paidSettlementDetailModal.hidden) {
-        renderPaidSettlementDetailModalContent();
       }
       if (!analysisModal.hidden) {
         renderAnalysisPanel();

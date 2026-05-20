@@ -188,7 +188,7 @@
       { text: "新建", className: "mobile-action-btn primary", button: openCreateModalBtn },
       { text: "导出", className: "mobile-action-btn", button: exportTableBtn },
       { text: "上传发票", className: "mobile-action-btn", button: accountantInvoiceUploadBtn },
-      { text: "结算", className: "mobile-action-btn", button: bossSettlementBtn },
+      { text: "核对用户确认", className: "mobile-action-btn", button: bossSettlementBtn },
       { text: "打款", className: "mobile-action-btn", button: bossSettlementDetailBtn },
       { text: "已上传/待结算详细", className: "mobile-action-btn", button: accountantUploadedSettlementDetailBtn },
       { text: "提醒", className: "mobile-action-btn", button: openReminderModalBtn },

@@ -15,12 +15,15 @@ const DATA_NAMESPACE = IS_DEVELOPMENT ? "development" : "production";
 
 const ROOT_DIR = __dirname;
 const SOURCE_HTML_FILE = path.join(ROOT_DIR, "派单结算录入.html");
+const SOURCE_DESKTOP_HTML_FILE = path.join(ROOT_DIR, "派单结算录入电脑版.html");
+const SOURCE_MOBILE_HTML_FILE = path.join(ROOT_DIR, "派单结算录入手机版.html");
 const SOURCE_PUBLIC_DIR = path.join(ROOT_DIR, "public");
 const SOURCE_BUILD_INFO_FILE = path.join(ROOT_DIR, "build-info.json");
 const SOURCE_CHANGE_LOG_FILE = path.join(ROOT_DIR, "CHANGELOG.json");
 const DIST_DIR = path.join(ROOT_DIR, "dist");
 const HTML_DIR = IS_DEVELOPMENT ? ROOT_DIR : DIST_DIR;
-const HTML_FILE = IS_DEVELOPMENT ? SOURCE_HTML_FILE : path.join(DIST_DIR, "派单结算录入.html");
+const DESKTOP_HTML_FILE = IS_DEVELOPMENT ? SOURCE_DESKTOP_HTML_FILE : path.join(DIST_DIR, "派单结算录入电脑版.html");
+const MOBILE_HTML_FILE = IS_DEVELOPMENT ? SOURCE_MOBILE_HTML_FILE : path.join(DIST_DIR, "派单结算录入手机版.html");
 const PUBLIC_DIR = IS_DEVELOPMENT ? SOURCE_PUBLIC_DIR : path.join(DIST_DIR, "public");
 const BUILD_INFO_FILE = IS_DEVELOPMENT ? SOURCE_BUILD_INFO_FILE : path.join(DIST_DIR, "build-info.json");
 const CHANGE_LOG_FILE = IS_DEVELOPMENT ? SOURCE_CHANGE_LOG_FILE : path.join(DIST_DIR, "CHANGELOG.json");
@@ -368,7 +371,10 @@ function scheduleDevLiveReload(changedPath) {
 
 function isDevLiveReloadSource(relativePath) {
   const normalizedPath = String(relativePath || "").split(path.sep).join("/");
-  return normalizedPath === "派单结算录入.html" || normalizedPath.startsWith("public/");
+  return normalizedPath === "派单结算录入.html"
+    || normalizedPath === "派单结算录入电脑版.html"
+    || normalizedPath === "派单结算录入手机版.html"
+    || normalizedPath.startsWith("public/");
 }
 
 function createDevWatcher(targetPath, options, onChange) {
@@ -399,6 +405,9 @@ function startDevWatchers() {
   } catch (error) {
     createDevWatcher(SOURCE_HTML_FILE, {}, () => {
       scheduleDevLiveReload(SOURCE_HTML_FILE);
+    });
+    createDevWatcher(SOURCE_DESKTOP_HTML_FILE, {}, () => {
+      scheduleDevLiveReload(SOURCE_DESKTOP_HTML_FILE);
     });
     createDevWatcher(SOURCE_PUBLIC_DIR, { recursive: true }, (fileName) => {
       const changedPath = typeof fileName === "string" && fileName
@@ -1241,12 +1250,12 @@ function ensureAccountantUsernameAvailable(username, savedAccountants) {
   }
 }
 
-function ensureAccountantDisplayNameAvailable(displayName, savedAccountants, errorMessage = "别名已存在") {
+function ensureAccountantDisplayNameAvailable(displayName, savedAccountants, errorMessage = "微信名已存在") {
   if (!displayName) {
     throw new Error(errorMessage);
   }
   if (isBuiltInAccountantName(displayName)) {
-    throw new Error("别名已被系统占用");
+    throw new Error("微信名已被系统占用");
   }
   if (savedAccountants.some((item) => normalizeAccountantDisplayName(item.displayName) === displayName)) {
     throw new Error(errorMessage);
@@ -3045,7 +3054,8 @@ async function serveHtmlFile(res, filePath, options = {}) {
     ));
     res.writeHead(200, {
       "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store"
+      "Cache-Control": "no-store",
+      "Vary": "User-Agent, Sec-CH-UA-Mobile"
     });
     if (headOnly) {
       res.end();
@@ -3061,8 +3071,25 @@ async function serveHtmlFile(res, filePath, options = {}) {
   }
 }
 
-async function serveHtml(res, options = {}) {
-  await serveHtmlFile(res, HTML_FILE, {
+function isMobileHtmlRequest(req) {
+  const clientHintMobile = String(req.headers["sec-ch-ua-mobile"] || "").trim();
+  if (clientHintMobile === "?1") {
+    return true;
+  }
+  if (clientHintMobile === "?0") {
+    return false;
+  }
+
+  const userAgent = String(req.headers["user-agent"] || "");
+  return /Android|iPhone|iPod|Windows Phone|IEMobile|Opera Mini|Mobile/i.test(userAgent);
+}
+
+function getAdaptiveHtmlFile(req) {
+  return isMobileHtmlRequest(req) ? MOBILE_HTML_FILE : DESKTOP_HTML_FILE;
+}
+
+async function serveHtml(req, res, options = {}) {
+  await serveHtmlFile(res, getAdaptiveHtmlFile(req), {
     ...options,
     missingMessage: "生产静态资源还未生成，请先执行 npm run build。"
   });
@@ -3116,6 +3143,8 @@ function getDefaultBuildInfo() {
     builtAt: "",
     appEnv: APP_ENV,
     html: path.basename(SOURCE_HTML_FILE),
+    desktopHtml: path.basename(SOURCE_DESKTOP_HTML_FILE),
+    mobileHtml: path.basename(SOURCE_MOBILE_HTML_FILE),
     publicDir: path.basename(SOURCE_PUBLIC_DIR)
   };
 }
@@ -4857,7 +4886,7 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
           ensureAccountantPhoneAvailable(nextPhone, otherAccountants);
         }
         if (nextDisplayName !== normalizeAccountantDisplayName(target.displayName)) {
-          ensureAccountantDisplayNameAvailable(nextDisplayName, otherAccountants, "别名已存在");
+          ensureAccountantDisplayNameAvailable(nextDisplayName, otherAccountants, "微信名已存在");
         }
 
         const nextProfile = normalizeAccountantProfile({
@@ -5078,6 +5107,26 @@ async function serveAuthAccountantRegister(req, res) {
     const realName = normalizeAccountantRealName(body.realName || body.fullName || body.legalName);
     const displayName = normalizeAccountantDisplayName(alias || username);
 
+    const invoiceRecipientInfoInput = body.invoiceRecipientInfo || null;
+    let invoiceRecipientInfo = null;
+    if (invoiceRecipientInfoInput && typeof invoiceRecipientInfoInput === "object") {
+      const idCardNo = normalizeText(invoiceRecipientInfoInput.idCardNo || invoiceRecipientInfoInput.idCard || invoiceRecipientInfoInput.idNumber, 50);
+      const bankName = normalizeText(invoiceRecipientInfoInput.bankName || invoiceRecipientInfoInput.bank, 100);
+      const bankCardNo = normalizeText(invoiceRecipientInfoInput.bankCardNo || invoiceRecipientInfoInput.bankCard || invoiceRecipientInfoInput.bankAccount, 50);
+      const declarationPhone = normalizeAccountantPhone(invoiceRecipientInfoInput.declarationPhone || invoiceRecipientInfoInput.declarationMobile || invoiceRecipientInfoInput.contactPhone);
+      const recipientName = normalizeAccountantRealName(invoiceRecipientInfoInput.name || invoiceRecipientInfoInput.realName || realName);
+      const hasAnyRecipientInfo = recipientName || idCardNo || bankName || bankCardNo || declarationPhone;
+      if (hasAnyRecipientInfo) {
+        invoiceRecipientInfo = {
+          name: recipientName,
+          idCardNo,
+          bankName,
+          bankCardNo,
+          declarationPhone
+        };
+      }
+    }
+
     if (!username) {
       sendJson(res, 400, { error: "账号不能为空" });
       return;
@@ -5087,7 +5136,7 @@ async function serveAuthAccountantRegister(req, res) {
       return;
     }
     if (!alias) {
-      sendJson(res, 400, { error: "别名不能为空" });
+      sendJson(res, 400, { error: "微信名不能为空" });
       return;
     }
     if (!phone) {
@@ -5102,7 +5151,7 @@ async function serveAuthAccountantRegister(req, res) {
       ensureAccountantDisplayNameAvailable(
         displayName,
         savedAccountants,
-        alias ? "别名已存在" : "账号已存在或与现有别名冲突"
+        alias ? "微信名已存在" : "账号已存在或与现有微信名冲突"
       );
 
       const nextProfile = normalizeAccountantProfile({
@@ -5111,7 +5160,8 @@ async function serveAuthAccountantRegister(req, res) {
         alias,
         realName,
         phone,
-        loginPassword
+        loginPassword,
+        invoiceRecipientInfo
       });
       const accountantsFromRecords = records.map((item) => normalizeAccountantDisplayName(item.accountant));
       const merged = buildAccountantProfiles(
@@ -5134,7 +5184,8 @@ async function serveAuthAccountantRegister(req, res) {
         name: result.displayName,
         alias: result.alias || "",
         realName: result.realName || "",
-        phone: result.phone || ""
+        phone: result.phone || "",
+        invoiceRecipientInfo: result.invoiceRecipientInfo || null
       }
     });
   } catch (error) {
@@ -5392,7 +5443,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if ((req.method === "GET" || req.method === "HEAD") && (pathname === "/" || pathname === "/派单结算录入.html")) {
-      await serveHtml(res, { headOnly: req.method === "HEAD" });
+      await serveHtml(req, res, { headOnly: req.method === "HEAD" });
       return;
     }
 

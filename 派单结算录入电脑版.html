@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>派单结算录入手机版</title>
-  <link rel="stylesheet" href="./public/css/app-mobile.css" />
+  <title>派单结算录入</title>
+  <link rel="stylesheet" href="./public/css/app.css" />
 </head>
-<body class="app-booting mobile-app">
+<body class="app-booting">
   <div id="globalToast" class="global-toast idle" aria-live="polite" hidden></div>
   <button id="devTodoLauncher" class="btn-secondary dev-todo-launcher" type="button" hidden>Todo</button>
 
@@ -845,7 +845,7 @@
           />
         </div>
         <div class="field field-wide row form-actions">
-          <button id="recordSubmitBtn" class="btn-primary" type="submit">指派订单</button>
+          <button id="recordSubmitBtn" class="btn-primary" type="submit">保存数据</button>
         </div>
       </form>
     </section>
@@ -1182,11 +1182,11 @@
 
         <div class="price-split price-split-premium">
           <span class="price-segment platform"><span class="price-label">平台</span><strong data-price-composition-field="premiumPlatform">0.00</strong><span class="price-percent" data-price-composition-percent="premiumPlatform">100.0%</span></span>
-          <span class="price-segment reception"><span class="price-label">接待</span><strong data-price-composition-field="premiumReception">0.00</strong><span class="price-percent" data-price-composition-percent="premiumReception">100.0%</span></span>
+          <span class="price-segment reception price-segment-clickable" id="priceSegmentPremiumReception" title="点击查看接待详细数据"><span class="price-label">接待</span><strong data-price-composition-field="premiumReception">0.00</strong><span class="price-percent" data-price-composition-percent="premiumReception">100.0%</span></span>
         </div>
         <div class="price-split price-split-total">
           <span class="price-segment platform"><span class="price-label">平台</span><strong data-price-composition-field="totalPlatform">0.00</strong><span class="price-percent" data-price-composition-percent="totalPlatform">100.0%</span></span>
-          <span class="price-segment reception"><span class="price-label">接待</span><strong data-price-composition-field="totalReception">0.00</strong><span class="price-percent" data-price-composition-percent="totalReception">100.0%</span></span>
+          <span class="price-segment reception price-segment-clickable" id="priceSegmentTotalReception" title="点击查看接待详细数据"><span class="price-label">接待</span><strong data-price-composition-field="totalReception">0.00</strong><span class="price-percent" data-price-composition-percent="totalReception">100.0%</span></span>
           <span class="price-segment accounting"><span class="price-label">会计结算价</span><strong data-price-composition-field="totalAccounting">0.00</strong><span class="price-percent" data-price-composition-percent="totalAccounting">100.0%</span></span>
         </div>
 
@@ -1203,10 +1203,34 @@
 
         <div class="price-result">
           <span class="price-segment platform"><span class="price-label">平台</span><strong data-price-composition-field="platform">0.00</strong><span class="price-percent" data-price-composition-percent="platform">100.0%</span></span>
-          <span class="price-segment reception"><span class="price-label">接待</span><strong data-price-composition-field="reception">0.00</strong><span class="price-percent" data-price-composition-percent="reception">100.0%</span></span>
-          <span class="price-segment accounting"><span class="price-label">会计</span><strong data-price-composition-field="accounting">0.00</strong><span class="price-percent" data-price-composition-percent="accounting">100.0%</span></span>
+          <span class="price-segment reception price-segment-clickable" id="priceSegmentResultReception" title="点击查看接待详细数据"><span class="price-label">接待</span><strong data-price-composition-field="reception">0.00</strong><span class="price-percent" data-price-composition-percent="reception">100.0%</span></span>
+          <span class="price-segment accounting price-segment-clickable" id="priceSegmentAccounting" title="点击查看会计详细数据"><span class="price-label">会计</span><strong data-price-composition-field="accounting">0.00</strong><span class="price-percent" data-price-composition-percent="accounting">100.0%</span></span>
         </div>
       </div>
+    </section>
+  </div>
+
+  <div id="receptionDetailModal" class="modal-overlay modal-stacked" hidden>
+    <section class="card modal-card paid-settlement-detail-modal-card" tabindex="-1">
+      <div class="paid-settlement-detail-top">
+        <div>
+          <h2 class="paid-settlement-detail-title">接待详细数据</h2>
+          <p id="receptionDetailMeta" class="paid-settlement-detail-meta"></p>
+        </div>
+      </div>
+      <div id="receptionDetailList" class="paid-settlement-detail-list"></div>
+    </section>
+  </div>
+
+  <div id="accountantDetailModal" class="modal-overlay modal-stacked" hidden>
+    <section class="card modal-card paid-settlement-detail-modal-card" tabindex="-1">
+      <div class="paid-settlement-detail-top">
+        <div>
+          <h2 class="paid-settlement-detail-title">会计详细数据</h2>
+          <p id="accountantDetailMeta" class="paid-settlement-detail-meta"></p>
+        </div>
+      </div>
+      <div id="accountantDetailList" class="paid-settlement-detail-list"></div>
     </section>
   </div>
 
@@ -1554,6 +1578,5 @@
   <script src="./public/js/app-table-analysis.js"></script>
   <script src="./public/js/app-ui.js"></script>
   <script src="./public/js/app-events.js"></script>
-  <script src="./public/js/app-mobile.js"></script>
 </body>
 </html>

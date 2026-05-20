@@ -2830,44 +2830,6 @@
         .map((text) => `<span class="analysis-tag">${escapeHtml(text)}</span>`)
         .join("");
 
-      const pendingCustomerConfirmationAccountantColumns = [
-        "会计",
-        {
-          label: "待核对客户确认单量"
-        },
-        {
-          label: "会计待核对客户确认金额"
-        }
-      ];
-
-      const pendingCustomerConfirmationAccountantTable = buildHtmlTable(
-        pendingCustomerConfirmationAccountantColumns,
-        pendingCustomerConfirmationAmountRows.accountantRows.map((row) => [
-          row.key,
-          formatCount(row.count),
-          formatCurrency(row.amount)
-        ])
-      );
-
-      const pendingCustomerConfirmationDispatcherColumns = [
-        "接待人",
-        {
-          label: "待核对客户确认单量"
-        },
-        {
-          label: "接待待核对客户确认金额"
-        }
-      ];
-
-      const pendingCustomerConfirmationDispatcherTable = buildHtmlTable(
-        pendingCustomerConfirmationDispatcherColumns,
-        pendingCustomerConfirmationAmountRows.dispatcherRows.map((row) => [
-          row.key,
-          formatCount(row.count),
-          formatCurrency(row.amount)
-        ])
-      );
-
       const dispatcherTable = buildHtmlTable(
         ["接待人", "单量", "会计价", "会计结算价", "结算率", "均单会计价"],
         byDispatcher.slice(0, 10).map((row) => [
@@ -3109,10 +3071,6 @@
         </section>
         <div class="analysis-scope">
           分析范围：当前筛选 ${formatCount(scopeRecords.length)} 条 / 全部 ${formatCount(allRecords.length)} 条
-        </div>
-        <div class="analysis-grid analysis-unsettled-grid">
-          <section class="analysis-panel"><h3>会计待核对客户确认金额</h3>${pendingCustomerConfirmationAccountantTable}</section>
-          <section class="analysis-panel"><h3>接待待核对客户确认金额</h3>${pendingCustomerConfirmationDispatcherTable}</section>
         </div>
         <div class="analysis-kpis">
           <div class="analysis-kpi"><div class="analysis-kpi-label">记录数</div><div class="analysis-kpi-value">${formatCount(scopeRecords.length)}</div></div>

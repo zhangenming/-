@@ -16,6 +16,16 @@
     }
   },
   {
+    "username": "123",
+    "displayName": "123",
+    "name": "123",
+    "alias": "123",
+    "realName": "",
+    "phone": "123",
+    "loginPassword": "123",
+    "invoiceRecipientInfo": null
+  },
+  {
     "username": "BieDong",
     "displayName": "别动",
     "name": "别动",
@@ -278,6 +288,22 @@
     "invoiceRecipientInfo": null
   },
   {
+    "username": "18996166018",
+    "displayName": "蜜糖会计师",
+    "name": "蜜糖会计师",
+    "alias": "蜜糖会计师",
+    "realName": "",
+    "phone": "18996166018",
+    "loginPassword": "123456",
+    "invoiceRecipientInfo": {
+      "name": "李盈莹",
+      "bankName": "招商银行重庆江北支行",
+      "bankCardNo": "6226 0902 3298 5198",
+      "idCardNo": "50023319880923004X",
+      "declarationPhone": "18996166018"
+    }
+  },
+  {
     "username": "Min",
     "displayName": "敏",
     "name": "敏",
@@ -325,7 +351,13 @@
     "realName": "",
     "phone": "18306041026",
     "loginPassword": "123321",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "启蓁",
+      "bankName": "中信银行重庆渝北支行",
+      "bankCardNo": "6217681213241535",
+      "idCardNo": "500224199106036281",
+      "declarationPhone": "18306041026"
+    }
   },
   {
     "username": "19923803560",
@@ -377,7 +409,13 @@
     "realName": "",
     "phone": "13599855181",
     "loginPassword": "123456",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "山的靠背",
+      "bankName": "中国建设银行股份有限公司莆田胜利支行",
+      "bankCardNo": "6217001840019653908",
+      "idCardNo": "130603197309261245",
+      "declarationPhone": "13599855181"
+    }
   },
   {
     "username": "ShiQiA",
@@ -455,7 +493,13 @@
     "realName": "",
     "phone": "18883813129",
     "loginPassword": "123456",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "王冬梅",
+      "bankName": "中国建设银行",
+      "bankCardNo": "6227003763410002920",
+      "idCardNo": "14273319900129512X",
+      "declarationPhone": "18883813129"
+    }
   },
   {
     "username": "WoXinFeiXiang",
@@ -619,7 +663,13 @@
     "realName": "杨海柱",
     "phone": "18723833987",
     "loginPassword": "zhu54205420",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "杨海柱",
+      "bankName": "中信银行南岸区南坪支行",
+      "bankCardNo": "6217701200488343",
+      "idCardNo": "50022119940325151X",
+      "declarationPhone": "18723833987"
+    }
   },
   {
     "username": "18874152462",
@@ -837,7 +887,13 @@
     "realName": "",
     "phone": "18164603946",
     "loginPassword": "123456",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "白佳",
+      "bankName": "中信银行玉溪分行营业部",
+      "bankCardNo": "6217 6819 0445 7929",
+      "idCardNo": "530402199508141226",
+      "declarationPhone": "18164603946"
+    }
   },
   {
     "username": "13602274429",
