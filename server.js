@@ -40,6 +40,8 @@ const INVOICE_IMAGE_DIR = path.join(DATA_DIR, "invoice-images");
 const INVOICE_IMAGE_URL_PREFIX = "/invoice-images/";
 const SERVER_LOG_FILE = path.join(ROOT_DIR, "server.log");
 const DEV_LIVE_RELOAD_PATHNAME = "/__dev/events";
+const FORCE_REFRESH_EVENTS_PATHNAME = "/api/events/force-refresh";
+const FORCE_REFRESH_TRIGGER_PATHNAME = "/api/force-refresh";
 const DISPATCHER_ACCOUNT_LIST = ["1", "a", "c", "d", "e", "k", "开心财税", "开心财税1旧", "开心财税k旧"];
 const DISPATCHER_ACCOUNTS = new Set(DISPATCHER_ACCOUNT_LIST);
 const DISPATCHER_LOGIN_PASSWORD = "11";
@@ -90,7 +92,9 @@ const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
 
 let writeQueue = Promise.resolve();
 const devLiveReloadClients = new Set();
+const forceRefreshClients = new Set();
 let devLiveReloadHeartbeat = null;
+let forceRefreshHeartbeat = null;
 let devLiveReloadDebounceTimer = null;
 let devWatchersStarted = false;
 let staticAssetVersion = "";
@@ -313,6 +317,14 @@ function removeDevLiveReloadClient(res) {
   }
 }
 
+function removeForceRefreshClient(client) {
+  forceRefreshClients.delete(client);
+  if (!forceRefreshClients.size && forceRefreshHeartbeat) {
+    clearInterval(forceRefreshHeartbeat);
+    forceRefreshHeartbeat = null;
+  }
+}
+
 function startDevLiveReloadHeartbeat() {
   if (devLiveReloadHeartbeat || !devLiveReloadClients.size) {
     return;
@@ -335,6 +347,28 @@ function startDevLiveReloadHeartbeat() {
   }, 15000);
 }
 
+function startForceRefreshHeartbeat() {
+  if (forceRefreshHeartbeat || !forceRefreshClients.size) {
+    return;
+  }
+
+  forceRefreshHeartbeat = setInterval(() => {
+    if (!forceRefreshClients.size) {
+      clearInterval(forceRefreshHeartbeat);
+      forceRefreshHeartbeat = null;
+      return;
+    }
+
+    for (const client of [...forceRefreshClients]) {
+      try {
+        client.res.write(": ping\n\n");
+      } catch {
+        removeForceRefreshClient(client);
+      }
+    }
+  }, 15000);
+}
+
 function broadcastDevLiveReload(payload) {
   if (!devLiveReloadClients.size) {
     return;
@@ -348,6 +382,29 @@ function broadcastDevLiveReload(payload) {
       removeDevLiveReloadClient(client);
     }
   }
+}
+
+function broadcastForceRefresh(payload = {}) {
+  if (!forceRefreshClients.size) {
+    return 0;
+  }
+
+  const body = [
+    "event: force-refresh",
+    `data: ${JSON.stringify(payload)}`,
+    "",
+    ""
+  ].join("\n");
+  let deliveredCount = 0;
+  for (const client of [...forceRefreshClients]) {
+    try {
+      client.res.write(body);
+      deliveredCount += 1;
+    } catch {
+      removeForceRefreshClient(client);
+    }
+  }
+  return deliveredCount;
 }
 
 function scheduleDevLiveReload(changedPath) {
@@ -442,6 +499,67 @@ function serveDevLiveReloadStream(req, res) {
   startDevLiveReloadHeartbeat();
   req.on("close", () => {
     removeDevLiveReloadClient(res);
+  });
+}
+
+async function serveForceRefreshEventStream(req, res) {
+  const host = req.headers.host || `127.0.0.1:${PORT}`;
+  const url = new URL(req.url || FORCE_REFRESH_EVENTS_PATHNAME, `http://${host}`);
+  const session = await resolveAuthSessionByLoginAccount(url.searchParams.get("account"));
+  if (!session) {
+    sendJson(res, 401, { error: "未登录或登录已失效" });
+    return;
+  }
+
+  if (session.role !== "accountant") {
+    sendJson(res, 403, { error: "仅会计账号可订阅强制刷新" });
+    return;
+  }
+
+  setApiCorsHeaders(res);
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-store",
+    Connection: "keep-alive"
+  });
+  res.write("retry: 1000\n\n");
+  const client = {
+    res,
+    session
+  };
+  forceRefreshClients.add(client);
+  startForceRefreshHeartbeat();
+  req.on("close", () => {
+    removeForceRefreshClient(client);
+  });
+}
+
+async function serveForceRefreshTrigger(req, res) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    sendJson(res, 405, { error: "方法不支持" });
+    return;
+  }
+
+  const session = await requireAuthSession(req, res, ["boss"]);
+  if (!session) return;
+
+  const payload = {
+    triggeredAt: getCurrentBeijingDateTime(),
+    triggeredBy: session.account,
+    targetRole: "accountant"
+  };
+  const deliveredCount = broadcastForceRefresh(payload);
+  sendJson(res, 200, {
+    ok: true,
+    deliveredCount,
+    payload
   });
 }
 
@@ -2223,6 +2341,10 @@ function isRecordInvoiceUploadedByRecordAccountantOrLinkedDispatcher(record, opt
   return isInvoiceUploadedByAccountantOrLinkedDispatcher(record, record?.accountant, options);
 }
 
+function isRecordInvoiceOptionalForPayout(record) {
+  return isBuiltInAccountantName(record?.accountant);
+}
+
 function normalizePayoutTarget(rawTarget) {
   const source = normalizeText(rawTarget, 160);
   if (!source) return null;
@@ -3800,6 +3922,16 @@ async function serveRecordSettlementPayout(req, res) {
           && settlementFields.isSettled
           && isCompletedCheckStatus(checkStatus);
         const canPayAccountantTarget = canPayBaseRecord
+          && (
+            isRecordInvoiceUploadedByRecordAccountantOrLinkedDispatcher({
+              ...current,
+              ...invoiceFields
+            }, {
+              dispatcherAccountantMappings,
+              accountants
+            })
+            || isRecordInvoiceOptionalForPayout(current)
+          )
           && !paymentFields.isSettlementPaid;
         const shouldPayAccountantTarget = recordTargets.some((target) => target.type === "accountant");
         const canPayDispatcherTarget = canPayBaseRecord
@@ -3807,6 +3939,17 @@ async function serveRecordSettlementPayout(req, res) {
             ...current,
             ...dispatcherInvoiceFields
           }, {
+            dispatcherAccountantMappings,
+            accountants
+          })
+          && isDispatcherInvoiceUploadedByAccountantOrLinkedDispatcher({
+            ...current,
+            ...dispatcherInvoiceFields
+          }, getLinkedAccountantDisplayNameByDispatcherTag(
+            normalizeDispatcherTag(current.dispatcher),
+            dispatcherAccountantMappings,
+            accountants
+          ), {
             dispatcherAccountantMappings,
             accountants
           })
@@ -5424,6 +5567,16 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "GET" && pathname === DEV_LIVE_RELOAD_PATHNAME) {
       serveDevLiveReloadStream(req, res);
+      return;
+    }
+
+    if (req.method === "GET" && pathname === FORCE_REFRESH_EVENTS_PATHNAME) {
+      await serveForceRefreshEventStream(req, res);
+      return;
+    }
+
+    if (pathname === FORCE_REFRESH_TRIGGER_PATHNAME) {
+      await serveForceRefreshTrigger(req, res);
       return;
     }
 

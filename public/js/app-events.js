@@ -144,6 +144,27 @@
       await openAccountantModal();
     });
 
+    if (forceRefreshAccountantPagesBtn) {
+      forceRefreshAccountantPagesBtn.addEventListener("click", async () => {
+        if (!requireAccount()) return;
+        if (!isBossLogin()) return;
+        try {
+          const result = await withLoading(
+            {
+              button: forceRefreshAccountantPagesBtn,
+              buttonText: "刷新中..."
+            },
+            () => triggerForceRefreshForAccountantPages()
+          );
+          const deliveredCount = Number(result?.deliveredCount) || 0;
+          showAppStatus(`已发送强制刷新指令，当前在线会计页面 ${deliveredCount} 个。`, "ok");
+        } catch (error) {
+          console.error(error);
+          showAppStatus(error.message || "强制刷新失败，请稍后重试。", "error");
+        }
+      });
+    }
+
     openRecycleModalBtn.addEventListener("click", async () => {
       await openRecycleModal();
     });

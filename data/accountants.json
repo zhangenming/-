@@ -341,7 +341,13 @@
     "realName": "李琪",
     "phone": "13520827406",
     "loginPassword": "123456",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "李琪",
+      "bankName": "中信银行北京八里庄支行",
+      "bankCardNo": "6217680730256851",
+      "idCardNo": "110105199305100429",
+      "declarationPhone": "13520827406"
+    }
   },
   {
     "username": "QiZhen",
@@ -744,6 +750,22 @@
     "invoiceRecipientInfo": null
   },
   {
+    "username": "13014590313",
+    "displayName": "有米U.mi-tong",
+    "name": "有米U.mi-tong",
+    "alias": "有米U.mi-tong",
+    "realName": "",
+    "phone": "13014590313",
+    "loginPassword": "Aa876361507",
+    "invoiceRecipientInfo": {
+      "name": "有米U.mi-tong",
+      "bankName": "中信银行郑州高新区支行",
+      "bankCardNo": "6217681122496089",
+      "idCardNo": "410102198803130169",
+      "declarationPhone": "13014590313"
+    }
+  },
+  {
     "username": "YouXing.",
     "displayName": "有幸",
     "name": "有幸",
@@ -774,6 +796,16 @@
       "idCardNo": "420114199109205425",
       "declarationPhone": "13437180362"
     }
+  },
+  {
+    "username": "13696254071",
+    "displayName": "袁琳",
+    "name": "袁琳",
+    "alias": "袁琳",
+    "realName": "",
+    "phone": "13696254071",
+    "loginPassword": "998311",
+    "invoiceRecipientInfo": null
   },
   {
     "username": "ChunShuYiWaizoey",
@@ -854,6 +886,22 @@
     }
   },
   {
+    "username": "13658122264",
+    "displayName": "DY050505",
+    "name": "DY050505",
+    "alias": "DY050505",
+    "realName": "",
+    "phone": "13658122264",
+    "loginPassword": "Yxm123456789!",
+    "invoiceRecipientInfo": {
+      "name": "DY050505",
+      "bankName": "6245",
+      "bankCardNo": "526673",
+      "idCardNo": "510623199092277328",
+      "declarationPhone": "13658122264"
+    }
+  },
+  {
     "username": "45558e79b3945112b447f3f791ce0fa5",
     "displayName": "Hello,现在",
     "name": "Hello,现在",
@@ -877,7 +925,13 @@
     "realName": "张映珊",
     "phone": "13652359816",
     "loginPassword": "123456",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "张映珊",
+      "bankName": "中国建设银行股份有限公司深圳华强北支行",
+      "bankCardNo": "6217007200054282655",
+      "idCardNo": "445281199305151325",
+      "declarationPhone": "13652359816"
+    }
   },
   {
     "username": "jia",

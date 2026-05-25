@@ -4,6 +4,66 @@
       return loginAccount ? encodeURIComponent(loginAccount) : "";
     }
 
+    function closeForceRefreshEventSource() {
+      if (forceRefreshReloadTimer) {
+        window.clearTimeout(forceRefreshReloadTimer);
+        forceRefreshReloadTimer = null;
+      }
+      if (!forceRefreshEventSource) return;
+      forceRefreshEventSource.close();
+      forceRefreshEventSource = null;
+    }
+
+    function scheduleForcedAccountantPageReload(payload = {}) {
+      if (!isAccountantLogin()) return;
+      const message = String(payload?.message || "").trim();
+      if (message) {
+        showAppStatus(message, "ok");
+      } else {
+        showAppStatus("管理员已触发强制刷新，页面即将更新。", "ok");
+      }
+      if (forceRefreshReloadTimer) {
+        window.clearTimeout(forceRefreshReloadTimer);
+      }
+      forceRefreshReloadTimer = window.setTimeout(() => {
+        window.location.reload();
+      }, 120);
+    }
+
+    function ensureForceRefreshSubscription() {
+      if (!window.EventSource) return;
+      if (!hasAuthenticatedAccount() || !isAccountantLogin()) {
+        closeForceRefreshEventSource();
+        return;
+      }
+      const encodedLoginAccount = getEncodedLoginAccountHeaderValue();
+      if (!encodedLoginAccount) {
+        closeForceRefreshEventSource();
+        return;
+      }
+      const expectedUrl = `${API_ENDPOINT_FORCE_REFRESH_EVENTS}?account=${encodedLoginAccount}`;
+      if (forceRefreshEventSource?.url === expectedUrl) {
+        return;
+      }
+      closeForceRefreshEventSource();
+      const source = new EventSource(expectedUrl);
+      source.addEventListener("force-refresh", (event) => {
+        let payload = {};
+        try {
+          payload = event?.data ? JSON.parse(event.data) : {};
+        } catch {
+          payload = {};
+        }
+        scheduleForcedAccountantPageReload(payload);
+      });
+      source.onerror = () => {
+        if (!hasAuthenticatedAccount() || !isAccountantLogin()) {
+          closeForceRefreshEventSource();
+        }
+      };
+      forceRefreshEventSource = source;
+    }
+
     async function fetchWithClientLog(url, options = {}, meta = {}) {
       const { skipAuth = false } = meta;
       const buildHeaders = () => {
@@ -28,6 +88,7 @@
     }
 
     function handleUnauthorizedSession() {
+      closeForceRefreshEventSource();
       clearAuthenticatedRuntimeState();
       saveToStorage();
       applyAccountToForm();
@@ -55,6 +116,7 @@
     }
 
     function clearAuthenticatedRuntimeState() {
+      closeForceRefreshEventSource();
       clearCurrentAccountIdentity();
       records = [];
       recycleBinRecords = [];
@@ -96,6 +158,7 @@
         saveSuccessfulLoginEntry(loginAccount, password, currentAccountRole);
       }
       saveToStorage();
+      ensureForceRefreshSubscription();
     }
 
     function syncModalOpenState() {
@@ -751,6 +814,12 @@
         const displayName = String(profile?.displayName || profile?.name || "").trim();
         return count + (orderCountByAccountant.get(displayName) || 0);
       }, 0);
+      if (accountantModalAccountantCount) {
+        accountantModalAccountantCount.textContent = `${activeAccountantCount}/${totalAccountantCount}`;
+      }
+      if (accountantModalOrderCount) {
+        accountantModalOrderCount.textContent = `${totalOrderCount}单`;
+      }
       accountantSortableHeaders.forEach((button) => {
         const key = String(button?.dataset?.key || "").trim();
         const label = String(button?.dataset?.label || "").trim();
@@ -1529,6 +1598,21 @@
         renderDispatcherList();
       }
       renderTable();
+    }
+
+    async function triggerForceRefreshForAccountantPages() {
+      const response = await fetchWithClientLog(
+        API_ENDPOINT_FORCE_REFRESH,
+        {
+          method: "POST"
+        },
+        { successMessage: "强制刷新会计页面" }
+      );
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error || `强制刷新失败（${response.status}）`);
+      }
+      return response.json();
     }
 
     async function fetchAccountants() {
@@ -2338,6 +2422,7 @@
       currentAccountRealName = storedRole === "accountant" ? storedRealName : "";
       currentAccountPhone = storedRole === "accountant" ? storedPhone : "";
       currentLoginAccount = storedLoginAccount;
+      ensureForceRefreshSubscription();
       if ((storedRole === "dispatcher" || storedRole === "boss") && storedAccount && currentAccount && storedAccount !== currentAccount) {
         saveToStorage();
       }

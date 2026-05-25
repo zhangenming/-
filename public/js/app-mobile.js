@@ -189,7 +189,7 @@
       { text: "导出", className: "mobile-action-btn", button: exportTableBtn },
       { text: "上传发票", className: "mobile-action-btn", button: accountantInvoiceUploadBtn },
       { text: "核对用户确认", className: "mobile-action-btn", button: bossSettlementBtn },
-      { text: "打款", className: "mobile-action-btn", button: bossSettlementDetailBtn },
+      { text: "结算", className: "mobile-action-btn", button: bossSettlementDetailBtn },
       { text: "已上传/待结算详细", className: "mobile-action-btn", button: accountantUploadedSettlementDetailBtn },
       { text: "提醒", className: "mobile-action-btn", button: openReminderModalBtn },
     ].filter((item) => item.button && !item.button.hidden);
@@ -272,7 +272,11 @@
     accountant.textContent = String(record?.accountant || "未分配会计").trim();
     const amount = document.createElement("strong");
     amount.className = "mobile-record-amount";
-    amount.textContent = toMoney(record?.paymentPrice);
+    if (isAccountantLogin()) {
+      amount.textContent = toMoney(record?.totalPrice);
+    } else {
+      amount.textContent = toMoney(record?.paymentPrice);
+    }
     money.append(accountant, amount);
     return money;
   }
@@ -327,12 +331,17 @@
   function createMobileRecordFinance(record) {
     const finance = document.createElement("div");
     finance.className = "mobile-record-finance";
-    finance.append(
-      createMeta("付款", toMoney(record?.paymentPrice)),
-      createMeta("溢价", formatPremiumWithPercent(record)),
-      createMeta("会计价", toMoney(record?.totalPrice)),
-      createMeta("结算价", formatSettlementPriceDisplay(record)),
-    );
+    const items = [
+      { label: "会计价", value: toMoney(record?.totalPrice) },
+      { label: "结算价", value: formatSettlementPriceDisplay(record) },
+    ];
+    if (!isAccountantLogin()) {
+      items.unshift(
+        { label: "付款", value: toMoney(record?.paymentPrice) },
+        { label: "溢价", value: formatPremiumWithPercent(record) },
+      );
+    }
+    finance.append(...items.map((item) => createMeta(item.label, item.value)));
     return finance;
   }
 
@@ -608,6 +617,7 @@
       { text: "排序", action: () => openMobileSheet("sort") },
       { text: "管理接待", button: openDispatcherModalBtn },
       { text: "管理会计", button: openAccountantModalBtn },
+      { text: "强制刷新会计页", button: forceRefreshAccountantPagesBtn },
       { text: "分析数据", button: openAnalysisModalBtn },
       { text: "回收站", button: openRecycleModalBtn },
       { text: "提醒", button: openReminderModalBtn },

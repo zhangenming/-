@@ -17,6 +17,8 @@ const API_ENDPOINT_AUTH_ACCOUNTANT_REGISTER = `${API_BASE}/api/auth/accountant-r
 const API_ENDPOINT_AUTH_LOGIN = `${API_BASE}/api/auth/login`;
 const API_ENDPOINT_AUTH_PASSWORD = `${API_BASE}/api/auth/password`;
 const API_ENDPOINT_AUTH_QUICK_LOGINS = `${API_BASE}/api/auth/quick-logins`;
+const API_ENDPOINT_FORCE_REFRESH = `${API_BASE}/api/force-refresh`;
+const API_ENDPOINT_FORCE_REFRESH_EVENTS = `${API_BASE}/api/events/force-refresh`;
 const STATIC_ASSET_VERSION = String(
   window.__STATIC_ASSET_VERSION__ || "",
 ).trim();
@@ -378,18 +380,30 @@ function getLinkedDispatcherSettlementAmount(
     typeof options === "object" &&
     Object.prototype.hasOwnProperty.call(options, "paid");
   const paidFilter = Boolean(options?.paid);
-  const detailRecords = getBossSettlementDetailRecords(sourceRecords);
+  const includeUnsettled = Boolean(options?.includeUnsettled);
+  const detailRecords = includeUnsettled
+    ? (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) =>
+        isRecordCompletionStatus(item),
+      )
+    : getBossSettlementDetailRecords(sourceRecords);
   let totalRawPremium = 0;
   let totalDispatcherPrice = 0;
+  let payoutRawPremium = 0;
+  let payoutDispatcherPrice = 0;
   const dispatcherCommissionMap = new Map();
   let recordCount = 0;
   const recordIds = [];
 
   let pendingCount = 0;
+  let pendingInvoiceCount = 0;
   let uploadedCount = 0;
   let paidCount = 0;
   const payoutRecordIds = [];
   const payoutTargets = [];
+  const revokeTargets = [];
+  const paidAtValues = [];
+  let latestPaidAt = "";
+  let latestPaidAtTime = 0;
   const invoiceMap = new Map();
   let latestUploadedAt = "";
   let latestUploadedBy = "";
@@ -397,7 +411,7 @@ function getLinkedDispatcherSettlementAmount(
   detailRecords.forEach((record) => {
     const dispatcher = normalizeDispatcherTag(record?.dispatcher);
     if (!dispatcherTags.includes(dispatcher)) return;
-    if (hasPaidFilter && isRecordSettlementPaid(record) !== paidFilter) return;
+    if (hasPaidFilter && isRecordDispatcherSettlementPaid(record) !== paidFilter) return;
 
     const recordId = String(record?.id || "").trim();
     if (recordId && !recordIds.includes(recordId)) {
@@ -425,7 +439,10 @@ function getLinkedDispatcherSettlementAmount(
     ).trim();
     const uploadedAtTime = parseDateTimeValue(uploadedAt);
     const invoiceImage = getDispatcherSettlementInvoiceImage(record);
-    const isPaid = isRecordSettlementPaid(record);
+    const isPaid = isRecordDispatcherSettlementPaid(record);
+    const paidAt = String(record?.dispatcherSettlementPaidAt || "").trim();
+    const paidAtTime = parseDateTimeValue(paidAt);
+    const payoutTarget = recordId ? `dispatcher:${recordId}` : "";
 
     if (isUploaded) {
       uploadedCount += 1;
@@ -466,14 +483,27 @@ function getLinkedDispatcherSettlementAmount(
         }
         invoiceMap.set(invoiceKey, invoiceItem);
       }
-      if (isPaid) {
-        paidCount += 1;
-      } else if (recordId) {
-        payoutRecordIds.push(recordId);
-        payoutTargets.push(recordId);
-      }
     } else {
       pendingCount += 1;
+      pendingInvoiceCount += 1;
+    }
+
+    if (isPaid) {
+      paidCount += 1;
+      if (payoutTarget) {
+        revokeTargets.push(payoutTarget);
+      }
+      if (paidAt) {
+        const normalizedPaidAtTime = Number.isNaN(paidAtTime) ? 0 : paidAtTime;
+        paidAtValues.push(paidAt);
+        if (!latestPaidAt || normalizedPaidAtTime >= latestPaidAtTime) {
+          latestPaidAt = paidAt;
+          latestPaidAtTime = normalizedPaidAtTime;
+        }
+      }
+    } else if (isUploaded && payoutTarget) {
+      payoutRecordIds.push(recordId);
+      payoutTargets.push(payoutTarget);
     }
 
     const premium = getPremiumValue(record);
@@ -488,6 +518,14 @@ function getLinkedDispatcherSettlementAmount(
       : 0;
     if (Number.isFinite(dispatcherPrice)) {
       totalDispatcherPrice += dispatcherPrice;
+    }
+    if (isUploaded && !isPaid) {
+      if (Number.isFinite(premium)) {
+        payoutRawPremium += premium;
+      }
+      if (Number.isFinite(dispatcherPrice)) {
+        payoutDispatcherPrice += dispatcherPrice;
+      }
     }
     if (Number.isFinite(totalPrice) && Number.isFinite(baseRate)) {
       dispatcherCommissionMap.set(
@@ -512,16 +550,34 @@ function getLinkedDispatcherSettlementAmount(
     Number.isFinite(invoiceAmount) && Number.isFinite(taxAmount)
       ? invoiceAmount - taxAmount
       : 0;
+  const payoutPremiumBreakdown = getTieredPremiumProfitBreakdown(payoutRawPremium);
+  const payoutPremiumProfit = payoutPremiumBreakdown ? payoutPremiumBreakdown.profit : Number.NaN;
+  const payoutInvoiceAmount =
+    Number.isFinite(payoutPremiumProfit) && Number.isFinite(payoutDispatcherPrice)
+      ? payoutPremiumProfit + payoutDispatcherPrice
+      : 0;
+  const payoutTaxAmount = Number.isFinite(payoutInvoiceAmount)
+    ? getSettlementTaxAmount(payoutInvoiceAmount)
+    : 0;
+  const payoutPayableAmount =
+    Number.isFinite(payoutInvoiceAmount) && Number.isFinite(payoutTaxAmount)
+      ? payoutInvoiceAmount - payoutTaxAmount
+      : 0;
 
   return {
     dispatcherTags,
     recordIds,
     recordCount,
     pendingCount,
+    pendingInvoiceCount,
     uploadedCount,
     paidCount,
     payoutRecordIds,
     payoutTargets,
+    revokeTargets,
+    paidAtValues,
+    latestPaidAt,
+    latestPaidAtTime,
     latestUploadedAt,
     latestUploadedBy,
     invoiceMap,
@@ -535,6 +591,9 @@ function getLinkedDispatcherSettlementAmount(
     invoiceAmount,
     taxAmount,
     payableAmount,
+    payoutInvoiceAmount,
+    payoutTaxAmount,
+    payoutPayableAmount,
   };
 }
 
@@ -627,6 +686,9 @@ const openRecycleModalBtn = document.getElementById("openRecycleModalBtn");
 const openAccountantModalBtn = document.getElementById(
   "openAccountantModalBtn",
 );
+const forceRefreshAccountantPagesBtn = document.getElementById(
+  "forceRefreshAccountantPagesBtn",
+);
 const openReminderModalBtn = document.getElementById("openReminderModalBtn");
 const openCustomerFeedbackModalBtn = document.getElementById(
   "openCustomerFeedbackModalBtn",
@@ -636,6 +698,8 @@ const accountantSortableHeaders = Array.from(
 );
 const accountantSearchInput = document.getElementById("accountantSearchInput");
 const accountantSearchClearBtn = document.getElementById("accountantSearchClearBtn");
+const accountantModalAccountantCount = document.getElementById("accountantModalAccountantCount");
+const accountantModalOrderCount = document.getElementById("accountantModalOrderCount");
 const dispatcherSortableHeaders = Array.from(
   document.querySelectorAll(".dispatcher-sort-btn"),
 );
@@ -1209,6 +1273,8 @@ let isBossSettlementPayoutSubmitting = false;
 let isInvoiceUploadSubmitting = false;
 let hasUploadedSettlementInvoiceThisSession = false;
 let invoiceUploadReplaceRecordIds = [];
+let forceRefreshEventSource = null;
+let forceRefreshReloadTimer = null;
 const bossSettlementDetailSortState = {
   key: "accountant",
   direction: "asc",
@@ -2405,36 +2471,61 @@ function isRecordDispatcherSettlementPaid(record) {
 function isBossSettlementPayoutRecordSelectable(record) {
   if (!canCurrentAccountPayoutSettlementRecords()) return false;
   if (!isRecordCompleted(record)) return false;
-  return (
+  return isRecordSettled(record) && getBossSettlementPayoutTargetsForRecord(record).length > 0;
+}
+
+function getBossSettlementPayoutTargetsForRecord(record) {
+  if (!canCurrentAccountPayoutSettlementRecords()) return [];
+  if (!isRecordCompleted(record)) return [];
+  const recordId = String(record?.id || "").trim();
+  if (!recordId || !isRecordSettled(record)) return [];
+
+  const targets = [];
+  if (
+    !isRecordSettlementPaid(record) &&
     (
       isRecordInvoiceUploadedByRecordAccountant(record) ||
       isRecordInvoiceOptionalForPayout(record)
+    )
+  ) {
+    targets.push(recordId);
+  }
+
+  const dispatcher = normalizeDispatcherTag(record?.dispatcher);
+  const linkedAccountant = dispatcher
+    ? getLinkedAccountantDisplayNameByTag(dispatcher)
+    : "";
+  if (
+    linkedAccountant &&
+    isRecordDispatcherInvoiceUploaded(record) &&
+    isInvoiceUploadedByAccountant(
+      {
+        ...record,
+        settlementInvoiceImage: getDispatcherSettlementInvoiceImage(record),
+        invoiceUploadedAt: record?.dispatcherInvoiceUploadedAt,
+        invoiceUploadedBy: record?.dispatcherInvoiceUploadedBy,
+        invoiceUploadedByUsername: record?.dispatcherInvoiceUploadedByUsername,
+      },
+      linkedAccountant,
     ) &&
-    !isRecordSettlementPaid(record)
-  );
+    !isRecordDispatcherSettlementPaid(record)
+  ) {
+    targets.push(`dispatcher:${recordId}`);
+  }
+
+  return targets;
 }
 
 function syncBossSettlementPayoutSelection(sourceRecords = records) {
   const validRecordIds = new Set();
   (Array.isArray(sourceRecords) ? sourceRecords : [])
-    .filter((item) => isBossSettlementPayoutRecordSelectable(item))
     .forEach((item) => {
-      const recordId = String(item?.id || "").trim();
-      if (!recordId) return;
-      if (
-        (
-          isRecordInvoiceUploadedByRecordAccountant(item) ||
-          isRecordInvoiceOptionalForPayout(item)
-        ) &&
-        !isRecordSettlementPaid(item)
-      ) {
-        validRecordIds.add(recordId);
-      }
+      getBossSettlementPayoutTargetsForRecord(item).forEach((target) => validRecordIds.add(target));
     });
   selectedBossSettlementPayoutRecordIds = new Set(
     Array.from(selectedBossSettlementPayoutRecordIds)
-      .map((recordId) => String(recordId || "").replace(/^dispatcher:/, ""))
-      .filter((recordId) => validRecordIds.has(recordId)),
+      .map((target) => String(target || "").trim())
+      .filter((target) => validRecordIds.has(target)),
   );
 }
 

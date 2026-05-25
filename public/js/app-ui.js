@@ -397,7 +397,9 @@
         const profile = getAccountantProfileByLoginName(group.accountant);
         const recipientInfo = normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo);
         const realName = getAccountantRealNameByLoginName(group.accountant);
-        const amount = group.payableAmount;
+        const amount = Object.prototype.hasOwnProperty.call(group, "payoutPayableAmount")
+          ? (Number(group.payoutPayableAmount) || 0)
+          : (Number(group.payableAmount) || 0);
 
         dataRows.push([
           realName || recipientInfo.name || group.accountant,
@@ -3701,6 +3703,14 @@
       return "";
     }
 
+    function getBossSettlementDetailSpecialAccountantRank(group) {
+      const index = BUILT_IN_ACCOUNTANT_NAMES.indexOf(String(group?.accountant || "").trim());
+      if (index >= 0) return index;
+      return group?.hasLinkedDispatcher || isAccountantLinkedToDispatcher(group?.accountant)
+        ? BUILT_IN_ACCOUNTANT_NAMES.length
+        : BUILT_IN_ACCOUNTANT_NAMES.length + 1;
+    }
+
     function compareBossSettlementDetailGroups(left, right, key) {
       const leftValue = getBossSettlementDetailSortValue(left, key);
       const rightValue = getBossSettlementDetailSortValue(right, key);
@@ -3724,7 +3734,13 @@
       const source = Array.isArray(groups) ? groups : [];
       const sortKey = String(bossSettlementDetailSortState.key || "accountant").trim();
       const direction = bossSettlementDetailSortState.direction === "desc" ? -1 : 1;
-      return [...source].sort((left, right) => compareBossSettlementDetailGroups(left, right, sortKey) * direction);
+      return [...source].sort((left, right) => {
+        const specialRankDiff =
+          getBossSettlementDetailSpecialAccountantRank(left) -
+          getBossSettlementDetailSpecialAccountantRank(right);
+        if (specialRankDiff !== 0) return specialRankDiff;
+        return compareBossSettlementDetailGroups(left, right, sortKey) * direction;
+      });
     }
 
     function updateBossSettlementDetailSort(key) {
@@ -3739,15 +3755,47 @@
       renderBossSettlementDetailModalContent();
     }
 
-    function getBossSettlementDetailPayoutStatusKey(group) {
-      if (!group || typeof group !== "object") return "pending_invoice";
-      if (Number(group.recordCount) > 0 && Number(group.paidCount) >= Number(group.recordCount)) return "paid";
+    function getBossSettlementDetailPayoutStatusKeys(group) {
+      if (!group || typeof group !== "object") return ["pending_invoice"];
+      const keys = [];
       const payoutTargets = Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds;
-      if (Array.isArray(payoutTargets) && payoutTargets.length > 0) return "payable";
-      return "pending_invoice";
+      const revokeTargets = Array.isArray(group.revokeTargets) ? group.revokeTargets : [];
+      const pendingInvoiceCount = Object.prototype.hasOwnProperty.call(group, "pendingInvoiceCount")
+        ? Number(group.pendingInvoiceCount)
+        : Number(group.pendingCount);
+      if (pendingInvoiceCount > 0) keys.push("pending_invoice");
+      if (Array.isArray(payoutTargets) && payoutTargets.length > 0) keys.push("payable");
+      if (
+        revokeTargets.length > 0 ||
+        (Number(group.recordCount) > 0 && Number(group.paidCount) >= Number(group.recordCount))
+      ) {
+        keys.push("paid");
+      }
+      return keys.length ? Array.from(new Set(keys)) : ["pending_invoice"];
     }
 
-    function getBossSettlementDetailPayoutStatusLabel(statusKey) {
+    function getBossSettlementDetailPayoutStatusKey(group) {
+      if (!group || typeof group !== "object") return "pending_invoice";
+      const statusKeys = getBossSettlementDetailPayoutStatusKeys(group);
+      const payoutTargets = Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds;
+      if (Array.isArray(payoutTargets) && payoutTargets.length > 0) return "payable";
+      if (statusKeys.includes("paid")) return "paid";
+      return statusKeys[0] || "pending_invoice";
+    }
+
+    function getBossSettlementDetailPayoutStatusLabel(statusKey, group = null) {
+      const labelMap = {
+        pending_invoice: "待上传",
+        payable: "待结算",
+        paid: "已结算"
+      };
+      const statusKeys = group && typeof group === "object"
+        ? getBossSettlementDetailPayoutStatusKeys(group)
+        : [statusKey];
+      const labels = statusKeys
+        .map((key) => labelMap[key] || "")
+        .filter(Boolean);
+      if (labels.length > 1) return labels.join(" / ");
       if (statusKey === "paid") return "已结算";
       if (statusKey === "payable") return "待结算";
       return "待上传";
@@ -3782,6 +3830,13 @@
       realName.className = "settlement-detail-accountant-real-name";
       realName.textContent = getBossSettlementDetailDisplayName(group.accountant);
       accountantTd.appendChild(realName);
+
+      if (isBuiltInAccountantName(group.accountant)) {
+        const specialBadge = document.createElement("span");
+        specialBadge.className = "settlement-detail-special-accountant-badge";
+        specialBadge.textContent = "特殊结算";
+        accountantTd.appendChild(specialBadge);
+      }
     }
 
     function getBossSettlementDetailOrderParts(group) {
@@ -3800,7 +3855,23 @@
     function createBossSettlementDetailOrderCell(group) {
       const orderTd = document.createElement("td");
       orderTd.className = "settlement-detail-order-cell settlement-detail-col-order";
-      orderTd.textContent = getBossSettlementDetailOrderLabel(group);
+      if (group?.hasLinkedDispatcher) {
+        const { own, dispatcher, total } = getBossSettlementDetailOrderParts(group);
+        [
+          { text: String(own) },
+          { text: "+" },
+          { text: String(dispatcher), className: "settlement-detail-order-dispatcher-part" },
+          { text: "=" },
+          { text: String(total) }
+        ].forEach((fragment) => {
+          const span = document.createElement("span");
+          if (fragment.className) span.className = fragment.className;
+          span.textContent = fragment.text;
+          orderTd.appendChild(span);
+        });
+      } else {
+        orderTd.textContent = getBossSettlementDetailOrderLabel(group);
+      }
       return orderTd;
     }
 
@@ -3838,11 +3909,23 @@
         const selectedCount = targets.filter((target) => selectedTargetSet.has(target)).length;
         if (selectedCount === 0) return sum;
 
-        const payableAmount = Number(group.payableAmount) || 0;
+        const payableAmount = Object.prototype.hasOwnProperty.call(group, "payoutPayableAmount")
+          ? (Number(group.payoutPayableAmount) || 0)
+          : (Number(group.payableAmount) || 0);
         if (selectedCount >= targets.length) return sum + payableAmount;
 
         return sum + (payableAmount * selectedCount / targets.length);
       }, 0);
+    }
+
+    function getBossSettlementPayoutGroupCount(groups, targetSet = null) {
+      const source = Array.isArray(groups) ? groups : [];
+      return source.filter((group) => {
+        const targets = Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds;
+        if (!Array.isArray(targets) || targets.length === 0) return false;
+        if (!(targetSet instanceof Set)) return true;
+        return targets.some((target) => targetSet.has(target));
+      }).length;
     }
 
     function formatSettlementPaidDateDisplay(rawDateTime) {
@@ -4060,10 +4143,51 @@
     function getBossSettlementDetailSummary(sourceRecords = records) {
       const detailRecords = getBossSettlementDetailRecords(sourceRecords);
       const groupMap = new Map();
-      const paidGroupMap = new Map();
-      let totalInvoiceAmount = 0;
       let latestSettledAt = "";
       let latestSettledAtTime = 0;
+
+      const createGroup = (accountant, options = {}) => ({
+        accountant,
+        recordIds: [],
+        recordCount: 0,
+        pendingCount: 0,
+        pendingInvoiceCount: 0,
+        uploadedCount: 0,
+        paidCount: 0,
+        payoutRecordIds: [],
+        payoutTargets: [],
+        revokeTargets: [],
+        paidAtValues: [],
+        latestPaidAt: "",
+        latestPaidAtTime: 0,
+        invoiceAmount: 0,
+        payoutInvoiceAmount: 0,
+        paidInvoiceAmount: 0,
+        isLinkedDispatcherOnly: Boolean(options.isLinkedDispatcherOnly),
+        latestUploadedAt: "",
+        latestUploadedBy: "",
+        invoiceMap: new Map()
+      });
+
+      const getOrCreateGroup = (accountant, options = {}) => {
+        const normalizedAccountant = String(accountant || "").trim() || "未分配会计";
+        const existing = groupMap.get(normalizedAccountant);
+        if (existing) return existing;
+        const nextGroup = createGroup(normalizedAccountant, options);
+        groupMap.set(normalizedAccountant, nextGroup);
+        return nextGroup;
+      };
+
+      const addPaidAtValue = (group, paidAt, paidAtTime) => {
+        const source = String(paidAt || "").trim();
+        if (!source) return;
+        const normalizedPaidAtTime = Number.isNaN(paidAtTime) ? 0 : paidAtTime;
+        group.paidAtValues.push(source);
+        if (!group.latestPaidAt || normalizedPaidAtTime >= group.latestPaidAtTime) {
+          group.latestPaidAt = source;
+          group.latestPaidAtTime = normalizedPaidAtTime;
+        }
+      };
 
       detailRecords.forEach((record) => {
         const accountant = String(record?.accountant || "").trim() || "未分配会计";
@@ -4080,47 +4204,18 @@
         const paidAt = String(record?.settlementPaidAt || "").trim();
         const paidAtTime = parseDateTimeValue(paidAt);
         const recordId = String(record?.id || "").trim();
-        const targetGroupMap = isPaid ? paidGroupMap : groupMap;
-        const current = targetGroupMap.get(accountant) || {
-          accountant,
-          recordIds: [],
-          recordCount: 0,
-          pendingCount: 0,
-          uploadedCount: 0,
-          paidCount: 0,
-          payoutRecordIds: [],
-          paidAtValues: [],
-          latestPaidAt: "",
-          latestPaidAtTime: 0,
-          invoiceAmount: 0,
-          latestUploadedAt: "",
-          latestUploadedBy: "",
-          invoiceMap: new Map()
-        };
+        const current = getOrCreateGroup(accountant);
 
-        if (recordId) {
+        if (recordId && !current.recordIds.includes(recordId)) {
           current.recordIds.push(recordId);
         }
         current.recordCount += 1;
         if (Number.isFinite(settlement)) {
           current.invoiceAmount += settlement;
-          totalInvoiceAmount += settlement;
         }
+
         if (isUploaded) {
           current.uploadedCount += 1;
-          if (isPaid) {
-            current.paidCount += 1;
-            if (paidAt) {
-              const normalizedPaidAtTime = Number.isNaN(paidAtTime) ? 0 : paidAtTime;
-              current.paidAtValues.push(paidAt);
-              if (!current.latestPaidAt || normalizedPaidAtTime >= current.latestPaidAtTime) {
-                current.latestPaidAt = paidAt;
-                current.latestPaidAtTime = normalizedPaidAtTime;
-              }
-            }
-          } else if (recordId) {
-            current.payoutRecordIds.push(recordId);
-          }
           const currentUploadedAtTime = parseDateTimeValue(current.latestUploadedAt);
           if (!current.latestUploadedAt || uploadedAtTime >= currentUploadedAtTime) {
             current.latestUploadedAt = uploadedAt;
@@ -4149,138 +4244,107 @@
             }
             current.invoiceMap.set(invoiceKey, invoiceItem);
           }
-        } else if (isInvoiceOptionalForPayout) {
-          current.pendingCount += 1;
-          if (isPaid) {
-            current.paidCount += 1;
-            if (paidAt) {
-              const normalizedPaidAtTime = Number.isNaN(paidAtTime) ? 0 : paidAtTime;
-              current.paidAtValues.push(paidAt);
-              if (!current.latestPaidAt || normalizedPaidAtTime >= current.latestPaidAtTime) {
-                current.latestPaidAt = paidAt;
-                current.latestPaidAtTime = normalizedPaidAtTime;
-              }
-            }
-          } else if (recordId) {
-            current.payoutRecordIds.push(recordId);
-          }
         } else {
           current.pendingCount += 1;
+          if (!isInvoiceOptionalForPayout) {
+            current.pendingInvoiceCount += 1;
+          }
         }
+
+        if (isPaid) {
+          current.paidCount += 1;
+          if (Number.isFinite(settlement)) {
+            current.paidInvoiceAmount += settlement;
+          }
+          if (recordId) {
+            current.revokeTargets.push(recordId);
+          }
+          addPaidAtValue(current, paidAt, paidAtTime);
+        } else if ((isUploaded || isInvoiceOptionalForPayout) && recordId) {
+          current.payoutRecordIds.push(recordId);
+          current.payoutTargets.push(recordId);
+          if (Number.isFinite(settlement)) {
+            current.payoutInvoiceAmount += settlement;
+          }
+        }
+
         if (settledAt && settledAtTime >= latestSettledAtTime) {
           latestSettledAt = settledAt;
           latestSettledAtTime = settledAtTime;
         }
-
-        targetGroupMap.set(accountant, current);
       });
 
-      const addLinkedDispatcherAccountants = (targetMap, isPaidGroup = false) => {
-        const detailDispatchers = new Set(
-          detailRecords.map((r) => normalizeDispatcherTag(r?.dispatcher)).filter(Boolean)
-        );
-        const allLinkedAccountants = new Set();
-
-        Object.entries(dispatcherAccountantMappings).forEach(([tag, phone]) => {
-          const normalizedTag = normalizeDispatcherTag(tag);
-          if (!detailDispatchers.has(normalizedTag)) return;
-
-          const accountant = getAccountantByPhone(phone);
-          const accountantName = accountant?.displayName || accountant?.name || accountant?.username;
-          if (accountantName) {
-            allLinkedAccountants.add(accountantName);
-          }
-        });
-
-        allLinkedAccountants.forEach((accountantName) => {
-          if (!targetMap.has(accountantName)) {
-            const linkedDispatcherAmount = getLinkedDispatcherSettlementAmount(accountantName, sourceRecords, {
-              paid: isPaidGroup
-            });
-            if (!linkedDispatcherAmount) return;
-
-            if (linkedDispatcherAmount.recordCount > 0) {
-              targetMap.set(accountantName, {
-                accountant: accountantName,
-                recordIds: linkedDispatcherAmount.recordIds,
-                recordCount: linkedDispatcherAmount.recordCount,
-                pendingCount: linkedDispatcherAmount.pendingCount,
-                uploadedCount: linkedDispatcherAmount.uploadedCount,
-                paidCount: linkedDispatcherAmount.paidCount,
-                payoutRecordIds: linkedDispatcherAmount.payoutRecordIds,
-                payoutTargets: linkedDispatcherAmount.payoutTargets,
-                paidAtValues: [],
-                latestPaidAt: "",
-                latestPaidAtTime: 0,
-                invoiceAmount: 0,
-                isLinkedDispatcherOnly: true,
-                latestUploadedAt: "",
-                latestUploadedBy: "",
-                invoiceMap: new Map()
-              });
-            }
-          }
-        });
-      };
-
-      addLinkedDispatcherAccountants(groupMap, false);
-      addLinkedDispatcherAccountants(paidGroupMap, true);
+      const detailDispatchers = new Set(
+        detailRecords.map((record) => normalizeDispatcherTag(record?.dispatcher)).filter(Boolean)
+      );
+      Object.entries(dispatcherAccountantMappings || {}).forEach(([tag, phone]) => {
+        const normalizedTag = normalizeDispatcherTag(tag);
+        if (!detailDispatchers.has(normalizedTag)) return;
+        const accountant = getAccountantByPhone(phone);
+        const accountantName = accountant?.displayName || accountant?.name || accountant?.username;
+        if (!accountantName || groupMap.has(accountantName)) return;
+        const linkedDispatcherAmount = getLinkedDispatcherSettlementAmount(accountantName, sourceRecords);
+        if (linkedDispatcherAmount && linkedDispatcherAmount.recordCount > 0) {
+          groupMap.set(accountantName, createGroup(accountantName, { isLinkedDispatcherOnly: true }));
+        }
+      });
 
       const buildGroups = (sourceMap) => Array.from(sourceMap.values())
         .map((group) => {
-          const statusKey = getBossSettlementDetailStatusKey(group.recordCount, group.uploadedCount);
-          const accountantTaxAmount = getSettlementTaxAmount(group.invoiceAmount);
-          const groupIsPaid = Number(group.recordCount) > 0 && Number(group.paidCount) >= Number(group.recordCount);
-          const linkedDispatcherAmount = getLinkedDispatcherSettlementAmount(group.accountant, sourceRecords, {
-            paid: groupIsPaid
-          });
+          const linkedDispatcherAmount = getLinkedDispatcherSettlementAmount(group.accountant, sourceRecords);
 
           const accountantInvoiceAmount = group.invoiceAmount;
-          const accountantPayableAmount = group.invoiceAmount - accountantTaxAmount;
+          const accountantTaxAmount = getSettlementTaxAmount(accountantInvoiceAmount);
+          const accountantPayableAmount = accountantInvoiceAmount - accountantTaxAmount;
 
-          let dispatcherInvoiceAmount = 0;
-          let dispatcherTaxAmount = 0;
-          let dispatcherPayableAmount = 0;
-          let dispatcherRecordCount = 0;
-          let dispatcherPremiumAmount = 0;
-          let dispatcherCommissionAmount = 0;
-          let dispatcherPremiumSegments = [];
-          let dispatcherCommissionTerms = [];
-          let hasLinkedDispatcher = isAccountantLinkedToDispatcher(group.accountant);
+          const dispatcherInvoiceAmount = Number(linkedDispatcherAmount?.invoiceAmount) || 0;
+          const dispatcherTaxAmount = Number(linkedDispatcherAmount?.taxAmount) || 0;
+          const dispatcherPayableAmount = Number(linkedDispatcherAmount?.payableAmount) || 0;
+          const dispatcherRecordCount = Number(linkedDispatcherAmount?.recordCount) || 0;
+          const dispatcherPremiumAmount = Number(linkedDispatcherAmount?.premium) || 0;
+          const dispatcherCommissionAmount = Number(linkedDispatcherAmount?.dispatcherPrice) || 0;
+          const dispatcherPremiumSegments = linkedDispatcherAmount?.premiumBreakdown?.segments || [];
+          const dispatcherCommissionTerms = linkedDispatcherAmount?.dispatcherCommissionTerms || [];
+          const linkedPaidDispatcherAmount = getLinkedDispatcherSettlementAmount(group.accountant, sourceRecords, {
+            paid: true
+          });
+          const accountantPaidInvoiceAmount = Number(group.paidInvoiceAmount) || 0;
+          const accountantPaidTaxAmount = getSettlementTaxAmount(accountantPaidInvoiceAmount);
+          const accountantPaidPayableAmount = accountantPaidInvoiceAmount - accountantPaidTaxAmount;
+          const accountantPaidRecordCount = Number(group.paidCount) || 0;
+          const dispatcherPaidInvoiceAmount = Number(linkedPaidDispatcherAmount?.invoiceAmount) || 0;
+          const dispatcherPaidTaxAmount = Number(linkedPaidDispatcherAmount?.taxAmount) || 0;
+          const dispatcherPaidPayableAmount = Number(linkedPaidDispatcherAmount?.payableAmount) || 0;
+          const dispatcherPaidRecordCount = Number(linkedPaidDispatcherAmount?.recordCount) || 0;
+          const paidInvoiceAmount = accountantPaidInvoiceAmount + dispatcherPaidInvoiceAmount;
+          const paidTaxAmount = getSettlementTaxAmount(paidInvoiceAmount);
+          const paidPayableAmount = paidInvoiceAmount - paidTaxAmount;
+          const hasLinkedDispatcher = isAccountantLinkedToDispatcher(group.accountant);
           const linkedDispatcherTags = getDispatcherTagsLinkedToAccountant(group.accountant);
-
-          if (linkedDispatcherAmount) {
-            dispatcherInvoiceAmount = linkedDispatcherAmount.invoiceAmount;
-            dispatcherTaxAmount = linkedDispatcherAmount.taxAmount;
-            dispatcherPayableAmount = linkedDispatcherAmount.payableAmount;
-            dispatcherRecordCount = linkedDispatcherAmount.recordCount;
-            dispatcherPremiumAmount = linkedDispatcherAmount.premium;
-            dispatcherCommissionAmount = linkedDispatcherAmount.dispatcherPrice;
-            dispatcherPremiumSegments = linkedDispatcherAmount.premiumBreakdown?.segments || [];
-            dispatcherCommissionTerms = linkedDispatcherAmount.dispatcherCommissionTerms || [];
-          }
-
-          const rowToneKeySource = group.recordCount > 0 ? group : (linkedDispatcherAmount || group);
 
           const totalInvoiceAmount = accountantInvoiceAmount + dispatcherInvoiceAmount;
           const totalTaxAmount = getSettlementTaxAmount(totalInvoiceAmount);
           const totalPayableAmount = totalInvoiceAmount - totalTaxAmount;
-          const shouldMergeLinkedDispatcherCounts = !group.isLinkedDispatcherOnly;
-          const combinedRecordCount = group.recordCount + (shouldMergeLinkedDispatcherCounts ? dispatcherRecordCount : 0);
-          const combinedPendingCount = group.pendingCount + (shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.pendingCount || 0) : 0);
-          const combinedUploadedCount = group.uploadedCount + (shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.uploadedCount || 0) : 0);
-          const combinedPaidCount = group.paidCount + (shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.paidCount || 0) : 0);
+          const combinedRecordCount = group.recordCount + dispatcherRecordCount;
+          const combinedPendingCount = group.pendingCount + (Number(linkedDispatcherAmount?.pendingCount) || 0);
+          const combinedPendingInvoiceCount = group.pendingInvoiceCount + (Number(linkedDispatcherAmount?.pendingInvoiceCount) || 0);
+          const combinedUploadedCount = group.uploadedCount + (Number(linkedDispatcherAmount?.uploadedCount) || 0);
+          const combinedPaidCount = group.paidCount + (Number(linkedDispatcherAmount?.paidCount) || 0);
           const combinedRecordIds = Array.from(new Set([
             ...group.recordIds,
-            ...(shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.recordIds || []) : [])
+            ...(linkedDispatcherAmount?.recordIds || [])
           ]));
           const combinedPayoutRecordIds = Array.from(new Set([
             ...group.payoutRecordIds,
-            ...(shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.payoutRecordIds || []) : [])
+            ...(linkedDispatcherAmount?.payoutRecordIds || [])
           ]));
           const combinedPayoutTargets = Array.from(new Set([
-            ...(Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds),
-            ...(shouldMergeLinkedDispatcherCounts ? (linkedDispatcherAmount?.payoutTargets || linkedDispatcherAmount?.payoutRecordIds || []) : [])
+            ...group.payoutTargets,
+            ...(linkedDispatcherAmount?.payoutTargets || [])
+          ]));
+          const combinedRevokeTargets = Array.from(new Set([
+            ...group.revokeTargets,
+            ...(linkedDispatcherAmount?.revokeTargets || [])
           ]));
           const combinedInvoiceMap = new Map(group.invoiceMap);
           if (linkedDispatcherAmount?.invoiceMap) {
@@ -4303,19 +4367,45 @@
           const combinedLatestUploadedBy = combinedLatestUploadedAt === linkedDispatcherAmount?.latestUploadedAt
             ? linkedDispatcherAmount.latestUploadedBy
             : group.latestUploadedBy;
+          const linkedLatestPaidAt = String(linkedDispatcherAmount?.latestPaidAt || "").trim();
+          const linkedLatestPaidAtTime = Number(linkedDispatcherAmount?.latestPaidAtTime) || parseDateTimeValue(linkedLatestPaidAt);
+          const useLinkedLatestPaidAt = linkedLatestPaidAt
+            && (!group.latestPaidAt || linkedLatestPaidAtTime >= group.latestPaidAtTime);
+          const combinedLatestPaidAt = useLinkedLatestPaidAt ? linkedLatestPaidAt : group.latestPaidAt;
+          const combinedLatestPaidAtTime = useLinkedLatestPaidAt ? linkedLatestPaidAtTime : group.latestPaidAtTime;
+          const combinedPaidAtValues = Array.from(new Set([
+            ...group.paidAtValues,
+            ...(linkedDispatcherAmount?.paidAtValues || [])
+          ]));
           const combinedStatusKey = getBossSettlementDetailStatusKey(combinedRecordCount, combinedUploadedCount);
+          const payoutInvoiceAmount =
+            (Number(group.payoutInvoiceAmount) || 0) +
+            (Number(linkedDispatcherAmount?.payoutInvoiceAmount) || 0);
+          const payoutTaxAmount = getSettlementTaxAmount(payoutInvoiceAmount);
+          const payoutPayableAmount = payoutInvoiceAmount - payoutTaxAmount;
+          const rowToneKeySource = {
+            recordCount: combinedRecordCount,
+            pendingCount: combinedPendingCount,
+            uploadedCount: combinedUploadedCount,
+            paidCount: combinedPaidCount,
+            payoutRecordIds: combinedPayoutRecordIds,
+            payoutTargets: combinedPayoutTargets
+          };
 
           return {
             accountant: group.accountant,
             recordIds: combinedRecordIds,
             recordCount: combinedRecordCount,
             pendingCount: combinedPendingCount,
+            pendingInvoiceCount: combinedPendingInvoiceCount,
             uploadedCount: combinedUploadedCount,
             paidCount: combinedPaidCount,
             payoutRecordIds: combinedPayoutRecordIds,
             payoutTargets: combinedPayoutTargets,
-            paidAtValues: group.paidAtValues,
-            latestPaidAt: group.latestPaidAt,
+            revokeTargets: combinedRevokeTargets,
+            paidAtValues: combinedPaidAtValues,
+            latestPaidAt: combinedLatestPaidAt,
+            latestPaidAtTime: combinedLatestPaidAtTime,
 
             accountantInvoiceAmount,
             accountantTaxAmount,
@@ -4335,37 +4425,84 @@
             invoiceAmount: totalInvoiceAmount,
             taxAmount: totalTaxAmount,
             payableAmount: totalPayableAmount,
+            payoutInvoiceAmount,
+            payoutTaxAmount,
+            payoutPayableAmount,
+            accountantPaidInvoiceAmount,
+            accountantPaidTaxAmount,
+            accountantPaidPayableAmount,
+            accountantPaidRecordCount,
+            dispatcherPaidInvoiceAmount,
+            dispatcherPaidTaxAmount,
+            dispatcherPaidPayableAmount,
+            dispatcherPaidRecordCount,
+            paidInvoiceAmount,
+            paidTaxAmount,
+            paidPayableAmount,
 
             latestUploadedAt: combinedLatestUploadedAt,
             latestUploadedBy: combinedLatestUploadedBy,
             uploadedInvoices: combinedUploadedInvoices,
             statusKey: combinedStatusKey,
             rowToneKey: getBossSettlementDetailRowToneKey(rowToneKeySource),
-            statusLabel: formatBossSettlementDetailStatusLabel(combinedStatusKey)
+            statusLabel: formatBossSettlementDetailStatusLabel(combinedStatusKey),
+            isLinkedDispatcherOnly: Boolean(group.isLinkedDispatcherOnly)
           };
         });
       const groups = buildGroups(groupMap);
-      const paidGroups = buildGroups(paidGroupMap);
-      const allGroups = groups.concat(paidGroups);
+      const paidGroups = groups
+        .filter((item) => {
+          const targets = Array.isArray(item.revokeTargets) ? item.revokeTargets : [];
+          return targets.length > 0;
+        })
+        .map((item) => {
+          const paidRecordCount =
+            (Number(item.accountantPaidRecordCount) || 0) +
+            (Number(item.dispatcherPaidRecordCount) || 0);
+          return {
+            ...item,
+            recordCount: paidRecordCount,
+            pendingCount: 0,
+            pendingInvoiceCount: 0,
+            uploadedCount: paidRecordCount,
+            paidCount: paidRecordCount,
+            payoutRecordIds: [],
+            payoutTargets: [],
+            accountantInvoiceAmount: Number(item.accountantPaidInvoiceAmount) || 0,
+            accountantTaxAmount: Number(item.accountantPaidTaxAmount) || 0,
+            accountantPayableAmount: Number(item.accountantPaidPayableAmount) || 0,
+            dispatcherInvoiceAmount: Number(item.dispatcherPaidInvoiceAmount) || 0,
+            dispatcherTaxAmount: Number(item.dispatcherPaidTaxAmount) || 0,
+            dispatcherPayableAmount: Number(item.dispatcherPaidPayableAmount) || 0,
+            dispatcherRecordCount: Number(item.dispatcherPaidRecordCount) || 0,
+            invoiceAmount: Number(item.paidInvoiceAmount) || 0,
+            taxAmount: Number(item.paidTaxAmount) || 0,
+            payableAmount: Number(item.paidPayableAmount) || 0,
+            statusKey: "uploaded",
+            rowToneKey: "paid",
+            statusLabel: formatBossSettlementDetailStatusLabel("uploaded")
+          };
+        });
 
-      const uploadedAccountantCount = allGroups.filter((item) => item.uploadedCount > 0).length;
-      const partialAccountantCount = allGroups.filter((item) => item.statusKey === "partial").length;
-      const pendingAccountantCount = allGroups.filter((item) => item.uploadedCount <= 0).length;
-      const uploadedRecordCount = allGroups.reduce((sum, item) => sum + item.uploadedCount, 0);
-      const pendingRecordCount = allGroups.reduce((sum, item) => sum + item.pendingCount, 0);
+      const uploadedAccountantCount = groups.filter((item) => item.uploadedCount > 0).length;
+      const partialAccountantCount = groups.filter((item) => item.statusKey === "partial").length;
+      const pendingAccountantCount = groups.filter((item) => item.uploadedCount <= 0).length;
+      const uploadedRecordCount = groups.reduce((sum, item) => sum + item.uploadedCount, 0);
+      const pendingRecordCount = groups.reduce((sum, item) => sum + item.pendingCount, 0);
       const payoutRecordCount = groups.reduce((sum, item) => {
         const targets = Array.isArray(item.payoutTargets) ? item.payoutTargets : item.payoutRecordIds;
         return sum + (Array.isArray(targets) ? targets.length : 0);
       }, 0);
-      const totalTaxAmount = allGroups.reduce((sum, item) => sum + item.taxAmount, 0);
-      const totalPayableAmount = allGroups.reduce((sum, item) => sum + item.payableAmount, 0);
+      const totalInvoiceAmount = groups.reduce((sum, item) => sum + item.invoiceAmount, 0);
+      const totalTaxAmount = groups.reduce((sum, item) => sum + item.taxAmount, 0);
+      const totalPayableAmount = groups.reduce((sum, item) => sum + item.payableAmount, 0);
 
       return {
         detailRecords,
         groups,
         paidGroups,
         recordCount: detailRecords.length,
-        accountantCount: new Set(allGroups.map((item) => String(item.accountant || "").trim()).filter(Boolean)).size,
+        accountantCount: groups.length,
         totalInvoiceAmount,
         totalTaxAmount,
         totalPayableAmount,
@@ -4400,21 +4537,25 @@
 
       const {
         groups,
-        paidGroups,
         payoutRecordCount: rawPayoutRecordCount
       } = getBossSettlementDetailSummary();
       syncBossSettlementPayoutSelection(records);
-      const allDetailGroups = groups.concat(paidGroups).map((group) => {
+      const allDetailGroups = groups.map((group) => {
         const payoutStatusKey = getBossSettlementDetailPayoutStatusKey(group);
+        const payoutStatusKeys = getBossSettlementDetailPayoutStatusKeys(group);
         return {
           ...group,
+          payoutStatusKeys,
           payoutStatusKey,
-          payoutStatusLabel: getBossSettlementDetailPayoutStatusLabel(payoutStatusKey)
+          payoutStatusLabel: getBossSettlementDetailPayoutStatusLabel(payoutStatusKey, group)
         };
       });
       const payoutStatusFilter = String(bossSettlementDetailPayoutStatusFilter || "").trim();
       const visibleGroups = payoutStatusFilter
-        ? allDetailGroups.filter((group) => group.payoutStatusKey === payoutStatusFilter)
+        ? allDetailGroups.filter((group) => {
+            const keys = Array.isArray(group.payoutStatusKeys) ? group.payoutStatusKeys : [group.payoutStatusKey];
+            return keys.includes(payoutStatusFilter);
+          })
         : allDetailGroups;
       const sortedGroups = getSortedBossSettlementDetailGroups(visibleGroups);
       const activeTableTotals = getBossSettlementDetailGroupTotals(sortedGroups);
@@ -4432,6 +4573,8 @@
         .filter((target) => allPayoutTargets.includes(target));
       const selectedPayoutRecordIdSet = new Set(selectedPayoutTargets);
       const payoutRecordCount = allPayoutTargets.length;
+      const payoutGroupCount = getBossSettlementPayoutGroupCount(sortedGroups);
+      const selectedPayoutGroupCount = getBossSettlementPayoutGroupCount(sortedGroups, selectedPayoutRecordIdSet);
       const areAllPayoutRecordsSelected = allPayoutTargets.length > 0
         && allPayoutTargets.every((target) => selectedPayoutRecordIdSet.has(target));
 
@@ -4446,16 +4589,6 @@
       const section = document.createElement("section");
       section.className = "settlement-detail-section";
 
-      const sectionHeading = document.createElement("div");
-      sectionHeading.className = "settlement-detail-section-heading";
-
-      const sectionTitle = document.createElement("h3");
-      sectionTitle.className = "settlement-detail-section-title";
-      sectionTitle.textContent = "结算明细";
-      sectionHeading.appendChild(sectionTitle);
-
-      section.appendChild(sectionHeading);
-
       const tableWrap = document.createElement("div");
       tableWrap.className = "settlement-detail-table-wrap";
 
@@ -4466,8 +4599,8 @@
         const payoutToolbarText = document.createElement("span");
         payoutToolbarText.className = "settlement-detail-payout-toolbar-text";
         payoutToolbarText.textContent = selectedPayoutTargets.length > 0
-          ? `已选 ${selectedPayoutTargets.length}单`
-          : `可打款 ${payoutRecordCount}单`;
+          ? `已选 ${selectedPayoutGroupCount}位`
+          : `可结算 ${payoutGroupCount}位`;
         payoutToolbar.appendChild(payoutToolbarText);
 
         const payoutSelectAllBtn = document.createElement("button");
@@ -4486,8 +4619,8 @@
         payoutToolbarBtn.dataset.settlementPayoutSelected = "true";
         payoutToolbarBtn.disabled = selectedPayoutTargets.length === 0 || isBossSettlementPayoutSubmitting;
         payoutToolbarBtn.textContent = isBossSettlementPayoutSubmitting
-          ? "打款中"
-          : (selectedPayoutTargets.length > 0 ? `批量打款（${selectedPayoutTargets.length}）` : "批量打款");
+          ? "结算中"
+          : (selectedPayoutTargets.length > 0 ? `批量结算（${selectedPayoutTargets.length}）` : "批量结算");
         payoutToolbar.appendChild(payoutToolbarBtn);
 
         const exportBtn = document.createElement("button");
@@ -4497,7 +4630,7 @@
         exportBtn.textContent = "导出";
         payoutToolbar.appendChild(exportBtn);
 
-        sectionHeading.appendChild(payoutToolbar);
+        section.appendChild(payoutToolbar);
       }
 
       const table = document.createElement("table");
@@ -4634,6 +4767,9 @@
       sortedGroups.forEach((group) => {
         const row = document.createElement("tr");
         row.className = `settlement-detail-row ${group.statusKey} tone-${group.rowToneKey} payout-${group.payoutStatusKey}`;
+        if (isBuiltInAccountantName(group.accountant)) {
+          row.classList.add("special-accountant");
+        }
 
         const accountantTd = document.createElement("td");
         accountantTd.className = "settlement-detail-accountant-cell settlement-detail-col-accountant";
@@ -4678,14 +4814,17 @@
         payoutTd.className = "settlement-detail-payout-cell settlement-detail-col-payout";
 
         const groupPayoutRecordIds = Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds;
+        const groupRevokeTargets = Array.isArray(group.revokeTargets) ? group.revokeTargets : [];
 
         const payoutState = document.createElement("span");
         payoutState.className = `settlement-detail-payout-state ${group.payoutStatusKey}`;
         const paidDate = formatSettlementPaidDateDisplay(group.latestPaidAt);
-        payoutState.textContent = group.payoutStatusKey === "paid" && paidDate
+        payoutState.textContent = group.payoutStatusKeys?.length === 1 && group.payoutStatusKey === "paid" && paidDate
           ? `已结算 ${paidDate}`
           : group.payoutStatusLabel;
-        const paidTooltip = group.payoutStatusKey === "paid" ? getSettlementPaidTimeTooltip(group) : "";
+        const paidTooltip = (Array.isArray(group.payoutStatusKeys) ? group.payoutStatusKeys : [group.payoutStatusKey]).includes("paid")
+          ? getSettlementPaidTimeTooltip(group)
+          : "";
         if (paidTooltip) {
           payoutState.title = paidTooltip;
         }
@@ -4695,49 +4834,51 @@
         const actionTd = document.createElement("td");
         actionTd.className = "settlement-detail-action-cell settlement-detail-col-action";
 
-        if (canPayoutSettlementRecords && group.payoutStatusKey === "payable" && groupPayoutRecordIds.length > 0) {
+        if (canPayoutSettlementRecords && (groupPayoutRecordIds.length > 0 || groupRevokeTargets.length > 0)) {
           const actionWrap = document.createElement("div");
           actionWrap.className = "settlement-detail-payout-actions";
 
-          const payoutSelectLabel = document.createElement("label");
-          payoutSelectLabel.className = "settlement-detail-payout-select";
+          if (groupPayoutRecordIds.length > 0) {
+            const payoutSelectLabel = document.createElement("label");
+            payoutSelectLabel.className = "settlement-detail-payout-select";
 
-          const payoutCheckbox = document.createElement("input");
-          payoutCheckbox.type = "checkbox";
-          payoutCheckbox.className = "settlement-detail-payout-checkbox";
-          payoutCheckbox.dataset.recordIds = groupPayoutRecordIds.join(",");
-          payoutCheckbox.checked = groupPayoutRecordIds.every((recordId) => selectedPayoutRecordIdSet.has(recordId));
-          payoutCheckbox.disabled = isBossSettlementPayoutSubmitting;
-          payoutSelectLabel.appendChild(payoutCheckbox);
+            const payoutCheckbox = document.createElement("input");
+            payoutCheckbox.type = "checkbox";
+            payoutCheckbox.className = "settlement-detail-payout-checkbox";
+            payoutCheckbox.dataset.recordIds = groupPayoutRecordIds.join(",");
+            payoutCheckbox.checked = groupPayoutRecordIds.every((recordId) => selectedPayoutRecordIdSet.has(recordId));
+            payoutCheckbox.disabled = isBossSettlementPayoutSubmitting;
+            payoutSelectLabel.appendChild(payoutCheckbox);
 
-          const payoutSelectText = document.createElement("span");
-          payoutSelectText.textContent = "选择";
-          payoutSelectLabel.appendChild(payoutSelectText);
-          actionWrap.appendChild(payoutSelectLabel);
+            const payoutSelectText = document.createElement("span");
+            payoutSelectText.textContent = "选择";
+            payoutSelectLabel.appendChild(payoutSelectText);
+            actionWrap.appendChild(payoutSelectLabel);
 
-          const payoutBtn = document.createElement("button");
-          payoutBtn.type = "button";
-          payoutBtn.className = "settlement-detail-payout-btn";
-          payoutBtn.dataset.recordIds = groupPayoutRecordIds.join(",");
-          payoutBtn.disabled = isBossSettlementPayoutSubmitting;
-          payoutBtn.textContent = isBossSettlementPayoutSubmitting ? "打款中" : "打款";
-          actionWrap.appendChild(payoutBtn);
+            const payoutBtn = document.createElement("button");
+            payoutBtn.type = "button";
+            payoutBtn.className = "settlement-detail-payout-btn";
+            payoutBtn.dataset.recordIds = groupPayoutRecordIds.join(",");
+            payoutBtn.disabled = isBossSettlementPayoutSubmitting;
+            payoutBtn.textContent = isBossSettlementPayoutSubmitting ? "结算中" : "结算";
+            actionWrap.appendChild(payoutBtn);
+          }
+
+          if (groupRevokeTargets.length > 0) {
+            const revokeBtn = document.createElement("button");
+            revokeBtn.type = "button";
+            revokeBtn.className = "settlement-detail-payout-revoke-btn";
+            revokeBtn.dataset.recordIds = groupRevokeTargets.join(",");
+            revokeBtn.dataset.tableTooltip = `撤销 ${groupRevokeTargets.length} 条打款状态和打款记录`;
+            revokeBtn.dataset.tableTooltipMode = "always";
+            revokeBtn.dataset.tableTooltipVariant = "compact";
+            revokeBtn.disabled = isBossSettlementPayoutSubmitting;
+            revokeBtn.textContent = isBossSettlementPayoutSubmitting ? "处理中" : "撤销";
+            revokeBtn.setAttribute("aria-label", revokeBtn.dataset.tableTooltip || "撤销打款");
+            actionWrap.appendChild(revokeBtn);
+          }
 
           actionTd.appendChild(actionWrap);
-        } else if (canPayoutSettlementRecords && group.payoutStatusKey === "paid") {
-          const revokeBtn = document.createElement("button");
-          revokeBtn.type = "button";
-          revokeBtn.className = "settlement-detail-payout-revoke-btn";
-          revokeBtn.dataset.recordIds = group.recordIds.join(",");
-          revokeBtn.dataset.tableTooltip = group.recordIds.length
-            ? `撤销 ${group.recordIds.length} 条打款状态和打款记录`
-            : "";
-          revokeBtn.dataset.tableTooltipMode = "always";
-          revokeBtn.dataset.tableTooltipVariant = "compact";
-          revokeBtn.disabled = isBossSettlementPayoutSubmitting || !group.recordIds.length;
-          revokeBtn.textContent = isBossSettlementPayoutSubmitting ? "处理中" : "撤销";
-          revokeBtn.setAttribute("aria-label", revokeBtn.dataset.tableTooltip || "撤销打款");
-          actionTd.appendChild(revokeBtn);
         }
 
         row.appendChild(actionTd);
@@ -4893,7 +5034,7 @@
 
       bossSettlementDetailBtn.hidden = !shouldShow;
       bossSettlementDetailBtn.disabled = !shouldShow;
-      bossSettlementDetailBtn.textContent = accountantCount > 0 ? `打款（${accountantCount}）` : "打款";
+      bossSettlementDetailBtn.textContent = accountantCount > 0 ? `结算（${accountantCount}）` : "结算";
       bossSettlementDetailBtn.title = shouldShow
         ? `查看 ${recordCount}单结算明细，待上传 ${pendingRecordCount}单，已上传 ${uploadedRecordCount}单`
         : "";
@@ -5858,6 +5999,9 @@
       openAnalysisModalBtn.hidden = !isBoss;
       openRecycleModalBtn.hidden = isAccountant;
       openAccountantModalBtn.hidden = isAccountant;
+      if (forceRefreshAccountantPagesBtn) {
+        forceRefreshAccountantPagesBtn.hidden = !isBoss;
+      }
       if (openChangeLogBtn) {
         openChangeLogBtn.hidden = isAccountant;
       }

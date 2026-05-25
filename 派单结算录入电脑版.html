@@ -235,6 +235,7 @@
         <button id="openAnalysisModalBtn" class="btn-secondary" type="button">分析数据</button>
         <button id="openDispatcherModalBtn" class="btn-secondary" type="button">管理接待</button>
         <button id="openAccountantModalBtn" class="btn-secondary" type="button">管理会计</button>
+        <button id="forceRefreshAccountantPagesBtn" class="btn-secondary" type="button" hidden>强制刷新会计页</button>
         <button id="openRecycleModalBtn" class="btn-secondary" type="button">回收站</button>
       </div>
       <section class="order-flow-guide" aria-label="订单正常流转流程">
@@ -377,7 +378,7 @@
           <div id="accountantInvoiceUploadSummary" class="table-invoice-upload-summary" hidden aria-hidden="true"></div>
           <button id="accountantUploadedSettlementDetailBtn" class="btn-secondary table-uploaded-detail-btn" type="button" hidden>已上传/待结算详细</button>
           <button id="bossSettlementBtn" class="btn-secondary table-settlement-btn" type="button" hidden disabled>核对用户确认</button>
-          <button id="bossSettlementDetailBtn" class="btn-secondary table-settlement-detail-btn" type="button" hidden disabled>打款</button>
+          <button id="bossSettlementDetailBtn" class="btn-secondary table-settlement-detail-btn" type="button" hidden disabled>结算</button>
         </div>
       </div>
       <div id="appStatusHint" class="login-request-hint app-status-hint idle" aria-live="polite" hidden></div>
@@ -1293,6 +1294,10 @@
       <div class="accountant-modal-top">
         <div class="accountant-modal-heading">
           <h2 class="accountant-modal-title">会计管理</h2>
+          <div id="accountantModalStats" class="accountant-modal-stats" aria-live="polite">
+            <span class="accountant-modal-stat">会计总数: <strong id="accountantModalAccountantCount">0</strong></span>
+            <span class="accountant-modal-stat">订单总数: <strong id="accountantModalOrderCount">0</strong></span>
+          </div>
         </div>
       </div>
       <p id="accountantModalHint" class="login-request-hint form-request-hint idle" aria-live="polite" hidden></p>

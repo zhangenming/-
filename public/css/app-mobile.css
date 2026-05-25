@@ -897,6 +897,12 @@ body.mobile-ready .table-wrap {
   display: none;
 }
 
+#appPage.accountant-view .data-col-payment,
+#appPage.accountant-view .data-col-premium,
+#appPage.accountant-view .price-item-payment {
+  display: none;
+}
+
 body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
   display: none;
 }
@@ -2126,6 +2132,42 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
   border-bottom: 1px solid var(--m-line);
   background: var(--m-surface);
   display: grid;
+}
+
+.accountant-modal-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.accountant-modal-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-width: 0;
+}
+
+.accountant-modal-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 4px 8px;
+  border: 1px solid var(--m-line);
+  border-radius: 999px;
+  background: var(--m-accent-soft);
+  color: var(--m-muted);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.accountant-modal-stat strong {
+  color: var(--m-accent-strong);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
 }
 
 .accountant-modal-actions {

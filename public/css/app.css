@@ -1130,10 +1130,32 @@
     body.boss-view #recordForm .field-dispatcher {
       grid-row: 2;
       grid-area: dispatcher;
+      align-items: start;
+      margin-bottom: 10px;
     }
 
     body.boss-view #recordForm .field-detail-row {
       grid-row: 3;
+    }
+
+    body.boss-view #recordForm .field-meta-row {
+      grid-row: 4;
+    }
+
+    body.boss-view #recordForm .field-price-row {
+      grid-row: 5;
+    }
+
+    body.boss-view #recordForm .field-summary {
+      grid-row: 6;
+    }
+
+    body.boss-view #recordForm .field-note {
+      grid-row: 7;
+    }
+
+    body.boss-view #recordForm .form-actions {
+      grid-row: 8;
     }
 
     body.dispatcher-self-view #recordForm .field-date,
@@ -1199,6 +1221,10 @@
       align-items: start;
     }
 
+    #recordForm .field-meta-row {
+      grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+    }
+
     #recordForm .detail-item,
     #recordForm .meta-item,
     #recordForm .price-item {
@@ -1212,6 +1238,10 @@
 
     #recordForm .meta-item-wide {
       grid-column: span 2;
+    }
+
+    #recordForm .field-meta-row .meta-item-wide {
+      grid-column: auto;
     }
 
     #recordForm .field-date > label,
@@ -1657,6 +1687,17 @@
       gap: 10px;
       align-content: center;
       padding: 2px 0 4px;
+    }
+
+    body.boss-view #recordForm .field-dispatcher > label {
+      padding-top: 14px;
+    }
+
+    body.boss-view #recordForm .field-dispatcher .tag-group {
+      min-height: 96px;
+      align-content: start;
+      row-gap: 10px;
+      padding: 0 0 2px;
     }
 
     #recordForm .field-dispatcher .tag-btn {
@@ -3330,7 +3371,8 @@
     }
 
     .settlement-detail-modal-card {
-      width: min(1280px, 96vw);
+      width: calc(100vw - 24px);
+      max-width: 1560px;
       max-height: calc(100vh - 30px);
       display: grid;
       gap: 18px;
@@ -3444,7 +3486,10 @@
 
     .accountant-modal-heading {
       min-width: 0;
-      display: grid;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 14px;
       align-content: center;
     }
 
@@ -3455,6 +3500,36 @@
       font-weight: 850;
       letter-spacing: 0;
       line-height: 1.2;
+    }
+
+    .accountant-modal-stats {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .accountant-modal-stat {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-height: 28px;
+      padding: 4px 10px;
+      border: 1px solid oklch(84% 0.024 165);
+      border-radius: 999px;
+      background: oklch(96.7% 0.015 165);
+      color: #48645b;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .accountant-modal-stat strong {
+      color: #1f6f5a;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
     }
 
     .accountant-modal-actions {
@@ -3688,6 +3763,10 @@
       .accountant-modal-top {
         gap: 14px;
         padding: 18px;
+      }
+
+      .accountant-modal-heading {
+        align-items: flex-start;
       }
 
       .accountant-modal-actions {
@@ -4524,23 +4603,6 @@
       min-width: 0;
     }
 
-    .settlement-detail-section-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      min-width: 0;
-    }
-
-    .settlement-detail-section-title {
-      margin: 0;
-      color: #1e4b40;
-      font-size: 15px;
-      font-weight: 850;
-      line-height: 1.25;
-      letter-spacing: 0;
-    }
-
     .settlement-detail-empty {
       padding: 34px 18px;
       border-radius: var(--radius-xl);
@@ -4552,7 +4614,8 @@
     }
 
     .settlement-detail-table-wrap {
-      overflow: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
       border: 1px solid #dbe8e1;
       border-radius: var(--radius-xl);
       background: #fcfefd;
@@ -4566,7 +4629,7 @@
 
     .settlement-detail-table {
       width: 100%;
-      min-width: 1160px;
+      min-width: 0;
       table-layout: fixed;
       border-collapse: separate;
       border-spacing: 0;
@@ -4576,7 +4639,7 @@
     }
 
     .settlement-detail-table col.settlement-detail-col-accountant {
-      width: 15%;
+      width: 16%;
     }
 
     .settlement-detail-table col.settlement-detail-col-name {
@@ -4584,28 +4647,28 @@
     }
 
     .settlement-detail-table col.settlement-detail-col-order {
-      width: 9%;
+      width: 8%;
     }
 
     .settlement-detail-table col.settlement-detail-col-money {
-      width: 14%;
+      width: 12%;
     }
 
     .settlement-detail-table col.settlement-detail-col-invoice {
-      width: 168px;
+      width: 14%;
     }
 
     .settlement-detail-table col.settlement-detail-col-payout {
-      width: 136px;
+      width: 10%;
     }
 
     .settlement-detail-table col.settlement-detail-col-action {
-      width: 132px;
+      width: 12%;
     }
 
     .settlement-detail-table th,
     .settlement-detail-table td {
-      padding: 12px 14px;
+      padding: 12px 10px;
       border-bottom: 1px solid #e1ece6;
       vertical-align: middle;
     }
@@ -4788,6 +4851,15 @@
       background: #f8fbf9;
     }
 
+    .settlement-detail-row.special-accountant td {
+      border-bottom-color: #d5dfcc;
+      background: #f6f9ef;
+    }
+
+    .settlement-detail-row.special-accountant:hover td {
+      background: #eef4e3;
+    }
+
     .settlement-detail-payout-toolbar {
       display: flex;
       align-items: center;
@@ -4921,6 +4993,22 @@
       white-space: nowrap;
     }
 
+    .settlement-detail-special-accountant-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 20px;
+      margin-top: 7px;
+      padding: 0 7px;
+      border: 1px solid #c9d8bd;
+      border-radius: 999px;
+      background: #edf5e5;
+      color: #48663c;
+      font-size: 11px;
+      font-weight: 850;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
     .settlement-detail-order-cell {
       color: #24473d;
       font-size: 12px;
@@ -4928,6 +5016,23 @@
       font-variant-numeric: tabular-nums;
       text-align: left;
       white-space: nowrap;
+    }
+
+    .settlement-detail-order-dispatcher-part,
+    .settlement-detail-money-dispatcher-part {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      margin: 0 2px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: #2e7d32;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1;
     }
 
     .settlement-detail-money {
@@ -4943,10 +5048,7 @@
       white-space: normal;
       overflow-wrap: anywhere;
       word-break: break-word;
-    }
-
-    .settlement-detail-money-dispatcher-part {
-      color: #2e7d32;
+      font-size: 12px;
     }
 
     .settlement-detail-money:focus-visible {
@@ -5031,6 +5133,7 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+      flex-wrap: wrap;
     }
 
     .settlement-detail-payout-select {
@@ -8853,6 +8956,10 @@
       #recordForm .field-meta-row,
       #recordForm .field-price-row {
         grid-template-columns: 1fr;
+      }
+
+      #recordForm .field-meta-row {
+        grid-template-columns: minmax(0, 1fr);
       }
 
       #recordForm .field-date > .date-field-controls {
