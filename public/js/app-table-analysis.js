@@ -332,10 +332,16 @@
         }
         return getPremiumValue(item);
       }
+      if (key === "settlementPrice") {
+        if (sortState.settlementMode === "percent") {
+          return getSettlementPercentValue(item);
+        }
+        return Number(item[key]);
+      }
       if (key === "profitPrice") {
         return getProfitValue(item);
       }
-      if (key === "paymentPrice" || key === "totalPrice" || key === "settlementPrice") {
+      if (key === "paymentPrice" || key === "totalPrice") {
         return Number(item[key]);
       }
       if (key === "date") {
@@ -378,6 +384,41 @@
       const payment = Number(item?.paymentPrice);
       if (!Number.isFinite(premium) || !Number.isFinite(payment) || payment === 0) return Number.NaN;
       return (premium / payment) * 100;
+    }
+
+    function getSettlementPercentValue(item) {
+      const settlement = Number(item?.settlementPrice);
+      const total = Number(item?.totalPrice);
+      if (!Number.isFinite(settlement) || !Number.isFinite(total) || total === 0) return Number.NaN;
+      return (settlement / total) * 100;
+    }
+
+    function getSettlementRatioValue(item) {
+      const settlement = Number(item?.settlementPrice);
+      const total = Number(item?.totalPrice);
+      if (!Number.isFinite(settlement) || !Number.isFinite(total) || total === 0) return Number.NaN;
+      return settlement / total;
+    }
+
+    function isNonStandardSettlementRatioRecord(item) {
+      const ratio = getSettlementRatioValue(item);
+      return Number.isFinite(ratio)
+        && Math.abs(ratio - SETTLEMENT_RATIO_TARGET) > SETTLEMENT_RATIO_TOLERANCE;
+    }
+
+    function getTextFilterTerms(rawValue) {
+      return String(rawValue || "")
+        .toLowerCase()
+        .split(/[\n\r]+/)
+        .map((value) => value.trim())
+        .filter(Boolean);
+    }
+
+    function isTextFilterMatched(value, rawFilter) {
+      const terms = getTextFilterTerms(rawFilter);
+      if (!terms.length) return true;
+      const text = String(value || "").toLowerCase();
+      return terms.some((term) => text.includes(term));
     }
 
     function compareSortValue(a, b) {
@@ -440,6 +481,19 @@
       return percent === 0 ? "" : formatTrimmedPercent(percent);
     }
 
+    function getSettlementTotalPercent(sourceRecords) {
+      const totals = (Array.isArray(sourceRecords) ? sourceRecords : []).reduce((current, item) => {
+        const settlement = Number(item?.settlementPrice);
+        const total = Number(item?.totalPrice);
+        if (Number.isFinite(settlement)) current.settlement += settlement;
+        if (Number.isFinite(total)) current.total += total;
+        return current;
+      }, { settlement: 0, total: 0 });
+      if (totals.total === 0) return "";
+      const percent = (totals.settlement / totals.total) * 100;
+      return percent === 0 ? "" : formatTrimmedPercent(percent);
+    }
+
     function buildAnalysisAmountSummaryHtml(sourceRecords) {
       const records = Array.isArray(sourceRecords) ? sourceRecords : [];
       const profitBreakdown = getProfitTotalBreakdown(records);
@@ -454,6 +508,7 @@
         ? toMoney(profitBreakdown.totalBase)
         : "";
       const settlementTotal = toMoney(getColumnTotal(records, "settlementPrice"));
+      const settlementPercent = getSettlementTotalPercent(records);
 
       const items = [
         {
@@ -474,7 +529,8 @@
         },
         {
           label: "会计结算价",
-          value: settlementTotal
+          value: settlementTotal,
+          meta: settlementPercent ? `[${settlementPercent}]` : ""
         }
       ];
 
@@ -544,7 +600,10 @@
         button.classList.toggle("active", active);
         const labelNode = document.createElement("span");
         labelNode.className = "sort-btn-label";
-        const modeLabel = key === "premiumPrice" && sortState.premiumMode === "percent" ? "(%)" : "";
+        const modeLabel = (
+          (key === "premiumPrice" && sortState.premiumMode === "percent")
+          || (key === "settlementPrice" && sortState.settlementMode === "percent")
+        ) ? "(%)" : "";
         labelNode.textContent = `${label}${modeLabel}${arrow}`;
         if (
           key === "paymentPrice"
@@ -575,6 +634,15 @@
               premiumTotalPercent ? `总溢价 / 总付款价：${premiumTotalPercent}` : "",
               formatProfitTotalTooltip(sourceRecords)
             ].filter(Boolean).join("\n");
+          } else if (key === "settlementPrice") {
+            const settlementTotalPercent = getSettlementTotalPercent(sourceRecords);
+            metaNode.textContent = settlementTotalPercent
+              ? `合计 ${total} [${settlementTotalPercent}]`
+              : `合计 ${total}`;
+            metaNode.title = [
+              `会计结算价合计：${total}`,
+              settlementTotalPercent ? `总会计结算价 / 总会计价：${settlementTotalPercent}` : ""
+            ].filter(Boolean).join("\n");
           } else {
             metaNode.textContent = `合计 ${total}`;
             metaNode.title = key === "profitPrice"
@@ -591,18 +659,21 @@
     function toggleSort(key) {
       if (!key) return;
       if (key === "profitPrice" && !shouldShowProfitColumn()) return;
-      if (key === "premiumPrice") {
+      const modeProperty = key === "premiumPrice"
+        ? "premiumMode"
+        : (key === "settlementPrice" ? "settlementMode" : "");
+      if (modeProperty) {
         if (sortState.key === key && sortState.direction === "asc") {
           sortState.direction = "desc";
-        } else if (sortState.key === key && sortState.direction === "desc" && sortState.premiumMode === "amount") {
-          sortState.premiumMode = "percent";
+        } else if (sortState.key === key && sortState.direction === "desc" && sortState[modeProperty] === "amount") {
+          sortState[modeProperty] = "percent";
           sortState.direction = "asc";
-        } else if (sortState.key === key && sortState.direction === "desc" && sortState.premiumMode === "percent") {
-          sortState.premiumMode = "amount";
+        } else if (sortState.key === key && sortState.direction === "desc" && sortState[modeProperty] === "percent") {
+          sortState[modeProperty] = "amount";
           sortState.direction = "asc";
         } else {
           sortState.key = key;
-          sortState.premiumMode = "amount";
+          sortState[modeProperty] = "amount";
           sortState.direction = "asc";
         }
       } else if (sortState.key === key) {
@@ -796,6 +867,11 @@
           return selectedAccountants.length === 0
             || selectedAccountants.includes(String(item.accountant || "").trim());
         },
+        settlementRatio: (item) => !filterState.settlementRatio
+          || isNonStandardSettlementRatioRecord(item),
+        customer: (item) => isTextFilterMatched(item.customer, filterState.customer),
+        summary: (item) => isTextFilterMatched(item.summary, filterState.summary),
+        remark: (item) => isTextFilterMatched(item.remark, filterState.remark),
         platform: (item) => !filterState.platform || getPlatformFilterValue(item) === filterState.platform,
         shopName: (item) => !filterState.shopName || getShopNameFilterValue(item) === filterState.shopName,
         source: (item) => !filterState.source || getSourceFilterValue(item) === filterState.source,
@@ -815,6 +891,10 @@
       const completedAtScopedRecords = getScopedRecordsByFilter("completedAt");
       const dispatcherScopedRecords = getScopedRecordsByFilter("dispatcher");
       const accountantScopedRecords = getScopedRecordsByFilter("accountant");
+      const settlementRatioScopedRecords = getScopedRecordsByFilter("settlementRatio");
+      const customerScopedRecords = getScopedRecordsByFilter("customer");
+      const summaryScopedRecords = getScopedRecordsByFilter("summary");
+      const remarkScopedRecords = getScopedRecordsByFilter("remark");
       const platformScopedRecords = getScopedRecordsByFilter("platform");
       const shopScopedRecords = getScopedRecordsByFilter("shopName");
       const sourceScopedRecords = getScopedRecordsByFilter("source");
@@ -844,6 +924,17 @@
         accountantScopedRecords,
         (item) => String(item.accountant || "").trim()
       );
+      const settlementRatioCountMap = new Map([
+        [
+          SETTLEMENT_RATIO_NON_60_FILTER,
+          settlementRatioScopedRecords.filter((item) => isNonStandardSettlementRatioRecord(item)).length
+        ]
+      ]);
+      const textFilterMatchCountMap = new Map([
+        ["customer", customerScopedRecords.filter((item) => isTextFilterMatched(item.customer, filterState.customer)).length],
+        ["summary", summaryScopedRecords.filter((item) => isTextFilterMatched(item.summary, filterState.summary)).length],
+        ["remark", remarkScopedRecords.filter((item) => isTextFilterMatched(item.remark, filterState.remark)).length]
+      ]);
       const platformCountMap = buildValueCountMap(
         platformScopedRecords,
         (item) => getPlatformFilterValue(item)
@@ -862,11 +953,18 @@
         (item) => getRecordSettlementFilterLabel(item)
       );
       const accountantValues = sortAccountantFilterValues(rawAccountantValues, accountantCountMap);
+      const accountantSearchQuery = String(filterAccountantSearchInput?.value || "").trim().toLowerCase();
+      const visibleAccountantValues = accountantSearchQuery
+        ? accountantValues.filter((value) => String(value || "").toLowerCase().includes(accountantSearchQuery))
+        : accountantValues;
       const platformValues = sortFilterValuesByCount(rawPlatformValues, platformCountMap);
       const shopValues = sortFilterValuesByCount(rawShopValues, shopCountMap);
       const sourceValues = sortFilterValuesByCount(rawSourceValues, sourceCountMap);
 
       setAccountantFilterValues(getSelectedAccountantFilters().filter((value) => accountantValues.includes(value)));
+      if (filterState.settlementRatio && filterState.settlementRatio !== SETTLEMENT_RATIO_NON_60_FILTER) {
+        filterState.settlementRatio = "";
+      }
 
       buildFilterOptionList(
         filterMonthList,
@@ -891,10 +989,17 @@
       );
       buildFilterOptionList(
         filterAccountantList,
-        accountantValues,
+        visibleAccountantValues,
         "accountant",
         filterState.accountant,
         accountantCountMap
+      );
+      buildFilterOptionList(
+        filterSettlementRatioList,
+        [SETTLEMENT_RATIO_NON_60_FILTER],
+        "settlementRatio",
+        filterState.settlementRatio,
+        settlementRatioCountMap
       );
       buildFilterOptionList(
         filterPlatformList,
@@ -952,6 +1057,11 @@
         const selectedAccountants = getSelectedAccountantFilters();
         const accountantMatched = selectedAccountants.length === 0
           || selectedAccountants.includes(String(item.accountant || "").trim());
+        const settlementRatioMatched = !filterState.settlementRatio
+          || isNonStandardSettlementRatioRecord(item);
+        const customerMatched = isTextFilterMatched(item.customer, filterState.customer);
+        const summaryMatched = isTextFilterMatched(item.summary, filterState.summary);
+        const remarkMatched = isTextFilterMatched(item.remark, filterState.remark);
         const platformMatched = !filterState.platform || getPlatformFilterValue(item) === filterState.platform;
         const shopMatched = !filterState.shopName || getShopNameFilterValue(item) === filterState.shopName;
         const sourceMatched = !filterState.source || getSourceFilterValue(item) === filterState.source;
@@ -964,6 +1074,10 @@
           && dispatcherMatched
           && orderNoMatched
           && accountantMatched
+          && settlementRatioMatched
+          && customerMatched
+          && summaryMatched
+          && remarkMatched
           && platformMatched
           && shopMatched
           && sourceMatched

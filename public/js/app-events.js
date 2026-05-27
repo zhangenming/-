@@ -618,6 +618,19 @@
         if (filterOrderInput) filterOrderInput.value = "";
       }
       if (key === "accountant") setAccountantFilterValues([]);
+      if (key === "settlementRatio") filterState.settlementRatio = "";
+      if (key === "customer") {
+        filterState.customer = "";
+        if (filterCustomerInput) filterCustomerInput.value = "";
+      }
+      if (key === "summary") {
+        filterState.summary = "";
+        if (filterSummaryInput) filterSummaryInput.value = "";
+      }
+      if (key === "remark") {
+        filterState.remark = "";
+        if (filterRemarkInput) filterRemarkInput.value = "";
+      }
       if (key === "platform") filterState.platform = "";
       if (key === "shopName") filterState.shopName = "";
       if (key === "source") filterState.source = "";
@@ -637,6 +650,10 @@
       if (key === "dispatcher") return hasDispatcherFilterSelected();
       if (key === "orderNo") return Boolean(filterState.orderNo);
       if (key === "accountant") return hasAccountantFilterSelected();
+      if (key === "settlementRatio") return Boolean(filterState.settlementRatio);
+      if (key === "customer") return Boolean(filterState.customer);
+      if (key === "summary") return Boolean(filterState.summary);
+      if (key === "remark") return Boolean(filterState.remark);
       if (key === "platform") return Boolean(filterState.platform);
       if (key === "shopName") return Boolean(filterState.shopName);
       if (key === "source") return Boolean(filterState.source);
@@ -660,6 +677,10 @@
     filterDispatcherBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "dispatcher"));
     filterOrderBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "orderNo"));
     filterAccountantBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "accountant"));
+    filterSettlementRatioBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "settlementRatio"));
+    filterCustomerBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "customer"));
+    filterSummaryBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "summary"));
+    filterRemarkBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "remark"));
     filterPlatformBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "platform"));
     filterShopBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "shopName"));
     filterSourceBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "source"));
@@ -690,6 +711,26 @@
       event.preventDefault();
       event.stopPropagation();
       toggleFilterPopover("accountant");
+    });
+    filterSettlementRatioValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("settlementRatio");
+    });
+    filterCustomerValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("customer");
+    });
+    filterSummaryValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("summary");
+    });
+    filterRemarkValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("remark");
     });
     filterPlatformValue.addEventListener("click", (event) => {
       event.preventDefault();
@@ -734,6 +775,22 @@
     });
 
     filterAccountantPopover.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    filterSettlementRatioPopover.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    filterCustomerPopover.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    filterSummaryPopover.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    filterRemarkPopover.addEventListener("click", (event) => {
       event.stopPropagation();
     });
 
@@ -895,6 +952,63 @@
       renderTable();
     });
 
+    filterSettlementRatioList.addEventListener("click", (event) => {
+      const target = event.target.closest(".filter-option-btn");
+      if (!target) return;
+      const selected = target.dataset.filterValue || "";
+      filterState.settlementRatio = filterState.settlementRatio === selected ? "" : selected;
+      closeAllFilterPopovers();
+      renderTable();
+    });
+
+    function applyTextColumnFilter(key, input, options = {}) {
+      filterState[key] = String(input?.value || "").trim();
+      if (options.closePopover) {
+        closeAllFilterPopovers();
+      }
+      renderTable();
+    }
+
+    [
+      { key: "customer", input: filterCustomerInput },
+      { key: "summary", input: filterSummaryInput },
+      { key: "remark", input: filterRemarkInput },
+    ].forEach(({ key, input }) => {
+      if (!input) return;
+      input.addEventListener("input", () => {
+        applyTextColumnFilter(key, input, { closePopover: false });
+      });
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          closeAllFilterPopovers();
+        }
+        if (event.key === "Escape") {
+          closeAllFilterPopovers();
+        }
+      });
+    });
+
+    if (filterAccountantSearchInput) {
+      filterAccountantSearchInput.addEventListener("input", () => {
+        updateFilterOptions();
+      });
+      filterAccountantSearchInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          const firstOption = filterAccountantList.querySelector(".filter-option-btn");
+          if (firstOption) {
+            toggleAccountantFilterValue(firstOption.dataset.filterValue || "");
+            updateFilterOptions();
+            renderTable();
+          }
+        }
+        if (event.key === "Escape") {
+          closeAllFilterPopovers();
+        }
+      });
+    }
+
     filterPlatformList.addEventListener("click", (event) => {
       const target = event.target.closest(".filter-option-btn");
       if (!target) return;
@@ -946,12 +1060,19 @@
       setDispatcherFilterValues([]);
       filterState.orderNo = "";
       setAccountantFilterValues([]);
+      filterState.settlementRatio = "";
+      filterState.customer = "";
+      filterState.summary = "";
+      filterState.remark = "";
       filterState.platform = "";
       filterState.shopName = "";
       filterState.source = "";
       setStatusFilterValues([]);
       filterState.settled = "";
       if (filterOrderInput) filterOrderInput.value = "";
+      if (filterCustomerInput) filterCustomerInput.value = "";
+      if (filterSummaryInput) filterSummaryInput.value = "";
+      if (filterRemarkInput) filterRemarkInput.value = "";
       closeAllFilterPopovers();
       renderTable();
     });
@@ -2320,6 +2441,10 @@
         || !filterDispatcherPopover.hidden
         || !filterOrderPopover.hidden
         || !filterAccountantPopover.hidden
+        || !filterSettlementRatioPopover.hidden
+        || !filterCustomerPopover.hidden
+        || !filterSummaryPopover.hidden
+        || !filterRemarkPopover.hidden
         || !filterPlatformPopover.hidden
         || !filterShopPopover.hidden
         || !filterSourcePopover.hidden

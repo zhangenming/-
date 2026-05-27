@@ -2134,6 +2134,11 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
   display: grid;
 }
 
+.accountant-modal-actions {
+  display: grid;
+  width: 100%;
+}
+
 .accountant-modal-heading {
   display: flex;
   flex-wrap: wrap;

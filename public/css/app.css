@@ -3413,6 +3413,13 @@
         linear-gradient(180deg, oklch(99.4% 0.006 165), oklch(97.2% 0.012 165));
     }
 
+    .accountant-modal-actions {
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      min-width: 0;
+    }
+
     .accountant-modal-card > .form-request-hint {
       margin: 0 22px;
     }
@@ -8456,6 +8463,22 @@
       max-width: 108px;
       padding: 2px 8px;
       font-size: 11px;
+    }
+
+    #filterAccountantPopover {
+      min-width: 220px;
+    }
+
+    #filterSettlementRatioPopover {
+      left: auto;
+      right: 0;
+      min-width: 180px;
+    }
+
+    #filterCustomerPopover,
+    #filterSummaryPopover,
+    #filterRemarkPopover {
+      min-width: 240px;
     }
 
     .filter-search-popover {

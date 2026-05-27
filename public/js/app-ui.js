@@ -5361,9 +5361,17 @@
         )
       );
       if (!normalizedRecordIds.length) {
-        showAppStatus("请先选择要打款的数据。");
+        showAppStatus("请先选择要结算的数据。");
         return;
       }
+
+      const confirmed = await openConfirmDialog({
+        title: "确认结算",
+        message: `确认结算 ${normalizedRecordIds.length} 条数据？`,
+        confirmText: "确认结算",
+        cancelText: "取消"
+      });
+      if (!confirmed) return;
 
       isBossSettlementPayoutSubmitting = true;
       try {
@@ -5371,7 +5379,7 @@
         const { paidRecordIds, skippedRecordIds } = await withLoading(
           {
             region: bossSettlementDetailList,
-            regionText: "正在打款..."
+            regionText: "正在结算..."
           },
           () => payoutSettlementRecordsByIds(normalizedRecordIds)
         );
@@ -5385,7 +5393,7 @@
         showAppStatus(messageParts.length ? `${messageParts.join("，")}。` : "未处理任何数据。", paidRecordIds.length ? "ok" : "error");
       } catch (error) {
         console.error(error);
-        showAppStatus(error.message || "打款失败，请稍后重试。");
+        showAppStatus(error.message || "结算失败，请稍后重试。");
       } finally {
         isBossSettlementPayoutSubmitting = false;
         renderBossSettlementDetailModalContent();
@@ -5549,6 +5557,10 @@
       filterDispatcherBtn.classList.toggle("active", hasDispatcherFilter);
       filterOrderBtn.classList.toggle("active", Boolean(filterState.orderNo));
       filterAccountantBtn.classList.toggle("active", hasAccountantFilter);
+      filterSettlementRatioBtn.classList.toggle("active", Boolean(filterState.settlementRatio));
+      filterCustomerBtn.classList.toggle("active", Boolean(filterState.customer));
+      filterSummaryBtn.classList.toggle("active", Boolean(filterState.summary));
+      filterRemarkBtn.classList.toggle("active", Boolean(filterState.remark));
       filterPlatformBtn.classList.toggle("active", Boolean(filterState.platform));
       filterShopBtn.classList.toggle("active", Boolean(filterState.shopName));
       filterSourceBtn.classList.toggle("active", Boolean(filterState.source));
@@ -5561,6 +5573,10 @@
       if (filterDispatcherIndicator) filterDispatcherIndicator.classList.toggle("active", hasDispatcherFilter);
       if (filterOrderIndicator) filterOrderIndicator.classList.toggle("active", Boolean(filterState.orderNo));
       if (filterAccountantIndicator) filterAccountantIndicator.classList.toggle("active", hasAccountantFilter);
+      if (filterSettlementRatioIndicator) filterSettlementRatioIndicator.classList.toggle("active", Boolean(filterState.settlementRatio));
+      if (filterCustomerIndicator) filterCustomerIndicator.classList.toggle("active", Boolean(filterState.customer));
+      if (filterSummaryIndicator) filterSummaryIndicator.classList.toggle("active", Boolean(filterState.summary));
+      if (filterRemarkIndicator) filterRemarkIndicator.classList.toggle("active", Boolean(filterState.remark));
       if (filterPlatformIndicator) filterPlatformIndicator.classList.toggle("active", Boolean(filterState.platform));
       if (filterShopIndicator) filterShopIndicator.classList.toggle("active", Boolean(filterState.shopName));
       if (filterSourceIndicator) filterSourceIndicator.classList.toggle("active", Boolean(filterState.source));
@@ -5571,6 +5587,10 @@
       filterDispatcherBtn.setAttribute("aria-expanded", String(!filterDispatcherPopover.hidden));
       filterOrderBtn.setAttribute("aria-expanded", String(!filterOrderPopover.hidden));
       filterAccountantBtn.setAttribute("aria-expanded", String(!filterAccountantPopover.hidden));
+      filterSettlementRatioBtn.setAttribute("aria-expanded", String(!filterSettlementRatioPopover.hidden));
+      filterCustomerBtn.setAttribute("aria-expanded", String(!filterCustomerPopover.hidden));
+      filterSummaryBtn.setAttribute("aria-expanded", String(!filterSummaryPopover.hidden));
+      filterRemarkBtn.setAttribute("aria-expanded", String(!filterRemarkPopover.hidden));
       filterPlatformBtn.setAttribute("aria-expanded", String(!filterPlatformPopover.hidden));
       filterShopBtn.setAttribute("aria-expanded", String(!filterShopPopover.hidden));
       filterSourceBtn.setAttribute("aria-expanded", String(!filterSourcePopover.hidden));
@@ -5581,6 +5601,10 @@
       syncFilterIconButton(filterDispatcherBtn, hasDispatcherFilter, FILTER_ICON_PATH, "清空接待人筛选", "筛选接待人");
       syncFilterIconButton(filterOrderBtn, Boolean(filterState.orderNo), SEARCH_ICON_PATH, "清空订单号查询", "查询订单号");
       syncFilterIconButton(filterAccountantBtn, hasAccountantFilter, FILTER_ICON_PATH, "清空会计筛选", "筛选会计");
+      syncFilterIconButton(filterSettlementRatioBtn, Boolean(filterState.settlementRatio), FILTER_ICON_PATH, "清空结算比例筛选", "筛选结算比例");
+      syncFilterIconButton(filterCustomerBtn, Boolean(filterState.customer), SEARCH_ICON_PATH, "清空客户搜索", "搜索客户");
+      syncFilterIconButton(filterSummaryBtn, Boolean(filterState.summary), SEARCH_ICON_PATH, "清空任务简介搜索", "搜索任务简介");
+      syncFilterIconButton(filterRemarkBtn, Boolean(filterState.remark), SEARCH_ICON_PATH, "清空备注搜索", "搜索备注");
       syncFilterIconButton(filterPlatformBtn, Boolean(filterState.platform), FILTER_ICON_PATH, "清空平台筛选", "筛选平台");
       syncFilterIconButton(filterShopBtn, Boolean(filterState.shopName), FILTER_ICON_PATH, "清空店铺名筛选", "筛选店铺名");
       syncFilterIconButton(filterSourceBtn, Boolean(filterState.source), FILTER_ICON_PATH, "清空来源筛选", "筛选来源");
@@ -5659,6 +5683,37 @@
         filterAccountantValue.title = "";
       }
 
+      if (filterState.settlementRatio) {
+        filterSettlementRatioValue.hidden = false;
+        filterSettlementRatioValue.textContent = filterState.settlementRatio;
+        filterSettlementRatioValue.title = filterState.settlementRatio;
+      } else {
+        filterSettlementRatioValue.hidden = true;
+        filterSettlementRatioValue.textContent = "";
+        filterSettlementRatioValue.title = "";
+      }
+
+      [
+        { valueNode: filterCustomerValue, rawValue: filterState.customer },
+        { valueNode: filterSummaryValue, rawValue: filterState.summary },
+        { valueNode: filterRemarkValue, rawValue: filterState.remark },
+      ].forEach(({ valueNode, rawValue }) => {
+        const value = String(rawValue || "").trim();
+        if (value) {
+          const terms = value.split(/[\n\r]+/).map((item) => item.trim()).filter(Boolean);
+          const displayText = terms.length > 1
+            ? `(${terms.length}) ${terms.join(" ")}`
+            : value;
+          valueNode.hidden = false;
+          valueNode.textContent = displayText;
+          valueNode.title = displayText;
+        } else {
+          valueNode.hidden = true;
+          valueNode.textContent = "";
+          valueNode.title = "";
+        }
+      });
+
       if (filterState.platform) {
         filterPlatformValue.hidden = false;
         filterPlatformValue.textContent = filterState.platform;
@@ -5719,6 +5774,10 @@
       filterDispatcherPopover.hidden = true;
       filterOrderPopover.hidden = true;
       filterAccountantPopover.hidden = true;
+      filterSettlementRatioPopover.hidden = true;
+      filterCustomerPopover.hidden = true;
+      filterSummaryPopover.hidden = true;
+      filterRemarkPopover.hidden = true;
       filterPlatformPopover.hidden = true;
       filterShopPopover.hidden = true;
       filterSourcePopover.hidden = true;
@@ -5787,60 +5846,50 @@
       if (typeof closeAllFormPickers === "function") {
         closeAllFormPickers();
       }
+      const hideOtherFilterPopovers = (activePopover) => {
+        [
+          filterMonthPopover,
+          filterCompletedAtPopover,
+          filterDispatcherPopover,
+          filterOrderPopover,
+          filterAccountantPopover,
+          filterSettlementRatioPopover,
+          filterCustomerPopover,
+          filterSummaryPopover,
+          filterRemarkPopover,
+          filterPlatformPopover,
+          filterShopPopover,
+          filterSourcePopover,
+          filterStatusPopover,
+          filterSettledPopover,
+        ].forEach((popover) => {
+          if (popover && popover !== activePopover) {
+            popover.hidden = true;
+          }
+        });
+      };
       if (key === "month") {
         updateFilterOptions();
         const open = filterMonthPopover.hidden;
         filterMonthPopover.hidden = !open;
-        filterCompletedAtPopover.hidden = true;
-        filterDispatcherPopover.hidden = true;
-        filterOrderPopover.hidden = true;
-        filterAccountantPopover.hidden = true;
-        filterPlatformPopover.hidden = true;
-        filterShopPopover.hidden = true;
-        filterSourcePopover.hidden = true;
-        filterStatusPopover.hidden = true;
-        filterSettledPopover.hidden = true;
+        hideOtherFilterPopovers(filterMonthPopover);
       }
       if (key === "completedAt") {
         updateFilterOptions();
         const open = filterCompletedAtPopover.hidden;
         filterCompletedAtPopover.hidden = !open;
-        filterMonthPopover.hidden = true;
-        filterDispatcherPopover.hidden = true;
-        filterOrderPopover.hidden = true;
-        filterAccountantPopover.hidden = true;
-        filterPlatformPopover.hidden = true;
-        filterShopPopover.hidden = true;
-        filterSourcePopover.hidden = true;
-        filterStatusPopover.hidden = true;
-        filterSettledPopover.hidden = true;
+        hideOtherFilterPopovers(filterCompletedAtPopover);
       }
       if (key === "dispatcher") {
         updateFilterOptions();
         const open = filterDispatcherPopover.hidden;
         filterDispatcherPopover.hidden = !open;
-        filterMonthPopover.hidden = true;
-        filterCompletedAtPopover.hidden = true;
-        filterOrderPopover.hidden = true;
-        filterAccountantPopover.hidden = true;
-        filterPlatformPopover.hidden = true;
-        filterShopPopover.hidden = true;
-        filterSourcePopover.hidden = true;
-        filterStatusPopover.hidden = true;
-        filterSettledPopover.hidden = true;
+        hideOtherFilterPopovers(filterDispatcherPopover);
       }
       if (key === "orderNo") {
         const open = filterOrderPopover.hidden;
         filterOrderPopover.hidden = !open;
-        filterMonthPopover.hidden = true;
-        filterCompletedAtPopover.hidden = true;
-        filterDispatcherPopover.hidden = true;
-        filterAccountantPopover.hidden = true;
-        filterPlatformPopover.hidden = true;
-        filterShopPopover.hidden = true;
-        filterSourcePopover.hidden = true;
-        filterStatusPopover.hidden = true;
-        filterSettledPopover.hidden = true;
+        hideOtherFilterPopovers(filterOrderPopover);
         if (open && filterOrderInput) {
           window.setTimeout(() => {
             filterOrderInput.focus();
@@ -5852,85 +5901,82 @@
         updateFilterOptions();
         const open = filterAccountantPopover.hidden;
         filterAccountantPopover.hidden = !open;
-        filterMonthPopover.hidden = true;
-        filterCompletedAtPopover.hidden = true;
-        filterDispatcherPopover.hidden = true;
-        filterOrderPopover.hidden = true;
-        filterPlatformPopover.hidden = true;
-        filterShopPopover.hidden = true;
-        filterSourcePopover.hidden = true;
-        filterStatusPopover.hidden = true;
-        filterSettledPopover.hidden = true;
+        hideOtherFilterPopovers(filterAccountantPopover);
+        if (open && filterAccountantSearchInput) {
+          window.setTimeout(() => {
+            filterAccountantSearchInput.focus();
+            filterAccountantSearchInput.select();
+          }, 0);
+        }
+      }
+      if (key === "settlementRatio") {
+        updateFilterOptions();
+        const open = filterSettlementRatioPopover.hidden;
+        filterSettlementRatioPopover.hidden = !open;
+        hideOtherFilterPopovers(filterSettlementRatioPopover);
+      }
+      if (key === "customer") {
+        const open = filterCustomerPopover.hidden;
+        filterCustomerPopover.hidden = !open;
+        hideOtherFilterPopovers(filterCustomerPopover);
+        if (open && filterCustomerInput) {
+          window.setTimeout(() => {
+            filterCustomerInput.focus();
+            filterCustomerInput.select();
+          }, 0);
+        }
+      }
+      if (key === "summary") {
+        const open = filterSummaryPopover.hidden;
+        filterSummaryPopover.hidden = !open;
+        hideOtherFilterPopovers(filterSummaryPopover);
+        if (open && filterSummaryInput) {
+          window.setTimeout(() => {
+            filterSummaryInput.focus();
+            filterSummaryInput.select();
+          }, 0);
+        }
+      }
+      if (key === "remark") {
+        const open = filterRemarkPopover.hidden;
+        filterRemarkPopover.hidden = !open;
+        hideOtherFilterPopovers(filterRemarkPopover);
+        if (open && filterRemarkInput) {
+          window.setTimeout(() => {
+            filterRemarkInput.focus();
+            filterRemarkInput.select();
+          }, 0);
+        }
       }
       if (key === "platform") {
         updateFilterOptions();
         const open = filterPlatformPopover.hidden;
         filterPlatformPopover.hidden = !open;
-        filterMonthPopover.hidden = true;
-        filterCompletedAtPopover.hidden = true;
-        filterDispatcherPopover.hidden = true;
-        filterOrderPopover.hidden = true;
-        filterAccountantPopover.hidden = true;
-        filterShopPopover.hidden = true;
-        filterSourcePopover.hidden = true;
-        filterStatusPopover.hidden = true;
-        filterSettledPopover.hidden = true;
+        hideOtherFilterPopovers(filterPlatformPopover);
       }
       if (key === "shopName") {
         updateFilterOptions();
         const open = filterShopPopover.hidden;
         filterShopPopover.hidden = !open;
-        filterMonthPopover.hidden = true;
-        filterCompletedAtPopover.hidden = true;
-        filterDispatcherPopover.hidden = true;
-        filterOrderPopover.hidden = true;
-        filterAccountantPopover.hidden = true;
-        filterPlatformPopover.hidden = true;
-        filterSourcePopover.hidden = true;
-        filterStatusPopover.hidden = true;
-        filterSettledPopover.hidden = true;
+        hideOtherFilterPopovers(filterShopPopover);
       }
       if (key === "source") {
         updateFilterOptions();
         const open = filterSourcePopover.hidden;
         filterSourcePopover.hidden = !open;
-        filterMonthPopover.hidden = true;
-        filterCompletedAtPopover.hidden = true;
-        filterDispatcherPopover.hidden = true;
-        filterOrderPopover.hidden = true;
-        filterAccountantPopover.hidden = true;
-        filterPlatformPopover.hidden = true;
-        filterShopPopover.hidden = true;
-        filterStatusPopover.hidden = true;
-        filterSettledPopover.hidden = true;
+        hideOtherFilterPopovers(filterSourcePopover);
       }
       if (key === "status") {
         updateFilterOptions();
         const open = filterStatusPopover.hidden;
         filterStatusPopover.hidden = !open;
-        filterMonthPopover.hidden = true;
-        filterCompletedAtPopover.hidden = true;
-        filterDispatcherPopover.hidden = true;
-        filterOrderPopover.hidden = true;
-        filterAccountantPopover.hidden = true;
-        filterPlatformPopover.hidden = true;
-        filterShopPopover.hidden = true;
-        filterSourcePopover.hidden = true;
-        filterSettledPopover.hidden = true;
+        hideOtherFilterPopovers(filterStatusPopover);
       }
       if (key === "settled") {
         updateFilterOptions();
         const open = filterSettledPopover.hidden;
         filterSettledPopover.hidden = !open;
-        filterMonthPopover.hidden = true;
-        filterCompletedAtPopover.hidden = true;
-        filterDispatcherPopover.hidden = true;
-        filterOrderPopover.hidden = true;
-        filterAccountantPopover.hidden = true;
-        filterPlatformPopover.hidden = true;
-        filterShopPopover.hidden = true;
-        filterSourcePopover.hidden = true;
-        filterStatusPopover.hidden = true;
+        hideOtherFilterPopovers(filterSettledPopover);
       }
       updateFilterButtonUI();
     }
@@ -6286,6 +6332,10 @@
         || hasDispatcherFilterSelected()
         || filterState.orderNo
         || hasAccountantFilterSelected()
+        || filterState.settlementRatio
+        || filterState.customer
+        || filterState.summary
+        || filterState.remark
         || filterState.platform
         || filterState.shopName
         || filterState.source

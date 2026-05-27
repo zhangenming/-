@@ -9,6 +9,10 @@
     { key: "dispatcher", label: "接待人", button: () => filterDispatcherBtn, value: () => getSelectedDispatcherFilters().map((item) => getDispatcherDisplayNameByTag(item)).join("、") },
     { key: "orderNo", label: "订单号", button: () => filterOrderBtn, value: () => filterState.orderNo },
     { key: "accountant", label: "会计", button: () => filterAccountantBtn, value: () => getSelectedAccountantFilters().join("、") },
+    { key: "settlementRatio", label: "非60%结算价", button: () => filterSettlementRatioBtn, value: () => filterState.settlementRatio },
+    { key: "customer", label: "客户", button: () => filterCustomerBtn, value: () => filterState.customer },
+    { key: "summary", label: "任务简介", button: () => filterSummaryBtn, value: () => filterState.summary },
+    { key: "remark", label: "备注", button: () => filterRemarkBtn, value: () => filterState.remark },
     { key: "platform", label: "平台", button: () => filterPlatformBtn, value: () => filterState.platform },
     { key: "shopName", label: "店铺名", button: () => filterShopBtn, value: () => filterState.shopName },
     { key: "source", label: "来源", button: () => filterSourceBtn, value: () => filterState.source },
@@ -360,11 +364,14 @@
   function createMobileRecordSummary(record) {
     const summary = document.createElement("div");
     summary.className = "mobile-record-summary";
-    summary.append(
+    const items = [
       createMeta("任务简介", String(record?.summary || "").trim() || "未填写"),
       createMeta("客户反馈", String(record?.customerFeedback || "").trim() || "无"),
-      createMeta("备注", String(record?.remark || "").trim() || "无"),
-    );
+    ];
+    if (!isAccountantLogin()) {
+      items.push(createMeta("备注", String(record?.remark || "").trim() || "无"));
+    }
+    summary.append(...items);
     return summary;
   }
 
@@ -537,7 +544,10 @@
       checkStatus: "状态",
     };
     const label = labelMap[sortState.key] || "当前字段";
-    return `${label} · ${sortState.direction === "asc" ? "升序" : "降序"}`;
+    const modeLabel = sortState.key === "premiumPrice" && sortState.premiumMode === "percent"
+      ? "比例"
+      : (sortState.key === "settlementPrice" && sortState.settlementMode === "percent" ? "比例" : "");
+    return `${label}${modeLabel ? `(${modeLabel})` : ""} · ${sortState.direction === "asc" ? "升序" : "降序"}`;
   }
 
   function scheduleMobileRender() {
@@ -617,7 +627,6 @@
       { text: "排序", action: () => openMobileSheet("sort") },
       { text: "管理接待", button: openDispatcherModalBtn },
       { text: "管理会计", button: openAccountantModalBtn },
-      { text: "强制刷新会计页", button: forceRefreshAccountantPagesBtn },
       { text: "分析数据", button: openAnalysisModalBtn },
       { text: "回收站", button: openRecycleModalBtn },
       { text: "提醒", button: openReminderModalBtn },
@@ -662,7 +671,10 @@
       { key: "checkStatus", label: "状态" },
     ].forEach((item) => {
       const active = sortState.key === item.key;
-      const direction = active ? (sortState.direction === "asc" ? "升序" : "降序") : "";
+      const mode = item.key === "premiumPrice" && sortState.premiumMode === "percent"
+        ? "比例"
+        : (item.key === "settlementPrice" && sortState.settlementMode === "percent" ? "比例" : "");
+      const direction = active ? `${mode ? `${mode} ` : ""}${sortState.direction === "asc" ? "升序" : "降序"}` : "";
       const button = createButton({
         className: `mobile-panel-button${active ? " active" : ""}`,
         text: item.label,

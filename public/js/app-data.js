@@ -2442,7 +2442,9 @@
       const payload = {
         sort: {
           key: sortState.key,
-          direction: sortState.direction
+          direction: sortState.direction,
+          premiumMode: sortState.premiumMode,
+          settlementMode: sortState.settlementMode
         },
         filter: {
           month: filterState.month,
@@ -2454,6 +2456,10 @@
           dispatcher: getSelectedDispatcherFilters(),
           orderNo: filterState.orderNo,
           accountant: getSelectedAccountantFilters(),
+          settlementRatio: filterState.settlementRatio,
+          customer: filterState.customer,
+          summary: filterState.summary,
+          remark: filterState.remark,
           platform: filterState.platform,
           shopName: filterState.shopName,
           source: filterState.source,
@@ -2484,6 +2490,8 @@
         const allowedSortKeys = getAllowedSortKeySet();
         const persistedSortKey = String(parsed?.sort?.key || "").trim();
         const persistedSortDirection = String(parsed?.sort?.direction || "").trim();
+        const persistedPremiumMode = String(parsed?.sort?.premiumMode || "").trim();
+        const persistedSettlementMode = String(parsed?.sort?.settlementMode || "").trim();
         const persistedMonth = String(parsedFilter.month || "").trim();
         const persistedDateStart = String(parsedFilter.dateStart || "").trim();
         const persistedDateEnd = String(parsedFilter.dateEnd || "").trim();
@@ -2493,6 +2501,10 @@
         const persistedDispatcher = normalizeDispatcherFilterValues(parsedFilter.dispatcher);
         const persistedOrderNo = String(parsedFilter.orderNo || "").trim();
         const persistedAccountant = normalizeAccountantFilterValues(parsedFilter.accountant);
+        const persistedSettlementRatio = String(parsedFilter.settlementRatio || "").trim();
+        const persistedCustomer = String(parsedFilter.customer || "").trim();
+        const persistedSummary = String(parsedFilter.summary || "").trim();
+        const persistedRemark = String(parsedFilter.remark || "").trim();
         const persistedPlatform = String(parsedFilter.platform || "").trim();
         const persistedShopName = String(parsedFilter.shopName || "").trim();
         const persistedSource = String(parsedFilter.source || "").trim();
@@ -2505,6 +2517,12 @@
         }
         if (persistedSortDirection === "asc" || persistedSortDirection === "desc") {
           sortState.direction = persistedSortDirection;
+        }
+        if (persistedPremiumMode === "amount" || persistedPremiumMode === "percent") {
+          sortState.premiumMode = persistedPremiumMode;
+        }
+        if (persistedSettlementMode === "amount" || persistedSettlementMode === "percent") {
+          sortState.settlementMode = persistedSettlementMode;
         }
 
         const normalizedDateRange = typeof getNormalizedDateRangeFilter === "function"
@@ -2523,6 +2541,15 @@
         filterState.orderNo = persistedOrderNo;
         if (filterOrderInput) filterOrderInput.value = persistedOrderNo || "";
         setAccountantFilterValues(persistedAccountant);
+        filterState.settlementRatio = persistedSettlementRatio === SETTLEMENT_RATIO_NON_60_FILTER
+          ? persistedSettlementRatio
+          : "";
+        filterState.customer = persistedCustomer;
+        filterState.summary = persistedSummary;
+        filterState.remark = persistedRemark;
+        if (filterCustomerInput) filterCustomerInput.value = persistedCustomer || "";
+        if (filterSummaryInput) filterSummaryInput.value = persistedSummary || "";
+        if (filterRemarkInput) filterRemarkInput.value = persistedRemark || "";
         filterState.platform = persistedPlatform;
         filterState.shopName = persistedShopName;
         filterState.source = persistedSource;

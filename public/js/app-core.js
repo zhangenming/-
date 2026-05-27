@@ -1138,6 +1138,12 @@ const filterCompletedAtBtn = document.getElementById("filterCompletedAtBtn");
 const filterDispatcherBtn = document.getElementById("filterDispatcherBtn");
 const filterOrderBtn = document.getElementById("filterOrderBtn");
 const filterAccountantBtn = document.getElementById("filterAccountantBtn");
+const filterSettlementRatioBtn = document.getElementById(
+  "filterSettlementRatioBtn",
+);
+const filterCustomerBtn = document.getElementById("filterCustomerBtn");
+const filterSummaryBtn = document.getElementById("filterSummaryBtn");
+const filterRemarkBtn = document.getElementById("filterRemarkBtn");
 const filterPlatformBtn = document.getElementById("filterPlatformBtn");
 const filterShopBtn = document.getElementById("filterShopBtn");
 const filterSourceBtn = document.getElementById("filterSourceBtn");
@@ -1154,6 +1160,16 @@ const filterOrderIndicator = document.getElementById("filterOrderIndicator");
 const filterAccountantIndicator = document.getElementById(
   "filterAccountantIndicator",
 );
+const filterSettlementRatioIndicator = document.getElementById(
+  "filterSettlementRatioIndicator",
+);
+const filterCustomerIndicator = document.getElementById(
+  "filterCustomerIndicator",
+);
+const filterSummaryIndicator = document.getElementById(
+  "filterSummaryIndicator",
+);
+const filterRemarkIndicator = document.getElementById("filterRemarkIndicator");
 const filterPlatformIndicator = document.getElementById(
   "filterPlatformIndicator",
 );
@@ -1170,6 +1186,12 @@ const filterCompletedAtValue = document.getElementById(
 const filterDispatcherValue = document.getElementById("filterDispatcherValue");
 const filterOrderValue = document.getElementById("filterOrderValue");
 const filterAccountantValue = document.getElementById("filterAccountantValue");
+const filterSettlementRatioValue = document.getElementById(
+  "filterSettlementRatioValue",
+);
+const filterCustomerValue = document.getElementById("filterCustomerValue");
+const filterSummaryValue = document.getElementById("filterSummaryValue");
+const filterRemarkValue = document.getElementById("filterRemarkValue");
 const filterPlatformValue = document.getElementById("filterPlatformValue");
 const filterShopValue = document.getElementById("filterShopValue");
 const filterSourceValue = document.getElementById("filterSourceValue");
@@ -1186,6 +1208,12 @@ const filterOrderPopover = document.getElementById("filterOrderPopover");
 const filterAccountantPopover = document.getElementById(
   "filterAccountantPopover",
 );
+const filterSettlementRatioPopover = document.getElementById(
+  "filterSettlementRatioPopover",
+);
+const filterCustomerPopover = document.getElementById("filterCustomerPopover");
+const filterSummaryPopover = document.getElementById("filterSummaryPopover");
+const filterRemarkPopover = document.getElementById("filterRemarkPopover");
 const filterPlatformPopover = document.getElementById("filterPlatformPopover");
 const filterShopPopover = document.getElementById("filterShopPopover");
 const filterSourcePopover = document.getElementById("filterSourcePopover");
@@ -1195,6 +1223,9 @@ const filterMonthList = document.getElementById("filterMonthList");
 const filterCompletedAtList = document.getElementById("filterCompletedAtList");
 const filterDispatcherList = document.getElementById("filterDispatcherList");
 const filterAccountantList = document.getElementById("filterAccountantList");
+const filterSettlementRatioList = document.getElementById(
+  "filterSettlementRatioList",
+);
 const filterPlatformList = document.getElementById("filterPlatformList");
 const filterShopList = document.getElementById("filterShopList");
 const filterSourceList = document.getElementById("filterSourceList");
@@ -1208,6 +1239,9 @@ const filterDateRangeApplyBtn = document.getElementById(
 const filterDateRangeClearBtn = document.getElementById(
   "filterDateRangeClearBtn",
 );
+const filterCustomerInput = document.getElementById("filterCustomerInput");
+const filterSummaryInput = document.getElementById("filterSummaryInput");
+const filterRemarkInput = document.getElementById("filterRemarkInput");
 const filterCompletedAtStartInput = document.getElementById(
   "filterCompletedAtStartInput",
 );
@@ -1219,6 +1253,9 @@ const filterCompletedAtRangeApplyBtn = document.getElementById(
 );
 const filterCompletedAtRangeClearBtn = document.getElementById(
   "filterCompletedAtRangeClearBtn",
+);
+const filterAccountantSearchInput = document.getElementById(
+  "filterAccountantSearchInput",
 );
 const filterOrderInput = document.getElementById("filterOrderInput");
 const tableHoverTooltip = document.createElement("div");
@@ -1285,6 +1322,7 @@ const sortState = {
   key: "date",
   direction: "desc",
   premiumMode: "amount",
+  settlementMode: "amount",
 };
 const accountantSortState = {
   key: "orderCount",
@@ -1304,12 +1342,19 @@ const filterState = {
   dispatcher: [],
   orderNo: "",
   accountant: [],
+  settlementRatio: "",
+  customer: "",
+  summary: "",
+  remark: "",
   platform: "",
   shopName: "",
   source: "",
   status: [],
   settled: "",
 };
+const SETTLEMENT_RATIO_NON_60_FILTER = "非60%";
+const SETTLEMENT_RATIO_TARGET = 0.6;
+const SETTLEMENT_RATIO_TOLERANCE = 0.00005;
 
 function normalizeMultiFilterValues(rawValue) {
   const values = Array.isArray(rawValue)
@@ -2335,9 +2380,17 @@ function canCurrentAccountPayoutSettlementRecords() {
 function canCurrentAccountDeleteRecord(record) {
   if (!record || typeof record !== "object") return false;
   if (isBossLogin()) return true;
-  if (isDispatcherLogin()) return getRecordWorkflowStatusKey(record) === "pending";
+  if (isDispatcherLogin()) {
+    return DISPATCHER_DELETABLE_WORKFLOW_STATUS_KEYS.has(getRecordWorkflowStatusKey(record));
+  }
   return false;
 }
+
+const DISPATCHER_DELETABLE_WORKFLOW_STATUS_KEYS = new Set([
+  "pending",
+  "checked",
+  "completed"
+]);
 
 const DISPATCHER_EDITABLE_WORKFLOW_STATUS_KEYS = new Set([
   "pending",

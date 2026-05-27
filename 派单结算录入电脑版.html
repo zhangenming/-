@@ -538,7 +538,20 @@
                       </svg>
                     </button>
                   </span>
-                  <div id="filterAccountantPopover" class="filter-popover" hidden>
+                  <div id="filterAccountantPopover" class="filter-popover filter-search-popover" hidden>
+                    <div class="filter-popover-section">
+                      <label class="filter-search-field" for="filterAccountantSearchInput">
+                        <span class="filter-popover-title">会计搜索</span>
+                        <input
+                          id="filterAccountantSearchInput"
+                          class="filter-search-input"
+                          type="search"
+                          autocomplete="off"
+                          placeholder="输入会计名称"
+                        />
+                      </label>
+                    </div>
+                    <div class="filter-popover-divider"></div>
                     <div id="filterAccountantList" class="filter-options"></div>
                   </div>
                 </div>
