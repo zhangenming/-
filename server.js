@@ -1781,9 +1781,17 @@ function getRecordWorkflowStatusKey(record) {
 function canDeleteRecord(session, record) {
   if (!session || !record || typeof record !== "object") return false;
   if (session.role === "boss") return true;
-  if (session.role === "dispatcher") return getRecordWorkflowStatusKey(record) === "pending";
+  if (session.role === "dispatcher") {
+    return DISPATCHER_DELETABLE_WORKFLOW_STATUS_KEYS.has(getRecordWorkflowStatusKey(record));
+  }
   return false;
 }
+
+const DISPATCHER_DELETABLE_WORKFLOW_STATUS_KEYS = new Set([
+  "pending",
+  "checked",
+  "completed"
+]);
 
 const DISPATCHER_EDITABLE_WORKFLOW_STATUS_KEYS = new Set([
   "pending",

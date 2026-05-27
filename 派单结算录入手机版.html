@@ -235,7 +235,6 @@
         <button id="openAnalysisModalBtn" class="btn-secondary" type="button">分析数据</button>
         <button id="openDispatcherModalBtn" class="btn-secondary" type="button">管理接待</button>
         <button id="openAccountantModalBtn" class="btn-secondary" type="button">管理会计</button>
-        <button id="forceRefreshAccountantPagesBtn" class="btn-secondary" type="button" hidden>强制刷新会计页</button>
         <button id="openRecycleModalBtn" class="btn-secondary" type="button">回收站</button>
       </div>
       <section class="order-flow-guide" aria-label="订单正常流转流程">
@@ -543,13 +542,88 @@
                   </div>
                 </div>
               </th>
-              <th><button class="sort-btn" type="button" data-key="customer" data-label="客户">客户</button></th>
-              <th><button class="sort-btn" type="button" data-key="summary" data-label="任务简介">任务简介</button></th>
-              <th class="data-col-remark"><button class="sort-btn" type="button" data-key="remark" data-label="备注">备注</button></th>
+              <th>
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="customer" data-label="客户">客户</button>
+                  <span id="filterCustomerIndicator" class="filter-indicator-wrap">
+                    <span id="filterCustomerValue" class="filter-value-chip" hidden></span>
+                    <button id="filterCustomerBtn" class="filter-icon-btn" type="button" aria-label="搜索客户" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M9.5 4a5.5 5.5 0 0 1 4.38 8.83l4.15 4.14-1.06 1.06-4.14-4.15A5.5 5.5 0 1 1 9.5 4Zm0 1.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterCustomerPopover" class="filter-popover filter-search-popover" hidden>
+                    <div class="filter-popover-section">
+                      <label class="filter-search-field" for="filterCustomerInput">
+                        <span class="filter-popover-title">客户搜索</span>
+                        <textarea id="filterCustomerInput" class="filter-search-input filter-order-textarea" rows="3" placeholder="每行输入一个客户关键词" autocomplete="off" spellcheck="false"></textarea>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </th>
+              <th>
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="summary" data-label="任务简介">任务简介</button>
+                  <span id="filterSummaryIndicator" class="filter-indicator-wrap">
+                    <span id="filterSummaryValue" class="filter-value-chip" hidden></span>
+                    <button id="filterSummaryBtn" class="filter-icon-btn" type="button" aria-label="搜索任务简介" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M9.5 4a5.5 5.5 0 0 1 4.38 8.83l4.15 4.14-1.06 1.06-4.14-4.15A5.5 5.5 0 1 1 9.5 4Zm0 1.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterSummaryPopover" class="filter-popover filter-search-popover" hidden>
+                    <div class="filter-popover-section">
+                      <label class="filter-search-field" for="filterSummaryInput">
+                        <span class="filter-popover-title">任务简介搜索</span>
+                        <textarea id="filterSummaryInput" class="filter-search-input filter-order-textarea" rows="3" placeholder="每行输入一个任务关键词" autocomplete="off" spellcheck="false"></textarea>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </th>
+              <th class="data-col-remark">
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="remark" data-label="备注">备注</button>
+                  <span id="filterRemarkIndicator" class="filter-indicator-wrap">
+                    <span id="filterRemarkValue" class="filter-value-chip" hidden></span>
+                    <button id="filterRemarkBtn" class="filter-icon-btn" type="button" aria-label="搜索备注" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M9.5 4a5.5 5.5 0 0 1 4.38 8.83l4.15 4.14-1.06 1.06-4.14-4.15A5.5 5.5 0 1 1 9.5 4Zm0 1.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterRemarkPopover" class="filter-popover filter-search-popover" hidden>
+                    <div class="filter-popover-section">
+                      <label class="filter-search-field" for="filterRemarkInput">
+                        <span class="filter-popover-title">备注搜索</span>
+                        <textarea id="filterRemarkInput" class="filter-search-input filter-order-textarea" rows="3" placeholder="每行输入一个备注关键词" autocomplete="off" spellcheck="false"></textarea>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </th>
               <th class="data-col-payment"><button class="sort-btn" type="button" data-key="paymentPrice" data-label="付款价">付款价</button></th>
               <th class="data-col-premium"><button class="sort-btn" type="button" data-key="premiumPrice" data-label="溢价">溢价</button></th>
               <th class="data-col-total"><button class="sort-btn" type="button" data-key="totalPrice" data-label="会计价">会计价</button></th>
-              <th class="data-col-settlement"><button class="sort-btn" type="button" data-key="settlementPrice" data-label="会计结算价">会计结算价</button></th>
+              <th class="data-col-settlement">
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="settlementPrice" data-label="会计结算价">会计结算价</button>
+                  <span id="filterSettlementRatioIndicator" class="filter-indicator-wrap">
+                    <span id="filterSettlementRatioValue" class="filter-value-chip" hidden></span>
+                    <button id="filterSettlementRatioBtn" class="filter-icon-btn" type="button" aria-label="筛选结算比例" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterSettlementRatioPopover" class="filter-popover" hidden>
+                    <div id="filterSettlementRatioList" class="filter-options"></div>
+                  </div>
+                </div>
+              </th>
               <th class="data-col-source">
                 <div class="th-inner">
                   <button class="sort-btn" type="button" data-key="source" data-label="来源">来源</button>
@@ -1274,6 +1348,9 @@
             <span class="accountant-modal-stat">会计总数: <strong id="accountantModalAccountantCount">0</strong></span>
             <span class="accountant-modal-stat">订单总数: <strong id="accountantModalOrderCount">0</strong></span>
           </div>
+        </div>
+        <div class="accountant-modal-actions">
+          <button id="forceRefreshAccountantPagesBtn" class="btn-secondary" type="button" hidden>强制刷新会计页</button>
         </div>
       </div>
       <p id="accountantModalHint" class="login-request-hint form-request-hint idle" aria-live="polite" hidden></p>

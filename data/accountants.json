@@ -62,6 +62,22 @@
     }
   },
   {
+    "username": "18642091201",
+    "displayName": "初一",
+    "name": "初一",
+    "alias": "初一",
+    "realName": "",
+    "phone": "18642091201",
+    "loginPassword": "5403274",
+    "invoiceRecipientInfo": {
+      "name": "孙艳杰",
+      "bankName": "中信银行沈阳沈河支行",
+      "bankCardNo": "6217712902465299",
+      "idCardNo": "211224198712016026",
+      "declarationPhone": "18642091201"
+    }
+  },
+  {
     "username": "ChunHuaQiuShi15973428149",
     "displayName": "春华秋实",
     "name": "春华秋实",
@@ -115,7 +131,13 @@
     "realName": "祝璐瑶",
     "phone": "15868835003",
     "loginPassword": "123456",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "祝璐瑶",
+      "bankName": "中信银行杭州滨江支行",
+      "bankCardNo": "6217680821618597",
+      "idCardNo": "36232219970513122X",
+      "declarationPhone": "15868835003"
+    }
   },
   {
     "username": "HaHaHa",
@@ -659,7 +681,13 @@
     "realName": "杨珊珊",
     "phone": "15337165643",
     "loginPassword": "123456",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "杨珊珊",
+      "bankName": "招商银行光谷科技支行",
+      "bankCardNo": "6214832708038042",
+      "idCardNo": "42900119940226162X",
+      "declarationPhone": "15337165643"
+    }
   },
   {
     "username": "YangXianSen",
@@ -992,6 +1020,22 @@
     }
   },
   {
+    "username": "19146006458",
+    "displayName": "Shine 会计师",
+    "name": "Shine 会计师",
+    "alias": "Shine 会计师",
+    "realName": "",
+    "phone": "19146006458",
+    "loginPassword": "zaizai168",
+    "invoiceRecipientInfo": {
+      "name": "Shine 会计师",
+      "bankName": "中信银行重庆星光支行",
+      "bankCardNo": "6217681213473146",
+      "idCardNo": "500384198812060024",
+      "declarationPhone": "19146006458"
+    }
+  },
+  {
     "username": "TT",
     "displayName": "TT",
     "name": "TT",
@@ -1025,7 +1069,13 @@
     "realName": "陈",
     "phone": "17782369746",
     "loginPassword": "123",
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "陈",
+      "bankName": "1",
+      "bankCardNo": "1",
+      "idCardNo": "1",
+      "declarationPhone": "17782369746"
+    }
   },
   {
     "username": "15828074401",
