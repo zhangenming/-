@@ -122,6 +122,41 @@
       openAnalysisModal();
     });
 
+    if (closeAnalysisPageBtn) {
+      closeAnalysisPageBtn.addEventListener("click", () => {
+        closeAnalysisModal();
+      });
+    }
+
+    if (analysisContent) {
+      analysisContent.addEventListener("click", (event) => {
+        const sortBtn = event.target.closest("[data-accountant-detail-sort]");
+        if (!sortBtn || !analysisContent.contains(sortBtn)) return;
+        handleAccountantDetailSort(sortBtn.dataset.accountantDetailSort);
+      });
+    }
+
+    if (openAnalysisAccountantDetailBtn) {
+      openAnalysisAccountantDetailBtn.addEventListener("click", () => {
+        openAnalysisAccountantDetailModal();
+      });
+    }
+
+    if (closeAnalysisAccountantDetailBtn) {
+      closeAnalysisAccountantDetailBtn.addEventListener("click", () => {
+        closeAnalysisAccountantDetailModal();
+      });
+    }
+
+    if (analysisAccountantDetailContent) {
+      analysisAccountantDetailContent.addEventListener("click", (event) => {
+        const sortBtn = event.target.closest("[data-accountant-detail-sort]");
+        if (!sortBtn || !analysisAccountantDetailContent.contains(sortBtn)) return;
+        handleAccountantDetailSort(sortBtn.dataset.accountantDetailSort);
+        renderAnalysisAccountantDetailModalContent();
+      });
+    }
+
     if (openDataModalBtn) {
       openDataModalBtn.addEventListener("click", () => {
         openPriceCompositionModal();
@@ -533,6 +568,7 @@
       if (!optionButton) return;
       const nextValue = String(optionButton.dataset.value || "").trim();
       setAccountantPickerValue(nextValue);
+      syncSettlementPriceForAccountantRatio();
       clearInlineFieldError(accountantPickerTrigger);
       if (!recordForm.querySelector(".field-validation-group-error")) {
         setRecordFormHint("", "idle");
@@ -1209,6 +1245,8 @@
         event.preventDefault();
         const originalUsername = String(accountantEditOriginalUsernameInput?.value || editingAccountantUsername || "").trim();
         const password = String(accountantEditPasswordInput?.value || "").trim();
+        const accountingSettlementRatioRaw = String(accountantEditSettlementRatioInput?.value || "").trim();
+        const accountingSettlementRatio = Number(accountingSettlementRatioRaw);
         const alias = String(accountantEditAliasInput?.value || "").trim();
         const phone = String(accountantEditPhoneInput?.value || "").trim();
         const recipientInfo = {
@@ -1243,6 +1281,16 @@
           });
           return;
         }
+        const canEditSettlementRatio = accountantEditMode === "admin" && isBossLogin();
+        if (canEditSettlementRatio && (!accountingSettlementRatioRaw || !Number.isFinite(accountingSettlementRatio) || accountingSettlementRatio < 0 || accountingSettlementRatio > 100)) {
+          showInlineFormError({
+            form: accountantEditForm,
+            hintSetter: setAccountantEditHint,
+            target: accountantEditSettlementRatioInput,
+            message: "请输入0到100之间的会计结算价比例。"
+          });
+          return;
+        }
         if (canEditRecipientFields) {
           const recipientTargets = [
             [accountantEditRecipientNameInput, recipientInfo.name, "请输入结算申报姓名。"],
@@ -1271,6 +1319,9 @@
           if (canEditSensitiveFields) {
             payload.password = password;
             payload.phone = phone;
+          }
+          if (canEditSettlementRatio) {
+            payload.accountingSettlementRatio = accountingSettlementRatio;
           }
           if (canEditRecipientFields) {
             payload.invoiceRecipientInfo = recipientInfo;
@@ -1600,6 +1651,7 @@
     });
 
     accountantList.addEventListener("click", async (event) => {
+      if (!isBossLogin()) return;
       const editBtn = event.target.closest(".accountant-edit-btn");
       if (editBtn) {
         const accountantUsername = String(editBtn.dataset.accountantUsername || "").trim();
@@ -2192,10 +2244,8 @@
       });
     }
 
-    analysisModal.addEventListener("click", (event) => {
-      if (event.target === analysisModal) {
-        closeAnalysisModal();
-      }
+    window.addEventListener("popstate", () => {
+      syncAnalysisPageRoute();
     });
 
     if (customerFeedbackModal) {
@@ -2274,6 +2324,14 @@
       accountantDetailModal.addEventListener("click", (event) => {
         if (event.target === accountantDetailModal) {
           closeAccountantDetailModal();
+        }
+      });
+    }
+
+    if (analysisAccountantDetailModal) {
+      analysisAccountantDetailModal.addEventListener("click", (event) => {
+        if (event.target === analysisAccountantDetailModal) {
+          closeAnalysisAccountantDetailModal();
         }
       });
     }
@@ -2468,6 +2526,10 @@
         return;
       }
       if (event.key === "Escape" && !analysisModal.hidden) {
+        if (analysisAccountantDetailModal && !analysisAccountantDetailModal.hidden) {
+          closeAnalysisAccountantDetailModal();
+          return;
+        }
         if (operationRecordsModal && !operationRecordsModal.hidden) {
           closeOperationRecordsModal();
           return;
@@ -2476,8 +2538,6 @@
           closePriceCompositionModal();
           return;
         }
-        closeAnalysisModal();
-        return;
       }
       if (customerFeedbackModal && event.key === "Escape" && !customerFeedbackModal.hidden) {
         closeCustomerFeedbackModal();
@@ -2813,7 +2873,7 @@
         closeCompleteModal();
         closeRecordHistoryModal();
         closeInvoicePreviewModal();
-        closeAnalysisModal();
+        closeAnalysisModal({ updateRoute: false });
         closeCustomerFeedbackModal();
         closeDispatcherModal();
         closeAccountantModal();

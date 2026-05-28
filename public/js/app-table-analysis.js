@@ -2,6 +2,10 @@
     const analysisChartInstances = new Map();
     let analysisChartRenderFrame = 0;
     let echartsLoadPromise = null;
+    let accountantDetailSortState = {
+      key: "settlement",
+      direction: "desc",
+    };
     const ANALYSIS_CHART_COLORS = ["#23765b", "#d48634", "#2f63aa", "#9a5b38", "#61746c", "#8c6a32", "#3c7c87", "#b35b5b"];
 
     function getVersionedAssetUrl(assetUrl) {
@@ -309,6 +313,7 @@
     }
 
     function getDefaultDispatcherTag() {
+      if (isBossLogin()) return "开心财税";
       return getDispatcherTagForAccount(currentAccount) || "1";
     }
 
@@ -433,6 +438,17 @@
       if (countGap !== 0) return countGap;
       const settlementGap = right.settlement - left.settlement;
       if (settlementGap !== 0) return settlementGap;
+      return String(left.key || "").localeCompare(String(right.key || ""), "zh-CN", {
+        numeric: true,
+        sensitivity: "base"
+      });
+    }
+
+    function compareSummaryRowsBySettlement(left, right) {
+      const settlementGap = right.settlement - left.settlement;
+      if (settlementGap !== 0) return settlementGap;
+      const countGap = right.count - left.count;
+      if (countGap !== 0) return countGap;
       return String(left.key || "").localeCompare(String(right.key || ""), "zh-CN", {
         numeric: true,
         sensitivity: "base"
@@ -2004,7 +2020,7 @@
       if (!chart) return;
       const metric = options.metric || "settlement";
       const metricName = options.metricName || "会计结算价";
-      const displayRows = [...visibleRows].reverse();
+      const displayRows = [...visibleRows];
       chart.setOption({
         ...getBaseChartOption(),
         grid: {
@@ -2048,6 +2064,7 @@
         },
         yAxis: {
           type: "category",
+          inverse: true,
           data: displayRows.map((row) => row.key || row.label),
           axisTick: {
             show: false
@@ -2707,13 +2724,6 @@
       renderAnalysisStatusChart(data.statusRows || []);
       renderAnalysisFunnelChart(data.funnelRows || []);
       renderAnalysisSourceChart(data.sourceRows || [], data.monthlySettlementRows || []);
-      renderAnalysisHorizontalBarChart("analysisAccountantChart", data.accountantRows || [], {
-        limit: 10,
-        left: 80,
-        labelWidth: 86,
-        metric: "settlement",
-        metricName: "会计结算价"
-      });
       if (data.showDispatcherSections) {
         renderAnalysisHorizontalBarChart("analysisDispatcherChart", data.dispatcherRows || [], {
           limit: 8,
@@ -2748,7 +2758,6 @@
               "analysisStatusChart",
               "analysisFunnelChart",
               "analysisSourceChart",
-              "analysisAccountantChart",
               "analysisDispatcherChart",
               "analysisCoopHeatmapChart",
               "analysisCustomerChart",
@@ -2794,35 +2803,273 @@
       return `<table class="analysis-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
     }
 
-    function buildAnalysisTags(scopeRecords) {
-      if (!scopeRecords.length) return [];
-      const showDispatcherSections = !isDispatcherLogin();
-      const sumTotal = scopeRecords.reduce((sum, item) => sum + toNumber(item.totalPrice), 0);
-      const sumSettlement = scopeRecords.reduce((sum, item) => sum + toNumber(item.settlementPrice), 0);
-      const ratio = sumTotal > 0 ? sumSettlement / sumTotal : 0;
+    function formatAnalysisBarPercent(value, maxValue) {
+      const current = Number(value) || 0;
+      const max = Number(maxValue) || 0;
+      if (max <= 0) return "0";
+      return String(Math.max(0, Math.min(100, (current / max) * 100)).toFixed(1));
+    }
 
-      const byDispatcher = summarizeBy(scopeRecords, (item) => getDispatcherDisplayNameByTag(item.dispatcher))
-        .sort((a, b) => b.settlement - a.settlement);
-      const byAccountant = summarizeBy(scopeRecords, (item) => String(item.accountant || "").trim() || "未填")
-        .sort(compareSummaryRowsByCount);
+    function buildAccountantMetricCell(valueText, barPercent, tone = "default") {
+      return `
+        <div class="analysis-accountant-metric">
+          <strong>${escapeHtml(valueText)}</strong>
+          <span class="analysis-accountant-bar analysis-accountant-bar-${escapeHtml(tone)}" style="--bar-value:${escapeHtml(barPercent)}%"></span>
+        </div>
+      `;
+    }
 
-      const tags = [];
-      if (showDispatcherSections && byDispatcher.length) {
-        tags.push(`接待人主力：${byDispatcher[0].key}（${formatCurrency(byDispatcher[0].settlement)}）`);
+    function getAccountantDispatcherSortKey(dispatcher) {
+      return `dispatcher:${String(dispatcher || "").trim()}`;
+    }
+
+    function getAccountantDispatcherFromSortKey(key) {
+      const source = String(key || "");
+      const prefix = "dispatcher:";
+      return source.startsWith(prefix) ? source.slice(prefix.length) : "";
+    }
+
+    function getAnalysisDispatcherOrderValue(dispatcher) {
+      const tag = normalizeDispatcherTag(dispatcher);
+      if (tag === "开心财税") return -1;
+      const index = DISPATCHER_TAGS.indexOf(tag);
+      return index >= 0 ? index : DISPATCHER_TAGS.length + 1;
+    }
+
+    function buildAccountantDispatcherColumns(coopRows) {
+      const map = new Map();
+      (Array.isArray(coopRows) ? coopRows : []).forEach((row) => {
+        const dispatcher = String(row?.dispatcher || "").trim() || "未填";
+        const bucket = map.get(dispatcher) || { key: dispatcher, label: dispatcher, total: 0 };
+        bucket.total += Number(row?.count) || 0;
+        map.set(dispatcher, bucket);
+      });
+      return Array.from(map.values()).sort((left, right) => {
+        const orderGap = getAnalysisDispatcherOrderValue(left.key) - getAnalysisDispatcherOrderValue(right.key);
+        if (orderGap !== 0) return orderGap;
+        return String(left.key).localeCompare(String(right.key), "zh-CN", {
+          numeric: true,
+          sensitivity: "base",
+        });
+      });
+    }
+
+    function buildAccountantRowsWithDispatcherCounts(accountantRows, coopRows) {
+      const countMap = new Map();
+      (Array.isArray(coopRows) ? coopRows : []).forEach((row) => {
+        const accountant = String(row?.accountant || "").trim() || "未填";
+        const dispatcher = String(row?.dispatcher || "").trim() || "未填";
+        const accountantCounts = countMap.get(accountant) || new Map();
+        accountantCounts.set(dispatcher, (accountantCounts.get(dispatcher) || 0) + (Number(row?.count) || 0));
+        countMap.set(accountant, accountantCounts);
+      });
+      return (Array.isArray(accountantRows) ? accountantRows : []).map((row) => ({
+        ...row,
+        dispatcherCounts: countMap.get(String(row?.key || "").trim() || "未填") || new Map(),
+      }));
+    }
+
+    function buildAccountantDispatcherCountCell(count, maxCount) {
+      const current = Number(count) || 0;
+      const barPercent = formatAnalysisBarPercent(current, maxCount);
+      return `
+        <div class="analysis-accountant-dispatcher-count${current > 0 ? " is-active" : ""}" style="--bar-value:${escapeHtml(barPercent)}%">
+          <span>${escapeHtml(formatCount(current))}</span>
+        </div>
+      `;
+    }
+
+    function getAccountantDetailSortValue(row, key) {
+      const item = row && typeof row === "object" ? row : {};
+      const dispatcher = getAccountantDispatcherFromSortKey(key);
+      if (dispatcher) return Number(item.dispatcherCounts?.get(dispatcher)) || 0;
+      if (key === "name") return String(item.key || "");
+      if (key === "count") return Number(item.count) || 0;
+      if (key === "total") return Number(item.total) || 0;
+      if (key === "settlement") return Number(item.settlement) || 0;
+      if (key === "ratio") return Number(item.ratio) || 0;
+      if (key === "avgTotal") return Number(item.avgTotal) || 0;
+      return Number(item.settlement) || 0;
+    }
+
+    function getAccountantDetailSortDefaultDirection(key) {
+      return key === "name" ? "asc" : "desc";
+    }
+
+    function getAccountantDetailNameSortPriority(row) {
+      const accountantName = String(row?.key || "").trim();
+      if (!accountantName) return 3;
+      if (isBuiltInAccountantName(accountantName)) return 0;
+      return getDispatcherTagsLinkedToAccountant(accountantName).length ? 1 : 2;
+    }
+
+    function sortAccountantDetailRows(accountantRows) {
+      const rows = Array.isArray(accountantRows) ? [...accountantRows] : [];
+      const sortKey = String(accountantDetailSortState?.key || "settlement");
+      const direction = accountantDetailSortState?.direction === "asc" ? "asc" : "desc";
+      const directionFactor = direction === "asc" ? 1 : -1;
+      return rows.sort((left, right) => {
+        if (sortKey === "name") {
+          const priorityGap = getAccountantDetailNameSortPriority(left) - getAccountantDetailNameSortPriority(right);
+          if (priorityGap !== 0) return priorityGap;
+        }
+        const primary = compareSortValue(
+          getAccountantDetailSortValue(left, sortKey),
+          getAccountantDetailSortValue(right, sortKey)
+        );
+        if (primary !== 0) return primary * directionFactor;
+        const settlementGap = Number(right.settlement || 0) - Number(left.settlement || 0);
+        if (settlementGap !== 0) return settlementGap;
+        const countGap = Number(right.count || 0) - Number(left.count || 0);
+        if (countGap !== 0) return countGap;
+        return String(left.key || "").localeCompare(String(right.key || ""), "zh-CN", {
+          numeric: true,
+          sensitivity: "base",
+        });
+      });
+    }
+
+    function buildAccountantDetailSortHeader(key, label, summary = "") {
+      const sortKey = String(accountantDetailSortState?.key || "settlement");
+      const direction = accountantDetailSortState?.direction === "asc" ? "asc" : "desc";
+      const active = key === sortKey;
+      const ariaSort = active ? (direction === "asc" ? "ascending" : "descending") : "none";
+      const nextDirection = active
+        ? (direction === "asc" ? "desc" : "asc")
+        : getAccountantDetailSortDefaultDirection(key);
+      const mark = active ? (direction === "asc" ? "↑" : "↓") : "↕";
+      return `
+        <th aria-sort="${ariaSort}">
+          <button
+            class="analysis-accountant-sort-btn${active ? " active" : ""}"
+            type="button"
+            data-accountant-detail-sort="${escapeHtml(key)}"
+            aria-label="${escapeHtml(`${label}排序，点击切换为${nextDirection === "asc" ? "升序" : "降序"}`)}"
+          >
+            <span class="analysis-accountant-sort-main">
+              <span>${escapeHtml(label)}</span>
+              ${summary ? `<span class="analysis-accountant-sort-summary">${escapeHtml(summary)}</span>` : ""}
+            </span>
+            <span class="analysis-accountant-sort-mark" aria-hidden="true">${escapeHtml(mark)}</span>
+          </button>
+        </th>
+      `;
+    }
+
+    function handleAccountantDetailSort(key) {
+      const nextKey = String(key || "").trim();
+      if (!nextKey) return;
+      if (accountantDetailSortState.key === nextKey) {
+        accountantDetailSortState = {
+          key: nextKey,
+          direction: accountantDetailSortState.direction === "asc" ? "desc" : "asc",
+        };
+      } else {
+        accountantDetailSortState = {
+          key: nextKey,
+          direction: getAccountantDetailSortDefaultDirection(nextKey),
+        };
       }
-      if (byAccountant.length) {
-        tags.push(`会计主力：${byAccountant[0].key}（${formatCurrency(byAccountant[0].settlement)}）`);
+      renderAnalysisPanel();
+    }
+
+    function buildAccountantDetailTable(accountantRows, coopRows) {
+      const dispatcherColumns = buildAccountantDispatcherColumns(coopRows);
+      const rows = sortAccountantDetailRows(buildAccountantRowsWithDispatcherCounts(accountantRows, coopRows));
+      if (!rows.length) {
+        return '<div class="analysis-empty">暂无可展示数据</div>';
       }
-      tags.push(`整体结算率：${formatPercent(ratio)}`);
-      tags.push(`总毛利空间：${formatCurrency(sumTotal - sumSettlement)}`);
-      const uniqueCustomers = summarizeBy(
-        scopeRecords,
-        (item) => String(item.customer || "").trim() || "未填"
+      const maxCount = Math.max(...rows.map((row) => Number(row.count) || 0), 1);
+      const maxTotal = Math.max(...rows.map((row) => Number(row.total) || 0), 1);
+      const maxSettlement = Math.max(...rows.map((row) => Number(row.settlement) || 0), 1);
+      const maxAverage = Math.max(...rows.map((row) => Number(row.avgTotal) || 0), 1);
+      const maxDispatcherCount = Math.max(
+        ...rows.flatMap((row) => dispatcherColumns.map((column) => Number(row.dispatcherCounts?.get(column.key)) || 0)),
+        1
       );
-      const repeatCustomers = uniqueCustomers.filter((row) => row.count >= 2);
-      const repeatShare = uniqueCustomers.length ? repeatCustomers.length / uniqueCustomers.length : 0;
-      tags.push(`复购客户占比：${formatPercent(repeatShare)}`);
-      return tags;
+      const summaryCount = rows.reduce((sum, row) => sum + (Number(row.count) || 0), 0);
+      const summaryTotal = rows.reduce((sum, row) => sum + (Number(row.total) || 0), 0);
+      const summarySettlement = rows.reduce((sum, row) => sum + (Number(row.settlement) || 0), 0);
+      const averageRatio = summaryTotal > 0 ? summarySettlement / summaryTotal : 0;
+      const averageUnitPrice = summaryCount > 0 ? summaryTotal / summaryCount : 0;
+      const dispatcherHeaders = dispatcherColumns
+        .map((column) => buildAccountantDetailSortHeader(
+          getAccountantDispatcherSortKey(column.key),
+          column.label,
+          `合计 ${formatCount(column.total)}`
+        ))
+        .join("");
+      const body = rows
+        .map((row, index) => {
+          const ratio = Number(row.ratio) || 0;
+          const accountantName = String(row.key || "未填");
+          const badgeText = getAccountantDispatcherBadgeText(accountantName);
+          const dispatcherCells = dispatcherColumns
+            .map((column) => {
+              const count = Number(row.dispatcherCounts?.get(column.key)) || 0;
+              return `<td>${buildAccountantDispatcherCountCell(count, maxDispatcherCount)}</td>`;
+            })
+            .join("");
+          return `
+            <tr>
+              <td class="analysis-accountant-name-cell">
+                <span class="analysis-accountant-rank">${index + 1}</span>
+                <span class="analysis-accountant-name-wrap">
+                  <span class="analysis-accountant-name">${escapeHtml(accountantName)}</span>
+                  ${badgeText ? `<span class="analysis-accountant-dispatcher-badge" title="关联接待：${escapeHtml(badgeText)}">${escapeHtml(badgeText)}</span>` : ""}
+                </span>
+              </td>
+              <td>${buildAccountantMetricCell(formatCount(row.count), formatAnalysisBarPercent(row.count, maxCount), "count")}</td>
+              <td>${buildAccountantMetricCell(formatCurrency(row.total), formatAnalysisBarPercent(row.total, maxTotal), "total")}</td>
+              <td>${buildAccountantMetricCell(formatCurrency(row.settlement), formatAnalysisBarPercent(row.settlement, maxSettlement), "settlement")}</td>
+              <td>${buildAccountantMetricCell(formatPercent(ratio), formatAnalysisBarPercent(ratio, 1), "ratio")}</td>
+              <td>${buildAccountantMetricCell(formatCurrency(row.avgTotal), formatAnalysisBarPercent(row.avgTotal, maxAverage), "average")}</td>
+              ${dispatcherCells}
+            </tr>
+          `;
+        })
+        .join("");
+      const tableMinWidth = 880 + (dispatcherColumns.length * 78);
+      return `
+        <div class="analysis-accountant-table-wrap">
+          <table class="analysis-table analysis-accountant-table" style="--analysis-accountant-table-min-width:${escapeHtml(String(tableMinWidth))}px">
+            <thead>
+              <tr>
+                ${buildAccountantDetailSortHeader("name", "会计名")}
+                ${buildAccountantDetailSortHeader("count", "单量", `合计 ${formatCount(summaryCount)}`)}
+                ${buildAccountantDetailSortHeader("total", "会计价", `合计 ${formatCurrency(summaryTotal)}`)}
+                ${buildAccountantDetailSortHeader("settlement", "会计结算价", `合计 ${formatCurrency(summarySettlement)}`)}
+                ${buildAccountantDetailSortHeader("ratio", "结算率", `平均 ${formatPercent(averageRatio)}`)}
+                ${buildAccountantDetailSortHeader("avgTotal", "平均单价", `平均 ${formatCurrency(averageUnitPrice)}`)}
+                ${dispatcherHeaders}
+              </tr>
+            </thead>
+            <tbody>${body}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function getAnalysisAccountantDetailData(sourceRecords = getFilteredRecords()) {
+      const scopeRecords = Array.isArray(sourceRecords) ? sourceRecords : [];
+      const byAccountant = summarizeBy(scopeRecords, (item) => String(item.accountant || "").trim() || "未填")
+        .sort(compareSummaryRowsBySettlement);
+      const coopRows = buildCoopRows(scopeRecords);
+      return {
+        scopeRecords,
+        byAccountant,
+        coopRows,
+        tableHtml: buildAccountantDetailTable(byAccountant, coopRows),
+      };
+    }
+
+    function renderAnalysisAccountantDetailModalContent() {
+      if (!analysisAccountantDetailMeta || !analysisAccountantDetailContent) return;
+      const detailData = getAnalysisAccountantDetailData();
+      analysisAccountantDetailMeta.textContent = detailData.byAccountant.length
+        ? `当前筛选 ${formatCount(detailData.scopeRecords.length)} 条 / ${formatCount(detailData.byAccountant.length)} 位会计 / ${formatCount(buildAccountantDispatcherColumns(detailData.coopRows).length)} 个接待`
+        : "当前筛选范围暂无会计明细数据";
+      analysisAccountantDetailContent.innerHTML = detailData.tableHtml;
     }
 
     function renderAnalysisPanel() {
@@ -2843,18 +3090,15 @@
       const sumSettlement = settlementValues.reduce((sum, value) => sum + value, 0);
       const sumMargin = sumTotal - sumSettlement;
       const avgTotal = sumTotal / scopeRecords.length;
-      const avgSettlement = sumSettlement / scopeRecords.length;
       const avgRatio = sumTotal > 0 ? sumSettlement / sumTotal : 0;
-      const medianTotal = median(totalValues);
-      const medianSettlement = median(settlementValues);
 
+      const accountantDetailData = getAnalysisAccountantDetailData(scopeRecords);
       const byDispatcher = summarizeBy(scopeRecords, (item) => getDispatcherDisplayNameByTag(item.dispatcher))
         .sort((a, b) => b.settlement - a.settlement);
-      const byAccountant = summarizeBy(scopeRecords, (item) => String(item.accountant || "").trim() || "未填")
-        .sort(compareSummaryRowsByCount);
+      const byAccountant = accountantDetailData.byAccountant;
       const byCustomer = summarizeBy(scopeRecords, (item) => String(item.customer || "").trim() || "未填")
         .sort((a, b) => b.settlement - a.settlement);
-      const coopRows = buildCoopRows(scopeRecords);
+      const coopRows = accountantDetailData.coopRows;
       const keywordRows = buildKeywordRows(scopeRecords);
       const trendRows = buildAnalysisTrendRows(scopeRecords);
       const statusRows = buildStatusRows(scopeRecords);
@@ -2871,9 +3115,6 @@
       const repeatOrderShare = scopeRecords.length
         ? repeatCustomerRows.reduce((sum, row) => sum + row.count, 0) / scopeRecords.length
         : 0;
-      const p90Total = quantile(totalValues, 0.9);
-      const cvTotal = avgTotal > 0 ? stddev(totalValues) / avgTotal : 0;
-      const corrTotalSettlement = pearsonCorrelation(totalValues, settlementValues);
 
       const monthRows = summarizeBy(scopeRecords, (item) => {
         const ts = parseDateValue(item.date);
@@ -2931,19 +3172,6 @@
         .sort((a, b) => b.total - a.total)
         .slice(0, 20);
 
-      const customerTopSettlement = byCustomer.slice(0, 10);
-      const customerTotalSettlement = byCustomer.reduce((sum, row) => sum + row.settlement, 0);
-      const topCustomerShare = customerTotalSettlement > 0 && customerTopSettlement.length
-        ? customerTopSettlement[0].settlement / customerTotalSettlement
-        : 0;
-      const top5Share = customerTotalSettlement > 0
-        ? customerTopSettlement.slice(0, 5).reduce((sum, row) => sum + row.settlement, 0) / customerTotalSettlement
-        : 0;
-
-      const tagsHtml = buildAnalysisTags(scopeRecords)
-        .map((text) => `<span class="analysis-tag">${escapeHtml(text)}</span>`)
-        .join("");
-
       const dispatcherTable = buildHtmlTable(
         ["接待人", "单量", "会计价", "会计结算价", "结算率", "均单会计价"],
         byDispatcher.slice(0, 10).map((row) => [
@@ -2967,7 +3195,6 @@
           formatCurrency(row.margin)
         ])
       );
-
       const customerTable = buildHtmlTable(
         ["客户", "单量", "会计结算价", "会计价", "结算率"],
         byCustomer.slice(0, 12).map((row) => [
@@ -3187,7 +3414,7 @@
           分析范围：当前筛选 ${formatCount(scopeRecords.length)} 条 / 全部 ${formatCount(allRecords.length)} 条
         </div>
         <div class="analysis-kpis">
-          <div class="analysis-kpi"><div class="analysis-kpi-label">记录数</div><div class="analysis-kpi-value">${formatCount(scopeRecords.length)}</div></div>
+          <div class="analysis-kpi"><div class="analysis-kpi-label">订单数</div><div class="analysis-kpi-value">${formatCount(scopeRecords.length)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">会计价合计</div><div class="analysis-kpi-value">${formatCurrency(sumTotal)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">会计结算价合计</div><div class="analysis-kpi-value">${formatCurrency(sumSettlement)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">毛利空间</div><div class="analysis-kpi-value">${formatCurrency(sumMargin)}</div></div>
@@ -3198,19 +3425,7 @@
           <div class="analysis-kpi"><div class="analysis-kpi-label">客户总数</div><div class="analysis-kpi-value">${formatCount(uniqueCustomerCount)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">复购客户占比</div><div class="analysis-kpi-value">${formatPercent(repeatCustomerShare)}</div></div>
           <div class="analysis-kpi"><div class="analysis-kpi-label">复购订单占比</div><div class="analysis-kpi-value">${formatPercent(repeatOrderShare)}</div></div>
-          <div class="analysis-kpi"><div class="analysis-kpi-label">会计价P90</div><div class="analysis-kpi-value">${formatCurrency(p90Total)}</div></div>
-          <div class="analysis-kpi"><div class="analysis-kpi-label">会计价波动系数</div><div class="analysis-kpi-value">${formatPercent(cvTotal)}</div></div>
-          <div class="analysis-kpi"><div class="analysis-kpi-label">金额相关性</div><div class="analysis-kpi-value">${corrTotalSettlement.toFixed(2)}</div></div>
         </div>
-        <div class="analysis-kpis">
-          <div class="analysis-kpi"><div class="analysis-kpi-label">均单会计结算价</div><div class="analysis-kpi-value">${formatCurrency(avgSettlement)}</div></div>
-          <div class="analysis-kpi"><div class="analysis-kpi-label">会计价中位数</div><div class="analysis-kpi-value">${formatCurrency(medianTotal)}</div></div>
-          <div class="analysis-kpi"><div class="analysis-kpi-label">结算中位数</div><div class="analysis-kpi-value">${formatCurrency(medianSettlement)}</div></div>
-          <div class="analysis-kpi"><div class="analysis-kpi-label">客户集中度Top1</div><div class="analysis-kpi-value">${formatPercent(topCustomerShare)}</div></div>
-          <div class="analysis-kpi"><div class="analysis-kpi-label">客户集中度Top5</div><div class="analysis-kpi-value">${formatPercent(top5Share)}</div></div>
-          <div class="analysis-kpi"><div class="analysis-kpi-label">数据异常数</div><div class="analysis-kpi-value">${formatCount(anomalies.length)}</div></div>
-        </div>
-        <div class="analysis-tags">${tagsHtml || '<span class="analysis-empty">暂无关键结论</span>'}</div>
         <section class="analysis-chart-board" aria-label="可视化分析">
           <article class="analysis-chart-panel">
             <div class="analysis-chart-panel-head">
@@ -3232,13 +3447,6 @@
               <span>${formatCount(sourceRows.length)} 个来源</span>
             </div>
             <div id="analysisSourceChart" class="analysis-small-chart" role="img" aria-label="订单来源结构图"></div>
-          </article>
-          <article class="analysis-chart-panel">
-            <div class="analysis-chart-panel-head">
-              <h3>会计承接</h3>
-              <span>按结算价排序</span>
-            </div>
-            <div id="analysisAccountantChart" class="analysis-small-chart" role="img" aria-label="会计承接金额排行图"></div>
           </article>
           ${showDispatcherSections ? `
             <article class="analysis-chart-panel">

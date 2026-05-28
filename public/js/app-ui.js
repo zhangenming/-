@@ -677,6 +677,14 @@
       if (accountantEditPasswordInput) {
         accountantEditPasswordInput.value = canEditSensitiveFields ? String(profile.loginPassword || "").trim() : "";
       }
+      if (accountantEditSettlementRatioInput) {
+        const canEditSettlementRatio = mode === "admin" && isBossLogin();
+        const ratioField = accountantEditSettlementRatioInput.closest(".field");
+        if (ratioField) ratioField.hidden = !canEditSettlementRatio;
+        accountantEditSettlementRatioInput.disabled = !canEditSettlementRatio;
+        accountantEditSettlementRatioInput.required = canEditSettlementRatio;
+        accountantEditSettlementRatioInput.value = canEditSettlementRatio ? String(normalizeAccountantSettlementRatio(profile.accountingSettlementRatio)) : "";
+      }
       if (accountantEditAliasInput) accountantEditAliasInput.value = alias;
       const recipientInfo = normalizeInvoiceRecipientInfo(profile.invoiceRecipientInfo);
       if (accountantEditRecipientFieldset) {
@@ -828,7 +836,32 @@
       syncModalOpenState();
     }
 
-    function openAnalysisModal() {
+    function isAnalysisPageRouteActive() {
+      try {
+        const params = new URLSearchParams(window.location.search || "");
+        return params.get("view") === "analysis";
+      } catch {
+        return false;
+      }
+    }
+
+    function updateAnalysisPageRoute(isActive, { replace = false } = {}) {
+      if (!window.history || !window.history.pushState) return;
+      const url = new URL(window.location.href);
+      if (isActive) {
+        url.searchParams.set("view", "analysis");
+      } else {
+        url.searchParams.delete("view");
+      }
+      const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+      const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      if (nextUrl === currentUrl) return;
+      const method = replace ? "replaceState" : "pushState";
+      window.history[method]({ view: isActive ? "analysis" : "table" }, "", nextUrl);
+    }
+
+    function openAnalysisModal(options = {}) {
+      const shouldUpdateRoute = options.updateRoute !== false;
       closeAllFilterPopovers();
       closeCreateModal();
       closeCheckModal();
@@ -842,12 +875,24 @@
       closeDevTodoModal();
       renderAnalysisPanel();
       analysisModal.hidden = false;
-      analysisModal.classList.remove("modal-enter");
-      analysisModalCard.classList.remove("modal-enter");
+      analysisModal.classList.remove("analysis-page-enter");
+      analysisModalCard.classList.remove("analysis-page-enter");
       void analysisModal.offsetWidth;
-      analysisModal.classList.add("modal-enter");
-      analysisModalCard.classList.add("modal-enter");
+      analysisModal.classList.add("analysis-page-enter");
+      analysisModalCard.classList.add("analysis-page-enter");
+      document.body.classList.add("analysis-page-active");
+      if (shouldUpdateRoute) {
+        updateAnalysisPageRoute(true);
+      }
       syncModalOpenState();
+    }
+
+    function syncAnalysisPageRoute() {
+      if (hasAuthenticatedAccount() && isBossLogin() && isAnalysisPageRouteActive()) {
+        openAnalysisModal({ updateRoute: false });
+        return;
+      }
+      closeAnalysisModal({ updateRoute: false });
     }
 
     function getCustomerFeedbackSourceRecords() {
@@ -1612,14 +1657,63 @@
       openReminderModalBtn.setAttribute("aria-label", openReminderModalBtn.title);
     }
 
-    function renderReminderModalContent() {
-      if (!reminderModalMeta || !reminderList || !reminderEmptyState) return;
+    function getReminderDispatcherKey(reminder) {
+      return String(reminder?.createdBy || "").trim();
+    }
+
+    function getReminderDispatcherLabel(dispatcherKey) {
+      return getDispatcherDisplayNameByTag(dispatcherKey) || String(dispatcherKey || "").trim() || "未标记";
+    }
+
+    function getVisibleReminderSource() {
       const isBoss = isBossLogin();
       const currentLoginName = String(currentAccount || "").trim();
-      const filteredReminders = (Array.isArray(reminders) ? reminders : []).filter((item) => {
+      return (Array.isArray(reminders) ? reminders : []).filter((item) => {
         if (isBoss) return true;
-        return String(item?.createdBy || "").trim() === currentLoginName;
+        return getReminderDispatcherKey(item) === currentLoginName;
       });
+    }
+
+    function renderReminderDispatcherTabs(sourceReminders) {
+      if (!reminderTabs) return;
+      const source = Array.isArray(sourceReminders) ? sourceReminders : [];
+      const counts = new Map();
+      source.forEach((item) => {
+        const key = getReminderDispatcherKey(item);
+        if (!key) return;
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+      const dispatcherKeys = Array.from(counts.keys()).sort((left, right) => {
+        return getReminderDispatcherLabel(left).localeCompare(getReminderDispatcherLabel(right), "zh-Hans-CN");
+      });
+      if (activeReminderDispatcherFilter && !counts.has(activeReminderDispatcherFilter)) {
+        activeReminderDispatcherFilter = "";
+      }
+      reminderTabs.innerHTML = "";
+      const tabItems = [
+        { key: "", label: "全部", count: source.length },
+        ...dispatcherKeys.map((key) => ({ key, label: getReminderDispatcherLabel(key), count: counts.get(key) || 0 }))
+      ];
+      reminderTabs.hidden = tabItems.length <= 1;
+      tabItems.forEach((item) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "reminder-tab";
+        button.dataset.reminderDispatcher = item.key;
+        button.setAttribute("role", "tab");
+        button.setAttribute("aria-selected", item.key === activeReminderDispatcherFilter ? "true" : "false");
+        button.textContent = `${item.label} ${item.count}`;
+        reminderTabs.appendChild(button);
+      });
+    }
+
+    function renderReminderModalContent() {
+      if (!reminderModalMeta || !reminderList || !reminderEmptyState) return;
+      const visibleReminders = getVisibleReminderSource();
+      renderReminderDispatcherTabs(visibleReminders);
+      const filteredReminders = activeReminderDispatcherFilter
+        ? visibleReminders.filter((item) => getReminderDispatcherKey(item) === activeReminderDispatcherFilter)
+        : visibleReminders;
       const sortedReminders = filteredReminders.sort((left, right) => {
         const dateCompare = String(left?.date || "").localeCompare(String(right?.date || ""));
         if (dateCompare !== 0) return dateCompare;
@@ -1666,10 +1760,10 @@
         const meta = document.createElement("span");
         meta.className = "reminder-item-meta";
         const metaParts = [];
-        if (isBoss) {
-          const createdBy = String(item?.createdBy || "").trim();
+        if (isBossLogin()) {
+          const createdBy = getReminderDispatcherKey(item);
           if (createdBy) {
-            metaParts.push(`接待: ${createdBy}`);
+            metaParts.push(`接待: ${getReminderDispatcherLabel(createdBy)}`);
           }
         }
         metaParts.push(formatDateTimeDisplay(item?.createdAt));
@@ -1706,6 +1800,7 @@
       closeDevTodoModal();
       reminderForm.reset();
       reminderDateInput.value = getTodayDateKey();
+      activeReminderDispatcherFilter = "";
       renderReminderModalContent();
       reminderModal.hidden = false;
       reminderModal.classList.remove("modal-enter");
@@ -1730,6 +1825,13 @@
       reminderModal.hidden = true;
       syncModalOpenState();
     }
+
+    reminderTabs?.addEventListener("click", (event) => {
+      const tab = event.target.closest("[data-reminder-dispatcher]");
+      if (!tab || !reminderTabs.contains(tab)) return;
+      activeReminderDispatcherFilter = String(tab.dataset.reminderDispatcher || "").trim();
+      renderReminderModalContent();
+    });
 
     function getOperationRecordInfoText(record) {
       const parts = [
@@ -1979,13 +2081,43 @@
       }
     }
 
-    function closeAnalysisModal() {
+    function closeAnalysisModal(options = {}) {
+      const shouldUpdateRoute = options.updateRoute !== false;
+      if (!analysisModal) return;
       closeOperationRecordsModal();
       closePriceCompositionModal();
+      closeAnalysisAccountantDetailModal();
       disposeAnalysisTrendChart();
-      analysisModal.classList.remove("modal-enter");
-      analysisModalCard.classList.remove("modal-enter");
+      analysisModal.classList.remove("analysis-page-enter");
+      if (analysisModalCard) {
+        analysisModalCard.classList.remove("analysis-page-enter");
+      }
       analysisModal.hidden = true;
+      document.body.classList.remove("analysis-page-active");
+      if (shouldUpdateRoute) {
+        updateAnalysisPageRoute(false, { replace: true });
+      }
+      syncModalOpenState();
+    }
+
+    function openAnalysisAccountantDetailModal() {
+      if (!analysisAccountantDetailModal || !analysisAccountantDetailModalCard) return;
+      renderAnalysisAccountantDetailModalContent();
+      analysisAccountantDetailModal.hidden = false;
+      analysisAccountantDetailModal.classList.remove("modal-enter");
+      analysisAccountantDetailModalCard.classList.remove("modal-enter");
+      void analysisAccountantDetailModal.offsetWidth;
+      analysisAccountantDetailModal.classList.add("modal-enter");
+      analysisAccountantDetailModalCard.classList.add("modal-enter");
+      syncModalOpenState();
+      analysisAccountantDetailModalCard.focus();
+    }
+
+    function closeAnalysisAccountantDetailModal() {
+      if (!analysisAccountantDetailModal || !analysisAccountantDetailModalCard) return;
+      analysisAccountantDetailModal.classList.remove("modal-enter");
+      analysisAccountantDetailModalCard.classList.remove("modal-enter");
+      analysisAccountantDetailModal.hidden = true;
       syncModalOpenState();
     }
 
@@ -6063,6 +6195,7 @@
       if (editProfileBtn) {
         editProfileBtn.hidden = !(isLoggedIn && isAccountant);
       }
+      syncAnalysisPageRoute();
       if (!canSettleRecords) {
         clearBossRecordSelection();
         clearBossSettlementPayoutSelection();
@@ -6078,6 +6211,9 @@
       }
       updateBossSettlementControls();
       updateBossSettlementDetailControls();
+      if (analysisModal && !analysisModal.hidden) {
+        renderAnalysisPanel();
+      }
       syncSettlementScheduleToggleUI();
     }
 
@@ -6474,6 +6610,27 @@
             chip.className = "dispatcher-chip";
             chip.textContent = value;
             td.appendChild(chip);
+          } else if (index === 3) {
+            td.classList.add("data-col-accountant");
+            const accountantText = String(value || "").trim();
+            const accountantWrap = document.createElement("span");
+            accountantWrap.className = "accountant-cell";
+            const accountantName = document.createElement("span");
+            accountantName.className = "accountant-cell-name";
+            accountantName.textContent = accountantText;
+            accountantWrap.appendChild(accountantName);
+            const badgeText = getAccountantDispatcherBadgeText(accountantText);
+            if (badgeText) {
+              const badge = document.createElement("span");
+              badge.className = "accountant-dispatcher-badge";
+              badge.textContent = badgeText;
+              badge.title = `关联接待：${getDispatcherDisplayNameByTag(badgeText) || badgeText}`;
+              badge.setAttribute("aria-label", badge.title);
+              accountantWrap.appendChild(badge);
+              tooltipText = accountantText ? `${accountantText}，${badge.title}` : badge.title;
+              tooltipMode = "always";
+            }
+            td.appendChild(accountantWrap);
           } else if (index === 11) {
             td.classList.add("data-col-source");
             td.textContent = value;
@@ -6535,7 +6692,6 @@
           if (tooltipMode) {
             td.dataset.tableTooltipMode = tooltipMode;
           }
-          if (index === 3) td.classList.add("data-col-accountant");
           if (index === 5) td.classList.add("summary");
           if (index === 6) td.classList.add("remark", "data-col-remark");
           if (index === 7) td.classList.add("data-col-payment");

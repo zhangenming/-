@@ -1206,16 +1206,33 @@
     </section>
   </div>
 
-  <div id="analysisModal" class="modal-overlay" hidden>
-    <section class="card modal-card analysis-modal-card">
+  <div id="analysisModal" class="analysis-page" hidden>
+    <section class="analysis-page-card analysis-modal-card">
       <div class="analysis-modal-top">
-        <h2 class="analysis-modal-title">数据分析</h2>
+        <div class="analysis-modal-heading">
+          <h2 class="analysis-modal-title">数据分析</h2>
+          <button id="closeAnalysisPageBtn" class="btn-secondary analysis-return-btn" type="button">返回</button>
+        </div>
         <div class="analysis-modal-actions">
+          <button id="openAnalysisAccountantDetailBtn" class="btn-secondary analysis-action-btn" type="button">会计明细维度</button>
           <button id="openOperationRecordsBtn" class="btn-secondary analysis-action-btn" type="button">操作记录</button>
           <button id="openPriceCompositionBtn" class="btn-secondary analysis-action-btn" type="button">价格组成</button>
         </div>
       </div>
       <div id="analysisContent" class="analysis-content"></div>
+    </section>
+  </div>
+
+  <div id="analysisAccountantDetailModal" class="modal-overlay modal-stacked" hidden>
+    <section class="card modal-card analysis-accountant-detail-modal-card" tabindex="-1">
+      <div class="analysis-accountant-detail-modal-top">
+        <div>
+          <h2 class="analysis-accountant-detail-modal-title">会计明细维度</h2>
+          <p id="analysisAccountantDetailMeta" class="analysis-accountant-detail-modal-meta"></p>
+        </div>
+        <button id="closeAnalysisAccountantDetailBtn" class="btn-secondary analysis-action-btn" type="button">关闭</button>
+      </div>
+      <div id="analysisAccountantDetailContent" class="analysis-accountant-detail-modal-content"></div>
     </section>
   </div>
 
@@ -1345,6 +1362,7 @@
         </div>
         <button id="reminderSubmitBtn" class="btn-primary" type="submit">新建提醒</button>
       </form>
+      <div id="reminderTabs" class="reminder-tabs" role="tablist" aria-label="按接待筛选提醒"></div>
       <div id="reminderList" class="reminder-list"></div>
       <div id="reminderEmptyState" class="empty">暂无提醒。</div>
     </section>
@@ -1412,6 +1430,7 @@
               <th class="accountant-col-phone"><button class="sort-btn accountant-sort-btn" type="button" data-key="phone" data-label="手机号(账号)">手机号(账号)</button></th>
               <th class="accountant-col-password"><button class="sort-btn accountant-sort-btn" type="button" data-key="password" data-label="密码">密码</button></th>
               <th class="accountant-col-display"><button class="sort-btn accountant-sort-btn" type="button" data-key="displayName" data-label="微信名">微信名</button></th>
+              <th class="accountant-col-settlement-ratio"><button class="sort-btn accountant-sort-btn" type="button" data-key="accountingSettlementRatio" data-label="会计结算价比例">会计结算价比例</button></th>
               <th class="accountant-col-recipient"><button class="sort-btn accountant-sort-btn" type="button" data-key="recipient" data-label="结算申报信息">结算申报信息</button></th>
               <th class="accountant-col-count"><button class="sort-btn accountant-sort-btn" type="button" data-key="orderCount" data-label="单量">单量</button></th>
               <th class="accountant-col-action"><button class="sort-btn accountant-sort-btn" type="button" data-key="action" data-label="操作">操作</button></th>
@@ -1466,6 +1485,20 @@
             data-no-suggest="true"
             autocapitalize="off"
             autocorrect="off"
+            spellcheck="false"
+          />
+        </div>
+        <div class="field">
+          <label for="accountantEditSettlementRatioInput">会计结算价比例</label>
+          <input
+            id="accountantEditSettlementRatioInput"
+            type="number"
+            min="0"
+            max="100"
+            step="0.01"
+            inputmode="decimal"
+            autocomplete="off"
+            data-no-suggest="true"
             spellcheck="false"
           />
         </div>

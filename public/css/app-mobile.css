@@ -907,6 +907,10 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
   display: none;
 }
 
+body.analysis-page-active .mobile-bottom-nav {
+  display: none;
+}
+
 .mobile-nav-btn {
   min-width: 0;
   min-height: 52px;
@@ -1185,11 +1189,40 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
 .customer-feedback-modal-card,
 .settlement-detail-modal-card,
 .paid-settlement-detail-modal-card,
+.analysis-accountant-detail-modal-card,
 .uploaded-settlement-detail-modal-card,
 .accountant-modal-card,
 .recycle-modal-card,
 .record-history-modal-card {
   max-height: 94vh;
+}
+
+.analysis-page {
+  position: fixed;
+  inset: 0;
+  z-index: 46;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+  background: var(--m-bg);
+  overflow: hidden;
+}
+
+.analysis-page[hidden] {
+  display: none;
+}
+
+.analysis-page-card {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  border: 1px solid var(--m-line);
+  border-radius: var(--m-radius);
+  background: var(--m-surface);
+  overflow: hidden;
 }
 
 .date-field-controls,
@@ -1310,6 +1343,64 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
   justify-content: space-between;
   gap: 10px;
   text-align: left;
+}
+
+#platformShopPicker .accountant-picker-dropdown {
+  max-height: min(82vh, 760px);
+}
+
+#platformShopPicker .accountant-picker-list {
+  gap: 10px;
+}
+
+.platform-shop-picker-group {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--platform-shop-group-border, var(--m-line));
+  border-left: 4px solid var(--platform-shop-group-accent, var(--m-accent));
+  border-radius: 12px;
+  background: var(--platform-shop-group-bg, var(--m-panel));
+}
+
+.platform-shop-picker-group-title {
+  color: var(--platform-shop-group-title, var(--m-accent-strong));
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.platform-shop-picker-group[data-group="闲鱼"] {
+  --platform-shop-group-accent: #149073;
+  --platform-shop-group-border: #b9ded2;
+  --platform-shop-group-bg: #f0faf6;
+  --platform-shop-group-title: #0d6b58;
+}
+
+.platform-shop-picker-group[data-group="淘宝"] {
+  --platform-shop-group-accent: #d06a28;
+  --platform-shop-group-border: #f0c5a5;
+  --platform-shop-group-bg: #fff7ef;
+  --platform-shop-group-title: #9a4a17;
+}
+
+.platform-shop-picker-group[data-group="企业微信"] {
+  --platform-shop-group-accent: #2f75bd;
+  --platform-shop-group-border: #bfd6ef;
+  --platform-shop-group-bg: #f2f7fd;
+  --platform-shop-group-title: #245b93;
+}
+
+.platform-shop-picker-group[data-group="其他"] {
+  --platform-shop-group-accent: #7b6bb8;
+  --platform-shop-group-border: #d5cdef;
+  --platform-shop-group-bg: #f7f4fd;
+  --platform-shop-group-title: #5b4b94;
+}
+
+.platform-shop-picker-group-options {
+  display: grid;
+  gap: 8px;
 }
 
 .filter-option-btn.filter-option-special-accountant {
@@ -1442,6 +1533,10 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
 .analysis-content {
   display: grid;
   gap: 12px;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 12px 12px;
+  align-content: start;
 }
 
 .analysis-amount-summary {
@@ -1522,6 +1617,7 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
 .customer-feedback-modal-card,
 .settlement-detail-modal-card,
 .paid-settlement-detail-modal-card,
+.analysis-accountant-detail-modal-card,
 .uploaded-settlement-detail-modal-card,
 .invoice-upload-modal-card,
 .record-history-modal-card,
@@ -1540,6 +1636,7 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
 .customer-feedback-modal-top,
 .settlement-detail-top,
 .paid-settlement-detail-top,
+.analysis-accountant-detail-modal-top,
 .return-price-modal-top,
 .reminder-modal-top,
 .change-log-modal-top,
@@ -1557,6 +1654,7 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
 .customer-feedback-modal-title,
 .settlement-detail-title,
 .paid-settlement-detail-title,
+.analysis-accountant-detail-modal-title,
 .return-price-title,
 .reminder-modal-title,
 .operation-records-title,
@@ -1566,6 +1664,74 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
   font-size: 18px;
   font-weight: 860;
   line-height: 1.25;
+}
+
+.analysis-modal-heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.analysis-return-btn {
+  min-height: 34px;
+  padding: 7px 12px;
+  border-color: var(--m-accent-soft);
+  background: var(--m-accent-soft);
+  color: var(--m-accent-strong);
+  font-size: 13px;
+  font-weight: 820;
+}
+
+.analysis-accountant-detail-modal-card {
+  width: 100vw;
+  max-width: 100vw;
+  height: min(96vh, 920px);
+  max-height: min(96vh, 920px);
+  overflow: hidden;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.analysis-accountant-detail-modal-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.analysis-accountant-detail-modal-meta {
+  margin: 5px 0 0;
+  color: var(--m-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.analysis-accountant-detail-modal-content {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.analysis-accountant-detail-modal-content .analysis-table th,
+.analysis-accountant-detail-modal-content .analysis-table td {
+  padding: 5px 6px;
+}
+
+.analysis-accountant-detail-modal-content .analysis-accountant-table {
+  min-width: min(var(--analysis-accountant-table-min-width, 760px), 100%);
+}
+
+.analysis-accountant-detail-modal-content .analysis-accountant-sort-btn {
+  min-height: 34px;
+  padding: 4px 5px;
+}
+
+.analysis-accountant-detail-modal-content .analysis-accountant-metric {
+  min-width: 96px;
+}
+
+.analysis-accountant-detail-modal-content .analysis-accountant-dispatcher-count {
+  min-width: 46px;
 }
 
 .return-price-heading,
@@ -1780,6 +1946,238 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
 
 .analysis-chart-panel-wide {
   grid-column: auto;
+}
+
+.analysis-panel-wide {
+  grid-column: 1 / -1;
+}
+
+.analysis-panel-title-meta {
+  display: inline-flex;
+  margin-left: 6px;
+  color: var(--m-muted);
+  font-size: 11px;
+  font-weight: 720;
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+
+.analysis-accountant-table-wrap {
+  overflow-x: auto;
+}
+
+.analysis-accountant-table {
+  min-width: var(--analysis-accountant-table-min-width, 760px);
+}
+
+.analysis-accountant-sort-btn {
+  width: 100%;
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  padding: 5px 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: transparent;
+  color: var(--m-text);
+  font: inherit;
+  font-weight: 860;
+}
+
+.analysis-accountant-sort-main {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  line-height: 1.15;
+}
+
+.analysis-accountant-sort-summary {
+  max-width: 100%;
+  color: var(--m-muted);
+  font-size: 10px;
+  font-weight: 780;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.analysis-accountant-sort-btn.active {
+  background: var(--m-panel);
+  color: var(--m-accent-strong);
+}
+
+.analysis-accountant-sort-mark {
+  min-width: 12px;
+  color: var(--m-muted);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.analysis-accountant-table tbody tr {
+  transition: background 0.14s ease, box-shadow 0.14s ease;
+}
+
+.analysis-accountant-table tbody tr:hover,
+.analysis-accountant-table tbody tr:focus-within {
+  background: oklch(96% 0.024 164);
+  box-shadow: inset 3px 0 0 var(--m-accent-strong);
+}
+
+.analysis-accountant-table tbody tr:hover td,
+.analysis-accountant-table tbody tr:focus-within td {
+  border-bottom-color: color-mix(in oklch, var(--m-accent-strong) 22%, var(--m-line));
+}
+
+.analysis-accountant-table tbody tr:hover .analysis-accountant-rank,
+.analysis-accountant-table tbody tr:focus-within .analysis-accountant-rank {
+  background: oklch(91% 0.045 164);
+}
+
+.analysis-accountant-table tbody tr:hover .analysis-accountant-bar,
+.analysis-accountant-table tbody tr:focus-within .analysis-accountant-bar {
+  background: oklch(89% 0.022 164);
+}
+
+.analysis-accountant-name-cell {
+  text-align: left;
+}
+
+.analysis-accountant-rank {
+  width: 22px;
+  height: 22px;
+  margin-right: 6px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--m-panel);
+  color: var(--m-accent-strong);
+  font-size: 11px;
+  font-weight: 860;
+}
+
+.analysis-accountant-name {
+  font-weight: 860;
+  color: var(--m-text);
+}
+
+.analysis-accountant-name-wrap {
+  position: relative;
+  max-width: 100%;
+  display: inline-flex;
+  min-width: 0;
+  padding-right: 18px;
+  padding-bottom: 7px;
+  line-height: 1.2;
+}
+
+.analysis-accountant-dispatcher-badge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: inline-grid;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  place-items: center;
+  border: 1px solid color-mix(in oklch, var(--m-accent-strong) 28%, transparent);
+  border-radius: 999px;
+  background: oklch(95% 0.032 164);
+  color: var(--m-accent-strong);
+  font-size: 9px;
+  font-weight: 860;
+  line-height: 1;
+}
+
+.analysis-accountant-metric {
+  min-width: 110px;
+  display: grid;
+  gap: 6px;
+}
+
+.analysis-accountant-metric strong {
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.analysis-accountant-bar {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--m-panel);
+  overflow: hidden;
+}
+
+.analysis-accountant-bar::before {
+  content: "";
+  display: block;
+  width: var(--bar-value, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--m-accent);
+}
+
+.analysis-accountant-bar-total::before {
+  background: oklch(52% 0.12 252);
+}
+
+.analysis-accountant-bar-settlement::before {
+  background: var(--m-accent-strong);
+}
+
+.analysis-accountant-bar-ratio::before {
+  background: oklch(64% 0.14 64);
+}
+
+.analysis-accountant-bar-average::before {
+  background: oklch(52% 0.09 205);
+}
+
+.analysis-accountant-dispatcher-count {
+  position: relative;
+  min-width: 52px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--m-line);
+  border-radius: 8px;
+  background: var(--m-surface);
+  color: var(--m-muted);
+  font-size: 12px;
+  font-weight: 860;
+  font-variant-numeric: tabular-nums;
+}
+
+.analysis-accountant-dispatcher-count::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: var(--bar-value, 0%);
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--m-accent-strong) 32%, var(--m-line));
+}
+
+.analysis-accountant-dispatcher-count span {
+  position: relative;
+  z-index: 1;
+}
+
+.analysis-accountant-dispatcher-count.is-active {
+  border-color: color-mix(in oklch, var(--m-accent-strong) 28%, var(--m-line));
+  background: oklch(95% 0.032 164);
+  color: var(--m-accent-strong);
+}
+
+.analysis-accountant-dispatcher-count.is-active::before {
+  background: var(--m-accent-strong);
 }
 
 .analysis-chart-tooltip {
@@ -2705,6 +3103,7 @@ body:has(.modal-overlay:not([hidden])) .mobile-bottom-nav {
 }
 
 body.modal-open,
+body.analysis-page-active,
 body.mobile-sheet-open {
   overflow: hidden;
 }

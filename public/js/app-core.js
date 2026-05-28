@@ -70,6 +70,7 @@ const BUILT_IN_ACCOUNTANT_NAMES = [
   NON_SETTLEMENT_ACCOUNTANT_NAME,
   EXTERNAL_ACCOUNTANT_NAME,
 ];
+const DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO = 60;
 const SOURCE_OPTIONS = ["小红书", "淘宝", "闲鱼", "抖音", "其他"];
 const PLATFORM_SHOP_OPTIONS = [
   { label: "闲鱼-开心财税", platform: "闲鱼", shopName: "开心财税" },
@@ -365,6 +366,23 @@ function getDispatcherTagsLinkedToAccountant(accountantName) {
     }
   });
   return linkedTags;
+}
+
+function getAccountantDispatcherBadgeTags(accountantName) {
+  const tags = getDispatcherTagsLinkedToAccountant(accountantName);
+  if (!tags.length) return [];
+  const orderMap = new Map(DISPATCHER_TAGS.map((tag, index) => [tag, index]));
+  return Array.from(new Set(tags)).sort((left, right) => {
+    const leftOrder = orderMap.has(left) ? orderMap.get(left) : Number.POSITIVE_INFINITY;
+    const rightOrder = orderMap.has(right) ? orderMap.get(right) : Number.POSITIVE_INFINITY;
+    if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+    return String(left).localeCompare(String(right), "zh-Hans-CN");
+  });
+}
+
+function getAccountantDispatcherBadgeText(accountantName) {
+  const tags = getAccountantDispatcherBadgeTags(accountantName);
+  return tags.length ? tags[0] : "";
 }
 
 function getLinkedDispatcherSettlementAmount(
@@ -805,6 +823,19 @@ const settlementDetailTabDispatcher = document.getElementById(
 const analysisModal = document.getElementById("analysisModal");
 const analysisModalCard = analysisModal.querySelector(".analysis-modal-card");
 const analysisContent = document.getElementById("analysisContent");
+const closeAnalysisPageBtn = document.getElementById("closeAnalysisPageBtn");
+const openAnalysisAccountantDetailBtn = document.getElementById(
+  "openAnalysisAccountantDetailBtn",
+);
+const analysisAccountantDetailModal = document.getElementById(
+  "analysisAccountantDetailModal",
+);
+const analysisAccountantDetailModalCard = analysisAccountantDetailModal
+  ? analysisAccountantDetailModal.querySelector(".analysis-accountant-detail-modal-card")
+  : null;
+const analysisAccountantDetailMeta = document.getElementById("analysisAccountantDetailMeta");
+const analysisAccountantDetailContent = document.getElementById("analysisAccountantDetailContent");
+const closeAnalysisAccountantDetailBtn = document.getElementById("closeAnalysisAccountantDetailBtn");
 const customerFeedbackModal = document.getElementById("customerFeedbackModal");
 const customerFeedbackModalCard = customerFeedbackModal
   ? customerFeedbackModal.querySelector(".customer-feedback-modal-card")
@@ -851,6 +882,7 @@ const reminderDateInput = document.getElementById("reminderDateInput");
 const reminderOrderInput = document.getElementById("reminderOrderInput");
 const reminderWechatInput = document.getElementById("reminderWechatInput");
 const reminderSubmitBtn = document.getElementById("reminderSubmitBtn");
+const reminderTabs = document.getElementById("reminderTabs");
 const reminderList = document.getElementById("reminderList");
 const reminderEmptyState = document.getElementById("reminderEmptyState");
 const dispatcherModal = document.getElementById("dispatcherModal");
@@ -887,6 +919,9 @@ const accountantEditPasswordField = document.getElementById(
 );
 const accountantEditPasswordInput = document.getElementById(
   "accountantEditPasswordInput",
+);
+const accountantEditSettlementRatioInput = document.getElementById(
+  "accountantEditSettlementRatioInput",
 );
 const accountantEditAliasInput = document.getElementById(
   "accountantEditAliasInput",
@@ -1278,6 +1313,7 @@ let linkedDispatcherAccountants = {};
 let recycleBinRecords = [];
 let accountantOperationLogs = [];
 let reminders = [];
+let activeReminderDispatcherFilter = "";
 let isReminderSubmitting = false;
 let hasFetchedRecords = false;
 let settlementPriceAutoFilled = false;
@@ -1696,6 +1732,7 @@ function normalizeAccountantProfile(rawProfile) {
       realName: "",
       phone: "",
       loginPassword: "",
+      accountingSettlementRatio: DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO,
     };
   }
   if (!rawProfile || typeof rawProfile !== "object") return null;
@@ -1726,6 +1763,11 @@ function normalizeAccountantProfile(rawProfile) {
   const loginPassword = String(
     rawProfile.loginPassword || rawProfile.password || "",
   ).trim();
+  const accountingSettlementRatio = normalizeAccountantSettlementRatio(
+    rawProfile.accountingSettlementRatio ??
+      rawProfile.settlementRatio ??
+      rawProfile.accountantSettlementRatio,
+  );
   const invoiceRecipientInfo = normalizeInvoiceRecipientInfo(
     rawProfile.invoiceRecipientInfo || rawProfile,
   );
@@ -1740,8 +1782,24 @@ function normalizeAccountantProfile(rawProfile) {
     realName,
     phone,
     loginPassword,
+    accountingSettlementRatio,
     invoiceRecipientInfo: hasInvoiceRecipientInfo ? invoiceRecipientInfo : null,
   };
+}
+
+function normalizeAccountantSettlementRatio(value, fallback = DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO) {
+  const raw = typeof value === "string" ? value.replace("%", "").trim() : value;
+  const ratio = Number(raw);
+  const fallbackRatio = Number(fallback);
+  if (!Number.isFinite(ratio) || ratio < 0 || ratio > 100) {
+    return Number.isFinite(fallbackRatio) ? fallbackRatio : DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO;
+  }
+  return Math.round(ratio * 100) / 100;
+}
+
+function formatAccountantSettlementRatio(value) {
+  const ratio = normalizeAccountantSettlementRatio(value);
+  return `${Number(ratio.toFixed(2))}%`;
 }
 
 function compareAccountantNameByOrderCount(leftName, rightName, orderCountMap) {
@@ -1822,6 +1880,12 @@ function mergeAccountantProfiles(sourceProfiles, extraNames = []) {
         realName: current.realName || profile.realName || "",
         phone: current.phone || profile.phone || "",
         loginPassword: current.loginPassword || profile.loginPassword || "",
+        accountingSettlementRatio: Object.prototype.hasOwnProperty.call(
+          current,
+          "accountingSettlementRatio",
+        )
+          ? current.accountingSettlementRatio
+          : profile.accountingSettlementRatio,
         invoiceRecipientInfo:
           current.invoiceRecipientInfo || profile.invoiceRecipientInfo || null,
       };
@@ -1845,6 +1909,7 @@ function mergeAccountantProfiles(sourceProfiles, extraNames = []) {
         realName: "",
         phone: "",
         loginPassword: "",
+        accountingSettlementRatio: DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO,
         invoiceRecipientInfo: null,
       });
     }

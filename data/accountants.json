@@ -7,6 +7,7 @@
     "realName": "郭晓卿",
     "phone": "13719936050",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "郭晓卿",
       "bankName": "农业银行",
@@ -23,6 +24,7 @@
     "realName": "",
     "phone": "123",
     "loginPassword": "123",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -33,6 +35,7 @@
     "realName": "张佳鑫",
     "phone": "13473234224",
     "loginPassword": "xin946946",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -43,6 +46,7 @@
     "realName": "唐冰",
     "phone": "18408256833",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -53,6 +57,7 @@
     "realName": "宋小瑜",
     "phone": "18560110213",
     "loginPassword": "860105",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "宋小瑜",
       "bankName": "中信银行济南英雄山路支行",
@@ -69,6 +74,7 @@
     "realName": "",
     "phone": "18642091201",
     "loginPassword": "5403274",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "孙艳杰",
       "bankName": "中信银行沈阳沈河支行",
@@ -85,6 +91,7 @@
     "realName": "邓美",
     "phone": "15973428149",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -95,6 +102,7 @@
     "realName": "陈德丽",
     "phone": "15287840918",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "陈德丽",
       "bankName": "农行曲靖大坡寺支行",
@@ -111,6 +119,7 @@
     "realName": "",
     "phone": "15608378025",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -121,6 +130,7 @@
     "realName": "",
     "phone": "17784750122",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -131,6 +141,7 @@
     "realName": "祝璐瑶",
     "phone": "15868835003",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "祝璐瑶",
       "bankName": "中信银行杭州滨江支行",
@@ -147,6 +158,7 @@
     "realName": "张志红",
     "phone": "13120218005",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -157,6 +169,7 @@
     "realName": "",
     "phone": "16623839947",
     "loginPassword": "cqhj123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "何姣",
       "bankName": "重庆农商商业银行江津支行",
@@ -173,6 +186,7 @@
     "realName": "",
     "phone": "13418125682",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "古园珍",
       "bankName": "中信银行深圳分行",
@@ -189,6 +203,7 @@
     "realName": "杨琦",
     "phone": "15157028009",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -199,6 +214,7 @@
     "realName": "",
     "phone": "15823026932",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -209,6 +225,7 @@
     "realName": "盛桂花",
     "phone": "13572050325",
     "loginPassword": "@Aa123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "盛桂花",
       "bankName": "平安银行西安分行营业部",
@@ -225,6 +242,7 @@
     "realName": "",
     "phone": "19923803606",
     "loginPassword": "199116",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "卿敏",
       "bankName": "中信银行重庆高新支行",
@@ -241,6 +259,7 @@
     "realName": "李银慧",
     "phone": "19139859821",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -251,6 +270,7 @@
     "realName": "",
     "phone": "18077950683",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -261,6 +281,7 @@
     "realName": "刘佳",
     "phone": "18983971878",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -271,6 +292,7 @@
     "realName": "路",
     "phone": "15310722595",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -281,6 +303,7 @@
     "realName": "",
     "phone": "17839174191",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "张敏",
       "bankName": "中信银行河南省安阳市永明路支行",
@@ -297,6 +320,7 @@
     "realName": "",
     "phone": "18883907964",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -307,6 +331,7 @@
     "realName": "",
     "phone": "无",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -317,6 +342,7 @@
     "realName": "",
     "phone": "18996166018",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "李盈莹",
       "bankName": "招商银行重庆江北支行",
@@ -333,6 +359,7 @@
     "realName": "",
     "phone": "13018373898",
     "loginPassword": "Whm123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -343,6 +370,7 @@
     "realName": "",
     "phone": "18983094603",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -353,6 +381,7 @@
     "realName": "",
     "phone": "18723383956",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -363,6 +392,7 @@
     "realName": "李琪",
     "phone": "13520827406",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "李琪",
       "bankName": "中信银行北京八里庄支行",
@@ -379,6 +409,7 @@
     "realName": "",
     "phone": "18306041026",
     "loginPassword": "123321",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "启蓁",
       "bankName": "中信银行重庆渝北支行",
@@ -395,6 +426,7 @@
     "realName": "刘秋菊",
     "phone": "19923803560",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "刘秋菊",
       "bankName": "中信银行重庆分行营业部",
@@ -411,6 +443,7 @@
     "realName": "秦春燕",
     "phone": "15736025589",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -421,6 +454,7 @@
     "realName": "梁艳",
     "phone": "13637738305",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "梁艳",
       "bankName": "中国银行",
@@ -437,6 +471,7 @@
     "realName": "",
     "phone": "13599855181",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "山的靠背",
       "bankName": "中国建设银行股份有限公司莆田胜利支行",
@@ -453,6 +488,7 @@
     "realName": "",
     "phone": "18895165706",
     "loginPassword": "111712",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "王宁",
       "bankName": "中信银行西安西大街支行",
@@ -469,6 +505,7 @@
     "realName": "",
     "phone": "17709663852",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -479,6 +516,7 @@
     "realName": "杨胡英",
     "phone": "13022357331",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "杨胡英",
       "bankName": "中信银行重庆高新支行",
@@ -495,6 +533,7 @@
     "realName": "",
     "phone": "17608292326",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -505,6 +544,7 @@
     "realName": "",
     "phone": "13280908662",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "宋楠楠",
       "bankName": "中信银行",
@@ -514,6 +554,17 @@
     }
   },
   {
+    "username": "15670092320",
+    "displayName": "王",
+    "name": "王",
+    "alias": "王",
+    "realName": "",
+    "phone": "15670092320",
+    "loginPassword": "15670092320",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": null
+  },
+  {
     "username": "WangDongMei",
     "displayName": "王冬梅",
     "name": "王冬梅",
@@ -521,6 +572,7 @@
     "realName": "",
     "phone": "18883813129",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "王冬梅",
       "bankName": "中国建设银行",
@@ -537,6 +589,7 @@
     "realName": "",
     "phone": "15671272751",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -547,6 +600,7 @@
     "realName": "邹菁菁",
     "phone": "18056863680",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -557,6 +611,7 @@
     "realName": "",
     "phone": "18098236782",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "刘阳",
       "bankName": "中信银行",
@@ -573,6 +628,7 @@
     "realName": "",
     "phone": "18512366657",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -583,6 +639,7 @@
     "realName": "",
     "phone": "15282052359",
     "loginPassword": "pyl382791",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "蒲亚兰",
       "bankName": "中信银行成都温江支行",
@@ -599,6 +656,7 @@
     "realName": "",
     "phone": "18279076370",
     "loginPassword": "w121122123",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "深圳市小顺企业管理咨询有限公司",
       "bankName": "中国银行股份有限公司深圳福城支行",
@@ -615,6 +673,7 @@
     "realName": "郑小云",
     "phone": "18316142404",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -625,6 +684,7 @@
     "realName": "",
     "phone": "13389652183",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "张红琳",
       "bankName": "中信银行重庆科学城支行",
@@ -641,6 +701,7 @@
     "realName": "",
     "phone": "15160205943",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -651,6 +712,7 @@
     "realName": "",
     "phone": "16620484292",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -661,6 +723,7 @@
     "realName": "徐佳",
     "phone": "13624582408",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -671,6 +734,7 @@
     "realName": "",
     "phone": "17338676783",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -681,6 +745,7 @@
     "realName": "杨珊珊",
     "phone": "15337165643",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "杨珊珊",
       "bankName": "招商银行光谷科技支行",
@@ -697,6 +762,7 @@
     "realName": "杨海柱",
     "phone": "18723833987",
     "loginPassword": "zhu54205420",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "杨海柱",
       "bankName": "中信银行南岸区南坪支行",
@@ -713,6 +779,7 @@
     "realName": "",
     "phone": "18874152462",
     "loginPassword": "1994314@LYY",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "龙煜阳",
       "bankName": "中信银行长沙星沙支行",
@@ -729,6 +796,7 @@
     "realName": "",
     "phone": "18998299736",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -739,6 +807,7 @@
     "realName": "郑晓璇",
     "phone": "13623042815",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -749,6 +818,7 @@
     "realName": "",
     "phone": "13568556558",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -759,6 +829,7 @@
     "realName": "",
     "phone": "17857683560",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "悠悠我心",
       "bankName": "招商银行",
@@ -775,6 +846,7 @@
     "realName": "有米U.mi",
     "phone": "TongTong",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -785,6 +857,7 @@
     "realName": "",
     "phone": "13014590313",
     "loginPassword": "Aa876361507",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "有米U.mi-tong",
       "bankName": "中信银行郑州高新区支行",
@@ -801,6 +874,7 @@
     "realName": "张国莉",
     "phone": "16603851225",
     "loginPassword": "123456@",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "张国莉",
       "bankName": "中信银行郑州南阳路支行",
@@ -817,6 +891,7 @@
     "realName": "",
     "phone": "13437180362",
     "loginPassword": "yuyu0813",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "张瑜",
       "bankName": "中信银行武汉汉正街支行",
@@ -833,6 +908,7 @@
     "realName": "",
     "phone": "13696254071",
     "loginPassword": "998311",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -843,6 +919,7 @@
     "realName": "",
     "phone": "13729647596",
     "loginPassword": "Aa13729647596",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "朱雪萍",
       "bankName": "中信银行广州白云新城支行",
@@ -859,6 +936,7 @@
     "realName": "邹丽",
     "phone": "15196524460",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -869,6 +947,7 @@
     "realName": "Abby",
     "phone": "13668095792",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "余洪淑",
       "bankName": "中信银行重庆江北支行",
@@ -885,6 +964,7 @@
     "realName": "cxl",
     "phone": "15968788338",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -895,6 +975,7 @@
     "realName": "",
     "phone": "13580337922",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -905,6 +986,7 @@
     "realName": "",
     "phone": "15218057242",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "温紫莹",
       "bankName": "中信银行广州开发区支行",
@@ -921,6 +1003,7 @@
     "realName": "",
     "phone": "13658122264",
     "loginPassword": "Yxm123456789!",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "DY050505",
       "bankName": "6245",
@@ -937,6 +1020,7 @@
     "realName": "",
     "phone": "15378717795",
     "loginPassword": "132167",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "河南詹森信息技术有限公司",
       "bankName": "交通银行郑州淮河路支行",
@@ -953,6 +1037,7 @@
     "realName": "张映珊",
     "phone": "13652359816",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "张映珊",
       "bankName": "中国建设银行股份有限公司深圳华强北支行",
@@ -969,12 +1054,30 @@
     "realName": "",
     "phone": "18164603946",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "白佳",
       "bankName": "中信银行玉溪分行营业部",
       "bankCardNo": "6217 6819 0445 7929",
       "idCardNo": "530402199508141226",
       "declarationPhone": "18164603946"
+    }
+  },
+  {
+    "username": "15825973574",
+    "displayName": "Kite",
+    "name": "Kite",
+    "alias": "Kite",
+    "realName": "徐婷",
+    "phone": "15825973574",
+    "loginPassword": "wj12345678",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": {
+      "name": "徐婷",
+      "bankName": "平安银行重庆沙坪坝支行",
+      "bankCardNo": "6230580000422275433",
+      "idCardNo": "500224199108095445",
+      "declarationPhone": "15825973574"
     }
   },
   {
@@ -985,6 +1088,7 @@
     "realName": "",
     "phone": "13602274429",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -995,6 +1099,7 @@
     "realName": "李广娜",
     "phone": "13785601960",
     "loginPassword": "880510",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "李广娜",
       "bankName": "中国工商银行廊坊朝阳支行",
@@ -1011,6 +1116,7 @@
     "realName": "",
     "phone": "15683655588",
     "loginPassword": "cy123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "陈亚",
       "bankName": "中信银行九龙坡支行",
@@ -1027,6 +1133,7 @@
     "realName": "",
     "phone": "19146006458",
     "loginPassword": "zaizai168",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "Shine 会计师",
       "bankName": "中信银行重庆星光支行",
@@ -1043,6 +1150,7 @@
     "realName": "",
     "phone": "",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
   },
   {
@@ -1053,6 +1161,7 @@
     "realName": "",
     "phone": "15823926035",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "王婷婷",
       "bankName": "农业银行重庆九龙坡石桥铺支行",
@@ -1069,6 +1178,7 @@
     "realName": "陈",
     "phone": "17782369746",
     "loginPassword": "123",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "陈",
       "bankName": "1",
@@ -1085,6 +1195,7 @@
     "realName": "WHL",
     "phone": "15828074401",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "吴会玲",
       "bankName": "中信银行重庆大渡口支行",
@@ -1094,6 +1205,17 @@
     }
   },
   {
+    "username": "zem",
+    "displayName": "zem",
+    "name": "zem",
+    "alias": "zem",
+    "realName": "",
+    "phone": "zem",
+    "loginPassword": "zem",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": null
+  },
+  {
     "username": "ziaRu",
     "displayName": "Zia茹",
     "name": "Zia茹",
@@ -1101,6 +1223,7 @@
     "realName": "",
     "phone": "13631074592",
     "loginPassword": "921101",
+    "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": {
       "name": "郑清茹",
       "bankName": "中信银行广州花都支行",

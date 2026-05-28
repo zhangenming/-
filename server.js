@@ -62,6 +62,8 @@ const BOSS_LOGIN_CODE_TO_ACCOUNT = BOSS_LOGIN_ACCOUNTS.reduce((result, item) => 
   return result;
 }, Object.create(null));
 const DEFAULT_ACCOUNTANT_LOGIN_PASSWORD = "123456";
+const DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO = 60;
+const DEFAULT_NEW_ACCOUNTANT_SETTLEMENT_RATIO = 50;
 const NON_SETTLEMENT_ACCOUNTANT_NAME = "不结算";
 const EXTERNAL_ACCOUNTANT_NAME = "外部人员";
 const BUILT_IN_ACCOUNTANT_NAMES = [NON_SETTLEMENT_ACCOUNTANT_NAME, EXTERNAL_ACCOUNTANT_NAME];
@@ -1336,6 +1338,16 @@ function normalizeAccountantPhone(value) {
   return normalizeText(value, 32);
 }
 
+function normalizeAccountantSettlementRatio(value, fallback = DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO) {
+  const raw = typeof value === "string" ? value.replace("%", "").trim() : value;
+  const ratio = Number(raw);
+  const fallbackRatio = Number(fallback);
+  if (!Number.isFinite(ratio) || ratio < 0 || ratio > 100) {
+    return Number.isFinite(fallbackRatio) ? fallbackRatio : DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO;
+  }
+  return Math.round(ratio * 100) / 100;
+}
+
 function resolveAccountantProfileDisplayName(raw) {
   if (!raw || typeof raw !== "object") return "";
   return normalizeAccountantDisplayName(
@@ -2119,7 +2131,8 @@ function normalizeAccountantProfile(raw) {
           alias: "",
           realName: "",
           phone: "",
-          loginPassword: ""
+          loginPassword: "",
+          accountingSettlementRatio: DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO
         }
       : null;
   }
@@ -2140,6 +2153,9 @@ function normalizeAccountantProfile(raw) {
   const loginPassword = normalizeAccountantLoginPassword(
     raw.loginPassword || raw.password
   );
+  const accountingSettlementRatio = normalizeAccountantSettlementRatio(
+    raw.accountingSettlementRatio ?? raw.settlementRatio ?? raw.accountantSettlementRatio
+  );
   const invoiceRecipientInfo = normalizeInvoiceRecipientInfo(raw.invoiceRecipientInfo || raw);
   const hasInvoiceRecipientInfo = Object.values(invoiceRecipientInfo).some(Boolean);
   return {
@@ -2150,6 +2166,7 @@ function normalizeAccountantProfile(raw) {
     realName,
     phone,
     loginPassword,
+    accountingSettlementRatio,
     invoiceRecipientInfo: hasInvoiceRecipientInfo ? invoiceRecipientInfo : null
   };
 }
@@ -2184,6 +2201,9 @@ function buildAccountantProfiles(savedAccountants, namesFromRecords = []) {
       realName: current.realName || profile.realName || "",
       phone: current.phone || profile.phone || "",
       loginPassword: current.loginPassword || profile.loginPassword || "",
+      accountingSettlementRatio: Object.prototype.hasOwnProperty.call(current, "accountingSettlementRatio")
+        ? current.accountingSettlementRatio
+        : profile.accountingSettlementRatio,
       invoiceRecipientInfo: current.invoiceRecipientInfo || profile.invoiceRecipientInfo || null
     };
     byUsername.set(profile.username, merged);
@@ -2205,6 +2225,7 @@ function buildAccountantProfiles(savedAccountants, namesFromRecords = []) {
         realName: "",
         phone: "",
         loginPassword: "",
+        accountingSettlementRatio: DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO,
         invoiceRecipientInfo: null
       });
     }
@@ -2224,6 +2245,7 @@ function buildAccountantProfiles(savedAccountants, namesFromRecords = []) {
     if (!profile.loginPassword) {
       profile.loginPassword = DEFAULT_ACCOUNTANT_LOGIN_PASSWORD;
     }
+    profile.accountingSettlementRatio = normalizeAccountantSettlementRatio(profile.accountingSettlementRatio);
   });
 
   return profiles;
@@ -4834,7 +4856,10 @@ async function serveAccountants(req, res) {
           alias: displayName,
           realName: body.realName,
           phone,
-          loginPassword: body.password || DEFAULT_ACCOUNTANT_LOGIN_PASSWORD
+          loginPassword: body.password || DEFAULT_ACCOUNTANT_LOGIN_PASSWORD,
+          accountingSettlementRatio: Object.prototype.hasOwnProperty.call(body, "accountingSettlementRatio")
+            ? body.accountingSettlementRatio
+            : DEFAULT_NEW_ACCOUNTANT_SETTLEMENT_RATIO
         });
         const merged = buildAccountantProfiles(
           [...savedAccountants, nextProfile],
@@ -4996,6 +5021,9 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
         const nextPassword = normalizeAccountantLoginPassword(
           hasPassword ? (body.password || body.loginPassword) : (target.loginPassword || DEFAULT_ACCOUNTANT_LOGIN_PASSWORD)
         );
+        const nextAccountingSettlementRatio = session.role === "boss" && Object.prototype.hasOwnProperty.call(body, "accountingSettlementRatio")
+          ? normalizeAccountantSettlementRatio(body.accountingSettlementRatio, target.accountingSettlementRatio)
+          : normalizeAccountantSettlementRatio(target.accountingSettlementRatio);
         const hasInvoiceRecipientInfo = (
           Object.prototype.hasOwnProperty.call(body, "invoiceRecipientInfo")
           || Object.prototype.hasOwnProperty.call(body, "recipientInfo")
@@ -5048,6 +5076,7 @@ async function serveAccountantByName(req, res, accountantUsernameRaw) {
           realName: invoiceRecipientOnlyUpdate ? target.realName : body.realName,
           phone: nextPhone,
           loginPassword: nextPassword,
+          accountingSettlementRatio: nextAccountingSettlementRatio,
           invoiceRecipientInfo: nextInvoiceRecipientInfo
         });
         if (!nextProfile) {
@@ -5312,6 +5341,7 @@ async function serveAuthAccountantRegister(req, res) {
         realName,
         phone,
         loginPassword,
+        accountingSettlementRatio: DEFAULT_NEW_ACCOUNTANT_SETTLEMENT_RATIO,
         invoiceRecipientInfo
       });
       const accountantsFromRecords = records.map((item) => normalizeAccountantDisplayName(item.accountant));

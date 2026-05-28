@@ -170,7 +170,7 @@
         || (invoicePreviewModal && !invoicePreviewModal.hidden)
         || !bossSettlementSummaryModal.hidden
         || (bossSettlementDetailModal && !bossSettlementDetailModal.hidden)
-        || !analysisModal.hidden
+        || (analysisAccountantDetailModal && !analysisAccountantDetailModal.hidden)
         || (customerFeedbackModal && !customerFeedbackModal.hidden)
         || (operationRecordsModal && !operationRecordsModal.hidden)
         || (reminderModal && !reminderModal.hidden)
@@ -273,9 +273,18 @@
       const total = Number(totalRaw);
       if (!Number.isFinite(total)) return;
       if (!settlementRaw || settlementPriceAutoFilled) {
-        settlementPriceInput.value = (total * 0.6).toFixed(2);
+        settlementPriceInput.value = (total * getSelectedAccountantSettlementRatioDecimal()).toFixed(2);
         settlementPriceAutoFilled = true;
       }
+    }
+
+    function getSelectedAccountantSettlementRatioDecimal() {
+      const accountantName = String(accountantInput?.value || "").trim();
+      const profile = accountants.find((item) => {
+        const displayName = String(item?.displayName || item?.name || "").trim();
+        return displayName === accountantName;
+      });
+      return normalizeAccountantSettlementRatio(profile?.accountingSettlementRatio) / 100;
     }
 
     function syncPremiumPriceFromPrices() {
@@ -306,6 +315,14 @@
       clearInlineFieldError(totalPriceInput);
       clearInlineFieldError(settlementPriceInput);
       syncPremiumPriceFromPrices();
+    }
+
+    function syncSettlementPriceForAccountantRatio() {
+      const totalRaw = String(totalPriceInput.value || "").trim();
+      if (!totalRaw || !settlementPriceAutoFilled) return;
+      const total = Number(totalRaw);
+      if (!Number.isFinite(total)) return;
+      settlementPriceInput.value = (total * getSelectedAccountantSettlementRatioDecimal()).toFixed(2);
     }
 
     function getRecordsRenderSignature(sourceRecords) {
@@ -555,7 +572,8 @@
         profile?.name,
         profile?.realName,
         invoiceRecipientInfo.name,
-        invoiceRecipientInfo.declarationPhone
+        invoiceRecipientInfo.declarationPhone,
+        formatAccountantSettlementRatio(profile?.accountingSettlementRatio)
       ]
         .map((item) => String(item || "").trim().toLowerCase())
         .filter(Boolean);
@@ -577,6 +595,7 @@
       const orderCountByAccountant = getAccountantOrderCountMap();
       const searchTerms = getAccountantSearchTerms();
       const filteredAccountants = accountants.filter((profile) => doesAccountantMatchSearch(profile, searchTerms));
+      const showActionColumn = isBossLogin();
       if (accountantSearchClearBtn) {
         accountantSearchClearBtn.hidden = !searchTerms.length;
       }
@@ -587,6 +606,10 @@
       const recipientHeader = document.querySelector(".accountant-col-recipient");
       if (recipientHeader) {
         recipientHeader.hidden = !showRecipientColumn;
+      }
+      const actionHeader = document.querySelector(".accountant-col-action");
+      if (actionHeader) {
+        actionHeader.hidden = !showActionColumn;
       }
       if (!accountants.length) {
         accountantEmptyState.textContent = "暂无会计资料。";
@@ -622,6 +645,7 @@
         const realName = String(profile.realName || "").trim();
         const phone = String(profile.phone || "").trim();
         const invoiceRecipientInfo = normalizeInvoiceRecipientInfo(profile.invoiceRecipientInfo);
+        const settlementRatioText = formatAccountantSettlementRatio(profile.accountingSettlementRatio);
         const hasInvoiceRecipientInfo = Object.values(invoiceRecipientInfo).every(Boolean);
         const recipientSummary = hasInvoiceRecipientInfo
           ? [
@@ -656,6 +680,12 @@
         passwordCell.className = "accountant-col-password";
         passwordCell.dataset.label = "密码";
         passwordCell.appendChild(passwordSpan);
+
+        const settlementRatioCell = document.createElement("td");
+        settlementRatioCell.className = "accountant-col-settlement-ratio";
+        settlementRatioCell.dataset.label = "会计结算价比例";
+        settlementRatioCell.textContent = settlementRatioText;
+        settlementRatioCell.title = settlementRatioText;
 
         const countSpan = document.createElement("span");
         countSpan.className = "accountant-item-count";
@@ -693,47 +723,49 @@
         recipientCell.appendChild(recipientWrap);
         recipientCell.title = recipientSummary || "未录入";
 
-        const actionLabel = displayName || phone || usernameText || "会计";
-        const editBtn = document.createElement("button");
-        editBtn.type = "button";
-        editBtn.className = "accountant-action-btn accountant-edit-btn";
-        editBtn.dataset.accountantUsername = usernameText;
-        editBtn.dataset.accountantPhone = phone;
-        editBtn.setAttribute("aria-label", `修改${actionLabel}`);
-        editBtn.textContent = "修改";
-
-        const deleteBtn = document.createElement("button");
-        deleteBtn.type = "button";
-        deleteBtn.className = "accountant-action-btn accountant-delete-btn";
-        deleteBtn.dataset.accountantUsername = String(profile.username || profile.name || "").trim();
-        deleteBtn.dataset.accountantPhone = phone;
-        deleteBtn.dataset.accountantDisplayName = displayName;
-        deleteBtn.dataset.relatedCount = String(orderCount);
-        deleteBtn.disabled = orderCount > 0;
-        deleteBtn.title = orderCount > 0 ? `当前有 ${orderCount} 条数据，暂不可删除` : "删除会计";
-        deleteBtn.setAttribute(
-          "aria-label",
-          orderCount > 0 ? `${actionLabel}当前有 ${orderCount} 条数据，暂不可删除` : `删除${actionLabel}`
-        );
-        deleteBtn.textContent = "删除";
-        const actionGroup = document.createElement("div");
-        actionGroup.className = "accountant-action-group";
-        actionGroup.setAttribute("aria-label", `${actionLabel}操作`);
-        actionGroup.appendChild(editBtn);
-        actionGroup.appendChild(deleteBtn);
-        const actionCell = document.createElement("td");
-        actionCell.className = "accountant-col-action";
-        actionCell.dataset.label = "操作";
-        actionCell.appendChild(actionGroup);
-
         row.appendChild(phoneCell);
         row.appendChild(passwordCell);
         row.appendChild(displayNameCell);
+        row.appendChild(settlementRatioCell);
         if (showRecipientColumn) {
           row.appendChild(recipientCell);
         }
         row.appendChild(countCell);
-        row.appendChild(actionCell);
+        if (showActionColumn) {
+          const actionLabel = displayName || phone || usernameText || "会计";
+          const editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.className = "accountant-action-btn accountant-edit-btn";
+          editBtn.dataset.accountantUsername = usernameText;
+          editBtn.dataset.accountantPhone = phone;
+          editBtn.setAttribute("aria-label", `修改${actionLabel}`);
+          editBtn.textContent = "修改";
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.type = "button";
+          deleteBtn.className = "accountant-action-btn accountant-delete-btn";
+          deleteBtn.dataset.accountantUsername = String(profile.username || profile.name || "").trim();
+          deleteBtn.dataset.accountantPhone = phone;
+          deleteBtn.dataset.accountantDisplayName = displayName;
+          deleteBtn.dataset.relatedCount = String(orderCount);
+          deleteBtn.disabled = orderCount > 0;
+          deleteBtn.title = orderCount > 0 ? `当前有 ${orderCount} 条数据，暂不可删除` : "删除会计";
+          deleteBtn.setAttribute(
+            "aria-label",
+            orderCount > 0 ? `${actionLabel}当前有 ${orderCount} 条数据，暂不可删除` : `删除${actionLabel}`
+          );
+          deleteBtn.textContent = "删除";
+          const actionGroup = document.createElement("div");
+          actionGroup.className = "accountant-action-group";
+          actionGroup.setAttribute("aria-label", `${actionLabel}操作`);
+          actionGroup.appendChild(editBtn);
+          actionGroup.appendChild(deleteBtn);
+          const actionCell = document.createElement("td");
+          actionCell.className = "accountant-col-action";
+          actionCell.dataset.label = "操作";
+          actionCell.appendChild(actionGroup);
+          row.appendChild(actionCell);
+        }
         accountantList.appendChild(row);
       });
     }
@@ -743,6 +775,7 @@
       const realName = String(profile?.realName || "").trim();
       const phone = String(profile?.phone || "").trim();
       const password = String(profile?.loginPassword || "").trim();
+      const settlementRatio = normalizeAccountantSettlementRatio(profile?.accountingSettlementRatio);
       const orderCount = orderCountByAccountant.get(displayName) || 0;
       const invoiceRecipientInfo = normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo);
       const recipientText = [
@@ -759,6 +792,7 @@
       if (key === "displayName") return displayName;
       if (key === "phone") return phone;
       if (key === "password") return password;
+      if (key === "accountingSettlementRatio") return settlementRatio;
       if (key === "recipient") return recipientText;
       if (key === "orderCount") return orderCount;
       if (key === "action") return orderCount > 0 ? 1 : 0;
@@ -1273,31 +1307,58 @@
       }
 
       platformShopPickerEmpty.hidden = true;
+      const groupedOptions = new Map();
       filteredOptions.forEach((item) => {
-        const optionBtn = document.createElement("button");
-        optionBtn.type = "button";
-        optionBtn.className = "accountant-picker-option";
-        optionBtn.dataset.value = item.label;
-        optionBtn.setAttribute("role", "option");
-        const isSelected = item.label === selectedValue;
-        optionBtn.setAttribute("aria-selected", String(isSelected));
-        if (isSelected) optionBtn.classList.add("selected");
+        const groupName = String(item.platform || "其他").trim() || "其他";
+        if (!groupedOptions.has(groupName)) groupedOptions.set(groupName, []);
+        groupedOptions.get(groupName).push(item);
+      });
 
-        const textSpan = document.createElement("span");
-        textSpan.textContent = item.label;
-        optionBtn.appendChild(textSpan);
+      ["闲鱼", "淘宝", "企业微信", "其他"].forEach((groupName) => {
+        const groupItems = groupedOptions.get(groupName) || [];
+        if (!groupItems.length) return;
 
-        if (isSelected) {
-          const rightMeta = document.createElement("span");
-          rightMeta.className = "accountant-picker-option-meta";
-          const badge = document.createElement("span");
-          badge.className = "accountant-picker-option-badge";
-          badge.textContent = "当前";
-          rightMeta.appendChild(badge);
-          optionBtn.appendChild(rightMeta);
-        }
+        const groupEl = document.createElement("div");
+        groupEl.className = "platform-shop-picker-group";
+        groupEl.dataset.group = groupName;
 
-        platformShopPickerList.appendChild(optionBtn);
+        const groupTitle = document.createElement("div");
+        groupTitle.className = "platform-shop-picker-group-title";
+        groupTitle.textContent = groupName;
+        groupEl.appendChild(groupTitle);
+
+        const groupOptions = document.createElement("div");
+        groupOptions.className = "platform-shop-picker-group-options";
+
+        groupItems.forEach((item) => {
+          const optionBtn = document.createElement("button");
+          optionBtn.type = "button";
+          optionBtn.className = "accountant-picker-option platform-shop-picker-option";
+          optionBtn.dataset.value = item.label;
+          optionBtn.setAttribute("role", "option");
+          const isSelected = item.label === selectedValue;
+          optionBtn.setAttribute("aria-selected", String(isSelected));
+          if (isSelected) optionBtn.classList.add("selected");
+
+          const textSpan = document.createElement("span");
+          textSpan.textContent = item.label;
+          optionBtn.appendChild(textSpan);
+
+          if (isSelected) {
+            const rightMeta = document.createElement("span");
+            rightMeta.className = "accountant-picker-option-meta";
+            const badge = document.createElement("span");
+            badge.className = "accountant-picker-option-badge";
+            badge.textContent = "当前";
+            rightMeta.appendChild(badge);
+            optionBtn.appendChild(rightMeta);
+          }
+
+          groupOptions.appendChild(optionBtn);
+        });
+
+        groupEl.appendChild(groupOptions);
+        platformShopPickerList.appendChild(groupEl);
       });
     }
 
