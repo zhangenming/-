@@ -1182,6 +1182,9 @@ const filterRemarkBtn = document.getElementById("filterRemarkBtn");
 const filterPlatformBtn = document.getElementById("filterPlatformBtn");
 const filterShopBtn = document.getElementById("filterShopBtn");
 const filterSourceBtn = document.getElementById("filterSourceBtn");
+const filterMonthlySettlementBtn = document.getElementById(
+  "filterMonthlySettlementBtn",
+);
 const filterStatusBtn = document.getElementById("filterStatusBtn");
 const filterSettledBtn = document.getElementById("filterSettledBtn");
 const filterMonthIndicator = document.getElementById("filterMonthIndicator");
@@ -1210,6 +1213,9 @@ const filterPlatformIndicator = document.getElementById(
 );
 const filterShopIndicator = document.getElementById("filterShopIndicator");
 const filterSourceIndicator = document.getElementById("filterSourceIndicator");
+const filterMonthlySettlementIndicator = document.getElementById(
+  "filterMonthlySettlementIndicator",
+);
 const filterStatusIndicator = document.getElementById("filterStatusIndicator");
 const filterSettledIndicator = document.getElementById(
   "filterSettledIndicator",
@@ -1230,6 +1236,9 @@ const filterRemarkValue = document.getElementById("filterRemarkValue");
 const filterPlatformValue = document.getElementById("filterPlatformValue");
 const filterShopValue = document.getElementById("filterShopValue");
 const filterSourceValue = document.getElementById("filterSourceValue");
+const filterMonthlySettlementValue = document.getElementById(
+  "filterMonthlySettlementValue",
+);
 const filterStatusValue = document.getElementById("filterStatusValue");
 const filterSettledValue = document.getElementById("filterSettledValue");
 const filterMonthPopover = document.getElementById("filterMonthPopover");
@@ -1252,6 +1261,9 @@ const filterRemarkPopover = document.getElementById("filterRemarkPopover");
 const filterPlatformPopover = document.getElementById("filterPlatformPopover");
 const filterShopPopover = document.getElementById("filterShopPopover");
 const filterSourcePopover = document.getElementById("filterSourcePopover");
+const filterMonthlySettlementPopover = document.getElementById(
+  "filterMonthlySettlementPopover",
+);
 const filterStatusPopover = document.getElementById("filterStatusPopover");
 const filterSettledPopover = document.getElementById("filterSettledPopover");
 const filterMonthList = document.getElementById("filterMonthList");
@@ -1264,6 +1276,9 @@ const filterSettlementRatioList = document.getElementById(
 const filterPlatformList = document.getElementById("filterPlatformList");
 const filterShopList = document.getElementById("filterShopList");
 const filterSourceList = document.getElementById("filterSourceList");
+const filterMonthlySettlementList = document.getElementById(
+  "filterMonthlySettlementList",
+);
 const filterStatusList = document.getElementById("filterStatusList");
 const filterSettledList = document.getElementById("filterSettledList");
 const filterDateStartInput = document.getElementById("filterDateStartInput");
@@ -1385,6 +1400,7 @@ const filterState = {
   platform: "",
   shopName: "",
   source: "",
+  monthlySettlement: "",
   status: [],
   settled: "",
 };
@@ -2691,6 +2707,38 @@ function getMonthlySettlementLabel(value) {
     : "否";
 }
 
+function normalizeDateOnlyValue(value) {
+  const source = String(value || "").trim();
+  if (!source) return "";
+  const timestamp = parseDateTimeValue(source);
+  if (!Number.isFinite(timestamp)) return "";
+  return formatDateFromDate(new Date(timestamp));
+}
+
+function getMonthlySettlementEndDate(record) {
+  const item = record && typeof record === "object" ? record : {};
+  const storedEndDate = normalizeDateOnlyValue(
+    item.monthlySettlementEndDate ||
+      item.reminderDate ||
+      item.monthlySettlementDate ||
+      item.monthlySettlementEndTime,
+  );
+  if (storedEndDate) return storedEndDate;
+  const orderNo = String(item.orderNo || "").trim();
+  const customer = String(item.customer || "").trim();
+  if (!orderNo || !customer || !Array.isArray(reminders)) return "";
+  const matchedReminder = reminders.find((reminder) => (
+    String(reminder?.orderNo || "").trim() === orderNo &&
+    String(reminder?.customerWechat || "").trim() === customer
+  ));
+  return normalizeDateOnlyValue(matchedReminder?.date);
+}
+
+function getMonthlySettlementDisplay(record) {
+  if (!isMonthlySettlementRecord(record)) return "";
+  return getMonthlySettlementEndDate(record) || "是";
+}
+
 function getDispatcherBaseProfitRate(record) {
   return isMonthlySettlementRecord(record) ? 0.13 : 0.08;
 }
@@ -3362,6 +3410,7 @@ function getRecordComparisonSignature(record) {
     String(item.createdAt || ""),
     String(item.date || ""),
     isMonthlySettlementRecord(item) ? "1" : "0",
+    getMonthlySettlementEndDate(item),
     String(item.dispatcher || ""),
     String(item.accountant || ""),
     String(item.platform || ""),

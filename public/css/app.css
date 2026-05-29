@@ -8031,6 +8031,10 @@
       width: 148px;
     }
 
+    col.col-monthly-settlement {
+      width: 124px;
+    }
+
     col.col-status {
       width: var(--table-sticky-status-width);
     }
@@ -8156,6 +8160,7 @@
     .data-col-total,
     .data-col-premium,
     .data-col-settlement,
+    .data-col-monthly-settlement,
     .recycle-col-payment,
     .recycle-col-total,
     .recycle-col-premium,
@@ -8209,6 +8214,7 @@
     td.data-col-total,
     td.data-col-premium,
     td.data-col-settlement,
+    td.data-col-monthly-settlement,
     td.recycle-col-payment,
     td.recycle-col-total,
     td.recycle-col-premium,
@@ -8221,6 +8227,7 @@
     th.data-col-total,
     th.data-col-premium,
     th.data-col-settlement,
+    th.data-col-monthly-settlement,
     .recycle-table thead th.recycle-col-payment,
     .recycle-table thead th.recycle-col-total,
     .recycle-table thead th.recycle-col-premium,
@@ -8231,7 +8238,8 @@
     th.data-col-payment .sort-btn,
     th.data-col-total .sort-btn,
     th.data-col-premium .sort-btn,
-    th.data-col-settlement .sort-btn {
+    th.data-col-settlement .sort-btn,
+    th.data-col-monthly-settlement .sort-btn {
       width: 100%;
       align-items: stretch;
     }
@@ -8243,7 +8251,9 @@
     th.data-col-premium .sort-btn-label,
     th.data-col-premium .sort-btn-meta,
     th.data-col-settlement .sort-btn-label,
-    th.data-col-settlement .sort-btn-meta {
+    th.data-col-settlement .sort-btn-meta,
+    th.data-col-monthly-settlement .sort-btn-label,
+    th.data-col-monthly-settlement .sort-btn-meta {
       display: block;
       width: 100%;
       text-align: center;
@@ -8252,7 +8262,8 @@
     th.data-col-payment .sort-btn-meta,
     th.data-col-total .sort-btn-meta,
     th.data-col-premium .sort-btn-meta,
-    th.data-col-settlement .sort-btn-meta {
+    th.data-col-settlement .sort-btn-meta,
+    th.data-col-monthly-settlement .sort-btn-meta {
       line-height: 1.2;
       font-variant-numeric: tabular-nums;
     }

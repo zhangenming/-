@@ -2524,6 +2524,7 @@
           platform: filterState.platform,
           shopName: filterState.shopName,
           source: filterState.source,
+          monthlySettlement: filterState.monthlySettlement,
           status: getSelectedStatusFilters(),
           settled: ""
         },
@@ -2569,6 +2570,7 @@
         const persistedPlatform = String(parsedFilter.platform || "").trim();
         const persistedShopName = String(parsedFilter.shopName || "").trim();
         const persistedSource = String(parsedFilter.source || "").trim();
+        const persistedMonthlySettlement = String(parsedFilter.monthlySettlement || "").trim();
         const persistedStatus = normalizeStatusFilterValues(parsedFilter.status);
         const persistedSettled = "";
         const persistedSidebarCollapsed = Boolean(parsed?.layout?.sidebarCollapsed);
@@ -2614,6 +2616,9 @@
         filterState.platform = persistedPlatform;
         filterState.shopName = persistedShopName;
         filterState.source = persistedSource;
+        filterState.monthlySettlement = ["是", "否"].includes(persistedMonthlySettlement)
+          ? persistedMonthlySettlement
+          : "";
         setStatusFilterValues(persistedStatus);
         filterState.settled = persistedSettled;
         setSidebarCollapsed(persistedSidebarCollapsed);

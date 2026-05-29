@@ -401,6 +401,7 @@
             <col class="col-shop" />
             <col class="col-order" />
             <col class="col-feedback" />
+            <col class="col-monthly-settlement" />
             <col class="col-status" />
             <col class="col-action" />
           </colgroup>
@@ -700,6 +701,22 @@
                 </div>
               </th>
               <th class="data-col-feedback"><button class="sort-btn" type="button" data-key="customerFeedback" data-label="客户反馈">客户反馈</button></th>
+              <th class="data-col-monthly-settlement">
+                <div class="th-inner">
+                  <button class="sort-btn" type="button" data-key="monthlySettlementEndDate" data-label="是否月结">是否月结</button>
+                  <span id="filterMonthlySettlementIndicator" class="filter-indicator-wrap">
+                    <span id="filterMonthlySettlementValue" class="filter-value-chip" hidden></span>
+                    <button id="filterMonthlySettlementBtn" class="filter-icon-btn" type="button" aria-label="筛选是否月结" aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="currentColor" d="M3 5h18l-7 8v5l-4 2v-7z"></path>
+                      </svg>
+                    </button>
+                  </span>
+                  <div id="filterMonthlySettlementPopover" class="filter-popover" hidden>
+                    <div id="filterMonthlySettlementList" class="filter-options"></div>
+                  </div>
+                </div>
+              </th>
               <th class="data-col-status">
                 <div class="th-inner status-th-inner">
                   <button class="sort-btn" type="button" data-key="checkStatus" data-label="状态">状态</button>
@@ -754,7 +771,7 @@
               <span>月结勾选</span>
             </label>
             <div class="reminder-date-wrapper" id="reminderDateField" hidden>
-              <label for="reminderDate" class="reminder-date-label">提醒时间</label>
+              <label for="reminderDate" class="reminder-date-label">月结结束时间</label>
               <input id="reminderDate" name="reminderDate" type="date" autocomplete="off" />
             </div>
           </div>

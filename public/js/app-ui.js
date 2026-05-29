@@ -106,6 +106,7 @@
       { label: "接待收益", getValue: (item) => formatProfitDisplay(item), visible: () => shouldShowProfitColumn() },
       { label: "会计价", getValue: (item) => toMoney(item?.totalPrice) },
       { label: "会计结算价", getValue: (item) => toMoney(item?.settlementPrice) },
+      { label: "是否月结", getValue: (item) => getMonthlySettlementDisplay(item) },
       { label: "状态", getValue: (item) => getRecordStatusWithSettlementText(item) }
     ];
 
@@ -2645,6 +2646,7 @@
       "invoiceRecipientDeclarationPhone",
       "date",
       "isMonthlySettlement",
+      "monthlySettlementEndDate",
       "dispatcher",
       "accountant",
       "platform",
@@ -2661,6 +2663,7 @@
     const ACCOUNTANT_RECORD_HISTORY_FIELD_ORDER = [
       "date",
       "dispatcher",
+      "monthlySettlementEndDate",
       "customer",
       "summary",
       "totalPrice",
@@ -2695,7 +2698,8 @@
       invoiceRecipientIdCardNo: "身份证号",
       invoiceRecipientDeclarationPhone: "申报手机号",
       date: "接单日期",
-      isMonthlySettlement: "月结勾选",
+      isMonthlySettlement: "是否月结",
+      monthlySettlementEndDate: "月结结束时间",
       dispatcher: "接待人",
       accountant: "会计",
       platform: "平台",
@@ -2751,7 +2755,10 @@
         return getRecordRefundBadgeText(item);
       }
       if (normalizedField === "isMonthlySettlement") {
-        return getMonthlySettlementLabel(item?.isMonthlySettlement);
+        return getMonthlySettlementDisplay(item);
+      }
+      if (normalizedField === "monthlySettlementEndDate") {
+        return getMonthlySettlementEndDate(item);
       }
       if (normalizedField === "isSettled") {
         if (!isRecordCompleted(item) && !isRecordSettled(item) && !isRecordInvoiceUploaded(item)) {
@@ -2872,7 +2879,7 @@
       if (["summary", "remark", "customerFeedback"].includes(normalizedField)) return "220px";
       if (["shopName"].includes(normalizedField)) return "172px";
       if (["settlementInvoiceImage", "invoiceUploadedAt"].includes(normalizedField)) return "168px";
-      if (["platform", "source", "customer", "orderNo", "dispatcher", "accountant", "date", "settledBy", "invoiceUploadedBy"].includes(normalizedField)) {
+      if (["platform", "source", "customer", "orderNo", "dispatcher", "accountant", "date", "monthlySettlementEndDate", "settledBy", "invoiceUploadedBy"].includes(normalizedField)) {
         return "136px";
       }
       return "124px";
@@ -2896,6 +2903,10 @@
       }
       if (normalizedField === "isMonthlySettlement") {
         const text = getMonthlySettlementLabel(value);
+        return text || "空";
+      }
+      if (normalizedField === "monthlySettlementEndDate") {
+        const text = normalizeDateOnlyValue(value);
         return text || "空";
       }
       if (normalizedField === "completedAt" || normalizedField === "settledAt" || normalizedField === "invoiceUploadedAt") {
@@ -5712,6 +5723,7 @@
       if (filterPlatformIndicator) filterPlatformIndicator.classList.toggle("active", Boolean(filterState.platform));
       if (filterShopIndicator) filterShopIndicator.classList.toggle("active", Boolean(filterState.shopName));
       if (filterSourceIndicator) filterSourceIndicator.classList.toggle("active", Boolean(filterState.source));
+      if (filterMonthlySettlementIndicator) filterMonthlySettlementIndicator.classList.toggle("active", Boolean(filterState.monthlySettlement));
       if (filterStatusIndicator) filterStatusIndicator.classList.toggle("active", hasStatusFilter);
       if (filterSettledIndicator) filterSettledIndicator.classList.toggle("active", Boolean(filterState.settled));
       filterMonthBtn.setAttribute("aria-expanded", String(!filterMonthPopover.hidden));
@@ -5726,6 +5738,7 @@
       filterPlatformBtn.setAttribute("aria-expanded", String(!filterPlatformPopover.hidden));
       filterShopBtn.setAttribute("aria-expanded", String(!filterShopPopover.hidden));
       filterSourceBtn.setAttribute("aria-expanded", String(!filterSourcePopover.hidden));
+      filterMonthlySettlementBtn.setAttribute("aria-expanded", String(!filterMonthlySettlementPopover.hidden));
       filterStatusBtn.setAttribute("aria-expanded", String(!filterStatusPopover.hidden));
       filterSettledBtn.setAttribute("aria-expanded", String(!filterSettledPopover.hidden));
       syncFilterIconButton(filterMonthBtn, hasDateFilter, FILTER_ICON_PATH, "清空日期筛选", "筛选日期");
@@ -5740,6 +5753,7 @@
       syncFilterIconButton(filterPlatformBtn, Boolean(filterState.platform), FILTER_ICON_PATH, "清空平台筛选", "筛选平台");
       syncFilterIconButton(filterShopBtn, Boolean(filterState.shopName), FILTER_ICON_PATH, "清空店铺名筛选", "筛选店铺名");
       syncFilterIconButton(filterSourceBtn, Boolean(filterState.source), FILTER_ICON_PATH, "清空来源筛选", "筛选来源");
+      syncFilterIconButton(filterMonthlySettlementBtn, Boolean(filterState.monthlySettlement), FILTER_ICON_PATH, "清空是否月结筛选", "筛选是否月结");
       syncFilterIconButton(filterStatusBtn, hasStatusFilter, FILTER_ICON_PATH, "清空状态筛选", "筛选状态");
       syncFilterIconButton(filterSettledBtn, Boolean(filterState.settled), FILTER_ICON_PATH, "清空结算筛选", "筛选结算状态");
       syncDateRangeFilterInputs();
@@ -5876,6 +5890,16 @@
         filterSourceValue.title = "";
       }
 
+      if (filterState.monthlySettlement) {
+        filterMonthlySettlementValue.hidden = false;
+        filterMonthlySettlementValue.textContent = filterState.monthlySettlement;
+        filterMonthlySettlementValue.title = filterState.monthlySettlement;
+      } else {
+        filterMonthlySettlementValue.hidden = true;
+        filterMonthlySettlementValue.textContent = "";
+        filterMonthlySettlementValue.title = "";
+      }
+
       if (hasStatusFilter) {
         const statusText = selectedStatusFilters.length === 1
           ? selectedStatusFilters[0]
@@ -5913,6 +5937,7 @@
       filterPlatformPopover.hidden = true;
       filterShopPopover.hidden = true;
       filterSourcePopover.hidden = true;
+      filterMonthlySettlementPopover.hidden = true;
       filterStatusPopover.hidden = true;
       filterSettledPopover.hidden = true;
       updateFilterButtonUI();
@@ -5992,6 +6017,7 @@
           filterPlatformPopover,
           filterShopPopover,
           filterSourcePopover,
+          filterMonthlySettlementPopover,
           filterStatusPopover,
           filterSettledPopover,
         ].forEach((popover) => {
@@ -6097,6 +6123,12 @@
         const open = filterSourcePopover.hidden;
         filterSourcePopover.hidden = !open;
         hideOtherFilterPopovers(filterSourcePopover);
+      }
+      if (key === "monthlySettlement") {
+        updateFilterOptions();
+        const open = filterMonthlySettlementPopover.hidden;
+        filterMonthlySettlementPopover.hidden = !open;
+        hideOtherFilterPopovers(filterMonthlySettlementPopover);
       }
       if (key === "status") {
         updateFilterOptions();
@@ -6475,6 +6507,7 @@
         || filterState.platform
         || filterState.shopName
         || filterState.source
+        || filterState.monthlySettlement
         || hasStatusFilterSelected()
         || filterState.settled
       );
@@ -6565,6 +6598,7 @@
           String(item.shopName || ""),
           String(item.orderNo || ""),
           String(item.customerFeedback || ""),
+          getMonthlySettlementDisplay(item),
           getRecordWorkflowStatusText(item)
         ];
         values.forEach((value, index) => {
@@ -6647,6 +6681,15 @@
             td.classList.add("data-col-feedback");
             td.textContent = value;
           } else if (index === 16) {
+            td.classList.add("data-col-monthly-settlement");
+            td.textContent = value;
+            const monthlyEndDate = getMonthlySettlementEndDate(item);
+            if (monthlyEndDate) {
+              tooltipText = `月结结束时间：${monthlyEndDate}`;
+              tooltipMode = "always";
+              td.setAttribute("aria-label", tooltipText);
+            }
+          } else if (index === 17) {
             td.classList.add("data-col-status");
             const statusWrap = document.createElement("div");
             statusWrap.className = "row-status-cell";
@@ -6853,6 +6896,12 @@
       }
       if (monthlySettlementCheckbox) {
         monthlySettlementCheckbox.checked = isMonthlySettlementRecord(record);
+      }
+      if (recordReminderDateField) {
+        recordReminderDateField.hidden = !isMonthlySettlementRecord(record);
+      }
+      if (recordReminderDateInput) {
+        recordReminderDateInput.value = getMonthlySettlementEndDate(record);
       }
       paymentPriceInput.value = Number.isFinite(Number(record.paymentPrice)) ? String(record.paymentPrice) : "";
       totalPriceInput.value = Number.isFinite(Number(record.totalPrice)) ? String(record.totalPrice) : "";

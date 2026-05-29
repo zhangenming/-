@@ -670,6 +670,7 @@
       if (key === "platform") filterState.platform = "";
       if (key === "shopName") filterState.shopName = "";
       if (key === "source") filterState.source = "";
+      if (key === "monthlySettlement") filterState.monthlySettlement = "";
       if (key === "status") setStatusFilterValues([]);
       if (key === "settled") filterState.settled = "";
       closeAllFilterPopovers();
@@ -693,6 +694,7 @@
       if (key === "platform") return Boolean(filterState.platform);
       if (key === "shopName") return Boolean(filterState.shopName);
       if (key === "source") return Boolean(filterState.source);
+      if (key === "monthlySettlement") return Boolean(filterState.monthlySettlement);
       if (key === "status") return hasStatusFilterSelected();
       if (key === "settled") return Boolean(filterState.settled);
       return false;
@@ -720,6 +722,7 @@
     filterPlatformBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "platform"));
     filterShopBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "shopName"));
     filterSourceBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "source"));
+    filterMonthlySettlementBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "monthlySettlement"));
     filterStatusBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "status"));
     filterSettledBtn.addEventListener("click", (event) => handleFilterButtonClick(event, "settled"));
 
@@ -783,6 +786,11 @@
       event.stopPropagation();
       toggleFilterPopover("source");
     });
+    filterMonthlySettlementValue.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFilterPopover("monthlySettlement");
+    });
     filterStatusValue.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -839,6 +847,10 @@
     });
 
     filterSourcePopover.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    filterMonthlySettlementPopover.addEventListener("click", (event) => {
       event.stopPropagation();
     });
 
@@ -1072,6 +1084,15 @@
       renderTable();
     });
 
+    filterMonthlySettlementList.addEventListener("click", (event) => {
+      const target = event.target.closest(".filter-option-btn");
+      if (!target) return;
+      const selected = target.dataset.filterValue || "";
+      filterState.monthlySettlement = filterState.monthlySettlement === selected ? "" : selected;
+      closeAllFilterPopovers();
+      renderTable();
+    });
+
     filterStatusList.addEventListener("click", (event) => {
       const target = event.target.closest(".filter-option-btn");
       if (!target) return;
@@ -1103,6 +1124,7 @@
       filterState.platform = "";
       filterState.shopName = "";
       filterState.source = "";
+      filterState.monthlySettlement = "";
       setStatusFilterValues([]);
       filterState.settled = "";
       if (filterOrderInput) filterOrderInput.value = "";
@@ -2639,6 +2661,12 @@
       const item = {
         date: String(formData.get("date") || dateInput.value || getTodayISODate()).trim(),
         isMonthlySettlement: Boolean(monthlySettlementCheckbox?.checked),
+        monthlySettlementEndDate: Boolean(monthlySettlementCheckbox?.checked)
+          ? normalizeDateOnlyValue(recordReminderDateInput?.value)
+          : "",
+        reminderDate: Boolean(monthlySettlementCheckbox?.checked)
+          ? normalizeDateOnlyValue(recordReminderDateInput?.value)
+          : "",
         dispatcher: dispatcherInput.value || getDefaultDispatcherTag(),
         accountant: currentAccountantName || String(formData.get("accountant") || "").trim(),
         platform: String(formData.get("platform") || "").trim(),
@@ -2688,13 +2716,12 @@
       }
 
       if (isCreateMode && !allowEmptyCreateFields && item.isMonthlySettlement) {
-        const reminderDate = String(recordReminderDateInput?.value || "").trim();
-        if (!reminderDate) {
+        if (!item.monthlySettlementEndDate) {
           showInlineFormError({
             form: recordForm,
             hintSetter: setRecordFormHint,
             target: recordReminderDateInput,
-            message: "月结必须输入提醒日期。"
+            message: "月结必须输入月结结束时间。"
           });
           return;
         }
@@ -2793,8 +2820,8 @@
           }
         );
 
-        if (!editingRecordId && item.isMonthlySettlement && recordReminderDateInput?.value) {
-          const reminderDate = String(recordReminderDateInput.value || "").trim();
+        if (!editingRecordId && item.isMonthlySettlement && item.monthlySettlementEndDate) {
+          const reminderDate = item.monthlySettlementEndDate;
           const orderNo = String(item.orderNo || "").trim();
           const customerWechat = String(item.customer || "").trim();
           if (reminderDate && orderNo && customerWechat) {
@@ -2804,6 +2831,7 @@
                 orderNo,
                 customerWechat
               });
+              renderTable();
             } catch (reminderError) {
               console.error("创建月结提醒失败:", reminderError);
             }

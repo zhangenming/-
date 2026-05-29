@@ -355,6 +355,14 @@
       if (key === "completedAt") {
         return parseDateTimeValue(item.completedAt);
       }
+      if (key === "monthlySettlementEndDate") {
+        const isMonthly = isMonthlySettlementRecord(item);
+        const endDateTime = parseDateValue(getMonthlySettlementEndDate(item));
+        return [
+          isMonthly ? 0 : 1,
+          Number.isFinite(endDateTime) ? endDateTime : Number.POSITIVE_INFINITY,
+        ];
+      }
       if (key === "dispatcher") {
         return normalizeDispatcherTag(item.dispatcher);
       }
@@ -427,6 +435,16 @@
     }
 
     function compareSortValue(a, b) {
+      if (Array.isArray(a) || Array.isArray(b)) {
+        const leftItems = Array.isArray(a) ? a : [a];
+        const rightItems = Array.isArray(b) ? b : [b];
+        const length = Math.max(leftItems.length, rightItems.length);
+        for (let index = 0; index < length; index += 1) {
+          const compared = compareSortValue(leftItems[index] ?? "", rightItems[index] ?? "");
+          if (compared !== 0) return compared;
+        }
+        return 0;
+      }
       const aNumber = typeof a === "number" && !Number.isNaN(a);
       const bNumber = typeof b === "number" && !Number.isNaN(b);
       if (aNumber && bNumber) return a - b;
@@ -665,10 +683,19 @@
               ? formatProfitTotalTooltip(sourceRecords)
               : `合计：${total}`;
           }
-          button.replaceChildren(labelNode, metaNode);
-          return;
-        }
-        button.replaceChildren(labelNode);
+        button.replaceChildren(labelNode, metaNode);
+        return;
+      }
+      if (key === "monthlySettlementEndDate") {
+        const monthlyCount = sourceRecords.filter((item) => isMonthlySettlementRecord(item)).length;
+        const metaNode = document.createElement("span");
+        metaNode.className = "sort-btn-meta";
+        metaNode.textContent = `月结 ${monthlyCount} 单`;
+        metaNode.title = `当前列表月结订单：${monthlyCount} 单`;
+        button.replaceChildren(labelNode, metaNode);
+        return;
+      }
+      button.replaceChildren(labelNode);
       });
     }
 
@@ -860,6 +887,9 @@
       if (filterState.source && !rawSourceValues.includes(filterState.source)) {
         filterState.source = "";
       }
+      if (filterState.monthlySettlement && !["是", "否"].includes(filterState.monthlySettlement)) {
+        filterState.monthlySettlement = "";
+      }
       setStatusFilterValues(getSelectedStatusFilters().filter((value) => statusValues.includes(value)));
       if (filterState.settled && !settledValues.includes(filterState.settled)) {
         filterState.settled = "";
@@ -891,6 +921,11 @@
         platform: (item) => !filterState.platform || getPlatformFilterValue(item) === filterState.platform,
         shopName: (item) => !filterState.shopName || getShopNameFilterValue(item) === filterState.shopName,
         source: (item) => !filterState.source || getSourceFilterValue(item) === filterState.source,
+        monthlySettlement: (item) => !filterState.monthlySettlement || (
+          filterState.monthlySettlement === "是"
+            ? isMonthlySettlementRecord(item)
+            : !isMonthlySettlementRecord(item)
+        ),
         status: (item) => {
           const selectedStatusFilters = getSelectedStatusFilters();
           return selectedStatusFilters.length === 0
@@ -914,6 +949,7 @@
       const platformScopedRecords = getScopedRecordsByFilter("platform");
       const shopScopedRecords = getScopedRecordsByFilter("shopName");
       const sourceScopedRecords = getScopedRecordsByFilter("source");
+      const monthlySettlementScopedRecords = getScopedRecordsByFilter("monthlySettlement");
       const statusScopedRecords = getScopedRecordsByFilter("status");
       const settledScopedRecords = getScopedRecordsByFilter("settled");
       const monthCountMap = buildValueCountMap(
@@ -963,6 +999,10 @@
         sourceScopedRecords,
         (item) => getSourceFilterValue(item)
       );
+      const monthlySettlementCountMap = new Map([
+        ["是", monthlySettlementScopedRecords.filter((item) => isMonthlySettlementRecord(item)).length],
+        ["否", monthlySettlementScopedRecords.filter((item) => !isMonthlySettlementRecord(item)).length],
+      ]);
       const statusCountMap = buildStatusValueCountMap(statusScopedRecords);
       const settledCountMap = buildValueCountMap(
         settledScopedRecords,
@@ -1039,6 +1079,13 @@
         sourceCountMap
       );
       buildFilterOptionList(
+        filterMonthlySettlementList,
+        ["是", "否"],
+        "monthlySettlement",
+        filterState.monthlySettlement,
+        monthlySettlementCountMap
+      );
+      buildFilterOptionList(
         filterStatusList,
         statusValues,
         "status",
@@ -1081,6 +1128,11 @@
         const platformMatched = !filterState.platform || getPlatformFilterValue(item) === filterState.platform;
         const shopMatched = !filterState.shopName || getShopNameFilterValue(item) === filterState.shopName;
         const sourceMatched = !filterState.source || getSourceFilterValue(item) === filterState.source;
+        const monthlySettlementMatched = !filterState.monthlySettlement || (
+          filterState.monthlySettlement === "是"
+            ? isMonthlySettlementRecord(item)
+            : !isMonthlySettlementRecord(item)
+        );
         const selectedStatusFilters = getSelectedStatusFilters();
         const statusMatched = selectedStatusFilters.length === 0
           || selectedStatusFilters.some((value) => getStatusFilterValues(item).includes(value));
@@ -1097,6 +1149,7 @@
           && platformMatched
           && shopMatched
           && sourceMatched
+          && monthlySettlementMatched
           && statusMatched
           && settledMatched;
       });
