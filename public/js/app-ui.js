@@ -1799,8 +1799,8 @@
       closeAccountantModal();
       closeRecycleModal();
       closeDevTodoModal();
-      reminderForm.reset();
-      reminderDateInput.value = getTodayDateKey();
+      if (reminderForm) reminderForm.reset();
+      if (reminderDateInput) reminderDateInput.value = getTodayDateKey();
       activeReminderDispatcherFilter = "";
       renderReminderModalContent();
       reminderModal.hidden = false;
@@ -1816,7 +1816,7 @@
         console.error(error);
         showAppStatus(error.message || "读取提醒失败，请稍后重试。");
       }
-      reminderDateInput.focus();
+      if (reminderDateInput) reminderDateInput.focus();
     }
 
     function closeReminderModal() {
@@ -3427,10 +3427,9 @@
     function getDefaultInvoiceRecipientInfoForCurrentAccount() {
       const profile = getInvoiceRecipientProfileForCurrentAccount();
       const info = normalizeInvoiceRecipientInfo(profile?.invoiceRecipientInfo);
-      const realName = String(profile?.realName || "").trim();
       return {
         ...info,
-        name: realName || info.name
+        name: info.name
       };
     }
 
@@ -5943,6 +5942,59 @@
       updateFilterButtonUI();
     }
 
+    function clearTableFilterState() {
+      clearDateFilterState();
+      clearCompletedAtFilterState();
+      setDispatcherFilterValues([]);
+      filterState.orderNo = "";
+      setAccountantFilterValues([]);
+      filterState.settlementRatio = "";
+      filterState.customer = "";
+      filterState.summary = "";
+      filterState.remark = "";
+      filterState.platform = "";
+      filterState.shopName = "";
+      filterState.source = "";
+      filterState.monthlySettlement = "";
+      setStatusFilterValues([]);
+      filterState.settled = "";
+      if (filterOrderInput) filterOrderInput.value = "";
+      if (filterCustomerInput) filterCustomerInput.value = "";
+      if (filterSummaryInput) filterSummaryInput.value = "";
+      if (filterRemarkInput) filterRemarkInput.value = "";
+    }
+
+    function applyMonthlySettlementQuickFilter() {
+      clearTableFilterState();
+      filterState.monthlySettlement = "是";
+      sortState.key = "date";
+      sortState.direction = "desc";
+      sortState.premiumMode = "amount";
+      sortState.settlementMode = "amount";
+      closeAllFilterPopovers();
+      renderTable();
+    }
+
+    function isMonthlySettlementDueToday(record) {
+      return Boolean(
+        isMonthlySettlementRecord(record)
+          && getMonthlySettlementEndDate(record) === getTodayISODate()
+      );
+    }
+
+    function updateMonthlySettlementQuickButton(sourceRecords = getVisibleRecords()) {
+      if (!applyMonthlySettlementFilterBtn) return;
+      const dueCount = (Array.isArray(sourceRecords) ? sourceRecords : [])
+        .filter((item) => isMonthlySettlementDueToday(item))
+        .length;
+      applyMonthlySettlementFilterBtn.classList.toggle("is-due-today", dueCount > 0);
+      applyMonthlySettlementFilterBtn.textContent = dueCount > 0 ? `月结（${dueCount}）` : "月结";
+      applyMonthlySettlementFilterBtn.title = dueCount > 0
+        ? `今日有 ${dueCount} 条月结订单到期，点击查看所有月结订单。`
+        : "筛选所有月结订单，并按接单日期排序";
+      applyMonthlySettlementFilterBtn.setAttribute("aria-label", applyMonthlySettlementFilterBtn.title);
+    }
+
     function syncSidebarToggleUI() {
       const isExpanded = !isSidebarCollapsed;
       const actionLabel = isExpanded ? "收起左侧栏" : "展开左侧栏";
@@ -6216,6 +6268,10 @@
         openChangeLogBtn.hidden = isAccountant;
       }
       updateReminderEntryButton();
+      if (applyMonthlySettlementFilterBtn) {
+        applyMonthlySettlementFilterBtn.hidden = !isLoggedIn;
+        updateMonthlySettlementQuickButton(getVisibleRecords());
+      }
       if (exportTableBtn) {
         exportTableBtn.hidden = !canCurrentAccountExportTableRecords();
       }
@@ -6469,6 +6525,7 @@
       const currentDispatcherTag = getCurrentDispatcherTag();
       const filteredRecords = getFilteredRecords();
       const sortedRecords = getSortedRecords(filteredRecords);
+      updateMonthlySettlementQuickButton(scopedRecords);
 
       if (filterState.orderNo) {
         const orderNoList = String(filterState.orderNo || "")
@@ -6546,11 +6603,15 @@
         const updateNoticeText = isUpdatedRow ? getUpdatedRecordIndicatorLabel(item) : "";
         const settlementSelectable = isBossSettlementRecordSelectable(item);
         const settlementDisabledReason = getBossSettlementSelectionDisabledReason(item);
+        const isMonthlyDueToday = isMonthlySettlementDueToday(item);
         if (isCurrentDispatcher) {
           tr.classList.add("dispatcher-current-row");
         }
         if (isUpdatedRow) {
           tr.classList.add("updated-record-row");
+        }
+        if (isMonthlyDueToday) {
+          tr.classList.add("monthly-settlement-due-row");
         }
         if (isSelected) {
           tr.classList.add("boss-selected-row");

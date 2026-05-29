@@ -371,6 +371,7 @@
         </h2>
         <div class="table-card-actions">
           <button id="openReminderModalBtn" class="btn-secondary reminder-entry-btn" type="button" hidden>提醒</button>
+          <button id="applyMonthlySettlementFilterBtn" class="btn-secondary monthly-settlement-quick-btn" type="button" hidden>月结</button>
           <button id="openCustomerFeedbackModalBtn" class="btn-secondary table-feedback-btn" type="button" hidden>客服反馈</button>
           <button id="exportTableBtn" class="btn-secondary table-export-btn" type="button" aria-label="导出当前筛选数据" hidden disabled>导出</button>
           <button id="accountantInvoiceUploadBtn" class="btn-secondary table-invoice-upload-btn" type="button" hidden disabled>上传发票</button>
@@ -1327,21 +1328,6 @@
           <p id="reminderModalMeta" class="reminder-modal-meta"></p>
         </div>
       </div>
-      <form id="reminderForm" class="reminder-form" novalidate>
-        <div class="field">
-          <label for="reminderDateInput">日期</label>
-          <input id="reminderDateInput" name="date" type="date" required />
-        </div>
-        <div class="field">
-          <label for="reminderOrderInput">订单号</label>
-          <input id="reminderOrderInput" name="orderNo" type="text" required autocomplete="off" />
-        </div>
-        <div class="field">
-          <label for="reminderWechatInput">客户微信</label>
-          <input id="reminderWechatInput" name="customerWechat" type="text" required autocomplete="off" />
-        </div>
-        <button id="reminderSubmitBtn" class="btn-primary" type="submit">新建提醒</button>
-      </form>
       <div id="reminderTabs" class="reminder-tabs" role="tablist" aria-label="按接待筛选提醒"></div>
       <div id="reminderList" class="reminder-list"></div>
       <div id="reminderEmptyState" class="empty">暂无提醒。</div>

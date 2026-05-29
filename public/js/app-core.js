@@ -708,6 +708,9 @@ const forceRefreshAccountantPagesBtn = document.getElementById(
   "forceRefreshAccountantPagesBtn",
 );
 const openReminderModalBtn = document.getElementById("openReminderModalBtn");
+const applyMonthlySettlementFilterBtn = document.getElementById(
+  "applyMonthlySettlementFilterBtn",
+);
 const openCustomerFeedbackModalBtn = document.getElementById(
   "openCustomerFeedbackModalBtn",
 );
@@ -2710,7 +2713,8 @@ function getMonthlySettlementLabel(value) {
 function normalizeDateOnlyValue(value) {
   const source = String(value || "").trim();
   if (!source) return "";
-  const timestamp = parseDateTimeValue(source);
+  const normalizedSource = source.replace(/[/.]/g, "-");
+  const timestamp = parseDateTimeValue(normalizedSource);
   if (!Number.isFinite(timestamp)) return "";
   return formatDateFromDate(new Date(timestamp));
 }
@@ -2736,7 +2740,7 @@ function getMonthlySettlementEndDate(record) {
 
 function getMonthlySettlementDisplay(record) {
   if (!isMonthlySettlementRecord(record)) return "";
-  return getMonthlySettlementEndDate(record) || "是";
+  return getMonthlySettlementEndDate(record) || "缺少日期";
 }
 
 function getDispatcherBaseProfitRate(record) {
@@ -3930,7 +3934,7 @@ function parseDateTimeValue(rawDateTime) {
   const source = String(rawDateTime || "").trim();
   if (!source) return Number.NaN;
   const structuredMatch = source.match(
-    /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/,
+    /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/,
   );
   if (structuredMatch) {
     const year = Number(structuredMatch[1]);

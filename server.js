@@ -115,7 +115,7 @@ const STATIC_MIME_TYPES = {
   ".ico": "image/x-icon"
 };
 const BEIJING_TIME_ZONE = "Asia/Shanghai";
-const STRUCTURED_DATE_TIME_PATTERN = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/;
+const STRUCTURED_DATE_TIME_PATTERN = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/;
 const TRUTHY_STATE_TEXT_VALUES = new Set(["true", "1", "yes"]);
 const SETTLED_WORKFLOW_STATE_VALUES = new Set([
   "已核对客户确认/待上传",
@@ -2785,7 +2785,10 @@ function ensureRecordIds(sourceRecords) {
     const normalizedSettlementPaymentFields = getNormalizedRecordSettlementPaymentFields(current);
     const normalizedDispatcherSettlementPaymentFields = getNormalizedRecordDispatcherSettlementPaymentFields(current);
     const normalizedMonthlySettlement = normalizeMonthlySettlementState(current.isMonthlySettlement);
-    const normalizedMonthlySettlementEndDate = normalizeDateOnlyValue(current.monthlySettlementEndDate);
+    const normalizedMonthlySettlementEndDate = normalizedMonthlySettlement
+      ? normalizeDateOnlyValue(current.monthlySettlementEndDate)
+      : "";
+    const hasMonthlySettlementEndDateField = Object.prototype.hasOwnProperty.call(current, "monthlySettlementEndDate");
     const hasNormalizedHistory = Array.isArray(current.operationHistory)
       && JSON.stringify(current.operationHistory) === JSON.stringify(normalizedHistory);
     const hasNormalizedSettlement = current.isSettled === normalizedSettlementFields.isSettled
@@ -2810,6 +2813,7 @@ function ensureRecordIds(sourceRecords) {
       && normalizeDateTimeValue(current.dispatcherSettlementPaidAt) === normalizedDispatcherSettlementPaymentFields.dispatcherSettlementPaidAt
       && normalizeText(current.dispatcherSettlementPaidBy, 48) === normalizedDispatcherSettlementPaymentFields.dispatcherSettlementPaidBy;
     const hasNormalizedMonthlySettlement = current.isMonthlySettlement === normalizedMonthlySettlement
+      && (!normalizedMonthlySettlement || hasMonthlySettlementEndDateField)
       && normalizeText(current.monthlySettlementEndDate, 32) === normalizedMonthlySettlementEndDate;
     const hasBuiltInCompletion = !isBuiltInAccountantRecord
       || (
@@ -2883,14 +2887,19 @@ function normalizeRecord(input) {
   const createdAt = getCurrentBeijingDateTime();
   const accountant = normalizeText(input.accountant, 48);
   const shouldAutoComplete = shouldAutoCompleteAccountantRecord(accountant);
+  const isMonthlySettlement = normalizeMonthlySettlementState(input.isMonthlySettlement);
+  const monthlySettlementEndDate = isMonthlySettlement
+    ? getMonthlySettlementEndDateInput(input)
+    : "";
+  if (isMonthlySettlement && !monthlySettlementEndDate) {
+    throw new Error("月结必须输入月结结束时间。");
+  }
   const item = {
     id: generateId("rec"),
     createdAt,
     date: normalizedDate || getCurrentBeijingDate(),
-    isMonthlySettlement: normalizeMonthlySettlementState(input.isMonthlySettlement),
-    monthlySettlementEndDate: normalizeMonthlySettlementState(input.isMonthlySettlement)
-      ? getMonthlySettlementEndDateInput(input)
-      : "",
+    isMonthlySettlement,
+    monthlySettlementEndDate,
     dispatcher: normalizeDispatcherTag(input.dispatcher) || normalizeText(input.dispatcher, 48),
     accountant,
     platform: normalizeText(input.platform, 80),
@@ -3555,11 +3564,11 @@ async function serveRecords(req, res) {
   if (req.method === "GET") {
     const records = await withWriteLock(async () => {
       const all = await readRecords();
-      const migration = ensureRecordIds(all);
       const [dispatcherAccountantMappings, savedAccountants] = await Promise.all([
         readDispatcherAccountantMappings(),
         readAccountants()
       ]);
+      const migration = ensureRecordIds(all);
       const accountantsFromRecords = migration.records.map((item) => normalizeAccountantDisplayName(item.accountant));
       const accountants = buildAccountantProfiles(savedAccountants, accountantsFromRecords);
       const shouldUpdateAccountants = JSON.stringify(savedAccountants) !== JSON.stringify(accountants);

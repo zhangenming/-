@@ -210,6 +210,12 @@
       });
     }
 
+    if (applyMonthlySettlementFilterBtn) {
+      applyMonthlySettlementFilterBtn.addEventListener("click", () => {
+        applyMonthlySettlementQuickFilter();
+      });
+    }
+
     if (reminderForm) {
       reminderForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -1112,25 +1118,7 @@
     });
 
     clearFilterBtn.addEventListener("click", () => {
-      clearDateFilterState();
-      clearCompletedAtFilterState();
-      setDispatcherFilterValues([]);
-      filterState.orderNo = "";
-      setAccountantFilterValues([]);
-      filterState.settlementRatio = "";
-      filterState.customer = "";
-      filterState.summary = "";
-      filterState.remark = "";
-      filterState.platform = "";
-      filterState.shopName = "";
-      filterState.source = "";
-      filterState.monthlySettlement = "";
-      setStatusFilterValues([]);
-      filterState.settled = "";
-      if (filterOrderInput) filterOrderInput.value = "";
-      if (filterCustomerInput) filterCustomerInput.value = "";
-      if (filterSummaryInput) filterSummaryInput.value = "";
-      if (filterRemarkInput) filterRemarkInput.value = "";
+      clearTableFilterState();
       closeAllFilterPopovers();
       renderTable();
     });
@@ -2658,15 +2646,17 @@
       const paymentPriceRaw = String(formData.get("paymentPrice") || "").trim();
       const totalPriceRaw = String(formData.get("totalPrice") || "").trim();
       const settlementPriceRaw = String(formData.get("settlementPrice") || "").trim();
+      const monthlySettlementEndDateRaw = String(
+        formData.get("reminderDate") || recordReminderDateInput?.value || "",
+      ).trim();
+      const monthlySettlementEndDate = Boolean(monthlySettlementCheckbox?.checked)
+        ? normalizeDateOnlyValue(monthlySettlementEndDateRaw)
+        : "";
       const item = {
         date: String(formData.get("date") || dateInput.value || getTodayISODate()).trim(),
         isMonthlySettlement: Boolean(monthlySettlementCheckbox?.checked),
-        monthlySettlementEndDate: Boolean(monthlySettlementCheckbox?.checked)
-          ? normalizeDateOnlyValue(recordReminderDateInput?.value)
-          : "",
-        reminderDate: Boolean(monthlySettlementCheckbox?.checked)
-          ? normalizeDateOnlyValue(recordReminderDateInput?.value)
-          : "",
+        monthlySettlementEndDate,
+        reminderDate: monthlySettlementEndDate,
         dispatcher: dispatcherInput.value || getDefaultDispatcherTag(),
         accountant: currentAccountantName || String(formData.get("accountant") || "").trim(),
         platform: String(formData.get("platform") || "").trim(),

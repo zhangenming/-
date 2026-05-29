@@ -6710,6 +6710,36 @@
       border-radius: 8px;
     }
 
+    .monthly-settlement-quick-btn {
+      min-height: 34px;
+      padding: 7px 12px;
+      border-radius: 8px;
+      border: 1px solid #8cb8a6;
+      background: #e7f3ee;
+      color: #285744;
+      font-weight: 700;
+    }
+
+    .monthly-settlement-quick-btn.is-due-today {
+      border-color: #cf3030;
+      background: #ffe1e1;
+      color: #991f1f;
+      box-shadow: 0 0 0 3px rgba(207, 48, 48, 0.16);
+      animation: monthly-settlement-alert-pulse 0.9s ease-in-out infinite;
+    }
+
+    @keyframes monthly-settlement-alert-pulse {
+      0%,
+      100% {
+        transform: translateY(0) scale(1);
+        box-shadow: 0 0 0 3px rgba(207, 48, 48, 0.14);
+      }
+      50% {
+        transform: translateY(-1px) scale(1.04);
+        box-shadow: 0 0 0 7px rgba(207, 48, 48, 0.28);
+      }
+    }
+
     .reminder-entry-btn.is-due {
       border-color: #d96565;
       background: #ffe3e3;
@@ -8547,6 +8577,20 @@
 
     #tableBody tr.updated-record-row:hover td.data-col-status {
       background: #ffedbc;
+    }
+
+    #tableBody tr.monthly-settlement-due-row td,
+    #tableBody tr.monthly-settlement-due-row td.row-action-cell,
+    #tableBody tr.monthly-settlement-due-row td.data-col-status {
+      background: #ffe4e4;
+      border-bottom-color: #e7a1a1;
+      color: #8f1f1f;
+    }
+
+    #tableBody tr.monthly-settlement-due-row:hover td,
+    #tableBody tr.monthly-settlement-due-row:hover td.row-action-cell,
+    #tableBody tr.monthly-settlement-due-row:hover td.data-col-status {
+      background: #ffd6d6;
     }
 
     .row-edit-btn,
