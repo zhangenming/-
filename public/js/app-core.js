@@ -2426,7 +2426,7 @@ function canCurrentAccountUseReminders() {
 function canCurrentAccountExportTableRecords() {
   return (
     hasAuthenticatedAccount() &&
-    (isBossLogin() || isDispatcherLogin() || isAccountantLogin())
+    (isBossLogin() || isDispatcherLogin())
   );
 }
 

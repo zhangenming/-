@@ -17,6 +17,23 @@
     }
   },
   {
+    "username": "15961993027",
+    "displayName": "@@会计师",
+    "name": "@@会计师",
+    "alias": "@@会计师",
+    "realName": "",
+    "phone": "15961993027",
+    "loginPassword": "7890",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": {
+      "name": "徐晓红",
+      "bankName": "江苏盐城工行城北支行",
+      "bankCardNo": "9558801109102154851",
+      "idCardNo": "320922197310020829",
+      "declarationPhone": "15961993027"
+    }
+  },
+  {
     "username": "123",
     "displayName": "123",
     "name": "123",
@@ -360,7 +377,13 @@
     "phone": "13018373898",
     "loginPassword": "Whm123456",
     "accountingSettlementRatio": 60,
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "敏",
+      "bankName": "中信银行重庆观音桥支行",
+      "bankCardNo": "6217681213641726",
+      "idCardNo": "500113199202196125",
+      "declarationPhone": "13018373898"
+    }
   },
   {
     "username": "NanGongYinXue",
@@ -382,7 +405,13 @@
     "phone": "18723383956",
     "loginPassword": "123456",
     "accountingSettlementRatio": 60,
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "皮迪克和猫",
+      "bankName": "重庆银行",
+      "bankCardNo": "6230960000009310678",
+      "idCardNo": "500222198909018629",
+      "declarationPhone": "18723383956"
+    }
   },
   {
     "username": "liQiQi",
@@ -445,6 +474,23 @@
     "loginPassword": "123456",
     "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
+  },
+  {
+    "username": "13712760362",
+    "displayName": "庆荣会计师",
+    "name": "庆荣会计师",
+    "alias": "庆荣会计师",
+    "realName": "",
+    "phone": "13712760362",
+    "loginPassword": "123456",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": {
+      "name": "吴庆荣",
+      "bankName": "中国农业银行",
+      "bankCardNo": "6228481389201382971",
+      "idCardNo": "430923198908240320",
+      "declarationPhone": "13712760362"
+    }
   },
   {
     "username": "13637738305",
@@ -537,6 +583,23 @@
     "invoiceRecipientInfo": null
   },
   {
+    "username": "13451352104",
+    "displayName": "四叶草",
+    "name": "四叶草",
+    "alias": "四叶草",
+    "realName": "",
+    "phone": "13451352104",
+    "loginPassword": "hanhongfei0509",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": {
+      "name": "韩红飞",
+      "bankName": "工商银行",
+      "bankCardNo": "6212260200131103570",
+      "idCardNo": "152326198905187887",
+      "declarationPhone": "13451352104"
+    }
+  },
+  {
     "username": "song",
     "displayName": "宋会计师",
     "name": "宋会计师",
@@ -582,6 +645,23 @@
     }
   },
   {
+    "username": "18244681775",
+    "displayName": "王绍楠",
+    "name": "王绍楠",
+    "alias": "王绍楠",
+    "realName": "王绍楠",
+    "phone": "18244681775",
+    "loginPassword": "WSNJL123",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": {
+      "name": "王绍楠",
+      "bankName": "农业银行",
+      "bankCardNo": "6228480652122800418",
+      "idCardNo": "130324199202185218",
+      "declarationPhone": "18244681775"
+    }
+  },
+  {
     "username": "WoXinFeiXiang",
     "displayName": "我心飞翔",
     "name": "我心飞翔",
@@ -591,6 +671,23 @@
     "loginPassword": "123456",
     "accountingSettlementRatio": 60,
     "invoiceRecipientInfo": null
+  },
+  {
+    "username": "1582613038",
+    "displayName": "小何",
+    "name": "小何",
+    "alias": "小何",
+    "realName": "何梦思",
+    "phone": "1582613038",
+    "loginPassword": "HEmengsi0401",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": {
+      "name": "何梦思",
+      "bankName": "中国邮政储蓄银行",
+      "bankCardNo": "6217976900057859907",
+      "idCardNo": "500104199208212425",
+      "declarationPhone": "15826130387"
+    }
   },
   {
     "username": "18056863680",
