@@ -1024,8 +1024,7 @@ function getNormalizedRecordSettlementFields(record) {
   const isSettled = normalizeRecordSettlementState(source.isSettled);
   return {
     isSettled,
-    settledAt: isSettled ? normalizeDateTimeValue(source.settledAt) : "",
-    settledBy: isSettled ? normalizeText(source.settledBy, 48) : ""
+    settledAt: isSettled ? normalizeDateTimeValue(source.settledAt) : ""
   };
 }
 
@@ -2539,7 +2538,6 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
     getValue: (record) => getRecordSettlementWorkflowStatusLabel(record)
   },
   { field: "settledAt", label: "结算时间", kind: "datetime" },
-  { field: "settledBy", label: "结算人", kind: "text" },
   {
     field: "settlementInvoiceImage",
     label: "发票",
@@ -2792,8 +2790,7 @@ function ensureRecordIds(sourceRecords) {
     const hasNormalizedHistory = Array.isArray(current.operationHistory)
       && JSON.stringify(current.operationHistory) === JSON.stringify(normalizedHistory);
     const hasNormalizedSettlement = current.isSettled === normalizedSettlementFields.isSettled
-      && normalizeDateTimeValue(current.settledAt) === normalizedSettlementFields.settledAt
-      && normalizeText(current.settledBy, 48) === normalizedSettlementFields.settledBy;
+      && normalizeDateTimeValue(current.settledAt) === normalizedSettlementFields.settledAt;
     const hasNormalizedInvoice = JSON.stringify(normalizeStoredInvoiceImage(current.settlementInvoiceImage || current.invoiceImage))
       === JSON.stringify(normalizedInvoiceFields.settlementInvoiceImage)
       && normalizeDateTimeValue(current.invoiceUploadedAt || current.settlementInvoiceUploadedAt) === normalizedInvoiceFields.invoiceUploadedAt
@@ -2914,7 +2911,6 @@ function normalizeRecord(input) {
     settlementPrice: normalizeOptionalMoneyField(input.settlementPrice),
     isSettled: false,
     settledAt: "",
-    settledBy: "",
     settlementInvoiceImage: null,
     invoiceUploadedAt: "",
     invoiceUploadedBy: "",
@@ -3069,7 +3065,6 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
       returnedBy: normalizeText(session?.account, 48),
       isSettled: false,
       settledAt: "",
-      settledBy: "",
       settlementInvoiceImage: null,
       invoiceUploadedAt: "",
       invoiceUploadedBy: "",
@@ -3651,7 +3646,7 @@ async function serveRecordSettlement(req, res) {
 
     const recordIdSet = new Set(recordIds);
     const settledAt = getCurrentBeijingDateTime();
-    const settledBy = normalizeText(session.account, 48) || BOSS_LOGIN_ACCOUNT;
+    const operatedBy = normalizeText(session.account, 48) || BOSS_LOGIN_ACCOUNT;
 
     const result = await withWriteLock(async () => {
       const all = await readRecords();
@@ -3689,8 +3684,7 @@ async function serveRecordSettlement(req, res) {
           ...current,
           ...currentSettlementFields,
           isSettled: true,
-          settledAt,
-          settledBy
+          settledAt
         };
         settledRecordIds.push(recordId);
         return appendRecordHistory(nextRecord, buildRecordHistoryEntry({
@@ -3703,7 +3697,7 @@ async function serveRecordSettlement(req, res) {
           actionKey: "settled",
           actionLabel: RECORD_HISTORY_ACTION_LABELS.settled,
           operatedAt: settledAt,
-          operatedBy: settledBy
+          operatedBy
         }));
       });
 
@@ -4457,7 +4451,6 @@ async function serveRecordById(req, res, recordIdRaw) {
               returnedBy: operatedBy || normalizeText(current.returnedBy, 48),
               isSettled: false,
               settledAt: "",
-              settledBy: "",
               settlementInvoiceImage: null,
               invoiceUploadedAt: "",
               invoiceUploadedBy: "",

@@ -2635,7 +2635,6 @@
       "settlementPrice",
       "isSettled",
       "settledAt",
-      "settledBy",
       "settlementInvoiceImage",
       "invoiceUploadedAt",
       "invoiceUploadedBy",
@@ -2688,7 +2687,6 @@
       settlementPrice: "会计结算价",
       isSettled: "结算",
       settledAt: "结算时间",
-      settledBy: "结算人",
       settlementInvoiceImage: "发票",
       invoiceUploadedAt: "发票上传时间",
       invoiceUploadedBy: "发票上传人",
@@ -2879,7 +2877,7 @@
       if (["summary", "remark", "customerFeedback"].includes(normalizedField)) return "220px";
       if (["shopName"].includes(normalizedField)) return "172px";
       if (["settlementInvoiceImage", "invoiceUploadedAt"].includes(normalizedField)) return "168px";
-      if (["platform", "source", "customer", "orderNo", "dispatcher", "accountant", "date", "monthlySettlementEndDate", "settledBy", "invoiceUploadedBy"].includes(normalizedField)) {
+      if (["platform", "source", "customer", "orderNo", "dispatcher", "accountant", "date", "monthlySettlementEndDate", "invoiceUploadedBy"].includes(normalizedField)) {
         return "136px";
       }
       return "124px";

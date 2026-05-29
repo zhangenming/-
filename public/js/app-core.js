@@ -3433,7 +3433,6 @@ function getRecordComparisonSignature(record) {
     String(item.returnedBy || ""),
     isRecordSettled(item) ? "1" : "0",
     String(item.settledAt || ""),
-    String(item.settledBy || ""),
     invoiceImage
       ? [
           String(invoiceImage.id || ""),
