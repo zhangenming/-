@@ -1384,6 +1384,13 @@ body.analysis-page-active .mobile-bottom-nav {
   --platform-shop-group-title: #9a4a17;
 }
 
+.platform-shop-picker-group[data-group="拼多多"] {
+  --platform-shop-group-accent: #c83f45;
+  --platform-shop-group-border: #efbfc3;
+  --platform-shop-group-bg: #fff3f4;
+  --platform-shop-group-title: #9b242b;
+}
+
 .platform-shop-picker-group[data-group="企业微信"] {
   --platform-shop-group-accent: #2f75bd;
   --platform-shop-group-border: #bfd6ef;

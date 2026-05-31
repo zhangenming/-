@@ -9,7 +9,7 @@
     { key: "dispatcher", label: "接待人", button: () => filterDispatcherBtn, value: () => getSelectedDispatcherFilters().map((item) => getDispatcherDisplayNameByTag(item)).join("、") },
     { key: "orderNo", label: "订单号", button: () => filterOrderBtn, value: () => filterState.orderNo },
     { key: "accountant", label: "会计", button: () => filterAccountantBtn, value: () => getSelectedAccountantFilters().join("、") },
-    { key: "settlementRatio", label: "非60%结算价", button: () => filterSettlementRatioBtn, value: () => filterState.settlementRatio },
+    { key: "settlementRatio", label: "非50%结算价", button: () => filterSettlementRatioBtn, value: () => filterState.settlementRatio },
     { key: "customer", label: "客户", button: () => filterCustomerBtn, value: () => filterState.customer },
     { key: "summary", label: "任务简介", button: () => filterSummaryBtn, value: () => filterState.summary },
     { key: "remark", label: "备注", button: () => filterRemarkBtn, value: () => filterState.remark },

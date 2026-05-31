@@ -279,12 +279,7 @@
     }
 
     function getSelectedAccountantSettlementRatioDecimal() {
-      const accountantName = String(accountantInput?.value || "").trim();
-      const profile = accountants.find((item) => {
-        const displayName = String(item?.displayName || item?.name || "").trim();
-        return displayName === accountantName;
-      });
-      return normalizeAccountantSettlementRatio(profile?.accountingSettlementRatio) / 100;
+      return DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO / 100;
     }
 
     function syncPremiumPriceFromPrices() {
@@ -1314,7 +1309,7 @@
         groupedOptions.get(groupName).push(item);
       });
 
-      ["闲鱼", "淘宝", "企业微信", "其他"].forEach((groupName) => {
+      ["闲鱼", "淘宝", "拼多多", "企业微信", "其他"].forEach((groupName) => {
         const groupItems = groupedOptions.get(groupName) || [];
         if (!groupItems.length) return;
 
@@ -2604,7 +2599,7 @@
         filterState.orderNo = persistedOrderNo;
         if (filterOrderInput) filterOrderInput.value = persistedOrderNo || "";
         setAccountantFilterValues(persistedAccountant);
-        filterState.settlementRatio = persistedSettlementRatio === SETTLEMENT_RATIO_NON_60_FILTER
+        filterState.settlementRatio = persistedSettlementRatio === SETTLEMENT_RATIO_NON_50_FILTER
           ? persistedSettlementRatio
           : "";
         filterState.customer = persistedCustomer;

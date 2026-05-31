@@ -70,8 +70,8 @@ const BUILT_IN_ACCOUNTANT_NAMES = [
   NON_SETTLEMENT_ACCOUNTANT_NAME,
   EXTERNAL_ACCOUNTANT_NAME,
 ];
-const DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO = 60;
-const SOURCE_OPTIONS = ["小红书", "淘宝", "闲鱼", "抖音", "其他"];
+const DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO = 50;
+const SOURCE_OPTIONS = ["小红书", "淘宝", "闲鱼", "抖音", "拼多多", "其他"];
 const PLATFORM_SHOP_OPTIONS = [
   { label: "闲鱼-开心财税", platform: "闲鱼", shopName: "开心财税" },
   { label: "闲鱼-果果财税", platform: "闲鱼", shopName: "果果财税" },
@@ -83,6 +83,7 @@ const PLATFORM_SHOP_OPTIONS = [
   { label: "淘宝-智算财税", platform: "淘宝", shopName: "智算财税" },
   { label: "淘宝-佳和财税", platform: "淘宝", shopName: "佳和财税" },
   { label: "淘宝-全账通", platform: "淘宝", shopName: "全账通" },
+  { label: "拼多多-开心财务", platform: "拼多多", shopName: "开心财务" },
   { label: "企业微信", platform: "企业微信", shopName: "企业微信" },
   { label: "其他", platform: "其他", shopName: "其他" },
 ];
@@ -253,7 +254,7 @@ const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
 function getDispatcherDisplayNameByTag(dispatcherTagRaw) {
   const dispatcherTag = normalizeDispatcherTag(dispatcherTagRaw);
   if (dispatcherTag === "开心财税") return "开心财税";
-  return dispatcherTag ? `开心财税${dispatcherTag.toLowerCase()}` : "";
+  return dispatcherTag ? dispatcherTag.toLowerCase() : "";
 }
 
 function getDispatcherAccountByTag(dispatcherTag) {
@@ -1407,8 +1408,8 @@ const filterState = {
   status: [],
   settled: "",
 };
-const SETTLEMENT_RATIO_NON_60_FILTER = "非60%";
-const SETTLEMENT_RATIO_TARGET = 0.6;
+const SETTLEMENT_RATIO_NON_50_FILTER = "非50%";
+const SETTLEMENT_RATIO_TARGET = 0.5;
 const SETTLEMENT_RATIO_TOLERANCE = 0.00005;
 
 function normalizeMultiFilterValues(rawValue) {

@@ -1642,6 +1642,13 @@
       --platform-shop-group-title: #9a4a17;
     }
 
+    #recordForm .platform-shop-picker-group[data-group="拼多多"] {
+      --platform-shop-group-accent: #c83f45;
+      --platform-shop-group-border: #efbfc3;
+      --platform-shop-group-bg: #fff3f4;
+      --platform-shop-group-title: #9b242b;
+    }
+
     #recordForm .platform-shop-picker-group[data-group="企业微信"] {
       --platform-shop-group-accent: #2f75bd;
       --platform-shop-group-border: #bfd6ef;
@@ -3195,6 +3202,7 @@
     }
 
     .invoice-upload-image-field {
+      position: relative;
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 10px 14px;
@@ -3217,14 +3225,16 @@
 
     .invoice-upload-image-field input {
       position: absolute;
-      width: 1px;
-      height: 1px;
-      margin: -1px;
+      inset: 0;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      margin: 0;
       padding: 0;
       border: 0;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
-      white-space: nowrap;
+      border-radius: 12px;
+      background: transparent;
+      cursor: pointer;
       opacity: 0;
     }
 

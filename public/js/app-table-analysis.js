@@ -978,7 +978,7 @@
       );
       const settlementRatioCountMap = new Map([
         [
-          SETTLEMENT_RATIO_NON_60_FILTER,
+          SETTLEMENT_RATIO_NON_50_FILTER,
           settlementRatioScopedRecords.filter((item) => isNonStandardSettlementRatioRecord(item)).length
         ]
       ]);
@@ -1018,7 +1018,7 @@
       const sourceValues = sortFilterValuesByCount(rawSourceValues, sourceCountMap);
 
       setAccountantFilterValues(getSelectedAccountantFilters().filter((value) => accountantValues.includes(value)));
-      if (filterState.settlementRatio && filterState.settlementRatio !== SETTLEMENT_RATIO_NON_60_FILTER) {
+      if (filterState.settlementRatio && filterState.settlementRatio !== SETTLEMENT_RATIO_NON_50_FILTER) {
         filterState.settlementRatio = "";
       }
 
@@ -1052,7 +1052,7 @@
       );
       buildFilterOptionList(
         filterSettlementRatioList,
-        [SETTLEMENT_RATIO_NON_60_FILTER],
+        [SETTLEMENT_RATIO_NON_50_FILTER],
         "settlementRatio",
         filterState.settlementRatio,
         settlementRatioCountMap
@@ -1428,17 +1428,90 @@
         });
     }
 
+    function getTrendDateParts(rawDateKey) {
+      const source = String(rawDateKey || "").trim();
+      let match = source.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/);
+      if (match) {
+        return {
+          year: Number(match[1]),
+          month: Number(match[2]),
+          day: Number(match[3])
+        };
+      }
+      match = source.match(/^(\d{1,2})月(\d{1,2})日$/);
+      if (match) {
+        return {
+          year: new Date().getFullYear(),
+          month: Number(match[1]),
+          day: Number(match[2])
+        };
+      }
+      const timestamp = parseDateValue(source);
+      if (Number.isNaN(timestamp)) return null;
+      const date = new Date(timestamp);
+      return {
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+        day: date.getDate()
+      };
+    }
+
     function isWeekendTrendDateKey(rawDateKey) {
-      const timestamp = parseDateValue(rawDateKey);
-      if (Number.isNaN(timestamp)) return false;
-      const day = new Date(timestamp).getDay();
+      const parts = getTrendDateParts(rawDateKey);
+      if (!parts) return false;
+      const day = new Date(parts.year, parts.month - 1, parts.day, 12).getDay();
       return day === 0 || day === 6;
     }
 
+    function getTrendWeekdayLabel(rawDateKey) {
+      const parts = getTrendDateParts(rawDateKey);
+      if (!parts) return "";
+      return ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][
+        new Date(parts.year, parts.month - 1, parts.day, 12).getDay()
+      ] || "";
+    }
+
     function formatTrendAxisDayLabel(rawDateKey) {
-      const timestamp = parseDateValue(rawDateKey);
-      if (Number.isNaN(timestamp)) return String(rawDateKey || "").trim();
-      return `${new Date(timestamp).getDate()}日`;
+      const parts = getTrendDateParts(rawDateKey);
+      if (!parts) return String(rawDateKey || "").trim();
+      return `${parts.day}日`;
+    }
+
+    function formatTrendTooltipDateLabel(rawDateKey) {
+      const parts = getTrendDateParts(rawDateKey);
+      if (!parts) return String(rawDateKey || "").trim();
+      const weekday = getTrendWeekdayLabel(rawDateKey);
+      return `${parts.month}月${parts.day}日${weekday ? ` ${weekday}` : ""}`;
+    }
+
+    function formatTrendAxisDisplayLabel(rawDateKey, previousRawDateKey = "") {
+      const parts = getTrendDateParts(rawDateKey);
+      if (!parts) return String(rawDateKey || "").trim();
+      const previousParts = getTrendDateParts(previousRawDateKey);
+      const isMonthStart = !previousParts
+        || previousParts.year !== parts.year
+        || previousParts.month !== parts.month;
+      if (isWeekendTrendDateKey(rawDateKey)) {
+        return isMonthStart
+          ? `${parts.month}/${parts.day}\n${getTrendWeekdayLabel(rawDateKey)}`
+          : `${parts.day}日\n${getTrendWeekdayLabel(rawDateKey)}`;
+      }
+      return isMonthStart ? `${parts.month}/${parts.day}` : `${parts.day}日`;
+    }
+
+    function formatTrendAxisRichLabel(rawDateKey, previousRawDateKey = "") {
+      const parts = getTrendDateParts(rawDateKey);
+      if (!parts) return String(rawDateKey || "").trim();
+      const previousParts = getTrendDateParts(previousRawDateKey);
+      const isMonthStart = !previousParts
+        || previousParts.year !== parts.year
+        || previousParts.month !== parts.month;
+      const dayText = isMonthStart ? `${parts.month}/${parts.day}` : `${parts.day}日`;
+      if (!isWeekendTrendDateKey(rawDateKey)) {
+        return `{normal|${dayText}}`;
+      }
+      const weekdayText = getTrendWeekdayLabel(rawDateKey);
+      return `{weekend|${dayText}}\n{weekend|${weekdayText}}`;
     }
 
     function formatAverageCount(value) {
@@ -1498,6 +1571,38 @@
           </div>
         `)
         .join("");
+    }
+
+    function buildContinuousTrendChartRows(trendRows) {
+      const sourceRows = Array.isArray(trendRows) ? trendRows : [];
+      const datedRows = sourceRows.filter((row) => !Number.isNaN(parseDateValue(row?.key)));
+      const undatedRows = sourceRows.filter((row) => Number.isNaN(parseDateValue(row?.key)));
+      if (!datedRows.length) return sourceRows;
+      const rowsByKey = new Map(datedRows.map((row) => [String(row.key || "").trim(), row]));
+      const sortedRows = [...datedRows].sort((left, right) => parseDateValue(left?.key) - parseDateValue(right?.key) || String(left.key || "").localeCompare(String(right.key || ""), "zh-CN", {
+        numeric: true,
+        sensitivity: "base"
+      }));
+      const startTime = toStartOfDay(parseDateValue(sortedRows[0].key));
+      const endTime = toStartOfDay(parseDateValue(sortedRows[sortedRows.length - 1].key));
+      const result = [];
+      for (let time = startTime; time <= endTime; time += 24 * 60 * 60 * 1000) {
+        const dayKey = toDayLabel(time);
+        const existingRow = rowsByKey.get(dayKey);
+        if (existingRow) {
+          result.push(existingRow);
+          continue;
+        }
+        result.push({
+          key: dayKey,
+          sortValue: time,
+          count: 0,
+          total: 0,
+          settlement: 0,
+          summaryText: ""
+        });
+      }
+      return [...result, ...undatedRows];
     }
 
     function buildStatusRows(scopeRecords) {
@@ -1771,9 +1876,10 @@
       }
       const chart = createAnalysisChart("analysisTrendChart");
       if (!chart) return;
+      const chartRows = buildContinuousTrendChartRows(trendRows);
 
-      const visiblePercent = trendRows.length > 18 ? Math.max(0, 100 - (18 / trendRows.length) * 100) : 0;
-      const dataZoom = trendRows.length > 18
+      const visiblePercent = chartRows.length > 18 ? Math.max(0, 100 - (18 / chartRows.length) * 100) : 0;
+      const dataZoom = chartRows.length > 18
         ? [
           {
             type: "inside",
@@ -1807,16 +1913,17 @@
           trigger: "axis",
           formatter(params) {
             const dataIndex = params[0]?.dataIndex || 0;
-            const row = trendRows[dataIndex];
+            const row = chartRows[dataIndex];
             if (!row) return "";
             const dateClass = isWeekendTrendDateKey(row.key) ? ' class="analysis-chart-weekend-date"' : "";
+            const summaryText = row.summaryText || (row.count > 0 ? "待积累" : "当日无记录");
             return `
               <div class="analysis-chart-tooltip">
-                <strong${dateClass}>${escapeHtml(formatTrendAxisDayLabel(row.key))}</strong>
+                <strong${dateClass}>${escapeHtml(formatTrendTooltipDateLabel(row.key))}</strong>
                 <span>接单量：${escapeHtml(formatCount(row.count))} 单</span>
                 <span>会计价：${escapeHtml(formatCurrency(row.total))}</span>
                 <span>会计结算价：${escapeHtml(formatCurrency(row.settlement))}</span>
-                <span>总结：${escapeHtml(row.summaryText || "待积累")}</span>
+                <span>总结：${escapeHtml(summaryText)}</span>
               </div>
             `;
           }
@@ -1834,14 +1941,14 @@
         grid: {
           top: 42,
           right: 48,
-          bottom: trendRows.length > 18 ? 52 : 24,
+          bottom: chartRows.length > 18 ? 52 : 24,
           left: 42,
           containLabel: true
         },
         xAxis: {
           type: "category",
           boundaryGap: true,
-          data: trendRows.map((row) => formatTrendAxisDayLabel(row.key)),
+          data: chartRows.map((row) => row.key),
           axisLine: {
             lineStyle: {
               color: "#d6e4dd"
@@ -1853,19 +1960,19 @@
           axisLabel: {
             interval: 0,
             formatter(value, index) {
-              const row = trendRows[index];
-              const styleName = row && isWeekendTrendDateKey(row.key) ? "weekend" : "normal";
-              return `{${styleName}|${value}}`;
+              return formatTrendAxisRichLabel(String(value || "").trim(), chartRows[index - 1]?.key || "");
             },
             rich: {
               normal: {
                 color: "#61746c",
-                fontSize: 11
+                fontSize: 11,
+                lineHeight: 15
               },
               weekend: {
                 color: "#d7352d",
                 fontSize: 11,
-                fontWeight: 700
+                fontWeight: 700,
+                lineHeight: 15
               }
             }
           }
@@ -1912,7 +2019,7 @@
             itemStyle: {
               borderRadius: [5, 5, 0, 0]
             },
-            data: trendRows.map((row) => row.count)
+            data: chartRows.map((row) => row.count)
           },
           {
             name: "会计价走势",
@@ -1923,7 +2030,7 @@
             lineStyle: {
               width: 2
             },
-            data: trendRows.map((row) => Number(row.total.toFixed(2)))
+            data: chartRows.map((row) => Number(row.total.toFixed(2)))
           },
           {
             name: "会计结算价走势",
@@ -1934,7 +2041,7 @@
             lineStyle: {
               width: 2
             },
-            data: trendRows.map((row) => Number(row.settlement.toFixed(2)))
+            data: chartRows.map((row) => Number(row.settlement.toFixed(2)))
           }
         ]
       });

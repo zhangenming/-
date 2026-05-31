@@ -5965,8 +5965,8 @@
     function applyMonthlySettlementQuickFilter() {
       clearTableFilterState();
       filterState.monthlySettlement = "是";
-      sortState.key = "date";
-      sortState.direction = "desc";
+      sortState.key = "monthlySettlementEndDate";
+      sortState.direction = "asc";
       sortState.premiumMode = "amount";
       sortState.settlementMode = "amount";
       closeAllFilterPopovers();
@@ -5989,7 +5989,7 @@
       applyMonthlySettlementFilterBtn.textContent = dueCount > 0 ? `月结（${dueCount}）` : "月结";
       applyMonthlySettlementFilterBtn.title = dueCount > 0
         ? `今日有 ${dueCount} 条月结订单到期，点击查看所有月结订单。`
-        : "筛选所有月结订单，并按接单日期排序";
+        : "筛选所有月结订单，并按月结结束时间排序";
       applyMonthlySettlementFilterBtn.setAttribute("aria-label", applyMonthlySettlementFilterBtn.title);
     }
 
