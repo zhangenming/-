@@ -71,6 +71,29 @@ const BUILT_IN_ACCOUNTANT_NAMES = [
   EXTERNAL_ACCOUNTANT_NAME,
 ];
 const DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO = 50;
+const DISPATCHER_PREMIUM_PROFIT_NEW_FORMULA_START_DATE = "2026-06-01";
+const DISPATCHER_PREMIUM_PROFIT_LEGACY_FORMULA = "legacy";
+const DISPATCHER_PREMIUM_PROFIT_NEW_FORMULA = "new";
+const DISPATCHER_PREMIUM_PROFIT_FORMULAS = {
+  [DISPATCHER_PREMIUM_PROFIT_LEGACY_FORMULA]: {
+    label: "2026-06-01前",
+    nonPositiveRate: 0.45,
+    tiers: [
+      { amount: 1000, rate: 0.45 },
+      { amount: 1000, rate: 0.5 },
+      { amount: Number.POSITIVE_INFINITY, rate: 0.55 },
+    ],
+  },
+  [DISPATCHER_PREMIUM_PROFIT_NEW_FORMULA]: {
+    label: "2026-06-01起",
+    nonPositiveRate: 0.4,
+    tiers: [
+      { amount: 3000, rate: 0.4 },
+      { amount: 2000, rate: 0.45 },
+      { amount: Number.POSITIVE_INFINITY, rate: 0.5 },
+    ],
+  },
+};
 const SOURCE_OPTIONS = ["小红书", "淘宝", "闲鱼", "抖音", "拼多多", "其他"];
 const PLATFORM_SHOP_OPTIONS = [
   { label: "闲鱼-开心财税", platform: "闲鱼", shopName: "开心财税" },
@@ -254,7 +277,7 @@ const DISPATCHER_LOGIN_CODE_TO_ACCOUNT = {
 function getDispatcherDisplayNameByTag(dispatcherTagRaw) {
   const dispatcherTag = normalizeDispatcherTag(dispatcherTagRaw);
   if (dispatcherTag === "开心财税") return "开心财税";
-  return dispatcherTag ? dispatcherTag.toLowerCase() : "";
+  return dispatcherTag ? dispatcherTag.toUpperCase() : "";
 }
 
 function getDispatcherAccountByTag(dispatcherTag) {
@@ -409,6 +432,8 @@ function getLinkedDispatcherSettlementAmount(
   let totalDispatcherPrice = 0;
   let payoutRawPremium = 0;
   let payoutDispatcherPrice = 0;
+  const premiumTerms = [];
+  const payoutPremiumTerms = [];
   const dispatcherCommissionMap = new Map();
   let recordCount = 0;
   const recordIds = [];
@@ -528,6 +553,10 @@ function getLinkedDispatcherSettlementAmount(
     const premium = getPremiumValue(record);
     if (Number.isFinite(premium)) {
       totalRawPremium += premium;
+      premiumTerms.push({
+        amount: premium,
+        formulaKey: getDispatcherPremiumProfitFormulaKey(record?.date),
+      });
     }
 
     const totalPrice = Number(record?.totalPrice);
@@ -541,6 +570,10 @@ function getLinkedDispatcherSettlementAmount(
     if (isUploaded && !isPaid) {
       if (Number.isFinite(premium)) {
         payoutRawPremium += premium;
+        payoutPremiumTerms.push({
+          amount: premium,
+          formulaKey: getDispatcherPremiumProfitFormulaKey(record?.date),
+        });
       }
       if (Number.isFinite(dispatcherPrice)) {
         payoutDispatcherPrice += dispatcherPrice;
@@ -556,7 +589,7 @@ function getLinkedDispatcherSettlementAmount(
 
   if (recordCount === 0) return null;
 
-  const premiumBreakdown = getTieredPremiumProfitBreakdown(totalRawPremium);
+  const premiumBreakdown = getTieredPremiumProfitBreakdownFromTerms(premiumTerms);
   const premiumProfit = premiumBreakdown ? premiumBreakdown.profit : Number.NaN;
   const invoiceAmount =
     Number.isFinite(premiumProfit) && Number.isFinite(totalDispatcherPrice)
@@ -569,7 +602,7 @@ function getLinkedDispatcherSettlementAmount(
     Number.isFinite(invoiceAmount) && Number.isFinite(taxAmount)
       ? invoiceAmount - taxAmount
       : 0;
-  const payoutPremiumBreakdown = getTieredPremiumProfitBreakdown(payoutRawPremium);
+  const payoutPremiumBreakdown = getTieredPremiumProfitBreakdownFromTerms(payoutPremiumTerms);
   const payoutPremiumProfit = payoutPremiumBreakdown ? payoutPremiumBreakdown.profit : Number.NaN;
   const payoutInvoiceAmount =
     Number.isFinite(payoutPremiumProfit) && Number.isFinite(payoutDispatcherPrice)
@@ -3175,11 +3208,8 @@ function getAccountantInvoiceUploadSummary(sourceRecords = records) {
           return Number.isFinite(settlement) ? sum + settlement : sum;
         }, 0)
       : 0;
-    const totalRawPremium = dispatcherRecords.reduce((sum, item) => {
-      const premium = getPremiumValue(item);
-      return Number.isFinite(premium) ? sum + premium : sum;
-    }, 0);
-    const premiumProfit = getTieredPremiumProfit(totalRawPremium);
+    const premiumBreakdown = getPremiumProfitBreakdownForRecords(dispatcherRecords);
+    const premiumProfit = premiumBreakdown ? premiumBreakdown.profit : Number.NaN;
     const dispatcherPrice = dispatcherRecords.reduce((sum, item) => {
       const totalPrice = Number(item?.totalPrice);
       const baseRate = getDispatcherBaseProfitRate(item);
@@ -3251,7 +3281,7 @@ function getDispatcherSettlementSummary(sourceRecords = records) {
       dispatcher,
       recordIds: [],
       recordCount: 0,
-      premiumList: [],
+      premiumTerms: [],
       dispatcherPriceList: [],
     };
 
@@ -3263,7 +3293,10 @@ function getDispatcherSettlementSummary(sourceRecords = records) {
 
     const premium = getPremiumValue(record);
     if (Number.isFinite(premium)) {
-      current.premiumList.push(premium);
+      current.premiumTerms.push({
+        amount: premium,
+        formulaKey: getDispatcherPremiumProfitFormulaKey(record?.date),
+      });
     }
 
     const totalPrice = Number(record?.totalPrice);
@@ -3280,11 +3313,8 @@ function getDispatcherSettlementSummary(sourceRecords = records) {
 
   const groups = Array.from(groupMap.values())
     .map((group) => {
-      const totalRawPremium = group.premiumList.reduce(
-        (sum, value) => sum + value,
-        0,
-      );
-      const premium = getTieredPremiumProfit(totalRawPremium);
+      const premiumBreakdown = getTieredPremiumProfitBreakdownFromTerms(group.premiumTerms);
+      const premium = premiumBreakdown ? premiumBreakdown.profit : Number.NaN;
       const dispatcherPrice = group.dispatcherPriceList.reduce(
         (sum, value) => sum + value,
         0,
@@ -4175,19 +4205,35 @@ function formatMoneyExpression(values, mapValue) {
   return terms.length ? terms.join(" + ") : "0.00";
 }
 
-function getTieredPremiumProfitBreakdown(rawPremium) {
+function getDispatcherPremiumProfitFormulaKey(rawDate) {
+  const normalizedDate = normalizeDateOnlyValue(rawDate);
+  return normalizedDate && normalizedDate >= DISPATCHER_PREMIUM_PROFIT_NEW_FORMULA_START_DATE
+    ? DISPATCHER_PREMIUM_PROFIT_NEW_FORMULA
+    : DISPATCHER_PREMIUM_PROFIT_LEGACY_FORMULA;
+}
+
+function getDispatcherPremiumProfitFormula(formulaKey) {
+  return DISPATCHER_PREMIUM_PROFIT_FORMULAS[formulaKey]
+    || DISPATCHER_PREMIUM_PROFIT_FORMULAS[DISPATCHER_PREMIUM_PROFIT_LEGACY_FORMULA];
+}
+
+function getTieredPremiumProfitBreakdown(rawPremium, formulaKey = DISPATCHER_PREMIUM_PROFIT_LEGACY_FORMULA) {
   const premium = Number(rawPremium);
   if (!Number.isFinite(premium)) return null;
+  const formula = getDispatcherPremiumProfitFormula(formulaKey);
   if (premium <= 0) {
-    const profit = premium * 0.45;
+    const profit = premium * formula.nonPositiveRate;
     return {
       premium,
       profit,
+      formulaKey,
       segments: [
         {
           amount: premium,
-          rate: 0.45,
+          rate: formula.nonPositiveRate,
           profit,
+          formulaKey,
+          formulaLabel: formula.label,
         },
       ],
     };
@@ -4204,20 +4250,60 @@ function getTieredPremiumProfitBreakdown(rawPremium) {
       amount,
       rate,
       profit: segmentProfit,
+      formulaKey,
+      formulaLabel: formula.label,
     });
     profit += segmentProfit;
     remaining -= amount;
   };
 
-  appendSegment(Math.min(remaining, 1000), 0.45);
-  appendSegment(Math.min(remaining, 1000), 0.5);
-  appendSegment(remaining, 0.55);
+  formula.tiers.forEach((tier) => {
+    appendSegment(Math.min(remaining, tier.amount), tier.rate);
+  });
 
   return {
     premium,
     profit,
+    formulaKey,
     segments,
   };
+}
+
+function getTieredPremiumProfitBreakdownFromTerms(rawTerms) {
+  const terms = Array.isArray(rawTerms) ? rawTerms : [];
+  const premiumByFormula = new Map();
+  terms.forEach((term) => {
+    const amount = Number(typeof term === "object" ? term.amount : term);
+    if (!Number.isFinite(amount)) return;
+    const formulaKey = typeof term === "object" && term.formulaKey
+      ? term.formulaKey
+      : DISPATCHER_PREMIUM_PROFIT_LEGACY_FORMULA;
+    premiumByFormula.set(formulaKey, (premiumByFormula.get(formulaKey) || 0) + amount);
+  });
+
+  if (!premiumByFormula.size) {
+    return getTieredPremiumProfitBreakdown(0, DISPATCHER_PREMIUM_PROFIT_NEW_FORMULA);
+  }
+
+  const breakdowns = Array.from(premiumByFormula.entries())
+    .map(([formulaKey, premium]) => getTieredPremiumProfitBreakdown(premium, formulaKey))
+    .filter(Boolean);
+  const premium = breakdowns.reduce((sum, item) => sum + (Number(item.premium) || 0), 0);
+  const profit = breakdowns.reduce((sum, item) => sum + (Number(item.profit) || 0), 0);
+  return {
+    premium,
+    profit,
+    formulaBreakdowns: breakdowns,
+    segments: breakdowns.flatMap((item) => item.segments || []),
+  };
+}
+
+function getPremiumProfitBreakdownForRecords(sourceRecords) {
+  const terms = (Array.isArray(sourceRecords) ? sourceRecords : []).map((record) => ({
+    amount: getPremiumValue(record),
+    formulaKey: getDispatcherPremiumProfitFormulaKey(record?.date),
+  }));
+  return getTieredPremiumProfitBreakdownFromTerms(terms);
 }
 
 function getProfitParts(source) {
@@ -4226,16 +4312,23 @@ function getProfitParts(source) {
   if (!Number.isFinite(total) || !Number.isFinite(premium)) return null;
   const baseProfitRate = getDispatcherBaseProfitRate(source);
   const baseProfit = total * baseProfitRate;
+  const premiumBreakdown = getTieredPremiumProfitBreakdown(
+    premium,
+    getDispatcherPremiumProfitFormulaKey(source?.date),
+  );
+  const premiumProfit = premiumBreakdown ? premiumBreakdown.profit : Number.NaN;
   return {
     baseProfit,
     baseProfitRate,
     premium,
-    totalProfit: baseProfit + getTieredPremiumProfit(premium),
+    premiumBreakdown,
+    premiumProfit,
+    totalProfit: baseProfit + premiumProfit,
   };
 }
 
-function getTieredPremiumProfit(rawPremium) {
-  const breakdown = getTieredPremiumProfitBreakdown(rawPremium);
+function getTieredPremiumProfit(rawPremium, formulaKey = DISPATCHER_PREMIUM_PROFIT_LEGACY_FORMULA) {
+  const breakdown = getTieredPremiumProfitBreakdown(rawPremium, formulaKey);
   return breakdown ? breakdown.profit : Number.NaN;
 }
 
@@ -4256,21 +4349,7 @@ function formatProfitDisplay(source) {
 }
 
 function getProfitTotal(sourceRecords) {
-  const summary = (Array.isArray(sourceRecords) ? sourceRecords : []).reduce(
-    (current, item) => {
-      const total = Number(item?.totalPrice);
-      const premium = getPremiumValue(item);
-      if (Number.isFinite(total)) {
-        current.totalBase += total * getDispatcherBaseProfitRate(item);
-      }
-      if (Number.isFinite(premium)) {
-        current.totalPremium += premium;
-      }
-      return current;
-    },
-    { totalBase: 0, totalPremium: 0 },
-  );
-  return summary.totalBase + getTieredPremiumProfit(summary.totalPremium);
+  return getProfitTotalBreakdown(sourceRecords).totalProfit;
 }
 
 function getProfitTotalBreakdown(sourceRecords) {
@@ -4283,10 +4362,14 @@ function getProfitTotalBreakdown(sourceRecords) {
       }
       if (Number.isFinite(premium)) {
         current.premiumTerms.push(premium);
+        current.premiumFormulaTerms.push({
+          amount: premium,
+          formulaKey: getDispatcherPremiumProfitFormulaKey(item?.date),
+        });
       }
       return current;
     },
-    { baseTerms: [], premiumTerms: [] },
+    { baseTerms: [], premiumTerms: [], premiumFormulaTerms: [] },
   );
 
   const totalBase = summary.baseTerms.reduce((sum, value) => sum + value, 0);
@@ -4294,7 +4377,7 @@ function getProfitTotalBreakdown(sourceRecords) {
     (sum, value) => sum + value,
     0,
   );
-  const premiumBreakdown = getTieredPremiumProfitBreakdown(totalPremium);
+  const premiumBreakdown = getTieredPremiumProfitBreakdownFromTerms(summary.premiumFormulaTerms);
   const premiumProfit = premiumBreakdown ? premiumBreakdown.profit : Number.NaN;
   return {
     baseTerms: summary.baseTerms,
@@ -4319,8 +4402,10 @@ function formatProfitTotalTooltip(sourceRecords) {
     (value) => formatSignedMoneyFactor(value),
   );
   const premiumTierLines = (breakdown.premiumBreakdown?.segments || []).map(
-    (segment) =>
-      `${formatSignedMoneyFactor(segment.amount)} * ${(segment.rate * 100).toFixed(0)}% = ${toMoney(segment.profit)}`,
+    (segment) => {
+      const formulaLabel = segment.formulaLabel ? `${segment.formulaLabel} ` : "";
+      return `${formulaLabel}${formatSignedMoneyFactor(segment.amount)} * ${(segment.rate * 100).toFixed(0)}% = ${toMoney(segment.profit)}`;
+    },
   );
 
   return [
@@ -4328,7 +4413,7 @@ function formatProfitTotalTooltip(sourceRecords) {
     `A部分：${baseExpression} = ${toMoney(breakdown.totalBase)}`,
     `B部分溢价合计：${premiumExpression} = ${toMoney(breakdown.totalPremium)}`,
     "B部分阶梯计算：",
-    ...(premiumTierLines.length ? premiumTierLines : ["0.00 * 45% = 0.00"]),
+    ...(premiumTierLines.length ? premiumTierLines : ["0.00 = 0.00"]),
     `总接待收益：${toMoney(breakdown.totalBase)} + ${toMoney(breakdown.premiumProfit)} = ${toMoney(breakdown.totalProfit)}`,
   ].join("\n");
 }

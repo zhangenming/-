@@ -168,6 +168,17 @@
     }
   },
   {
+    "username": "15575996182",
+    "displayName": "哈哈",
+    "name": "哈哈",
+    "alias": "哈哈",
+    "realName": "龚宇",
+    "phone": "15575996182",
+    "loginPassword": "123456",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": null
+  },
+  {
     "username": "HaHaHa",
     "displayName": "哈哈哈",
     "name": "哈哈哈",
@@ -322,6 +333,23 @@
       "bankCardNo": "6214830238667488",
       "idCardNo": "500221198610090064",
       "declarationPhone": "18983971878"
+    }
+  },
+  {
+    "username": "15010678731",
+    "displayName": "刘伟元会计师",
+    "name": "刘伟元会计师",
+    "alias": "刘伟元会计师",
+    "realName": "刘伟元",
+    "phone": "15010678731",
+    "loginPassword": "2427361172",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": {
+      "name": "刘伟元会计师",
+      "bankName": "中国建设银行股份有限公司应县支行",
+      "bankCardNo": "6217000310000951936",
+      "idCardNo": "140622199305080033",
+      "declarationPhone": "15010678731"
     }
   },
   {
@@ -937,6 +965,23 @@
     "invoiceRecipientInfo": null
   },
   {
+    "username": "15224960627",
+    "displayName": "一诺千金",
+    "name": "一诺千金",
+    "alias": "一诺千金",
+    "realName": "",
+    "phone": "15224960627",
+    "loginPassword": "123456",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": {
+      "name": "郭卫卫",
+      "bankName": "中国银行",
+      "bankCardNo": "6217858000083605557",
+      "idCardNo": "412724198604084860",
+      "declarationPhone": "15224960627"
+    }
+  },
+  {
     "username": "YiYiYiYi",
     "displayName": "壹壹亿亿",
     "name": "壹壹亿亿",
@@ -1112,6 +1157,17 @@
     "realName": "",
     "phone": "13580337922",
     "loginPassword": "123456",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": null
+  },
+  {
+    "username": "15923149700",
+    "displayName": "ddy123456",
+    "name": "ddy123456",
+    "alias": "ddy123456",
+    "realName": "",
+    "phone": "15923149700",
+    "loginPassword": "ddy193125",
     "accountingSettlementRatio": 50,
     "invoiceRecipientInfo": null
   },
