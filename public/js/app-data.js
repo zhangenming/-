@@ -1942,6 +1942,7 @@
       const nextRecords = Array.isArray(payload.records) ? payload.records : [item, ...records];
       syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: false });
       records = nextRecords;
+      resetTableViewToDefault();
       renderTable();
       if (!analysisModal.hidden) {
         renderAnalysisPanel();

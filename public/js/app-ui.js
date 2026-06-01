@@ -5962,6 +5962,15 @@
       if (filterRemarkInput) filterRemarkInput.value = "";
     }
 
+    function resetTableViewToDefault() {
+      clearTableFilterState();
+      sortState.key = "date";
+      sortState.direction = "desc";
+      sortState.premiumMode = "amount";
+      sortState.settlementMode = "amount";
+      closeAllFilterPopovers();
+    }
+
     function applyMonthlySettlementQuickFilter() {
       clearTableFilterState();
       filterState.monthlySettlement = "是";
