@@ -1471,8 +1471,7 @@
           totalProfit: 0
         };
       }
-      const premiumBreakdown = getTieredPremiumProfitBreakdown(profit.premium);
-      const premiumReceptionProfit = premiumBreakdown ? premiumBreakdown.profit : 0;
+      const premiumReceptionProfit = Number(profit.premiumProfit);
       return {
         baseProfit: Number.isFinite(profit.baseProfit) ? profit.baseProfit : 0,
         premiumReceptionProfit: Number.isFinite(premiumReceptionProfit) ? premiumReceptionProfit : 0,
@@ -1647,15 +1646,11 @@
 
     function updateReminderEntryButton() {
       if (!openReminderModalBtn) return;
-      const canUseReminders = canCurrentAccountUseReminders();
-      const dueCount = getDueReminderCount();
-      openReminderModalBtn.hidden = !canUseReminders;
-      openReminderModalBtn.classList.toggle("is-due", dueCount > 0);
-      openReminderModalBtn.textContent = dueCount > 0 ? `提醒（${dueCount}）` : "提醒";
-      openReminderModalBtn.title = dueCount > 0
-        ? `有 ${dueCount} 条提醒已到期，请打开检查具体提醒。`
-        : "查看和新建提醒";
-      openReminderModalBtn.setAttribute("aria-label", openReminderModalBtn.title);
+      openReminderModalBtn.hidden = true;
+      openReminderModalBtn.classList.remove("is-due");
+      openReminderModalBtn.textContent = "提醒";
+      openReminderModalBtn.removeAttribute("title");
+      openReminderModalBtn.removeAttribute("aria-label");
     }
 
     function getReminderDispatcherKey(reminder) {
@@ -1957,6 +1952,11 @@
         return Number(amount.toFixed(2)).toString();
       };
       const formatFormulaPercent = (rate) => `${Number((Number(rate) * 100).toFixed(2))}%`;
+      const formatPremiumFormulaSegment = (segment) => {
+        const label = String(segment?.formulaLabel || "").trim();
+        const prefix = label ? `${label}:` : "";
+        return `${prefix}${formatFormulaMoney(segment.amount)}*${formatFormulaPercent(segment.rate)}`;
+      };
       const premiumSegments = Array.isArray(group?.dispatcherPremiumSegments)
         ? group.dispatcherPremiumSegments
         : [];
@@ -1964,7 +1964,7 @@
         ? group.dispatcherCommissionTerms
         : [];
       const premiumFormula = premiumSegments.length
-        ? premiumSegments.map((segment) => `${formatFormulaMoney(segment.amount)}*${formatFormulaPercent(segment.rate)}`).join("+")
+        ? premiumSegments.map(formatPremiumFormulaSegment).join("+")
         : "0";
       const commissionFormula = commissionTerms.length
         ? commissionTerms.map((term) => `${formatFormulaMoney(term.amount)}*${formatFormulaPercent(term.rate)}`).join("+")
@@ -2023,6 +2023,11 @@
         return Number(amount.toFixed(2)).toString();
       };
       const formatFormulaPercent = (rate) => `${Number((Number(rate) * 100).toFixed(2))}%`;
+      const formatPremiumFormulaSegment = (segment) => {
+        const label = String(segment?.formulaLabel || "").trim();
+        const prefix = label ? `${label}:` : "";
+        return `${prefix}${formatFormulaMoney(segment.amount)}*${formatFormulaPercent(segment.rate)}`;
+      };
       const premiumSegments = Array.isArray(summary?.dispatcherPremiumSegments)
         ? summary.dispatcherPremiumSegments
         : [];
@@ -2030,7 +2035,7 @@
         ? summary.dispatcherCommissionTerms
         : [];
       const premiumFormula = premiumSegments.length
-        ? premiumSegments.map((segment) => `${formatFormulaMoney(segment.amount)}*${formatFormulaPercent(segment.rate)}`).join("+")
+        ? premiumSegments.map(formatPremiumFormulaSegment).join("+")
         : "0";
       const commissionFormula = commissionTerms.length
         ? commissionTerms.map((term) => `${formatFormulaMoney(term.amount)}*${formatFormulaPercent(term.rate)}`).join("+")
@@ -5089,7 +5094,7 @@
       const headRow = document.createElement("tr");
       const headerColumns = [
         { key: "dispatcher", label: "接待", summary: `${dispatcherCount}位/${recordCount || 0}单`, align: "dispatcher" },
-        { key: "premium", label: "溢价(50%)", summary: `合计 ${toMoney(totalPremium)}`, align: "money" },
+        { key: "premium", label: "溢价收益", summary: `合计 ${toMoney(totalPremium)}`, align: "money" },
         { key: "dispatcherPrice", label: "接待价", summary: `合计 ${toMoney(totalDispatcherPrice)}`, align: "money" },
         { key: "invoiceAmount", label: "开票金额", summary: `合计 ${toMoney(totalInvoiceAmount)}`, align: "money" },
         { key: "taxAmount", label: "个税", summary: `合计 ${toMoney(totalTaxAmount)}`, align: "money" },
