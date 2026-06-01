@@ -5620,14 +5620,14 @@
     }
 
     function clearDateFilterState() {
-      filterState.month = "";
+      setDateShortcutFilterValues([]);
       filterState.dateStart = "";
       filterState.dateEnd = "";
       syncDateRangeFilterInputs(true);
     }
 
     function clearCompletedAtFilterState() {
-      filterState.completedAtMonth = "";
+      setCompletedAtShortcutFilterValues([]);
       filterState.completedAtStart = "";
       filterState.completedAtEnd = "";
       syncDateRangeFilterInputs(true, {
@@ -5643,7 +5643,7 @@
         filterDateStartInput?.value || "",
         filterDateEndInput?.value || ""
       );
-      filterState.month = "";
+      setDateShortcutFilterValues([]);
       filterState.dateStart = normalizedRange.start;
       filterState.dateEnd = normalizedRange.end;
       syncDateRangeFilterInputs(true);
@@ -5654,7 +5654,7 @@
         filterCompletedAtStartInput?.value || "",
         filterCompletedAtEndInput?.value || ""
       );
-      filterState.completedAtMonth = "";
+      setCompletedAtShortcutFilterValues([]);
       filterState.completedAtStart = normalizedRange.start;
       filterState.completedAtEnd = normalizedRange.end;
       syncDateRangeFilterInputs(true, {
@@ -5687,6 +5687,8 @@
         dateStart: filterState.completedAtStart,
         dateEnd: filterState.completedAtEnd
       });
+      const selectedDateShortcutFilters = getSelectedDateShortcutFilters();
+      const selectedCompletedAtShortcutFilters = getSelectedCompletedAtShortcutFilters();
       const dateFilterChip = getDateFilterChipMeta();
       const completedAtFilterChip = getDateFilterChipMeta(
         filterState.completedAtMonth,
@@ -5767,7 +5769,7 @@
       });
 
       if (hasDateFilter) {
-        const monthLabel = dateFilterChip.label || formatMonthFilterChipLabel(filterState.month);
+        const monthLabel = dateFilterChip.label || formatMonthFilterChipLabel(selectedDateShortcutFilters);
         filterMonthValue.hidden = false;
         filterMonthValue.textContent = monthLabel;
         filterMonthValue.title = dateFilterChip.title || monthLabel;
@@ -5779,7 +5781,7 @@
 
       if (hasCompletedAtFilter) {
         const monthLabel = completedAtFilterChip.label || formatMonthFilterChipLabel(
-          filterState.completedAtMonth,
+          selectedCompletedAtShortcutFilters,
           filterState.completedAtStart,
           filterState.completedAtEnd
         );

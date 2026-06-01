@@ -61,7 +61,14 @@
 
   function getDateFilterSummary(month, start, end) {
     const parts = [];
-    if (month) parts.push(formatDateFilterOptionLabel(month));
+    const monthLabels = normalizeDateShortcutFilterValues(month)
+      .map((item) => formatDateFilterOptionLabel(item))
+      .filter(Boolean);
+    if (monthLabels.length === 1) {
+      parts.push(monthLabels[0]);
+    } else if (monthLabels.length > 1) {
+      parts.push(`已选 ${monthLabels.length} 项`);
+    }
     if (start || end) parts.push(`${start || "开始"} 至 ${end || "结束"}`);
     return parts.join(" / ");
   }

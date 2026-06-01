@@ -872,10 +872,10 @@
       const target = event.target.closest(".filter-option-btn");
       if (!target) return;
       const selected = target.dataset.filterValue || "";
-      const nextMonth = filterState.month === selected ? "" : selected;
-      clearDateFilterState();
-      filterState.month = nextMonth;
-      closeAllFilterPopovers();
+      filterState.dateStart = "";
+      filterState.dateEnd = "";
+      syncDateRangeFilterInputs(true);
+      toggleDateShortcutFilterValue(selected);
       renderTable();
     });
 
@@ -883,10 +883,15 @@
       const target = event.target.closest(".filter-option-btn");
       if (!target) return;
       const selected = target.dataset.filterValue || "";
-      const nextMonth = filterState.completedAtMonth === selected ? "" : selected;
-      clearCompletedAtFilterState();
-      filterState.completedAtMonth = nextMonth;
-      closeAllFilterPopovers();
+      filterState.completedAtStart = "";
+      filterState.completedAtEnd = "";
+      syncDateRangeFilterInputs(true, {
+        startInput: filterCompletedAtStartInput,
+        endInput: filterCompletedAtEndInput,
+        startValue: filterState.completedAtStart,
+        endValue: filterState.completedAtEnd
+      });
+      toggleCompletedAtShortcutFilterValue(selected);
       renderTable();
     });
 

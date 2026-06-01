@@ -160,8 +160,8 @@
     }
 
     function hasDateFilterSelected(dateState = filterState) {
-      const month = String(dateState?.month || "").trim();
-      if (month) return true;
+      const months = normalizeDateShortcutFilterValues(dateState?.month);
+      if (months.length > 0) return true;
       const normalizedRange = getNormalizedDateRangeFilter(dateState?.dateStart, dateState?.dateEnd);
       return Boolean(normalizedRange.start || normalizedRange.end);
     }
@@ -174,10 +174,11 @@
     }
 
     function getDateFilterChipMeta(monthRaw = filterState.month, startRaw = filterState.dateStart, endRaw = filterState.dateEnd) {
-      const month = String(monthRaw || "").trim();
-      if (month) {
-        const label = formatDateFilterOptionLabel(month);
-        return { label, title: label };
+      const months = normalizeDateShortcutFilterValues(monthRaw);
+      if (months.length > 0) {
+        const labels = months.map((month) => formatDateFilterOptionLabel(month)).filter(Boolean);
+        const label = labels.length === 1 ? labels[0] : `已选 ${labels.length} 项`;
+        return { label, title: labels.join("、") };
       }
 
       const normalizedRange = getNormalizedDateRangeFilter(startRaw, endRaw);
@@ -210,12 +211,16 @@
     }
 
     function isDateFilterMatched(rawDate, filterValueRaw, startRaw = "", endRaw = "") {
-      const filterValue = String(filterValueRaw || "").trim();
-      if (filterValue) {
-        if (isTodayFilterValue(filterValue)) {
-          return getDateLikeDayKey(rawDate) === toDayLabel(Date.now());
-        }
-        return getDateLikeMonthKey(rawDate) === filterValue;
+      const filterValues = normalizeDateShortcutFilterValues(filterValueRaw);
+      if (filterValues.length > 0) {
+        const dayKey = getDateLikeDayKey(rawDate);
+        const monthKey = getDateLikeMonthKey(rawDate);
+        const todayKey = toDayLabel(Date.now());
+        return filterValues.some((filterValue) => (
+          isTodayFilterValue(filterValue)
+            ? dayKey === todayKey
+            : monthKey === filterValue
+        ));
       }
 
       const normalizedRange = getNormalizedDateRangeFilter(startRaw, endRaw);
@@ -805,7 +810,7 @@
         const button = document.createElement("button");
         button.type = "button";
         button.className = "filter-option-btn";
-        if (type === "status" || type === "accountant" || type === "dispatcher") {
+        if (type === "month" || type === "status" || type === "accountant" || type === "dispatcher") {
           button.classList.add("filter-option-multi");
         }
         if (type === "accountant" && isBuiltInAccountantName(value)) {
@@ -871,12 +876,10 @@
       const settledValues = ["已完成/待核对客户确认", "已核对客户确认/待上传", "已上传/待结算", "已结算"]
         .filter((value) => rawSettledValues.includes(value));
 
-      if (filterState.month && !monthValues.includes(filterState.month)) {
-        filterState.month = "";
-      }
-      if (filterState.completedAtMonth && !completedAtMonthValues.includes(filterState.completedAtMonth)) {
-        filterState.completedAtMonth = "";
-      }
+      setDateShortcutFilterValues(getSelectedDateShortcutFilters().filter((value) => monthValues.includes(value)));
+      setCompletedAtShortcutFilterValues(
+        getSelectedCompletedAtShortcutFilters().filter((value) => completedAtMonthValues.includes(value))
+      );
       setDispatcherFilterValues(getSelectedDispatcherFilters().filter((value) => dispatcherValues.includes(value)));
       if (filterState.platform && !rawPlatformValues.includes(filterState.platform)) {
         filterState.platform = "";
@@ -1026,14 +1029,14 @@
         filterMonthList,
         monthValues,
         "month",
-        filterState.month,
+        getSelectedDateShortcutFilters(),
         monthCountMap
       );
       buildFilterOptionList(
         filterCompletedAtList,
         completedAtMonthValues,
         "month",
-        filterState.completedAtMonth,
+        getSelectedCompletedAtShortcutFilters(),
         completedAtCountMap
       );
       buildFilterOptionList(

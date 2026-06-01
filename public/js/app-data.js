@@ -2550,10 +2550,10 @@
         const persistedSortDirection = String(parsed?.sort?.direction || "").trim();
         const persistedPremiumMode = String(parsed?.sort?.premiumMode || "").trim();
         const persistedSettlementMode = String(parsed?.sort?.settlementMode || "").trim();
-        const persistedMonth = String(parsedFilter.month || "").trim();
+        const persistedMonth = normalizeDateShortcutFilterValues(parsedFilter.month);
         const persistedDateStart = String(parsedFilter.dateStart || "").trim();
         const persistedDateEnd = String(parsedFilter.dateEnd || "").trim();
-        const persistedCompletedAtMonth = String(parsedFilter.completedAtMonth || "").trim();
+        const persistedCompletedAtMonth = normalizeDateShortcutFilterValues(parsedFilter.completedAtMonth);
         const persistedCompletedAtStart = String(parsedFilter.completedAtStart || "").trim();
         const persistedCompletedAtEnd = String(parsedFilter.completedAtEnd || "").trim();
         const persistedDispatcher = normalizeDispatcherFilterValues(parsedFilter.dispatcher);
@@ -2587,13 +2587,13 @@
         const normalizedDateRange = typeof getNormalizedDateRangeFilter === "function"
           ? getNormalizedDateRangeFilter(persistedDateStart, persistedDateEnd)
           : { start: persistedDateStart, end: persistedDateEnd };
-        filterState.month = persistedMonth;
+        setDateShortcutFilterValues(persistedMonth);
         filterState.dateStart = normalizedDateRange.start;
         filterState.dateEnd = normalizedDateRange.end;
         const normalizedCompletedAtRange = typeof getNormalizedDateRangeFilter === "function"
           ? getNormalizedDateRangeFilter(persistedCompletedAtStart, persistedCompletedAtEnd)
           : { start: persistedCompletedAtStart, end: persistedCompletedAtEnd };
-        filterState.completedAtMonth = persistedCompletedAtMonth;
+        setCompletedAtShortcutFilterValues(persistedCompletedAtMonth);
         filterState.completedAtStart = normalizedCompletedAtRange.start;
         filterState.completedAtEnd = normalizedCompletedAtRange.end;
         setDispatcherFilterValues(persistedDispatcher);

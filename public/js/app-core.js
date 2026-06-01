@@ -1388,10 +1388,10 @@ const dispatcherSortState = {
   direction: "desc",
 };
 const filterState = {
-  month: "",
+  month: [],
   dateStart: "",
   dateEnd: "",
-  completedAtMonth: "",
+  completedAtMonth: [],
   completedAtStart: "",
   completedAtEnd: "",
   dispatcher: [],
@@ -1426,6 +1426,62 @@ function normalizeMultiFilterValues(rawValue) {
       seen.add(value);
       return true;
     });
+}
+
+function normalizeDateShortcutFilterValues(rawValue) {
+  return normalizeMultiFilterValues(rawValue);
+}
+
+function setDateShortcutFilterValues(values) {
+  filterState.month = normalizeDateShortcutFilterValues(values);
+}
+
+function getSelectedDateShortcutFilters() {
+  const normalizedValues = normalizeDateShortcutFilterValues(filterState.month);
+  if (
+    !Array.isArray(filterState.month) ||
+    normalizedValues.length !== filterState.month.length
+  ) {
+    filterState.month = normalizedValues;
+  }
+  return normalizedValues;
+}
+
+function toggleDateShortcutFilterValue(value) {
+  const selectedValue = String(value || "").trim();
+  if (!selectedValue) return;
+  const selectedValues = getSelectedDateShortcutFilters();
+  setDateShortcutFilterValues(
+    selectedValues.includes(selectedValue)
+      ? selectedValues.filter((item) => item !== selectedValue)
+      : [...selectedValues, selectedValue],
+  );
+}
+
+function setCompletedAtShortcutFilterValues(values) {
+  filterState.completedAtMonth = normalizeDateShortcutFilterValues(values);
+}
+
+function getSelectedCompletedAtShortcutFilters() {
+  const normalizedValues = normalizeDateShortcutFilterValues(filterState.completedAtMonth);
+  if (
+    !Array.isArray(filterState.completedAtMonth) ||
+    normalizedValues.length !== filterState.completedAtMonth.length
+  ) {
+    filterState.completedAtMonth = normalizedValues;
+  }
+  return normalizedValues;
+}
+
+function toggleCompletedAtShortcutFilterValue(value) {
+  const selectedValue = String(value || "").trim();
+  if (!selectedValue) return;
+  const selectedValues = getSelectedCompletedAtShortcutFilters();
+  setCompletedAtShortcutFilterValues(
+    selectedValues.includes(selectedValue)
+      ? selectedValues.filter((item) => item !== selectedValue)
+      : [...selectedValues, selectedValue],
+  );
 }
 
 function normalizeDispatcherFilterValues(rawValue) {
