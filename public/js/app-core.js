@@ -2539,6 +2539,10 @@ function canCurrentAccountExportTableRecords() {
   );
 }
 
+function canCurrentAccountViewSettlementRatio() {
+  return hasAuthenticatedAccount() && (isBossLogin() || isDispatcherLogin());
+}
+
 function canCurrentAccountUploadSettlementInvoice() {
   return isAccountantLogin();
 }

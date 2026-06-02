@@ -553,7 +553,7 @@
     const label = labelMap[sortState.key] || "当前字段";
     const modeLabel = sortState.key === "premiumPrice" && sortState.premiumMode === "percent"
       ? "比例"
-      : (sortState.key === "settlementPrice" && sortState.settlementMode === "percent" ? "比例" : "");
+      : (sortState.key === "settlementPrice" && sortState.settlementMode === "percent" && canCurrentAccountViewSettlementRatio() ? "比例" : "");
     return `${label}${modeLabel ? `(${modeLabel})` : ""} · ${sortState.direction === "asc" ? "升序" : "降序"}`;
   }
 
@@ -680,7 +680,7 @@
       const active = sortState.key === item.key;
       const mode = item.key === "premiumPrice" && sortState.premiumMode === "percent"
         ? "比例"
-        : (item.key === "settlementPrice" && sortState.settlementMode === "percent" ? "比例" : "");
+        : (item.key === "settlementPrice" && sortState.settlementMode === "percent" && canCurrentAccountViewSettlementRatio() ? "比例" : "");
       const direction = active ? `${mode ? `${mode} ` : ""}${sortState.direction === "asc" ? "升序" : "降序"}` : "";
       const button = createButton({
         className: `mobile-panel-button${active ? " active" : ""}`,

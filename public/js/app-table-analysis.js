@@ -547,7 +547,9 @@
         ? toMoney(profitBreakdown.totalBase)
         : "";
       const settlementTotal = toMoney(getColumnTotal(records, "settlementPrice"));
-      const settlementPercent = getSettlementTotalPercent(records);
+      const settlementPercent = canCurrentAccountViewSettlementRatio()
+        ? getSettlementTotalPercent(records)
+        : "";
 
       const items = [
         {
@@ -674,7 +676,9 @@
               formatProfitTotalTooltip(sourceRecords)
             ].filter(Boolean).join("\n");
           } else if (key === "settlementPrice") {
-            const settlementTotalPercent = getSettlementTotalPercent(sourceRecords);
+            const settlementTotalPercent = canCurrentAccountViewSettlementRatio()
+              ? getSettlementTotalPercent(sourceRecords)
+              : "";
             metaNode.textContent = settlementTotalPercent
               ? `合计 ${total} [${settlementTotalPercent}]`
               : `合计 ${total}`;
@@ -709,7 +713,7 @@
       if (key === "profitPrice" && !shouldShowProfitColumn()) return;
       const modeProperty = key === "premiumPrice"
         ? "premiumMode"
-        : (key === "settlementPrice" ? "settlementMode" : "");
+        : (key === "settlementPrice" && canCurrentAccountViewSettlementRatio() ? "settlementMode" : "");
       if (modeProperty) {
         if (sortState.key === key && sortState.direction === "asc") {
           sortState.direction = "desc";
