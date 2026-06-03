@@ -4574,15 +4574,15 @@
           const totalInvoiceAmount = accountantInvoiceAmount + dispatcherInvoiceAmount;
           const totalTaxAmount = getSettlementTaxAmount(totalInvoiceAmount);
           const totalPayableAmount = totalInvoiceAmount - totalTaxAmount;
+          const combinedRecordIds = Array.from(new Set([
+            ...group.recordIds,
+            ...(linkedDispatcherAmount?.recordIds || [])
+          ]));
           const combinedRecordCount = combinedRecordIds.length;
           const combinedPendingCount = group.pendingCount + (Number(linkedDispatcherAmount?.pendingCount) || 0);
           const combinedPendingInvoiceCount = group.pendingInvoiceCount + (Number(linkedDispatcherAmount?.pendingInvoiceCount) || 0);
           const combinedUploadedCount = group.uploadedCount + (Number(linkedDispatcherAmount?.uploadedCount) || 0);
           const combinedPaidCount = group.paidCount + (Number(linkedDispatcherAmount?.paidCount) || 0);
-          const combinedRecordIds = Array.from(new Set([
-            ...group.recordIds,
-            ...(linkedDispatcherAmount?.recordIds || [])
-          ]));
           const combinedPayoutRecordIds = Array.from(new Set([
             ...group.payoutRecordIds,
             ...(linkedDispatcherAmount?.payoutRecordIds || [])
