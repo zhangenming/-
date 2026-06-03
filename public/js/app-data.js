@@ -64,6 +64,24 @@
       forceRefreshEventSource = source;
     }
 
+    function getNetworkRequestErrorMessage(error, url) {
+      const endpointText = String(url || "").trim();
+      const suffix = endpointText ? `（${endpointText}）` : "";
+      if (error?.name === "AbortError") {
+        return `请求已中断${suffix}，请稍后重试。`;
+      }
+      return `网络连接异常${suffix}，请确认服务已启动或网络连接正常。`;
+    }
+
+    function showNetworkRequestError(error, url, meta = {}) {
+      if (meta.surfaceNetworkError === false) return;
+      const message = getNetworkRequestErrorMessage(error, url);
+      showAppStatus(message, "error");
+      if (!hasAuthenticatedAccount()) {
+        setLoginRequestHint(message, "error");
+      }
+    }
+
     async function fetchWithClientLog(url, options = {}, meta = {}) {
       const { skipAuth = false } = meta;
       const buildHeaders = () => {
@@ -75,10 +93,19 @@
         return headers;
       };
 
-      let response = await fetch(url, {
-        ...options,
-        headers: buildHeaders()
-      });
+      let response;
+      try {
+        response = await fetch(url, {
+          ...options,
+          headers: buildHeaders()
+        });
+      } catch (error) {
+        if (error?.name === "AbortError") {
+          throw error;
+        }
+        showNetworkRequestError(error, url, meta);
+        throw new Error(getNetworkRequestErrorMessage(error, url));
+      }
 
       if (!skipAuth && response.status === 401) {
         handleUnauthorizedSession();
@@ -350,6 +377,7 @@
         return buildInfoWithVersion;
       } catch (error) {
         console.error(error);
+        showAppStatus(error.message || "读取版本信息失败，请稍后重试。", "error");
         renderBuildInfo();
         return null;
       } finally {
