@@ -6403,7 +6403,7 @@
     }
 
     async function syncDataAfterLogin() {
-      renderTableLoadingState("正在加载工作数据...");
+      renderTableLoadingState("正在加载基础资料...");
       try {
         await fetchAccountants();
       } catch (error) {
