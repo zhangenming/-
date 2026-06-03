@@ -118,7 +118,7 @@
     function renderTableColumnSettings() {
       if (!tableColumnSettingsList) return;
       tableColumnSettingsList.innerHTML = "";
-      TABLE_COLUMN_SETTINGS.forEach((column) => {
+      TABLE_COLUMN_SETTINGS.filter(isTableColumnAvailable).forEach((column) => {
         const label = document.createElement("label");
         label.className = "table-column-option";
         label.htmlFor = `tableColumnSetting_${column.key}`;
@@ -141,7 +141,9 @@
 
     function updateTableColumnSettingsButton() {
       if (!tableColumnSettingsBtn) return;
-      const hiddenCount = TABLE_COLUMN_SETTINGS.filter((column) => !isTableColumnVisible(column.key)).length;
+      const hiddenCount = TABLE_COLUMN_SETTINGS
+        .filter(isTableColumnAvailable)
+        .filter((column) => !isTableColumnVisible(column.key)).length;
       tableColumnSettingsBtn.classList.toggle("active", hiddenCount > 0);
       tableColumnSettingsBtn.title = hiddenCount > 0 ? `已隐藏 ${hiddenCount} 列` : "设置数据表显示列";
     }
@@ -150,7 +152,7 @@
       const table = tableBody ? tableBody.closest("table") : null;
       if (!table) return;
       TABLE_COLUMN_SETTINGS.forEach((column) => {
-        const hidden = !isTableColumnVisible(column.key);
+        const hidden = !isTableColumnAvailable(column) || !isTableColumnVisible(column.key);
         column.selectors.forEach((selector) => {
           table.querySelectorAll(selector).forEach((node) => {
             node.hidden = hidden;
@@ -307,6 +309,7 @@
     function getTableExportColumns() {
       return TABLE_EXPORT_COLUMNS.filter((column) => (
         (typeof column.visible !== "function" || column.visible())
+        && (!column.key || isTableColumnAvailable(column.key))
         && (!column.key || isTableColumnVisible(column.key))
       ));
     }

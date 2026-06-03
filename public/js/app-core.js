@@ -1462,19 +1462,19 @@ const filterState = {
 const TABLE_COLUMN_SETTINGS = [
   { key: "date", label: "接单日期", selectors: [".col-date", ".data-col-date"] },
   { key: "completedAt", label: "完工日期", selectors: [".col-completed-at", ".data-col-completed-at"] },
-  { key: "dispatcher", label: "接待人", selectors: [".col-dispatcher", ".data-col-dispatcher"] },
-  { key: "accountant", label: "会计", selectors: [".col-accountant", ".data-col-accountant"] },
+  { key: "dispatcher", label: "接待人", selectors: [".col-dispatcher", ".data-col-dispatcher"], hiddenForDispatcherSelf: true },
+  { key: "accountant", label: "会计", selectors: [".col-accountant", ".data-col-accountant"], hiddenForAccountant: true },
   { key: "customer", label: "客户", selectors: [".col-customer", ".data-col-customer"] },
   { key: "summary", label: "任务简介", selectors: [".col-summary", ".data-col-summary"] },
-  { key: "remark", label: "备注", selectors: [".col-remark", ".data-col-remark", "td.remark"] },
-  { key: "payment", label: "付款价", selectors: [".col-payment", ".data-col-payment"] },
-  { key: "premium", label: "溢价", selectors: [".col-premium", ".data-col-premium"] },
+  { key: "remark", label: "备注", selectors: [".col-remark", ".data-col-remark", "td.remark"], hiddenForAccountant: true },
+  { key: "payment", label: "付款价", selectors: [".col-payment", ".data-col-payment"], hiddenForAccountant: true },
+  { key: "premium", label: "溢价", selectors: [".col-premium", ".data-col-premium"], hiddenForAccountant: true },
   { key: "total", label: "会计价", selectors: [".col-total", ".data-col-total"] },
   { key: "settlement", label: "会计结算价", selectors: [".col-settlement", ".data-col-settlement"] },
-  { key: "source", label: "来源", selectors: [".col-source", ".data-col-source"] },
-  { key: "platform", label: "平台", selectors: [".col-platform", ".data-col-platform"] },
-  { key: "shop", label: "店铺名", selectors: [".col-shop", ".data-col-shop"] },
-  { key: "order", label: "订单号", selectors: [".col-order", ".data-col-order"] },
+  { key: "source", label: "来源", selectors: [".col-source", ".data-col-source"], hiddenForAccountant: true },
+  { key: "platform", label: "平台", selectors: [".col-platform", ".data-col-platform"], hiddenForAccountant: true },
+  { key: "shop", label: "店铺名", selectors: [".col-shop", ".data-col-shop"], hiddenForAccountant: true },
+  { key: "order", label: "订单号", selectors: [".col-order", ".data-col-order"], hiddenForAccountant: true },
   { key: "feedback", label: "客户反馈", selectors: [".col-feedback", ".data-col-feedback"] },
   { key: "monthlySettlement", label: "是否月结", selectors: [".col-monthly-settlement", ".data-col-monthly-settlement"] }
 ];
@@ -1494,6 +1494,16 @@ function isTableColumnVisible(key) {
   const column = getTableColumnSetting(key);
   if (!column) return true;
   return tableColumnVisibilityState[column.key] !== false;
+}
+
+function isTableColumnAvailable(keyOrColumn) {
+  const column = typeof keyOrColumn === "object" && keyOrColumn
+    ? keyOrColumn
+    : getTableColumnSetting(keyOrColumn);
+  if (!column) return true;
+  if (column.hiddenForAccountant && isAccountantLogin()) return false;
+  if (column.hiddenForDispatcherSelf && isDispatcherLogin() && !isBossLogin() && !isAccountantLogin()) return false;
+  return true;
 }
 
 function normalizeTableColumnVisibilityState(rawState) {
