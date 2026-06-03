@@ -392,47 +392,29 @@
         ? "正在读取订单记录..."
         : "正在刷新订单记录...";
       const waitingMessage = "records接口仍在等待，请稍候...";
-      const controller = typeof AbortController === "function"
-        ? new AbortController()
-        : null;
       let waitingTimer = null;
-      let timeoutTimer = null;
       if (shouldRenderSkeleton) {
         renderTableLoadingState(loadingMessage);
       } else {
         setRegionLoading(mainTableWrap, true, loadingMessage);
       }
-      if (controller) {
-        waitingTimer = window.setTimeout(() => {
-          setRegionLoading(mainTableWrap, true, waitingMessage);
-        }, RECORDS_REQUEST_WAITING_MS);
-        timeoutTimer = window.setTimeout(() => {
-          controller.abort();
-        }, RECORDS_REQUEST_TIMEOUT_MS);
-      }
+      waitingTimer = window.setTimeout(() => {
+        setRegionLoading(mainTableWrap, true, waitingMessage);
+      }, RECORDS_REQUEST_WAITING_MS);
 
       let payload;
       try {
         const response = await fetchWithClientLog(
           API_ENDPOINT_RECORDS,
-          {
-            cache: "no-store",
-            ...(controller ? { signal: controller.signal } : {})
-          },
+          { cache: "no-store" },
           { successMessage: "刷新数据" }
         );
         if (!response.ok) {
           throw new Error(`读取数据失败（${response.status}）`);
         }
         payload = await response.json();
-      } catch (error) {
-        if (error?.name === "AbortError") {
-          throw new Error("records接口响应超时，请稍后重试。");
-        }
-        throw error;
       } finally {
         if (waitingTimer) window.clearTimeout(waitingTimer);
-        if (timeoutTimer) window.clearTimeout(timeoutTimer);
         setRegionLoading(mainTableWrap, false);
       }
       const nextRecords = Array.isArray(payload.records) ? payload.records : [];
