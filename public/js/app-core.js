@@ -4611,6 +4611,9 @@ function setRegionLoading(region, active, text = "加载中...") {
   if (!(region instanceof HTMLElement)) return;
   const isActive = Boolean(active);
   region.classList.toggle("is-loading", isActive);
+  if (region === mainTableWrap) {
+    region.classList.toggle("main-table-loading", isActive);
+  }
   if (isActive) {
     region.setAttribute("aria-busy", "true");
     region.dataset.loadingText =
