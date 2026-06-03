@@ -2869,8 +2869,13 @@ function isRecordSettled(record) {
 
 function isMonthlySettlementRecord(record) {
   if (!record || typeof record !== "object") return false;
+  const monthlySettlement = record.monthlySettlement && typeof record.monthlySettlement === "object"
+    ? record.monthlySettlement
+    : {};
   return normalizeStateFlag(
-    record.isMonthlySettlement,
+    Object.prototype.hasOwnProperty.call(monthlySettlement, "enabled")
+      ? monthlySettlement.enabled
+      : record.isMonthlySettlement,
     MONTHLY_SETTLEMENT_STATE_VALUES,
   );
 }
@@ -2938,14 +2943,28 @@ function formatMoneyInputValue(value) {
   return Number.isFinite(amount) ? amount.toFixed(2) : "";
 }
 
+function getRecordMonthlySettlement(record) {
+  const item = record && typeof record === "object" ? record : {};
+  const source = item.monthlySettlement && typeof item.monthlySettlement === "object"
+    ? item.monthlySettlement
+    : {};
+  const enabled = isMonthlySettlementRecord(item);
+  return {
+    enabled,
+    endDate: enabled
+      ? normalizeDateOnlyValue(source.endDate || item.monthlySettlementEndDate || item.reminderDate || item.monthlySettlementDate || item.monthlySettlementEndTime)
+      : "",
+    id: enabled ? String(source.id || item.monthlySettlementId || "").trim() : "",
+    monthCount: enabled ? (source.monthCount ?? item.monthlySettlementMonthCount ?? "") : "",
+    sequence: enabled ? (source.sequence ?? item.monthlySettlementSequence ?? "") : "",
+    totalPaymentPrice: enabled ? (source.totalPaymentPrice ?? item.monthlySettlementTotalPaymentPrice ?? "") : ""
+  };
+}
+
 function getMonthlySettlementEndDate(record) {
   const item = record && typeof record === "object" ? record : {};
-  const storedEndDate = normalizeDateOnlyValue(
-    item.monthlySettlementEndDate ||
-      item.reminderDate ||
-      item.monthlySettlementDate ||
-      item.monthlySettlementEndTime,
-  );
+  const monthlySettlement = getRecordMonthlySettlement(item);
+  const storedEndDate = monthlySettlement.endDate;
   if (storedEndDate) return storedEndDate;
   const orderNo = String(item.orderNo || "").trim();
   const customer = String(item.customer || "").trim();
@@ -2959,11 +2978,11 @@ function getMonthlySettlementEndDate(record) {
 
 function getMonthlySettlementDisplay(record) {
   if (!isMonthlySettlementRecord(record)) return "";
-  const item = record && typeof record === "object" ? record : {};
-  const groupId = String(item.monthlySettlementId || "").trim();
+  const monthlySettlement = getRecordMonthlySettlement(record);
+  const groupId = monthlySettlement.id;
   const groupSuffix = groupId ? groupId.slice(-6) : "";
-  const monthCount = parsePositiveIntegerValue(item.monthlySettlementMonthCount);
-  const sequence = parsePositiveIntegerValue(item.monthlySettlementSequence);
+  const monthCount = parsePositiveIntegerValue(monthlySettlement.monthCount);
+  const sequence = parsePositiveIntegerValue(monthlySettlement.sequence);
   const sequenceText = Number.isInteger(sequence) && Number.isInteger(monthCount)
     ? `${sequence}/${monthCount}`
     : "";
@@ -3607,6 +3626,7 @@ function getRecordComparisonSignature(record) {
         .join("\u0003")
     : "";
   const invoiceImage = getSettlementInvoiceImage(item);
+  const monthlySettlement = getRecordMonthlySettlement(item);
   const operationHistory = Array.isArray(item.operationHistory)
     ? item.operationHistory
         .map((entry) => {
@@ -3640,12 +3660,12 @@ function getRecordComparisonSignature(record) {
     String(item.id || ""),
     String(item.createdAt || ""),
     String(item.date || ""),
-    isMonthlySettlementRecord(item) ? "1" : "0",
-    getMonthlySettlementEndDate(item),
-    String(item.monthlySettlementId || ""),
-    String(item.monthlySettlementMonthCount || ""),
-    String(item.monthlySettlementSequence || ""),
-    String(item.monthlySettlementTotalPaymentPrice || ""),
+    monthlySettlement.enabled ? "1" : "0",
+    monthlySettlement.endDate,
+    String(monthlySettlement.id || ""),
+    String(monthlySettlement.monthCount || ""),
+    String(monthlySettlement.sequence || ""),
+    String(monthlySettlement.totalPaymentPrice || ""),
     String(item.dispatcher || ""),
     String(item.accountant || ""),
     String(item.platform || ""),

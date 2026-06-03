@@ -107,10 +107,10 @@
       { key: "total", label: "会计价", getValue: (item) => toMoney(item?.totalPrice) },
       { key: "settlement", label: "会计结算价", getValue: (item) => toMoney(item?.settlementPrice) },
       { key: "monthlySettlement", label: "是否月结", getValue: (item) => getMonthlySettlementDisplay(item) },
-      { key: "monthlySettlement", label: "月结ID", getValue: (item) => String(item?.monthlySettlementId || "").trim() },
-      { key: "monthlySettlement", label: "月结月数", getValue: (item) => String(item?.monthlySettlementMonthCount || "").trim() },
-      { key: "monthlySettlement", label: "月结序号", getValue: (item) => String(item?.monthlySettlementSequence || "").trim() },
-      { key: "monthlySettlement", label: "月结单总付款价", getValue: (item) => toMoney(item?.monthlySettlementTotalPaymentPrice), visible: () => !isAccountantLogin() },
+      { key: "monthlySettlement", label: "月结ID", getValue: (item) => getRecordMonthlySettlement(item).id },
+      { key: "monthlySettlement", label: "月结月数", getValue: (item) => String(getRecordMonthlySettlement(item).monthCount || "").trim() },
+      { key: "monthlySettlement", label: "月结序号", getValue: (item) => String(getRecordMonthlySettlement(item).sequence || "").trim() },
+      { key: "monthlySettlement", label: "月结单总付款价", getValue: (item) => toMoney(getRecordMonthlySettlement(item).totalPaymentPrice), visible: () => !isAccountantLogin() },
       { label: "状态", getValue: (item) => getRecordStatusWithSettlementText(item) }
     ];
 
@@ -2853,6 +2853,18 @@
       }
       if (normalizedField === "monthlySettlementEndDate") {
         return getMonthlySettlementEndDate(item);
+      }
+      if (normalizedField === "monthlySettlementId") {
+        return getRecordMonthlySettlement(item).id;
+      }
+      if (normalizedField === "monthlySettlementMonthCount") {
+        return getRecordMonthlySettlement(item).monthCount;
+      }
+      if (normalizedField === "monthlySettlementSequence") {
+        return getRecordMonthlySettlement(item).sequence;
+      }
+      if (normalizedField === "monthlySettlementTotalPaymentPrice") {
+        return getRecordMonthlySettlement(item).totalPaymentPrice;
       }
       if (normalizedField === "isSettled") {
         if (!isRecordCompleted(item) && !isRecordSettled(item) && !isRecordInvoiceUploaded(item)) {
@@ -7123,14 +7135,15 @@
       if (recordReminderDateInput) {
         recordReminderDateInput.value = getMonthlySettlementEndDate(record);
       }
+      const monthlySettlement = getRecordMonthlySettlement(record);
       if (monthlySettlementTotalPaymentPriceInput) {
-        monthlySettlementTotalPaymentPriceInput.value = Number.isFinite(Number(record.monthlySettlementTotalPaymentPrice))
-          ? String(record.monthlySettlementTotalPaymentPrice)
+        monthlySettlementTotalPaymentPriceInput.value = Number.isFinite(Number(monthlySettlement.totalPaymentPrice))
+          ? String(monthlySettlement.totalPaymentPrice)
           : "";
       }
       if (monthlySettlementMonthCountInput) {
-        monthlySettlementMonthCountInput.value = Number.isInteger(Number(record.monthlySettlementMonthCount))
-          ? String(record.monthlySettlementMonthCount)
+        monthlySettlementMonthCountInput.value = Number.isInteger(Number(monthlySettlement.monthCount))
+          ? String(monthlySettlement.monthCount)
           : "";
       }
       paymentPriceInput.value = Number.isFinite(Number(record.paymentPrice)) ? String(record.paymentPrice) : "";

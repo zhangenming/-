@@ -2729,12 +2729,15 @@
         : "";
       const item = {
         date: String(formData.get("date") || dateInput.value || getTodayISODate()).trim(),
-        isMonthlySettlement: Boolean(monthlySettlementCheckbox?.checked),
-        monthlySettlementEndDate,
+        monthlySettlement: {
+          enabled: Boolean(monthlySettlementCheckbox?.checked),
+          endDate: monthlySettlementEndDate,
+          id: "",
+          monthCount: isMonthlySettlementCreate ? monthlySettlementMonthCount : "",
+          sequence: "",
+          totalPaymentPrice: isMonthlySettlementCreate ? monthlySettlementTotalPaymentPrice : ""
+        },
         reminderDate: monthlySettlementEndDate,
-        monthlySettlementMonthCount: isMonthlySettlementCreate ? monthlySettlementMonthCount : "",
-        monthlySettlementSequence: "",
-        monthlySettlementTotalPaymentPrice: isMonthlySettlementCreate ? monthlySettlementTotalPaymentPrice : "",
         dispatcher: dispatcherInput.value || getDefaultDispatcherTag(),
         accountant: currentAccountantName || String(formData.get("accountant") || "").trim(),
         platform: String(formData.get("platform") || "").trim(),
@@ -2806,7 +2809,7 @@
           });
           return;
         }
-        if (!item.monthlySettlementEndDate) {
+        if (!item.monthlySettlement.endDate) {
           showInlineFormError({
             form: recordForm,
             hintSetter: setRecordFormHint,
@@ -2896,12 +2899,15 @@
       const createItems = isMonthlySettlementCreate
         ? Array.from({ length: monthlySettlementMonthCount }, (_, index) => ({
           ...item,
-          monthlySettlementId,
-          monthlySettlementMonthCount,
-          monthlySettlementSequence: index + 1,
-          monthlySettlementTotalPaymentPrice: index === 0
-            ? monthlySettlementTotalPaymentPrice
-            : 0,
+          monthlySettlement: {
+            ...item.monthlySettlement,
+            id: monthlySettlementId,
+            monthCount: monthlySettlementMonthCount,
+            sequence: index + 1,
+            totalPaymentPrice: index === 0
+              ? monthlySettlementTotalPaymentPrice
+              : 0
+          },
           checkStatus: "pending"
         }))
         : [{
@@ -2928,8 +2934,8 @@
           }
         );
 
-        if (!editingRecordId && item.isMonthlySettlement && item.monthlySettlementEndDate) {
-          const reminderDate = item.monthlySettlementEndDate;
+        if (!editingRecordId && item.monthlySettlement.enabled && item.monthlySettlement.endDate) {
+          const reminderDate = item.monthlySettlement.endDate;
           const orderNo = String(item.orderNo || "").trim();
           const customerWechat = String(item.customer || "").trim();
           if (reminderDate && orderNo && customerWechat) {
