@@ -2986,7 +2986,7 @@ function getMonthlySettlementDisplay(record) {
   const sequenceText = Number.isInteger(sequence) && Number.isInteger(monthCount)
     ? `${sequence}/${monthCount}`
     : "";
-  const endDateText = getMonthlySettlementEndDate(item) || "缺少日期";
+  const endDateText = monthlySettlement.endDate || getMonthlySettlementEndDate(record) || "缺少日期";
   return [groupSuffix ? `ID ${groupSuffix}` : "", sequenceText, endDateText]
     .filter(Boolean)
     .join(" · ");
