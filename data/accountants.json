@@ -610,9 +610,9 @@
     "displayName": "睡到人间晚饭时",
     "name": "睡到人间晚饭时",
     "alias": "睡到人间晚饭时",
-    "realName": "杨胡英",
+    "realName": "",
     "phone": "13022357331",
-    "loginPassword": "123456",
+    "loginPassword": "7511234039",
     "accountingSettlementRatio": 50,
     "invoiceRecipientInfo": {
       "name": "杨胡英",
@@ -1137,6 +1137,17 @@
       "idCardNo": "500235199407209560",
       "declarationPhone": "13668095792"
     }
+  },
+  {
+    "username": "18366106976",
+    "displayName": "Beryl",
+    "name": "Beryl",
+    "alias": "Beryl",
+    "realName": "",
+    "phone": "18366106976",
+    "loginPassword": "si0208he",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": null
   },
   {
     "username": "cxl",

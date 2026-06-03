@@ -1,5 +1,22 @@
 [
   {
+    "logId": "alog_mpy5loxw5zbwma",
+    "operatedAt": "2026-06-03 22:20:28",
+    "operatedBy": "过过过过过",
+    "operatedByUsername": "GuoGuoGuoGuoGuo",
+    "actionKey": "checked",
+    "actionLabel": "确认",
+    "recordId": "rec_mpwn2ssgjbsb8w",
+    "date": "2026-06-02",
+    "dispatcher": "A",
+    "accountant": "过过过过过",
+    "customer": "-",
+    "summary": "13个店铺25.3-26.5月账单",
+    "remark": "13家店铺25.3-26.5月份，一个月出一个总利润",
+    "customerFeedback": "",
+    "completedAt": ""
+  },
+  {
     "logId": "alog_mpxsbctt128naa",
     "operatedAt": "2026-06-03 16:08:31",
     "operatedBy": "瑜",
