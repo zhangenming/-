@@ -2916,10 +2916,10 @@
           async () => {
             if (editingRecordId) {
               await updateRecordById(editingRecordId, item);
-            } else if (createItems.length > 1) {
-              await createRecords(createItems);
             } else {
-              await createRecord(createItems[0]);
+              for (const createItem of createItems) {
+                await createRecord(createItem);
+              }
             }
           }
         );
