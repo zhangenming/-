@@ -1391,6 +1391,13 @@ body.analysis-page-active .mobile-bottom-nav {
   --platform-shop-group-title: #9b242b;
 }
 
+.platform-shop-picker-group[data-group="中信银行"] {
+  --platform-shop-group-accent: #b38b2e;
+  --platform-shop-group-border: #e6d2a6;
+  --platform-shop-group-bg: #fffaf0;
+  --platform-shop-group-title: #7a5c17;
+}
+
 .platform-shop-picker-group[data-group="企业微信"] {
   --platform-shop-group-accent: #2f75bd;
   --platform-shop-group-border: #bfd6ef;

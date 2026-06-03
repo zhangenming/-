@@ -1309,7 +1309,7 @@
         groupedOptions.get(groupName).push(item);
       });
 
-      ["闲鱼", "淘宝", "拼多多", "企业微信", "其他"].forEach((groupName) => {
+      ["闲鱼", "淘宝", "拼多多", "中信银行", "企业微信", "其他"].forEach((groupName) => {
         const groupItems = groupedOptions.get(groupName) || [];
         if (!groupItems.length) return;
 
