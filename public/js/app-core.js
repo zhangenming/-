@@ -1128,6 +1128,14 @@ const mainTableWrap = tableBody ? tableBody.closest(".table-wrap") : null;
 const emptyState = document.getElementById("emptyState");
 const tableTotalCount = document.getElementById("tableTotalCount");
 const clearFilterBtn = document.getElementById("clearFilterBtn");
+const tableColumnSettings = document.getElementById("tableColumnSettings");
+const tableColumnSettingsBtn = document.getElementById("tableColumnSettingsBtn");
+const tableColumnSettingsDropdown = document.getElementById(
+  "tableColumnSettingsDropdown",
+);
+const tableColumnSettingsList = document.getElementById(
+  "tableColumnSettingsList",
+);
 const exportTableBtn = document.getElementById("exportTableBtn");
 const bossSettlementBtn = document.getElementById("bossSettlementBtn");
 const bossSettlementSummaryBtn = document.getElementById(
@@ -1451,8 +1459,57 @@ const filterState = {
   status: [],
   settled: "",
 };
+const TABLE_COLUMN_SETTINGS = [
+  { key: "date", label: "接单日期", selectors: [".col-date", ".data-col-date"] },
+  { key: "completedAt", label: "完工日期", selectors: [".col-completed-at", ".data-col-completed-at"] },
+  { key: "dispatcher", label: "接待人", selectors: [".col-dispatcher", ".data-col-dispatcher"] },
+  { key: "accountant", label: "会计", selectors: [".col-accountant", ".data-col-accountant"] },
+  { key: "customer", label: "客户", selectors: [".col-customer", ".data-col-customer"] },
+  { key: "summary", label: "任务简介", selectors: [".col-summary", ".data-col-summary"] },
+  { key: "remark", label: "备注", selectors: [".col-remark", ".data-col-remark", "td.remark"] },
+  { key: "payment", label: "付款价", selectors: [".col-payment", ".data-col-payment"] },
+  { key: "premium", label: "溢价", selectors: [".col-premium", ".data-col-premium"] },
+  { key: "total", label: "会计价", selectors: [".col-total", ".data-col-total"] },
+  { key: "settlement", label: "会计结算价", selectors: [".col-settlement", ".data-col-settlement"] },
+  { key: "source", label: "来源", selectors: [".col-source", ".data-col-source"] },
+  { key: "platform", label: "平台", selectors: [".col-platform", ".data-col-platform"] },
+  { key: "shop", label: "店铺名", selectors: [".col-shop", ".data-col-shop"] },
+  { key: "order", label: "订单号", selectors: [".col-order", ".data-col-order"] },
+  { key: "feedback", label: "客户反馈", selectors: [".col-feedback", ".data-col-feedback"] },
+  { key: "monthlySettlement", label: "是否月结", selectors: [".col-monthly-settlement", ".data-col-monthly-settlement"] }
+];
+const tableColumnVisibilityState = TABLE_COLUMN_SETTINGS.reduce((state, column) => {
+  state[column.key] = true;
+  return state;
+}, {});
 const SETTLEMENT_RATIO_NON_50_FILTER = "非50%";
 const SETTLEMENT_RATIO_TARGET = 0.5;
+
+function getTableColumnSetting(key) {
+  const normalizedKey = String(key || "").trim();
+  return TABLE_COLUMN_SETTINGS.find((column) => column.key === normalizedKey) || null;
+}
+
+function isTableColumnVisible(key) {
+  const column = getTableColumnSetting(key);
+  if (!column) return true;
+  return tableColumnVisibilityState[column.key] !== false;
+}
+
+function normalizeTableColumnVisibilityState(rawState) {
+  const source = rawState && typeof rawState === "object" ? rawState : {};
+  return TABLE_COLUMN_SETTINGS.reduce((state, column) => {
+    state[column.key] = source[column.key] !== false;
+    return state;
+  }, {});
+}
+
+function setTableColumnVisibilityState(nextState) {
+  const normalizedState = normalizeTableColumnVisibilityState(nextState);
+  TABLE_COLUMN_SETTINGS.forEach((column) => {
+    tableColumnVisibilityState[column.key] = normalizedState[column.key];
+  });
+}
 const SETTLEMENT_RATIO_TOLERANCE = 0.00005;
 
 function normalizeMultiFilterValues(rawValue) {

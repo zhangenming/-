@@ -1746,6 +1746,28 @@
       });
     }
 
+    if (tableColumnSettingsBtn) {
+      tableColumnSettingsBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleTableColumnSettings();
+      });
+    }
+
+    if (tableColumnSettingsDropdown) {
+      tableColumnSettingsDropdown.addEventListener("click", (event) => {
+        event.stopPropagation();
+      });
+    }
+
+    if (tableColumnSettingsList) {
+      tableColumnSettingsList.addEventListener("change", (event) => {
+        const checkbox = event.target.closest(".table-column-option-checkbox");
+        if (!checkbox) return;
+        setTableColumnVisible(checkbox.dataset.tableColumnKey || "", checkbox.checked);
+      });
+    }
+
     if (invoiceRecipientInfoBtn && invoiceRecipientInfoForm) {
       invoiceRecipientInfoBtn.addEventListener("click", () => {
         if (!requireAccount()) return;
@@ -2507,6 +2529,7 @@
 
     document.addEventListener("click", () => {
       closeAllFilterPopovers();
+      closeTableColumnSettings();
       closeAccountantPicker();
       closeSourcePicker();
       closePlatformShopPicker();
@@ -2557,6 +2580,11 @@
       }
       if (event.key === "Escape" && !platformShopPickerDropdown.hidden) {
         closePlatformShopPicker({ focusTrigger: true });
+        return;
+      }
+      if (event.key === "Escape" && tableColumnSettingsDropdown && !tableColumnSettingsDropdown.hidden) {
+        closeTableColumnSettings();
+        tableColumnSettingsBtn?.focus();
         return;
       }
       if (event.key === "Escape" && !analysisModal.hidden) {

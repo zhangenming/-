@@ -366,6 +366,17 @@
       <div class="table-card-head">
         <h2 class="table-card-title">
           数据表
+          <span id="tableColumnSettings" class="table-column-settings">
+            <button id="tableColumnSettingsBtn" class="table-column-settings-btn" type="button" aria-label="设置数据表显示列" aria-expanded="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="currentColor" d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-13Zm1.5 0v13h3.25v-13H5.5Zm4.75 0v13h3.5v-13h-3.5Zm5 0v13h3.25v-13h-3.25Z"></path>
+              </svg>
+              <span>列设置</span>
+            </button>
+            <div id="tableColumnSettingsDropdown" class="table-column-settings-dropdown" hidden>
+              <div id="tableColumnSettingsList" class="table-column-settings-list"></div>
+            </div>
+          </span>
           <span id="tableTotalCount" class="table-total-count">共 0 条</span>
           <button id="clearFilterBtn" class="clear-filter-btn" type="button" hidden>清空筛选</button>
         </h2>
@@ -413,7 +424,7 @@
                   <span>全选</span>
                 </label>
               </th>
-              <th>
+              <th class="data-col-date">
                 <div class="th-inner">
                   <button class="sort-btn" type="button" data-key="date" data-label="接单日期">接单日期</button>
                   <span id="filterMonthIndicator" class="filter-indicator-wrap">
@@ -556,7 +567,7 @@
                   </div>
                 </div>
               </th>
-              <th>
+              <th class="data-col-customer">
                 <div class="th-inner">
                   <button class="sort-btn" type="button" data-key="customer" data-label="客户">客户</button>
                   <span id="filterCustomerIndicator" class="filter-indicator-wrap">
@@ -577,7 +588,7 @@
                   </div>
                 </div>
               </th>
-              <th>
+              <th class="data-col-summary">
                 <div class="th-inner">
                   <button class="sort-btn" type="button" data-key="summary" data-label="任务简介">任务简介</button>
                   <span id="filterSummaryIndicator" class="filter-indicator-wrap">

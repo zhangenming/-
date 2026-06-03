@@ -2585,7 +2585,8 @@
           settled: ""
         },
         layout: {
-          sidebarCollapsed: isSidebarCollapsed
+          sidebarCollapsed: isSidebarCollapsed,
+          tableColumns: normalizeTableColumnVisibilityState(tableColumnVisibilityState)
         }
       };
       setPersistentStateItem(STORAGE_KEY_VIEW_STATE, JSON.stringify(payload));
@@ -2630,6 +2631,7 @@
         const persistedStatus = normalizeStatusFilterValues(parsedFilter.status);
         const persistedSettled = "";
         const persistedSidebarCollapsed = Boolean(parsed?.layout?.sidebarCollapsed);
+        const persistedTableColumns = normalizeTableColumnVisibilityState(parsed?.layout?.tableColumns);
 
         if (allowedSortKeys.has(persistedSortKey)) {
           sortState.key = persistedSortKey;
@@ -2678,6 +2680,7 @@
         setStatusFilterValues(persistedStatus);
         filterState.settled = persistedSettled;
         setSidebarCollapsed(persistedSidebarCollapsed);
+        setTableColumnVisibilityState(persistedTableColumns);
         setSettlementScheduleCollapsed(false);
       } catch (error) {
         console.error(error);

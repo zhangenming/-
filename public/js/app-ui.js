@@ -90,30 +90,104 @@
     }
 
     const TABLE_EXPORT_COLUMNS = [
-      { label: "接单日期", getValue: (item) => String(item?.date || "").trim() },
-      { label: "完工时间", getValue: (item) => formatDateTimeDisplay(item?.completedAt) },
-      { label: "接待人", getValue: (item) => getDispatcherDisplayNameByTag(item?.dispatcher) },
-      { label: "来源", getValue: (item) => String(item?.source || "").trim() },
-      { label: "平台", getValue: (item) => String(item?.platform || "").trim() },
-      { label: "店铺名", getValue: (item) => String(item?.shopName || "").trim() },
-      { label: "订单号", getValue: (item) => String(item?.orderNo || "").trim() },
-      { label: "会计", getValue: (item) => String(item?.accountant || "").trim() },
-      { label: "客户", getValue: (item) => String(item?.customer || "").trim() },
-      { label: "任务简介", getValue: (item) => String(item?.summary || "").trim() },
-      { label: "备注", getValue: (item) => String(item?.remark || "").trim() },
-      { label: "付款价", getValue: (item) => toMoney(item?.paymentPrice) },
-      { label: "溢价", getValue: (item) => toMoney(getPremiumValue(item)) },
+      { key: "date", label: "接单日期", getValue: (item) => String(item?.date || "").trim() },
+      { key: "completedAt", label: "完工时间", getValue: (item) => formatDateTimeDisplay(item?.completedAt) },
+      { key: "dispatcher", label: "接待人", getValue: (item) => getDispatcherDisplayNameByTag(item?.dispatcher) },
+      { key: "source", label: "来源", getValue: (item) => String(item?.source || "").trim() },
+      { key: "platform", label: "平台", getValue: (item) => String(item?.platform || "").trim() },
+      { key: "shop", label: "店铺名", getValue: (item) => String(item?.shopName || "").trim() },
+      { key: "order", label: "订单号", getValue: (item) => String(item?.orderNo || "").trim() },
+      { key: "accountant", label: "会计", getValue: (item) => String(item?.accountant || "").trim() },
+      { key: "customer", label: "客户", getValue: (item) => String(item?.customer || "").trim() },
+      { key: "summary", label: "任务简介", getValue: (item) => String(item?.summary || "").trim() },
+      { key: "remark", label: "备注", getValue: (item) => String(item?.remark || "").trim() },
+      { key: "payment", label: "付款价", getValue: (item) => toMoney(item?.paymentPrice) },
+      { key: "premium", label: "溢价", getValue: (item) => toMoney(getPremiumValue(item)) },
       { label: "接待收益", getValue: (item) => formatProfitDisplay(item), visible: () => shouldShowProfitColumn() },
-      { label: "会计价", getValue: (item) => toMoney(item?.totalPrice) },
-      { label: "会计结算价", getValue: (item) => toMoney(item?.settlementPrice) },
-      { label: "是否月结", getValue: (item) => getMonthlySettlementDisplay(item) },
-      { label: "月结月数", getValue: (item) => String(item?.monthlySettlementMonthCount || "").trim() },
-      { label: "月结序号", getValue: (item) => String(item?.monthlySettlementSequence || "").trim() },
-      { label: "月结单总付款价", getValue: (item) => toMoney(item?.monthlySettlementTotalPaymentPrice) },
+      { key: "total", label: "会计价", getValue: (item) => toMoney(item?.totalPrice) },
+      { key: "settlement", label: "会计结算价", getValue: (item) => toMoney(item?.settlementPrice) },
+      { key: "monthlySettlement", label: "是否月结", getValue: (item) => getMonthlySettlementDisplay(item) },
+      { key: "monthlySettlement", label: "月结月数", getValue: (item) => String(item?.monthlySettlementMonthCount || "").trim() },
+      { key: "monthlySettlement", label: "月结序号", getValue: (item) => String(item?.monthlySettlementSequence || "").trim() },
+      { key: "monthlySettlement", label: "月结单总付款价", getValue: (item) => toMoney(item?.monthlySettlementTotalPaymentPrice) },
       { label: "状态", getValue: (item) => getRecordStatusWithSettlementText(item) }
     ];
 
     let stickyTableColumnSyncFrame = 0;
+
+    function renderTableColumnSettings() {
+      if (!tableColumnSettingsList) return;
+      tableColumnSettingsList.innerHTML = "";
+      TABLE_COLUMN_SETTINGS.forEach((column) => {
+        const label = document.createElement("label");
+        label.className = "table-column-option";
+        label.htmlFor = `tableColumnSetting_${column.key}`;
+
+        const checkbox = document.createElement("input");
+        checkbox.id = `tableColumnSetting_${column.key}`;
+        checkbox.type = "checkbox";
+        checkbox.className = "table-column-option-checkbox";
+        checkbox.dataset.tableColumnKey = column.key;
+        checkbox.checked = isTableColumnVisible(column.key);
+
+        const text = document.createElement("span");
+        text.textContent = column.label;
+
+        label.appendChild(checkbox);
+        label.appendChild(text);
+        tableColumnSettingsList.appendChild(label);
+      });
+    }
+
+    function updateTableColumnSettingsButton() {
+      if (!tableColumnSettingsBtn) return;
+      const hiddenCount = TABLE_COLUMN_SETTINGS.filter((column) => !isTableColumnVisible(column.key)).length;
+      tableColumnSettingsBtn.classList.toggle("active", hiddenCount > 0);
+      tableColumnSettingsBtn.title = hiddenCount > 0 ? `已隐藏 ${hiddenCount} 列` : "设置数据表显示列";
+    }
+
+    function applyTableColumnVisibility() {
+      const table = tableBody ? tableBody.closest("table") : null;
+      if (!table) return;
+      TABLE_COLUMN_SETTINGS.forEach((column) => {
+        const hidden = !isTableColumnVisible(column.key);
+        column.selectors.forEach((selector) => {
+          table.querySelectorAll(selector).forEach((node) => {
+            node.hidden = hidden;
+          });
+        });
+      });
+      renderTableColumnSettings();
+      updateTableColumnSettingsButton();
+      scheduleStickyTableColumnWidthSync();
+    }
+
+    function setTableColumnVisible(key, visible) {
+      const column = getTableColumnSetting(key);
+      if (!column) return;
+      tableColumnVisibilityState[column.key] = Boolean(visible);
+      saveViewState();
+      applyTableColumnVisibility();
+    }
+
+    function openTableColumnSettings() {
+      if (!tableColumnSettingsDropdown || !tableColumnSettingsBtn) return;
+      renderTableColumnSettings();
+      tableColumnSettingsDropdown.hidden = false;
+      tableColumnSettingsBtn.setAttribute("aria-expanded", "true");
+    }
+
+    function closeTableColumnSettings() {
+      if (!tableColumnSettingsDropdown || !tableColumnSettingsBtn) return;
+      tableColumnSettingsDropdown.hidden = true;
+      tableColumnSettingsBtn.setAttribute("aria-expanded", "false");
+    }
+
+    function toggleTableColumnSettings() {
+      if (!tableColumnSettingsDropdown) return;
+      if (tableColumnSettingsDropdown.hidden) openTableColumnSettings();
+      else closeTableColumnSettings();
+    }
 
     function formatPremiumWithPercent(record) {
       const item = record && typeof record === "object" ? record : {};
@@ -232,7 +306,8 @@
 
     function getTableExportColumns() {
       return TABLE_EXPORT_COLUMNS.filter((column) => (
-        typeof column.visible !== "function" || column.visible()
+        (typeof column.visible !== "function" || column.visible())
+        && (!column.key || isTableColumnVisible(column.key))
       ));
     }
 
@@ -6663,7 +6738,7 @@
       if (!filteredRecords.length) {
         emptyState.style.display = "block";
         emptyState.textContent = scopedRecords.length ? "当前筛选无数据。" : "暂无数据，先录入一条。";
-        scheduleStickyTableColumnWidthSync();
+        applyTableColumnVisibility();
         return;
       }
       emptyState.style.display = "none";
@@ -6871,7 +6946,8 @@
           if (tooltipMode) {
             td.dataset.tableTooltipMode = tooltipMode;
           }
-          if (index === 5) td.classList.add("summary");
+          if (index === 4) td.classList.add("data-col-customer");
+          if (index === 5) td.classList.add("summary", "data-col-summary");
           if (index === 6) td.classList.add("remark", "data-col-remark");
           if (index === 7) td.classList.add("data-col-payment");
           if (index === 8) td.classList.add("data-col-premium");
@@ -6960,7 +7036,7 @@
         tr.appendChild(actionTd);
         tableBody.appendChild(tr);
       });
-      scheduleStickyTableColumnWidthSync();
+      applyTableColumnVisibility();
     }
 
     function openCreateModal() {
