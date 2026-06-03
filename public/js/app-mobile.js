@@ -465,7 +465,7 @@
   function renderMobileRecord(record) {
     const card = document.createElement("article");
     const recordId = String(record?.id || "").trim();
-    const statusKey = getRecordWorkflowStatusKey(record);
+    const statusKey = getRecordWorkflowStatusDisplayKey(record);
     const dispatcherTag = normalizeDispatcherTag(record?.dispatcher);
     const isCurrentDispatcher = Boolean(getCurrentDispatcherTag() && dispatcherTag === getCurrentDispatcherTag());
     const isExpanded = expandedMobileRecordIds.has(recordId);

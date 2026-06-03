@@ -3059,6 +3059,7 @@ function getRecordWorkflowStatusLabelByKey(statusKey) {
   if (statusKey === "paid") return "已结算";
   if (statusKey === "uploaded") return "已上传/待结算";
   if (statusKey === "settled") return "已核对客户确认/待上传";
+  if (statusKey === "partial") return "接待/会计状态不一致";
   if (statusKey === "partial_refunded") return "部分退款";
   if (statusKey === "refunded") return "退款";
   if (statusKey === "completed") return "已完成/待核对客户确认";
@@ -3089,15 +3090,110 @@ function getSettlementWorkflowStatusText(value) {
 }
 
 function getRecordSettlementLabel(record) {
+  const scope = getRecordSettlementDisplayScope(record);
+  if (scope === "dispatcher") return getRecordDispatcherSettlementLabel(record);
+  if (scope === "combined") return getRecordCombinedSettlementLabel(record);
+  return getRecordAccountingSettlementLabel(record);
+}
+
+function getRecordAccountingSettlementStatusKey(record) {
   if (isRecordSettlementPaid(record))
-    return getRecordWorkflowStatusLabelByKey("paid");
+    return "paid";
   if (isRecordInvoiceUploadedByRecordAccountant(record))
-    return getRecordWorkflowStatusLabelByKey("uploaded");
+    return "uploaded";
   if (isRecordSettled(record))
-    return getRecordWorkflowStatusLabelByKey("settled");
-  return isRecordCompleted(record)
-    ? getRecordWorkflowStatusLabelByKey("completed")
-    : getRecordWorkflowStatusLabelByKey("completed");
+    return "settled";
+  return "completed";
+}
+
+function getRecordDispatcherSettlementStatusKey(record) {
+  if (isRecordDispatcherSettlementPaid(record))
+    return "paid";
+  if (isRecordDispatcherInvoiceUploaded(record))
+    return "uploaded";
+  if (isRecordSettled(record))
+    return "settled";
+  return "completed";
+}
+
+function getRecordAccountingSettlementLabel(record) {
+  return getRecordWorkflowStatusLabelByKey(getRecordAccountingSettlementStatusKey(record));
+}
+
+function getRecordDispatcherSettlementLabel(record) {
+  return getRecordWorkflowStatusLabelByKey(getRecordDispatcherSettlementStatusKey(record));
+}
+
+function getRecordCombinedSettlementLabel(record) {
+  const dispatcherLabel = getRecordDispatcherSettlementLabel(record);
+  const accountingLabel = getRecordAccountingSettlementLabel(record);
+  if (dispatcherLabel === accountingLabel) return accountingLabel;
+  return `接待：${dispatcherLabel} / 会计：${accountingLabel}`;
+}
+
+function getRecordSettlementDisplayScope(record = null) {
+  if (isDispatcherLogin()) return "dispatcher";
+  if (isBossLogin()) return "combined";
+  return "accounting";
+}
+
+function getRecordWorkflowStatusKeyForScope(record, scope) {
+  const checkStatus = String(record?.checkStatus || "")
+    .trim()
+    .toLowerCase();
+  if (checkStatus === "refunded" || checkStatus === "partial_refunded") {
+    if (scope === "dispatcher") return getRecordDispatcherSettlementStatusKey(record);
+    if (scope === "combined") return getRecordCombinedSettlementStatusKey(record);
+    return getRecordAccountingSettlementStatusKey(record);
+  }
+  if (checkStatus === "returned") return "returned";
+  if (checkStatus === "completed") {
+    if (scope === "dispatcher") return getRecordDispatcherSettlementStatusKey(record);
+    if (scope === "combined") return getRecordCombinedSettlementStatusKey(record);
+    return getRecordAccountingSettlementStatusKey(record);
+  }
+  if (checkStatus === "checked") return "checked";
+  return "pending";
+}
+
+function getRecordCombinedSettlementStatusKey(record) {
+  const dispatcherKey = getRecordDispatcherSettlementStatusKey(record);
+  const accountingKey = getRecordAccountingSettlementStatusKey(record);
+  return dispatcherKey === accountingKey ? accountingKey : "partial";
+}
+
+function getRecordStatusPreviewInvoiceImage(record) {
+  const scope = getRecordSettlementDisplayScope(record);
+  if (scope === "dispatcher") return getDispatcherSettlementInvoiceImage(record);
+  if (scope === "combined") {
+    const dispatcherKey = getRecordDispatcherSettlementStatusKey(record);
+    const accountingKey = getRecordAccountingSettlementStatusKey(record);
+    if (dispatcherKey !== accountingKey || dispatcherKey !== "uploaded") return null;
+    return getDispatcherSettlementInvoiceImage(record) || getSettlementInvoiceImage(record);
+  }
+  return getSettlementInvoiceImage(record);
+}
+
+function getRecordWorkflowStatusDisplayKey(record) {
+  return getRecordWorkflowStatusKeyForScope(record, getRecordSettlementDisplayScope(record));
+}
+
+function getRecordAccountingSettlementFilterLabel(record) {
+  return getRecordWorkflowStatusLabelByKey(getRecordAccountingSettlementStatusKey(record));
+}
+
+function getRecordDispatcherSettlementFilterLabel(record) {
+  return getRecordWorkflowStatusLabelByKey(getRecordDispatcherSettlementStatusKey(record));
+}
+
+function getRecordContextualSettlementFilterLabels(record) {
+  const labels = new Set();
+  labels.add(getRecordSettlementLabel(record));
+  if (isBossLogin()) {
+    labels.add(getRecordDispatcherSettlementFilterLabel(record));
+    labels.add(getRecordAccountingSettlementFilterLabel(record));
+  }
+  return Array.from(labels).map((value) => String(value || "").trim()).filter(Boolean);
 }
 
 function hasRecordRefundOperation(record) {
@@ -3163,24 +3259,7 @@ function hasRecordAccountantConfirmation(record) {
 }
 
 function getRecordWorkflowStatusKey(record) {
-  const checkStatus = String(record?.checkStatus || "")
-    .trim()
-    .toLowerCase();
-  if (checkStatus === "refunded" || checkStatus === "partial_refunded") {
-    if (isRecordSettlementPaid(record)) return "paid";
-    if (isRecordInvoiceUploaded(record)) return "uploaded";
-    if (isRecordSettled(record)) return "settled";
-    return "completed";
-  }
-  if (checkStatus === "returned") return "returned";
-  if (checkStatus === "completed") {
-    if (isRecordSettlementPaid(record)) return "paid";
-    if (isRecordInvoiceUploaded(record)) return "uploaded";
-    if (isRecordSettled(record)) return "settled";
-    return "completed";
-  }
-  if (checkStatus === "checked") return "checked";
-  return "pending";
+  return getRecordWorkflowStatusKeyForScope(record, "accounting");
 }
 
 function getRecordWorkflowStatusFilterLabel(record) {
@@ -3189,13 +3268,25 @@ function getRecordWorkflowStatusFilterLabel(record) {
 }
 
 function getRecordWorkflowStatusText(record) {
-  const statusKey = getRecordWorkflowStatusKey(record);
+  const statusKey = getRecordWorkflowStatusDisplayKey(record);
   if (statusKey === "checked") return getRecordStatusChipText(record);
-  return getRecordWorkflowStatusFilterLabel(record);
+  if (
+    statusKey === "settled" ||
+    statusKey === "uploaded" ||
+    statusKey === "paid" ||
+    statusKey === "partial"
+  ) {
+    return getRecordSettlementLabel(record);
+  }
+  return getRecordWorkflowStatusLabelByKey(statusKey);
 }
 
 function getRecordSettlementFilterLabel(record) {
-  return isRecordCompleted(record) ? getRecordSettlementLabel(record) : "";
+  return isRecordCompleted(record) ? getRecordContextualSettlementFilterLabels(record)[0] || "" : "";
+}
+
+function getRecordSettlementFilterLabels(record) {
+  return isRecordCompleted(record) ? getRecordContextualSettlementFilterLabels(record) : [];
 }
 
 function getRecordStatusWithSettlementText(record) {
@@ -3319,7 +3410,7 @@ function getAccountantInvoiceUploadSummary(sourceRecords = records) {
       Number(settlementGroup.payableAmount) || invoiceAmount - taxAmount;
     return {
       targetRecords,
-      count: Number(settlementGroup.recordCount) || targetRecords.length,
+      count: targetRecords.length,
       uploadableCount: targetRecords.length,
       invoiceAmount,
       taxAmount,

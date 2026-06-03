@@ -4574,7 +4574,7 @@
           const totalInvoiceAmount = accountantInvoiceAmount + dispatcherInvoiceAmount;
           const totalTaxAmount = getSettlementTaxAmount(totalInvoiceAmount);
           const totalPayableAmount = totalInvoiceAmount - totalTaxAmount;
-          const combinedRecordCount = group.recordCount + dispatcherRecordCount;
+          const combinedRecordCount = combinedRecordIds.length;
           const combinedPendingCount = group.pendingCount + (Number(linkedDispatcherAmount?.pendingCount) || 0);
           const combinedPendingInvoiceCount = group.pendingInvoiceCount + (Number(linkedDispatcherAmount?.pendingInvoiceCount) || 0);
           const combinedUploadedCount = group.uploadedCount + (Number(linkedDispatcherAmount?.uploadedCount) || 0);
@@ -6925,8 +6925,8 @@
             const statusWrap = document.createElement("div");
             statusWrap.className = "row-status-cell";
             const statusChip = document.createElement("span");
-            const statusKey = getRecordWorkflowStatusKey(item);
-            const invoiceImage = statusKey === "uploaded" ? getSettlementInvoiceImage(item) : null;
+            const statusKey = getRecordWorkflowStatusDisplayKey(item);
+            const invoiceImage = statusKey === "uploaded" ? getRecordStatusPreviewInvoiceImage(item) : null;
             statusChip.className = `record-status-chip ${statusKey}`;
             statusChip.textContent = String(value || "");
             if (invoiceImage) {

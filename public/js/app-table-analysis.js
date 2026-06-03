@@ -379,18 +379,21 @@
           settled: 3,
           uploaded: 4,
           paid: 5,
-          returned: 6,
-          partial_refunded: 7,
-          refunded: 8
+          partial: 6,
+          returned: 7,
+          partial_refunded: 8,
+          refunded: 9
         };
-        const status = getRecordWorkflowStatusKey(item);
+        const status = getRecordWorkflowStatusDisplayKey(item);
         return Object.prototype.hasOwnProperty.call(workflowOrder, status) ? workflowOrder[status] : 99;
       }
       if (key === "settled") {
-        if (getRecordWorkflowStatusKey(item) === "settled") return 2;
-        if (getRecordWorkflowStatusKey(item) === "uploaded") return 3;
+        const statusKey = getRecordWorkflowStatusDisplayKey(item);
+        if (statusKey === "settled") return 2;
+        if (statusKey === "uploaded") return 3;
+        if (statusKey === "partial") return 4;
         if (!isRecordCompleted(item)) return 0;
-        if (isRecordInvoiceUploaded(item)) return 3;
+        if (getRecordStatusPreviewInvoiceImage(item)) return 3;
         if (isRecordSettled(item)) return 2;
         return 1;
       }
@@ -762,7 +765,9 @@
 
     function getStatusFilterValues(item) {
       return [
-        getRecordWorkflowStatusFilterLabel(item),
+        getRecordWorkflowStatusText(item),
+        getRecordWorkflowStatusLabelByKey(getRecordWorkflowStatusDisplayKey(item)),
+        ...getRecordContextualSettlementFilterLabels(item),
         getRecordRefundBadgeText(item)
       ].map((value) => String(value || "").trim()).filter(Boolean);
     }
@@ -771,6 +776,16 @@
       const map = new Map();
       sourceRecords.forEach((item) => {
         getStatusFilterValues(item).forEach((value) => {
+          map.set(value, (map.get(value) || 0) + 1);
+        });
+      });
+      return map;
+    }
+
+    function buildSettlementValueCountMap(sourceRecords) {
+      const map = new Map();
+      sourceRecords.forEach((item) => {
+        getRecordSettlementFilterLabels(item).forEach((value) => {
           map.set(value, (map.get(value) || 0) + 1);
         });
       });
@@ -872,10 +887,10 @@
       const rawStatusValues = Array.from(
         new Set(scopedRecords.flatMap((item) => getStatusFilterValues(item)))
       );
-      const statusValues = ["已接待/待确认", "已确认/待完成", "已完成/待核对客户确认", "已核对客户确认/待上传", "已上传/待结算", "已结算", "已退单", "部分退款", "退单"]
+      const statusValues = ["已接待/待确认", "已确认/待完成", "已完成/待核对客户确认", "已核对客户确认/待上传", "已上传/待结算", "已结算", "接待/会计状态不一致", "已退单", "部分退款", "退单"]
         .filter((value) => rawStatusValues.includes(value));
       const rawSettledValues = Array.from(
-        new Set(scopedRecords.map((item) => getRecordSettlementFilterLabel(item)).filter(Boolean))
+        new Set(scopedRecords.flatMap((item) => getRecordSettlementFilterLabels(item)).filter(Boolean))
       );
       const settledValues = ["已完成/待核对客户确认", "已核对客户确认/待上传", "已上传/待结算", "已结算"]
         .filter((value) => rawSettledValues.includes(value));
@@ -938,7 +953,7 @@
           return selectedStatusFilters.length === 0
             || selectedStatusFilters.some((value) => getStatusFilterValues(item).includes(value));
         },
-        settled: (item) => !filterState.settled || getRecordSettlementFilterLabel(item) === filterState.settled,
+        settled: (item) => !filterState.settled || getRecordSettlementFilterLabels(item).includes(filterState.settled),
         orderNo: (item) => orderNoList.length === 0
           || orderNoList.some(query => String(item.orderNo || "").toLowerCase().trim() === query)
       };
@@ -1011,10 +1026,7 @@
         ["否", monthlySettlementScopedRecords.filter((item) => !isMonthlySettlementRecord(item)).length],
       ]);
       const statusCountMap = buildStatusValueCountMap(statusScopedRecords);
-      const settledCountMap = buildValueCountMap(
-        settledScopedRecords,
-        (item) => getRecordSettlementFilterLabel(item)
-      );
+      const settledCountMap = buildSettlementValueCountMap(settledScopedRecords);
       const accountantValues = sortAccountantFilterValues(rawAccountantValues, accountantCountMap);
       const accountantSearchQuery = String(filterAccountantSearchInput?.value || "").trim().toLowerCase();
       const visibleAccountantValues = accountantSearchQuery
@@ -1143,7 +1155,7 @@
         const selectedStatusFilters = getSelectedStatusFilters();
         const statusMatched = selectedStatusFilters.length === 0
           || selectedStatusFilters.some((value) => getStatusFilterValues(item).includes(value));
-        const settledMatched = !filterState.settled || getRecordSettlementFilterLabel(item) === filterState.settled;
+        const settledMatched = !filterState.settled || getRecordSettlementFilterLabels(item).includes(filterState.settled);
         return monthMatched
           && completedAtMatched
           && dispatcherMatched
@@ -1623,7 +1635,7 @@
       }]));
 
       scopeRecords.forEach((item) => {
-        const key = getRecordWorkflowStatusKey(item);
+        const key = getRecordWorkflowStatusDisplayKey(item);
         const row = rowsByKey.get(key) || {
           key,
           label: getRecordWorkflowStatusLabelByKey(key),
