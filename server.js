@@ -2835,6 +2835,9 @@ function ensureRecordIds(sourceRecords) {
       && normalizeText(current.dispatcherSettlementPaidBy, 48) === normalizedDispatcherSettlementPaymentFields.dispatcherSettlementPaidBy;
     const hasNormalizedMonthlySettlement = current.isMonthlySettlement === normalizedMonthlySettlement
       && (!normalizedMonthlySettlement || hasMonthlySettlementEndDateField)
+      && (!normalizedMonthlySettlement || hasMonthlySettlementMonthCountField)
+      && (!normalizedMonthlySettlement || hasMonthlySettlementSequenceField)
+      && (!normalizedMonthlySettlement || hasMonthlySettlementTotalPaymentPriceField)
       && normalizeText(current.monthlySettlementEndDate, 32) === normalizedMonthlySettlementEndDate
       && (!hasMonthlySettlementMonthCountField || current.monthlySettlementMonthCount === normalizedMonthlySettlementMonthCount)
       && (!hasMonthlySettlementSequenceField || current.monthlySettlementSequence === normalizedMonthlySettlementSequence)
@@ -3299,6 +3302,9 @@ function isAccountantEditableRecordPayload(payload) {
     "date",
     "isMonthlySettlement",
     "monthlySettlementEndDate",
+    "monthlySettlementMonthCount",
+    "monthlySettlementSequence",
+    "monthlySettlementTotalPaymentPrice",
     "dispatcher",
     "accountant",
     "platform",
