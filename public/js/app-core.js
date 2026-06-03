@@ -2959,7 +2959,18 @@ function getMonthlySettlementEndDate(record) {
 
 function getMonthlySettlementDisplay(record) {
   if (!isMonthlySettlementRecord(record)) return "";
-  return getMonthlySettlementEndDate(record) || "缺少日期";
+  const item = record && typeof record === "object" ? record : {};
+  const groupId = String(item.monthlySettlementId || "").trim();
+  const groupSuffix = groupId ? groupId.slice(-6) : "";
+  const monthCount = parsePositiveIntegerValue(item.monthlySettlementMonthCount);
+  const sequence = parsePositiveIntegerValue(item.monthlySettlementSequence);
+  const sequenceText = Number.isInteger(sequence) && Number.isInteger(monthCount)
+    ? `${sequence}/${monthCount}`
+    : "";
+  const endDateText = getMonthlySettlementEndDate(item) || "缺少日期";
+  return [groupSuffix ? `ID ${groupSuffix}` : "", sequenceText, endDateText]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 function getDispatcherBaseProfitRate(record) {
@@ -3631,6 +3642,7 @@ function getRecordComparisonSignature(record) {
     String(item.date || ""),
     isMonthlySettlementRecord(item) ? "1" : "0",
     getMonthlySettlementEndDate(item),
+    String(item.monthlySettlementId || ""),
     String(item.monthlySettlementMonthCount || ""),
     String(item.monthlySettlementSequence || ""),
     String(item.monthlySettlementTotalPaymentPrice || ""),

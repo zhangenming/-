@@ -107,9 +107,10 @@
       { key: "total", label: "会计价", getValue: (item) => toMoney(item?.totalPrice) },
       { key: "settlement", label: "会计结算价", getValue: (item) => toMoney(item?.settlementPrice) },
       { key: "monthlySettlement", label: "是否月结", getValue: (item) => getMonthlySettlementDisplay(item) },
+      { key: "monthlySettlement", label: "月结ID", getValue: (item) => String(item?.monthlySettlementId || "").trim() },
       { key: "monthlySettlement", label: "月结月数", getValue: (item) => String(item?.monthlySettlementMonthCount || "").trim() },
       { key: "monthlySettlement", label: "月结序号", getValue: (item) => String(item?.monthlySettlementSequence || "").trim() },
-      { key: "monthlySettlement", label: "月结单总付款价", getValue: (item) => toMoney(item?.monthlySettlementTotalPaymentPrice) },
+      { key: "monthlySettlement", label: "月结单总付款价", getValue: (item) => toMoney(item?.monthlySettlementTotalPaymentPrice), visible: () => !isAccountantLogin() },
       { label: "状态", getValue: (item) => getRecordStatusWithSettlementText(item) }
     ];
 
@@ -2731,6 +2732,7 @@
       "invoiceRecipientDeclarationPhone",
       "date",
       "isMonthlySettlement",
+      "monthlySettlementId",
       "monthlySettlementEndDate",
       "monthlySettlementMonthCount",
       "monthlySettlementSequence",
@@ -2751,6 +2753,7 @@
     const ACCOUNTANT_RECORD_HISTORY_FIELD_ORDER = [
       "date",
       "dispatcher",
+      "monthlySettlementId",
       "monthlySettlementEndDate",
       "customer",
       "summary",
@@ -2786,6 +2789,7 @@
       invoiceRecipientDeclarationPhone: "申报手机号",
       date: "接单日期",
       isMonthlySettlement: "是否月结",
+      monthlySettlementId: "月结ID",
       monthlySettlementEndDate: "月结结束时间",
       monthlySettlementMonthCount: "月结月数",
       monthlySettlementSequence: "月结序号",
@@ -2897,6 +2901,7 @@
         "date",
         "dispatcher",
         "accountant",
+        "monthlySettlementId",
         "platform",
         "shopName",
         "source",
@@ -2969,7 +2974,7 @@
       if (["summary", "remark", "customerFeedback"].includes(normalizedField)) return "220px";
       if (["shopName"].includes(normalizedField)) return "172px";
       if (["settlementInvoiceImage", "invoiceUploadedAt"].includes(normalizedField)) return "168px";
-      if (["platform", "source", "customer", "orderNo", "dispatcher", "accountant", "date", "monthlySettlementEndDate", "monthlySettlementTotalPaymentPrice", "invoiceUploadedBy"].includes(normalizedField)) {
+      if (["platform", "source", "customer", "orderNo", "dispatcher", "accountant", "date", "monthlySettlementId", "monthlySettlementEndDate", "monthlySettlementTotalPaymentPrice", "invoiceUploadedBy"].includes(normalizedField)) {
         return "136px";
       }
       return "124px";

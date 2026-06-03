@@ -1913,6 +1913,9 @@ const ACCOUNTANT_RECORD_HISTORY_VISIBLE_FIELDS = new Set([
   "date",
   "dispatcher",
   "monthlySettlementEndDate",
+  "monthlySettlementId",
+  "monthlySettlementMonthCount",
+  "monthlySettlementSequence",
   "customer",
   "summary",
   "totalPrice",
@@ -1983,6 +1986,9 @@ function sanitizeRecordForAccountant(record) {
     settlementPrice: Number.isFinite(settlementPrice) ? settlementPrice : "",
     isMonthlySettlement: normalizeMonthlySettlementState(source.isMonthlySettlement),
     monthlySettlementEndDate: normalizeDateOnlyValue(source.monthlySettlementEndDate),
+    monthlySettlementId: normalizeText(source.monthlySettlementId, 80),
+    monthlySettlementMonthCount: normalizePositiveIntegerField(source.monthlySettlementMonthCount),
+    monthlySettlementSequence: normalizePositiveIntegerField(source.monthlySettlementSequence),
     checkStatus: normalizeText(source.checkStatus, 24).toLowerCase() || "pending",
     refundStatus: normalizeText(source.refundStatus, 24).toLowerCase(),
     refundedAt: normalizeDateTimeValue(source.refundedAt),
@@ -2588,6 +2594,7 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
       ? (normalizeDateOnlyValue(record?.monthlySettlementEndDate) || "是")
       : ""
   },
+  { field: "monthlySettlementId", label: "月结ID", kind: "text" },
   { field: "monthlySettlementEndDate", label: "月结结束时间", kind: "date" },
   { field: "monthlySettlementMonthCount", label: "月结月数", kind: "text" },
   { field: "monthlySettlementSequence", label: "月结序号", kind: "text" },
@@ -2798,6 +2805,9 @@ function ensureRecordIds(sourceRecords) {
     const normalizedMonthlySettlementEndDate = normalizedMonthlySettlement
       ? normalizeDateOnlyValue(current.monthlySettlementEndDate)
       : "";
+    const normalizedMonthlySettlementId = normalizedMonthlySettlement
+      ? (normalizeText(current.monthlySettlementId, 80) || generateId("mset"))
+      : "";
     const normalizedMonthlySettlementMonthCount = normalizedMonthlySettlement
       ? normalizePositiveIntegerField(current.monthlySettlementMonthCount)
       : "";
@@ -2808,6 +2818,7 @@ function ensureRecordIds(sourceRecords) {
       ? normalizeOptionalMoneyField(current.monthlySettlementTotalPaymentPrice)
       : "";
     const hasMonthlySettlementEndDateField = Object.prototype.hasOwnProperty.call(current, "monthlySettlementEndDate");
+    const hasMonthlySettlementIdField = Object.prototype.hasOwnProperty.call(current, "monthlySettlementId");
     const hasMonthlySettlementMonthCountField = Object.prototype.hasOwnProperty.call(current, "monthlySettlementMonthCount");
     const hasMonthlySettlementSequenceField = Object.prototype.hasOwnProperty.call(current, "monthlySettlementSequence");
     const hasMonthlySettlementTotalPaymentPriceField = Object.prototype.hasOwnProperty.call(current, "monthlySettlementTotalPaymentPrice");
@@ -2835,10 +2846,12 @@ function ensureRecordIds(sourceRecords) {
       && normalizeText(current.dispatcherSettlementPaidBy, 48) === normalizedDispatcherSettlementPaymentFields.dispatcherSettlementPaidBy;
     const hasNormalizedMonthlySettlement = current.isMonthlySettlement === normalizedMonthlySettlement
       && (!normalizedMonthlySettlement || hasMonthlySettlementEndDateField)
+      && (!normalizedMonthlySettlement || hasMonthlySettlementIdField)
       && (!normalizedMonthlySettlement || hasMonthlySettlementMonthCountField)
       && (!normalizedMonthlySettlement || hasMonthlySettlementSequenceField)
       && (!normalizedMonthlySettlement || hasMonthlySettlementTotalPaymentPriceField)
       && normalizeText(current.monthlySettlementEndDate, 32) === normalizedMonthlySettlementEndDate
+      && (!hasMonthlySettlementIdField || normalizeText(current.monthlySettlementId, 80) === normalizedMonthlySettlementId)
       && (!hasMonthlySettlementMonthCountField || current.monthlySettlementMonthCount === normalizedMonthlySettlementMonthCount)
       && (!hasMonthlySettlementSequenceField || current.monthlySettlementSequence === normalizedMonthlySettlementSequence)
       && (!hasMonthlySettlementTotalPaymentPriceField || current.monthlySettlementTotalPaymentPrice === normalizedMonthlySettlementTotalPaymentPrice);
@@ -2881,6 +2894,7 @@ function ensureRecordIds(sourceRecords) {
       returnedAt: normalizedReturnedAt,
       isMonthlySettlement: normalizedMonthlySettlement,
       monthlySettlementEndDate: normalizedMonthlySettlementEndDate,
+      monthlySettlementId: normalizedMonthlySettlementId,
       monthlySettlementMonthCount: normalizedMonthlySettlementMonthCount,
       monthlySettlementSequence: normalizedMonthlySettlementSequence,
       monthlySettlementTotalPaymentPrice: normalizedMonthlySettlementTotalPaymentPrice,
@@ -2930,6 +2944,9 @@ function normalizeRecord(input) {
     date: normalizedDate || getCurrentBeijingDate(),
     isMonthlySettlement,
     monthlySettlementEndDate,
+    monthlySettlementId: isMonthlySettlement
+      ? (normalizeText(input.monthlySettlementId, 80) || generateId("mset"))
+      : "",
     monthlySettlementMonthCount: isMonthlySettlement
       ? normalizePositiveIntegerField(input.monthlySettlementMonthCount)
       : "",
@@ -3021,6 +3038,16 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
         ? getMonthlySettlementEndDateInput(source)
         : normalizeDateOnlyValue(current.monthlySettlementEndDate))
     : "";
+  const nextMonthlySettlementId = nextIsMonthlySettlement
+    ? (
+      normalizeText(
+        Object.prototype.hasOwnProperty.call(source, "monthlySettlementId")
+          ? source.monthlySettlementId
+          : current.monthlySettlementId,
+        80
+      ) || generateId("mset")
+    )
+    : "";
   const nextMonthlySettlementMonthCount = nextIsMonthlySettlement
     ? normalizePositiveIntegerField(
       Object.prototype.hasOwnProperty.call(source, "monthlySettlementMonthCount")
@@ -3095,6 +3122,7 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
     date: nextDate,
     isMonthlySettlement: nextIsMonthlySettlement,
     monthlySettlementEndDate: nextMonthlySettlementEndDate,
+    monthlySettlementId: nextMonthlySettlementId,
     monthlySettlementMonthCount: nextMonthlySettlementMonthCount,
     monthlySettlementSequence: nextMonthlySettlementSequence,
     monthlySettlementTotalPaymentPrice: nextMonthlySettlementTotalPaymentPrice,
@@ -3302,6 +3330,7 @@ function isAccountantEditableRecordPayload(payload) {
     "date",
     "isMonthlySettlement",
     "monthlySettlementEndDate",
+    "monthlySettlementId",
     "monthlySettlementMonthCount",
     "monthlySettlementSequence",
     "monthlySettlementTotalPaymentPrice",

@@ -2890,9 +2890,13 @@
         return;
       }
 
+      const monthlySettlementId = isMonthlySettlementCreate
+        ? `mset_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
+        : "";
       const createItems = isMonthlySettlementCreate
         ? Array.from({ length: monthlySettlementMonthCount }, (_, index) => ({
           ...item,
+          monthlySettlementId,
           monthlySettlementMonthCount,
           monthlySettlementSequence: index + 1,
           monthlySettlementTotalPaymentPrice: index === 0
