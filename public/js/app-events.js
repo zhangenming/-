@@ -2668,6 +2668,15 @@
       const allowEmptyCreateFields = isCreateMode && isDevelopmentEnvironment();
       const currentAccountantName = isAccountantLogin() ? getCurrentAccountantDisplayName() : "";
       const isMonthlySettlementCreate = isCreateMode && Boolean(monthlySettlementCheckbox?.checked);
+      if (isMonthlySettlementCreate && !hasDebugQueryFlag()) {
+        showInlineFormError({
+          form: recordForm,
+          hintSetter: setRecordFormHint,
+          target: monthlySettlementCheckbox,
+          message: "月结勾选暂时关闭，调试链接可使用。"
+        });
+        return;
+      }
       const monthlySettlementTotalPaymentPriceRaw = String(
         formData.get("monthlySettlementTotalPaymentPrice") || "",
       ).trim();
