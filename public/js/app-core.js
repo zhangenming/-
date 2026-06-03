@@ -3132,7 +3132,7 @@ function getRecordCombinedSettlementLabel(record) {
 }
 
 function getRecordSettlementDisplayScope(record = null) {
-  if (isDispatcherLogin()) return "dispatcher";
+  if (isDispatcherLogin()) return "combined";
   if (isBossLogin()) return "combined";
   return "accounting";
 }
@@ -3189,7 +3189,7 @@ function getRecordDispatcherSettlementFilterLabel(record) {
 function getRecordContextualSettlementFilterLabels(record) {
   const labels = new Set();
   labels.add(getRecordSettlementLabel(record));
-  if (isBossLogin()) {
+  if (isBossLogin() || isDispatcherLogin()) {
     labels.add(getRecordDispatcherSettlementFilterLabel(record));
     labels.add(getRecordAccountingSettlementFilterLabel(record));
   }
