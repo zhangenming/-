@@ -391,15 +391,23 @@
       const loadingMessage = shouldRenderSkeleton
         ? "正在读取订单记录..."
         : "正在刷新订单记录...";
-      const waitingMessage = "records接口仍在等待，请稍候...";
+      const requestStartedAt = Date.now();
+      const getWaitingMessage = () => {
+        const elapsedSeconds = Math.max(1, Math.floor((Date.now() - requestStartedAt) / 1000));
+        return `records接口仍在等待，已加载 ${elapsedSeconds} 秒...`;
+      };
       let waitingTimer = null;
+      let waitingInterval = null;
       if (shouldRenderSkeleton) {
         renderTableLoadingState(loadingMessage);
       } else {
         setRegionLoading(mainTableWrap, true, loadingMessage);
       }
       waitingTimer = window.setTimeout(() => {
-        setRegionLoading(mainTableWrap, true, waitingMessage);
+        setRegionLoading(mainTableWrap, true, getWaitingMessage());
+        waitingInterval = window.setInterval(() => {
+          setRegionLoading(mainTableWrap, true, getWaitingMessage());
+        }, 1000);
       }, RECORDS_REQUEST_WAITING_MS);
 
       let payload;
@@ -415,6 +423,7 @@
         payload = await response.json();
       } finally {
         if (waitingTimer) window.clearTimeout(waitingTimer);
+        if (waitingInterval) window.clearInterval(waitingInterval);
         setRegionLoading(mainTableWrap, false);
       }
       const nextRecords = Array.isArray(payload.records) ? payload.records : [];
