@@ -1,5 +1,22 @@
 [
   {
+    "logId": "alog_mpxsbctt128naa",
+    "operatedAt": "2026-06-03 16:08:31",
+    "operatedBy": "瑜",
+    "operatedByUsername": "瑜",
+    "actionKey": "checked",
+    "actionLabel": "确认",
+    "recordId": "rec_mpwnem09xnwazk",
+    "date": "2026-06-02",
+    "dispatcher": "A",
+    "accountant": "瑜",
+    "customer": "@",
+    "summary": "外帐",
+    "remark": "",
+    "customerFeedback": "",
+    "completedAt": ""
+  },
+  {
     "logId": "alog_mpxpksvvt4o4i9",
     "operatedAt": "2026-06-03 14:51:53",
     "operatedBy": "Zia茹",
