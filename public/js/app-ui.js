@@ -6422,14 +6422,7 @@
         showAppStatus("读取共享数据失败，请确认 Node 服务已启动。");
         renderTable();
       }
-      try {
-        await fetchAccountantOperationLogs();
-      } catch (error) {
-        console.error(error);
-        showAppStatus(error.message || "读取会计操作日志失败，请稍后重试。");
-      } finally {
-        setRegionLoading(mainTableWrap, false);
-      }
+      setRegionLoading(mainTableWrap, false);
     }
 
     async function loginAccount(name, password) {

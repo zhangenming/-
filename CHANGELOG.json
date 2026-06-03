@@ -1,6 +1,12 @@
 [
   {
     "type": "optimization",
+    "version": "42.91.685",
+    "time": "2026-06-03 16:24:47",
+    "content": "优化首页接口加载：初始化时不再请求CHANGELOG.json和accountant-operation-logs，更新日志与操作日志改为打开对应弹窗时按需读取。"
+  },
+  {
+    "type": "optimization",
     "version": "42.90.685",
     "time": "2026-06-03 16:21:19",
     "content": "优化records接口超时时间：订单记录接口等待超时从25秒调整为1分钟，减少慢请求场景下过早提示失败。"

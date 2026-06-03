@@ -325,14 +325,6 @@
       return sourceRecords.map((item) => getRecordComparisonSignature(item)).join("\u0002");
     }
 
-    function parseVersionXY(versionStr) {
-      const version = String(versionStr || "").trim();
-      const parts = version.split(".");
-      const x = parseInt(parts[0]) || 1;
-      const y = parseInt(parts[1]) || 0;
-      return { x, y, baseVersion: `${x}.${y}` };
-    }
-
     async function fetchBuildInfo() {
       if (buildInfoPanel) {
         setRegionLoading(buildInfoPanel, true, "正在读取版本...");
@@ -340,10 +332,7 @@
         if (buildTimeText) buildTimeText.textContent = "Build 读取中...";
       }
       try {
-        const [buildInfoResponse, changeLogResponse] = await Promise.all([
-          fetch(API_ENDPOINT_BUILD_INFO, { cache: "no-store" }),
-          fetch(API_ENDPOINT_CHANGE_LOG, { cache: "no-store" })
-        ]);
+        const buildInfoResponse = await fetch(API_ENDPOINT_BUILD_INFO, { cache: "no-store" });
 
         if (!buildInfoResponse.ok) {
           renderBuildInfo();
@@ -352,30 +341,9 @@
 
         const buildInfo = await buildInfoResponse.json();
 
-        let baseVersion = "1.0";
-        if (changeLogResponse.ok) {
-          const changeLog = await changeLogResponse.json();
-          const items = Array.isArray(changeLog)
-            ? changeLog
-            : Array.isArray(changeLog?.changes)
-              ? changeLog.changes
-              : [];
-          if (items.length > 0) {
-            const latestVersion = String(items[0]?.version || "").trim();
-            if (latestVersion) {
-              baseVersion = parseVersionXY(latestVersion).baseVersion;
-            }
-          }
-        }
-
-        const buildNumber = Number(buildInfo?.buildNumber);
-        const fullVersion = Number.isInteger(buildNumber) && buildNumber >= 0
-          ? `${baseVersion}.${buildNumber}`
-          : baseVersion;
-
         const buildInfoWithVersion = {
           ...buildInfo,
-          version: fullVersion
+          version: String(buildInfo?.version || "").trim() || "1.0"
         };
 
         renderBuildInfo(buildInfoWithVersion);
