@@ -106,6 +106,7 @@ const PLATFORM_SHOP_OPTIONS = [
   { label: "淘宝-智算财税", platform: "淘宝", shopName: "智算财税" },
   { label: "淘宝-佳和财税", platform: "淘宝", shopName: "佳和财税" },
   { label: "淘宝-全账通", platform: "淘宝", shopName: "全账通" },
+  { label: "淘宝-账易顺", platform: "淘宝", shopName: "账易顺" },
   { label: "拼多多-开心财务", platform: "拼多多", shopName: "开心财务" },
   { label: "企业微信", platform: "企业微信", shopName: "企业微信" },
   { label: "其他", platform: "其他", shopName: "其他" },
