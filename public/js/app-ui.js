@@ -107,6 +107,9 @@
       { label: "会计价", getValue: (item) => toMoney(item?.totalPrice) },
       { label: "会计结算价", getValue: (item) => toMoney(item?.settlementPrice) },
       { label: "是否月结", getValue: (item) => getMonthlySettlementDisplay(item) },
+      { label: "月结月数", getValue: (item) => String(item?.monthlySettlementMonthCount || "").trim() },
+      { label: "月结序号", getValue: (item) => String(item?.monthlySettlementSequence || "").trim() },
+      { label: "月结单总付款价", getValue: (item) => toMoney(item?.monthlySettlementTotalPaymentPrice) },
       { label: "状态", getValue: (item) => getRecordStatusWithSettlementText(item) }
     ];
 
@@ -2651,6 +2654,9 @@
       "date",
       "isMonthlySettlement",
       "monthlySettlementEndDate",
+      "monthlySettlementMonthCount",
+      "monthlySettlementSequence",
+      "monthlySettlementTotalPaymentPrice",
       "dispatcher",
       "accountant",
       "platform",
@@ -2703,6 +2709,9 @@
       date: "接单日期",
       isMonthlySettlement: "是否月结",
       monthlySettlementEndDate: "月结结束时间",
+      monthlySettlementMonthCount: "月结月数",
+      monthlySettlementSequence: "月结序号",
+      monthlySettlementTotalPaymentPrice: "月结单总付款价",
       dispatcher: "接待人",
       accountant: "会计",
       platform: "平台",
@@ -2882,7 +2891,7 @@
       if (["summary", "remark", "customerFeedback"].includes(normalizedField)) return "220px";
       if (["shopName"].includes(normalizedField)) return "172px";
       if (["settlementInvoiceImage", "invoiceUploadedAt"].includes(normalizedField)) return "168px";
-      if (["platform", "source", "customer", "orderNo", "dispatcher", "accountant", "date", "monthlySettlementEndDate", "invoiceUploadedBy"].includes(normalizedField)) {
+      if (["platform", "source", "customer", "orderNo", "dispatcher", "accountant", "date", "monthlySettlementEndDate", "monthlySettlementTotalPaymentPrice", "invoiceUploadedBy"].includes(normalizedField)) {
         return "136px";
       }
       return "124px";
@@ -2890,7 +2899,7 @@
 
     function getRecordHistoryValueText(field, value) {
       const normalizedField = String(field || "").trim();
-      if (["paymentPrice", "totalPrice", "premiumPrice", "settlementPrice"].includes(normalizedField)) {
+      if (["paymentPrice", "totalPrice", "premiumPrice", "settlementPrice", "monthlySettlementTotalPaymentPrice"].includes(normalizedField)) {
         const amount = Number(value);
         return Number.isFinite(amount) ? toMoney(amount) : "空";
       }
@@ -6348,6 +6357,51 @@
       settlementPriceInput.required = shouldRequire;
     }
 
+    function syncMonthlySettlementCalculatedFields() {
+      const isMonthly = Boolean(monthlySettlementCheckbox?.checked);
+      const isCreateMode = !String(recordEditingIdInput?.value || "").trim();
+      const shouldUseCalculatedMonthlyFields = isMonthly && isCreateMode;
+      const monthlyTotalControl = monthlySettlementTotalPaymentPriceInput?.closest(".monthly-settlement-control");
+      const monthlyCountControl = monthlySettlementMonthCountInput?.closest(".monthly-settlement-control");
+
+      if (monthlyTotalControl) monthlyTotalControl.hidden = !isCreateMode;
+      if (monthlyCountControl) monthlyCountControl.hidden = !isCreateMode;
+
+      if (monthlySettlementTotalPaymentPriceInput) {
+        monthlySettlementTotalPaymentPriceInput.required = shouldUseCalculatedMonthlyFields && isProductionEnvironment();
+      }
+      if (monthlySettlementMonthCountInput) {
+        monthlySettlementMonthCountInput.required = shouldUseCalculatedMonthlyFields && isProductionEnvironment();
+      }
+      if (recordReminderDateInput) {
+        recordReminderDateInput.readOnly = shouldUseCalculatedMonthlyFields;
+        recordReminderDateInput.setAttribute("aria-readonly", shouldUseCalculatedMonthlyFields ? "true" : "false");
+      }
+      if (paymentPriceInput) {
+        paymentPriceInput.readOnly = shouldUseCalculatedMonthlyFields;
+        paymentPriceInput.setAttribute("aria-readonly", shouldUseCalculatedMonthlyFields ? "true" : "false");
+      }
+
+      if (!shouldUseCalculatedMonthlyFields) return;
+
+      const monthCount = parsePositiveIntegerValue(monthlySettlementMonthCountInput?.value);
+      const monthlyTotalPayment = Number(String(monthlySettlementTotalPaymentPriceInput?.value || "").trim());
+      const hasValidMonthCount = Number.isInteger(monthCount) && monthCount > 0;
+      const hasValidMonthlyTotal = Number.isFinite(monthlyTotalPayment) && monthlyTotalPayment >= 0;
+
+      if (recordReminderDateInput) {
+        recordReminderDateInput.value = hasValidMonthCount
+          ? addCalendarMonthsClamped(dateInput?.value || getTodayISODate(), monthCount)
+          : "";
+      }
+      if (paymentPriceInput) {
+        paymentPriceInput.value = hasValidMonthCount && hasValidMonthlyTotal
+          ? formatMoneyInputValue(monthlyTotalPayment / monthCount)
+          : "";
+        syncPremiumPriceFromPrices();
+      }
+    }
+
     function resetRecordFormMode() {
       recordEditingIdInput.value = "";
       setRecordDateInputValue(getTodayISODate());
@@ -6364,6 +6418,13 @@
       if (recordReminderDateInput) {
         recordReminderDateInput.value = "";
       }
+      if (monthlySettlementTotalPaymentPriceInput) {
+        monthlySettlementTotalPaymentPriceInput.value = "";
+      }
+      if (monthlySettlementMonthCountInput) {
+        monthlySettlementMonthCountInput.value = "";
+      }
+      syncMonthlySettlementCalculatedFields();
     }
 
     function shouldSkipRecordModalAutoFocus() {
@@ -6971,9 +7032,20 @@
       if (recordReminderDateInput) {
         recordReminderDateInput.value = getMonthlySettlementEndDate(record);
       }
+      if (monthlySettlementTotalPaymentPriceInput) {
+        monthlySettlementTotalPaymentPriceInput.value = Number.isFinite(Number(record.monthlySettlementTotalPaymentPrice))
+          ? String(record.monthlySettlementTotalPaymentPrice)
+          : "";
+      }
+      if (monthlySettlementMonthCountInput) {
+        monthlySettlementMonthCountInput.value = Number.isInteger(Number(record.monthlySettlementMonthCount))
+          ? String(record.monthlySettlementMonthCount)
+          : "";
+      }
       paymentPriceInput.value = Number.isFinite(Number(record.paymentPrice)) ? String(record.paymentPrice) : "";
       totalPriceInput.value = Number.isFinite(Number(record.totalPrice)) ? String(record.totalPrice) : "";
       settlementPriceInput.value = Number.isFinite(Number(record.settlementPrice)) ? String(record.settlementPrice) : "";
+      syncMonthlySettlementCalculatedFields();
       syncPremiumPriceFromPrices();
       showRecordModal(orderNoInput);
     }

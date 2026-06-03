@@ -771,8 +771,31 @@
               <span>月结勾选</span>
             </label>
             <div class="reminder-date-wrapper" id="reminderDateField" hidden>
+              <div class="monthly-settlement-control">
+                <label for="monthlySettlementTotalPaymentPrice" class="reminder-date-label">月结单总付款价</label>
+                <input
+                  id="monthlySettlementTotalPaymentPrice"
+                  name="monthlySettlementTotalPaymentPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  autocomplete="off"
+                />
+              </div>
+              <div class="monthly-settlement-control">
+                <label for="monthlySettlementMonthCount" class="reminder-date-label">月数</label>
+                <input
+                  id="monthlySettlementMonthCount"
+                  name="monthlySettlementMonthCount"
+                  type="number"
+                  min="1"
+                  step="1"
+                  inputmode="numeric"
+                  autocomplete="off"
+                />
+              </div>
               <label for="reminderDate" class="reminder-date-label">月结结束时间</label>
-              <input id="reminderDate" name="reminderDate" type="date" autocomplete="off" />
+              <input id="reminderDate" name="reminderDate" type="date" autocomplete="off" readonly />
             </div>
           </div>
         </div>

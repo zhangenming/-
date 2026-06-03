@@ -387,6 +387,24 @@
       syncPremiumPriceFromPrices();
     });
 
+    if (dateInput) {
+      dateInput.addEventListener("input", () => {
+        syncMonthlySettlementCalculatedFields();
+      });
+    }
+
+    if (monthlySettlementTotalPaymentPriceInput) {
+      monthlySettlementTotalPaymentPriceInput.addEventListener("input", () => {
+        syncMonthlySettlementCalculatedFields();
+      });
+    }
+
+    if (monthlySettlementMonthCountInput) {
+      monthlySettlementMonthCountInput.addEventListener("input", () => {
+        syncMonthlySettlementCalculatedFields();
+      });
+    }
+
     totalPriceInput.addEventListener("input", () => {
       syncPremiumPriceFromPrices();
       syncSettlementPriceFromTotal();
@@ -2642,12 +2660,26 @@
     recordForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!requireAccount()) return;
+      syncMonthlySettlementCalculatedFields();
 
       const formData = new FormData(recordForm);
       const editingRecordId = String(recordEditingIdInput.value || "").trim();
       const isCreateMode = !editingRecordId;
       const allowEmptyCreateFields = isCreateMode && isDevelopmentEnvironment();
       const currentAccountantName = isAccountantLogin() ? getCurrentAccountantDisplayName() : "";
+      const isMonthlySettlementCreate = isCreateMode && Boolean(monthlySettlementCheckbox?.checked);
+      const monthlySettlementTotalPaymentPriceRaw = String(
+        formData.get("monthlySettlementTotalPaymentPrice") || "",
+      ).trim();
+      const monthlySettlementMonthCountRaw = String(
+        formData.get("monthlySettlementMonthCount") || "",
+      ).trim();
+      const monthlySettlementTotalPaymentPrice = monthlySettlementTotalPaymentPriceRaw === ""
+        ? Number.NaN
+        : Number(monthlySettlementTotalPaymentPriceRaw);
+      const monthlySettlementMonthCount = monthlySettlementMonthCountRaw === ""
+        ? Number.NaN
+        : parsePositiveIntegerValue(monthlySettlementMonthCountRaw);
       const paymentPriceRaw = String(formData.get("paymentPrice") || "").trim();
       const totalPriceRaw = String(formData.get("totalPrice") || "").trim();
       const settlementPriceRaw = String(formData.get("settlementPrice") || "").trim();
@@ -2662,6 +2694,9 @@
         isMonthlySettlement: Boolean(monthlySettlementCheckbox?.checked),
         monthlySettlementEndDate,
         reminderDate: monthlySettlementEndDate,
+        monthlySettlementMonthCount: isMonthlySettlementCreate ? monthlySettlementMonthCount : "",
+        monthlySettlementSequence: "",
+        monthlySettlementTotalPaymentPrice: isMonthlySettlementCreate ? monthlySettlementTotalPaymentPrice : "",
         dispatcher: dispatcherInput.value || getDefaultDispatcherTag(),
         accountant: currentAccountantName || String(formData.get("accountant") || "").trim(),
         platform: String(formData.get("platform") || "").trim(),
@@ -2710,7 +2745,29 @@
         }
       }
 
-      if (isCreateMode && !allowEmptyCreateFields && item.isMonthlySettlement) {
+      if (isMonthlySettlementCreate) {
+        if (!Number.isFinite(monthlySettlementTotalPaymentPrice) || monthlySettlementTotalPaymentPrice < 0) {
+          showInlineFormError({
+            form: recordForm,
+            hintSetter: setRecordFormHint,
+            target: monthlySettlementTotalPaymentPriceInput,
+            message: monthlySettlementTotalPaymentPriceRaw === ""
+              ? "月结单总付款价为必填项。"
+              : "月结单总付款价格式无效。"
+          });
+          return;
+        }
+        if (!Number.isInteger(monthlySettlementMonthCount) || monthlySettlementMonthCount < 1) {
+          showInlineFormError({
+            form: recordForm,
+            hintSetter: setRecordFormHint,
+            target: monthlySettlementMonthCountInput,
+            message: monthlySettlementMonthCountRaw === ""
+              ? "月数为必填项。"
+              : "月数需要为大于0的整数。"
+          });
+          return;
+        }
         if (!item.monthlySettlementEndDate) {
           showInlineFormError({
             form: recordForm,
@@ -2795,6 +2852,21 @@
         return;
       }
 
+      const createItems = isMonthlySettlementCreate
+        ? Array.from({ length: monthlySettlementMonthCount }, (_, index) => ({
+          ...item,
+          monthlySettlementMonthCount,
+          monthlySettlementSequence: index + 1,
+          monthlySettlementTotalPaymentPrice: index === 0
+            ? monthlySettlementTotalPaymentPrice
+            : 0,
+          checkStatus: "pending"
+        }))
+        : [{
+          ...item,
+          checkStatus: "pending"
+        }];
+
       try {
         setRecordFormHint(editingRecordId ? "修改保存中..." : "数据保存中...", "pending");
         await withLoading(
@@ -2806,11 +2878,10 @@
           async () => {
             if (editingRecordId) {
               await updateRecordById(editingRecordId, item);
+            } else if (createItems.length > 1) {
+              await createRecords(createItems);
             } else {
-              await createRecord({
-                ...item,
-                checkStatus: "pending"
-              });
+              await createRecord(createItems[0]);
             }
           }
         );
@@ -2881,7 +2952,14 @@
               if (recordReminderDateInput) {
                 recordReminderDateInput.value = "";
               }
+              if (monthlySettlementTotalPaymentPriceInput) {
+                monthlySettlementTotalPaymentPriceInput.value = "";
+              }
+              if (monthlySettlementMonthCountInput) {
+                monthlySettlementMonthCountInput.value = "";
+              }
             }
+            syncMonthlySettlementCalculatedFields();
           });
         }
         bindInlineValidation(completeForm, setCompleteFormHint);

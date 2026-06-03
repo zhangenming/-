@@ -1044,6 +1044,12 @@ const dateInput = document.getElementById("date");
 const monthlySettlementCheckbox = document.getElementById("monthlySettlement");
 const recordReminderDateField = document.getElementById("reminderDateField");
 const recordReminderDateInput = document.getElementById("reminderDate");
+const monthlySettlementTotalPaymentPriceInput = document.getElementById(
+  "monthlySettlementTotalPaymentPrice",
+);
+const monthlySettlementMonthCountInput = document.getElementById(
+  "monthlySettlementMonthCount",
+);
 const dispatcherInput = document.getElementById("dispatcher");
 const dispatcherTagButtons = Array.from(
   document.querySelectorAll(".dispatcher-tag-btn"),
@@ -2817,6 +2823,54 @@ function normalizeDateOnlyValue(value) {
   return formatDateFromDate(new Date(timestamp));
 }
 
+function parseLocalDateOnlyValue(value) {
+  const normalized = normalizeDateOnlyValue(value);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const date = new Date(year, monthIndex, day);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== monthIndex ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
+}
+
+function addCalendarMonthsClamped(rawDate, monthCount) {
+  const startDate = parseLocalDateOnlyValue(rawDate);
+  const count = Number(monthCount);
+  if (!startDate || !Number.isInteger(count) || count < 1) return "";
+  const targetYear = startDate.getFullYear();
+  const targetMonthIndex = startDate.getMonth() + count;
+  const targetMonthLastDay = new Date(targetYear, targetMonthIndex + 1, 0).getDate();
+  const targetDay = Math.min(startDate.getDate(), targetMonthLastDay);
+  return formatDateFromDate(new Date(targetYear, targetMonthIndex, targetDay));
+}
+
+function parsePositiveIntegerValue(value) {
+  const source = String(value ?? "").trim();
+  if (!source) return Number.NaN;
+  const amount = Number(source);
+  if (!Number.isInteger(amount) || amount < 1) return Number.NaN;
+  return amount;
+}
+
+function roundMoneyValue(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return Number.NaN;
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
+}
+
+function formatMoneyInputValue(value) {
+  const amount = roundMoneyValue(value);
+  return Number.isFinite(amount) ? amount.toFixed(2) : "";
+}
+
 function getMonthlySettlementEndDate(record) {
   const item = record && typeof record === "object" ? record : {};
   const storedEndDate = normalizeDateOnlyValue(
@@ -3510,6 +3564,9 @@ function getRecordComparisonSignature(record) {
     String(item.date || ""),
     isMonthlySettlementRecord(item) ? "1" : "0",
     getMonthlySettlementEndDate(item),
+    String(item.monthlySettlementMonthCount || ""),
+    String(item.monthlySettlementSequence || ""),
+    String(item.monthlySettlementTotalPaymentPrice || ""),
     String(item.dispatcher || ""),
     String(item.accountant || ""),
     String(item.platform || ""),

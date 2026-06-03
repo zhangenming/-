@@ -1003,6 +1003,13 @@ function normalizeOptionalMoneyField(value) {
   return Number.isFinite(amount) ? amount : "";
 }
 
+function normalizePositiveIntegerField(value) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string" && value.trim() === "") return "";
+  const amount = Number(value);
+  return Number.isInteger(amount) && amount > 0 ? amount : "";
+}
+
 function normalizeStateFlag(value, extraTruthyValues = null) {
   if (value === true) return true;
   if (value === false) return false;
@@ -2581,6 +2588,9 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
       : ""
   },
   { field: "monthlySettlementEndDate", label: "月结结束时间", kind: "date" },
+  { field: "monthlySettlementMonthCount", label: "月结月数", kind: "text" },
+  { field: "monthlySettlementSequence", label: "月结序号", kind: "text" },
+  { field: "monthlySettlementTotalPaymentPrice", label: "月结单总付款价", kind: "money" },
   {
     field: "dispatcher",
     label: "派单人",
@@ -2787,7 +2797,19 @@ function ensureRecordIds(sourceRecords) {
     const normalizedMonthlySettlementEndDate = normalizedMonthlySettlement
       ? normalizeDateOnlyValue(current.monthlySettlementEndDate)
       : "";
+    const normalizedMonthlySettlementMonthCount = normalizedMonthlySettlement
+      ? normalizePositiveIntegerField(current.monthlySettlementMonthCount)
+      : "";
+    const normalizedMonthlySettlementSequence = normalizedMonthlySettlement
+      ? normalizePositiveIntegerField(current.monthlySettlementSequence)
+      : "";
+    const normalizedMonthlySettlementTotalPaymentPrice = normalizedMonthlySettlement
+      ? normalizeOptionalMoneyField(current.monthlySettlementTotalPaymentPrice)
+      : "";
     const hasMonthlySettlementEndDateField = Object.prototype.hasOwnProperty.call(current, "monthlySettlementEndDate");
+    const hasMonthlySettlementMonthCountField = Object.prototype.hasOwnProperty.call(current, "monthlySettlementMonthCount");
+    const hasMonthlySettlementSequenceField = Object.prototype.hasOwnProperty.call(current, "monthlySettlementSequence");
+    const hasMonthlySettlementTotalPaymentPriceField = Object.prototype.hasOwnProperty.call(current, "monthlySettlementTotalPaymentPrice");
     const hasNormalizedHistory = Array.isArray(current.operationHistory)
       && JSON.stringify(current.operationHistory) === JSON.stringify(normalizedHistory);
     const hasNormalizedSettlement = current.isSettled === normalizedSettlementFields.isSettled
@@ -2812,7 +2834,10 @@ function ensureRecordIds(sourceRecords) {
       && normalizeText(current.dispatcherSettlementPaidBy, 48) === normalizedDispatcherSettlementPaymentFields.dispatcherSettlementPaidBy;
     const hasNormalizedMonthlySettlement = current.isMonthlySettlement === normalizedMonthlySettlement
       && (!normalizedMonthlySettlement || hasMonthlySettlementEndDateField)
-      && normalizeText(current.monthlySettlementEndDate, 32) === normalizedMonthlySettlementEndDate;
+      && normalizeText(current.monthlySettlementEndDate, 32) === normalizedMonthlySettlementEndDate
+      && (!hasMonthlySettlementMonthCountField || current.monthlySettlementMonthCount === normalizedMonthlySettlementMonthCount)
+      && (!hasMonthlySettlementSequenceField || current.monthlySettlementSequence === normalizedMonthlySettlementSequence)
+      && (!hasMonthlySettlementTotalPaymentPriceField || current.monthlySettlementTotalPaymentPrice === normalizedMonthlySettlementTotalPaymentPrice);
     const hasBuiltInCompletion = !isBuiltInAccountantRecord
       || (
         normalizeText(current.checkStatus, 24).toLowerCase() === "completed"
@@ -2852,6 +2877,9 @@ function ensureRecordIds(sourceRecords) {
       returnedAt: normalizedReturnedAt,
       isMonthlySettlement: normalizedMonthlySettlement,
       monthlySettlementEndDate: normalizedMonthlySettlementEndDate,
+      monthlySettlementMonthCount: normalizedMonthlySettlementMonthCount,
+      monthlySettlementSequence: normalizedMonthlySettlementSequence,
+      monthlySettlementTotalPaymentPrice: normalizedMonthlySettlementTotalPaymentPrice,
       operationHistory: normalizedHistory,
       ...normalizedSettlementFields,
       ...normalizedInvoiceFields,
@@ -2898,6 +2926,15 @@ function normalizeRecord(input) {
     date: normalizedDate || getCurrentBeijingDate(),
     isMonthlySettlement,
     monthlySettlementEndDate,
+    monthlySettlementMonthCount: isMonthlySettlement
+      ? normalizePositiveIntegerField(input.monthlySettlementMonthCount)
+      : "",
+    monthlySettlementSequence: isMonthlySettlement
+      ? normalizePositiveIntegerField(input.monthlySettlementSequence)
+      : "",
+    monthlySettlementTotalPaymentPrice: isMonthlySettlement
+      ? normalizeOptionalMoneyField(input.monthlySettlementTotalPaymentPrice)
+      : "",
     dispatcher: normalizeDispatcherTag(input.dispatcher) || normalizeText(input.dispatcher, 48),
     accountant,
     platform: normalizeText(input.platform, 80),
@@ -2980,6 +3017,27 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
         ? getMonthlySettlementEndDateInput(source)
         : normalizeDateOnlyValue(current.monthlySettlementEndDate))
     : "";
+  const nextMonthlySettlementMonthCount = nextIsMonthlySettlement
+    ? normalizePositiveIntegerField(
+      Object.prototype.hasOwnProperty.call(source, "monthlySettlementMonthCount")
+        ? source.monthlySettlementMonthCount
+        : current.monthlySettlementMonthCount
+    )
+    : "";
+  const nextMonthlySettlementSequence = nextIsMonthlySettlement
+    ? normalizePositiveIntegerField(
+      Object.prototype.hasOwnProperty.call(source, "monthlySettlementSequence")
+        ? source.monthlySettlementSequence
+        : current.monthlySettlementSequence
+    )
+    : "";
+  const nextMonthlySettlementTotalPaymentPrice = nextIsMonthlySettlement
+    ? normalizeOptionalMoneyField(
+      Object.prototype.hasOwnProperty.call(source, "monthlySettlementTotalPaymentPrice")
+        ? source.monthlySettlementTotalPaymentPrice
+        : current.monthlySettlementTotalPaymentPrice
+    )
+    : "";
   const nextDispatcherInput = session?.role === "dispatcher"
     ? getDispatcherTagForAccount(session.account)
     : (Object.prototype.hasOwnProperty.call(source, "dispatcher") ? source.dispatcher : current.dispatcher);
@@ -3033,6 +3091,9 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
     date: nextDate,
     isMonthlySettlement: nextIsMonthlySettlement,
     monthlySettlementEndDate: nextMonthlySettlementEndDate,
+    monthlySettlementMonthCount: nextMonthlySettlementMonthCount,
+    monthlySettlementSequence: nextMonthlySettlementSequence,
+    monthlySettlementTotalPaymentPrice: nextMonthlySettlementTotalPaymentPrice,
     dispatcher: nextDispatcher,
     accountant: nextAccountant,
     platform: nextPlatform,
@@ -3591,21 +3652,35 @@ async function serveRecords(req, res) {
     }
     try {
       const body = await parseBody(req);
-      const payload = {
-        ...(body && typeof body === "object" ? body : {})
-      };
-      if (session.role === "dispatcher") {
-        payload.dispatcher = getDispatcherTagForAccount(session.account);
+      const sourceItems = Array.isArray(body?.records)
+        ? body.records
+        : (Array.isArray(body) ? body : [body]);
+      const payloadItems = sourceItems
+        .filter((entry) => entry && typeof entry === "object")
+        .map((entry) => {
+          const payload = { ...entry };
+          if (session.role === "dispatcher") {
+            payload.dispatcher = getDispatcherTagForAccount(session.account);
+          }
+          return payload;
+        });
+      if (!payloadItems.length) {
+        sendJson(res, 400, { error: "请填写要新增的数据。" });
+        return;
       }
-      const item = normalizeRecord(payload);
+      if (payloadItems.length > 60) {
+        sendJson(res, 400, { error: "单次最多新增60条数据。" });
+        return;
+      }
+      const items = payloadItems.map((payload) => normalizeRecord(payload));
       const records = await withWriteLock(async () => {
         const all = await readRecords();
         const migration = ensureRecordIds(all);
-        migration.records.unshift(item);
+        migration.records.unshift(...items);
         await writeRecords(migration.records);
         return scopeRecordsBySession(session, migration.records);
       });
-      sendJson(res, 201, { ok: true, item, records });
+      sendJson(res, 201, { ok: true, item: items[0], items, records });
     } catch (error) {
       sendJson(res, 400, { error: error.message || "请求参数错误" });
     }

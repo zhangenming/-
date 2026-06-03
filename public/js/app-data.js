@@ -1959,6 +1959,40 @@
       }
     }
 
+    async function createRecords(items) {
+      const sourceItems = Array.isArray(items) ? items : [];
+      if (!sourceItems.length) return;
+      const response = await fetchWithClientLog(API_ENDPOINT_RECORDS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ records: sourceItems })
+      });
+
+      if (!response.ok) {
+        let message = `保存失败（${response.status}）`;
+        try {
+          const payload = await response.json();
+          if (payload.error) message = payload.error;
+        } catch (error) {
+          console.error(error);
+        }
+        throw new Error(message);
+      }
+
+      const payload = await response.json();
+      const nextRecords = Array.isArray(payload.records) ? payload.records : [...sourceItems, ...records];
+      syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: false });
+      records = nextRecords;
+      resetTableViewToDefault();
+      renderTable();
+      if (!analysisModal.hidden) {
+        renderAnalysisPanel();
+      }
+      if (!accountantModal.hidden) {
+        renderAccountantList();
+      }
+    }
+
     async function updateRecordById(recordId, payload) {
       const response = await fetchWithClientLog(`${API_ENDPOINT_RECORDS}/${encodeURIComponent(recordId)}`, {
         method: "PATCH",

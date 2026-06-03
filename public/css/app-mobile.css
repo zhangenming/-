@@ -1237,6 +1237,22 @@ body.analysis-page-active .mobile-bottom-nav {
   gap: 12px;
 }
 
+.reminder-date-wrapper,
+.monthly-settlement-control {
+  display: grid;
+  gap: 8px;
+}
+
+.monthly-settlement-control[hidden] {
+  display: none;
+}
+
+.reminder-date-wrapper input[readonly],
+.price-item input[readonly] {
+  color: var(--m-muted);
+  background: var(--m-panel-strong);
+}
+
 #createModal .field-dispatcher.mobile-dispatcher-locked .tag-group {
   display: none;
 }
