@@ -36,6 +36,7 @@ const ACCOUNTANT_OPERATION_LOG_FILE = path.join(DATA_DIR, "accountant-operation-
 const REMINDERS_FILE = path.join(DATA_DIR, "reminders.json");
 const FEEDBACK_IMAGE_DIR = path.join(DATA_DIR, "feedback-images");
 const FEEDBACK_IMAGE_URL_PREFIX = "/feedback-images/";
+const CUSTOMER_FEEDBACK_MIN_LENGTH = 12;
 const INVOICE_IMAGE_DIR = path.join(DATA_DIR, "invoice-images");
 const INVOICE_IMAGE_URL_PREFIX = "/invoice-images/";
 const SERVER_LOG_FILE = path.join(ROOT_DIR, "server.log");
@@ -4483,6 +4484,9 @@ async function serveRecordById(req, res, recordIdRaw) {
           if (shouldRefund) {
             updatedRecord = buildRefundRecordUpdate(current, body, session);
           } else if (shouldComplete) {
+            if (Array.from(customerFeedback).length < CUSTOMER_FEEDBACK_MIN_LENGTH) {
+              throw new Error(`客户反馈至少输入${CUSTOMER_FEEDBACK_MIN_LENGTH}个字。`);
+            }
             const serviceFeedbackImages = Object.prototype.hasOwnProperty.call(body, "serviceFeedbackImages")
               ? await resolveFeedbackImagesForUpdate(currentServiceFeedbackImages, body.serviceFeedbackImages, recordId)
               : currentServiceFeedbackImages;

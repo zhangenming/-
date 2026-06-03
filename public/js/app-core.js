@@ -24,6 +24,7 @@ const STATIC_ASSET_VERSION = String(
 ).trim();
 const ECHARTS_ASSET_URL = "./public/vendor/echarts.min.js";
 const RECORDS_REQUEST_WAITING_MS = 8000;
+const CUSTOMER_FEEDBACK_MIN_LENGTH = 12;
 const STORAGE_KEY_ACCOUNT = "dispatch_current_account_v1";
 const STORAGE_KEY_ACCOUNT_ROLE = "dispatch_current_account_role_v1";
 const STORAGE_KEY_ACCOUNT_DISPLAY_NAME =

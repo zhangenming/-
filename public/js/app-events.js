@@ -1450,12 +1450,13 @@
       if (!recordId) return;
       const completedAtRaw = String(completeTimeInput.value || "").trim();
       const customerFeedback = String(completeCustomerFeedbackInput.value || "").trim();
-      if (!customerFeedback) {
+      const customerFeedbackLength = Array.from(customerFeedback).length;
+      if (customerFeedbackLength < CUSTOMER_FEEDBACK_MIN_LENGTH) {
         showInlineFormError({
           form: completeForm,
           hintSetter: setCompleteFormHint,
           target: completeCustomerFeedbackInput,
-          message: "客户反馈为必填项。"
+          message: `客户反馈至少输入${CUSTOMER_FEEDBACK_MIN_LENGTH}个字。`
         });
         return;
       }
