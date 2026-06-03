@@ -999,6 +999,7 @@ function normalizeMonthlySettlementDetails(source, options = {}) {
 function stripLegacyMonthlySettlementFields(record) {
   const source = record && typeof record === "object" ? record : {};
   const {
+    monthlySettlement,
     isMonthlySettlement,
     monthlySettlementEndDate,
     monthlySettlementId,
@@ -2041,7 +2042,7 @@ function sanitizeRecordForAccountant(record) {
     totalPrice: Number.isFinite(totalPrice) ? totalPrice : "",
     premiumPrice: Number.isFinite(premiumPrice) ? premiumPrice : "",
     settlementPrice: Number.isFinite(settlementPrice) ? settlementPrice : "",
-    monthlySettlement,
+    ...(monthlySettlement.enabled ? { monthlySettlement } : {}),
     checkStatus: normalizeText(source.checkStatus, 24).toLowerCase() || "pending",
     refundStatus: normalizeText(source.refundStatus, 24).toLowerCase(),
     refundedAt: normalizeDateTimeValue(source.refundedAt),
@@ -2914,9 +2915,13 @@ function ensureRecordIds(sourceRecords) {
     const hasNormalizedDispatcherSettlementPayment = current.isDispatcherSettlementPaid === normalizedDispatcherSettlementPaymentFields.isDispatcherSettlementPaid
       && normalizeDateTimeValue(current.dispatcherSettlementPaidAt) === normalizedDispatcherSettlementPaymentFields.dispatcherSettlementPaidAt
       && normalizeText(current.dispatcherSettlementPaidBy, 48) === normalizedDispatcherSettlementPaymentFields.dispatcherSettlementPaidBy;
-    const hasNormalizedMonthlySettlement = hasNestedMonthlySettlementField
-      && !hasLegacyMonthlySettlementField
-      && JSON.stringify(current.monthlySettlement) === JSON.stringify(normalizedMonthlySettlement);
+    const hasNormalizedMonthlySettlement = normalizedMonthlySettlement.enabled
+      ? (
+        hasNestedMonthlySettlementField
+        && !hasLegacyMonthlySettlementField
+        && JSON.stringify(current.monthlySettlement) === JSON.stringify(normalizedMonthlySettlement)
+      )
+      : (!hasNestedMonthlySettlementField && !hasLegacyMonthlySettlementField);
     const hasBuiltInCompletion = !isBuiltInAccountantRecord
       || (
         normalizeText(current.checkStatus, 24).toLowerCase() === "completed"
@@ -2954,7 +2959,7 @@ function ensureRecordIds(sourceRecords) {
       checkedAt: normalizedCheckedAt,
       completedAt: normalizedCompletedAt,
       returnedAt: normalizedReturnedAt,
-      monthlySettlement: normalizedMonthlySettlement,
+      ...(normalizedMonthlySettlement.enabled ? { monthlySettlement: normalizedMonthlySettlement } : {}),
       operationHistory: normalizedHistory,
       ...normalizedSettlementFields,
       ...normalizedInvoiceFields,
@@ -2996,7 +3001,7 @@ function normalizeRecord(input) {
     id: generateId("rec"),
     createdAt,
     date: normalizedDate || getCurrentBeijingDate(),
-    monthlySettlement,
+    ...(monthlySettlement.enabled ? { monthlySettlement } : {}),
     dispatcher: normalizeDispatcherTag(input.dispatcher) || normalizeText(input.dispatcher, 48),
     accountant,
     platform: normalizeText(input.platform, 80),
@@ -3119,7 +3124,7 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
     ...currentInvoiceFields,
     ...currentSettlementPaymentFields,
     date: nextDate,
-    monthlySettlement: nextMonthlySettlement,
+    ...(nextMonthlySettlement.enabled ? { monthlySettlement: nextMonthlySettlement } : {}),
     dispatcher: nextDispatcher,
     accountant: nextAccountant,
     platform: nextPlatform,

@@ -2729,14 +2729,6 @@
         : "";
       const item = {
         date: String(formData.get("date") || dateInput.value || getTodayISODate()).trim(),
-        monthlySettlement: {
-          enabled: Boolean(monthlySettlementCheckbox?.checked),
-          endDate: monthlySettlementEndDate,
-          id: "",
-          monthCount: isMonthlySettlementCreate ? monthlySettlementMonthCount : "",
-          sequence: "",
-          totalPaymentPrice: isMonthlySettlementCreate ? monthlySettlementTotalPaymentPrice : ""
-        },
         reminderDate: monthlySettlementEndDate,
         dispatcher: dispatcherInput.value || getDefaultDispatcherTag(),
         accountant: currentAccountantName || String(formData.get("accountant") || "").trim(),
@@ -2751,6 +2743,16 @@
         totalPrice: totalPriceRaw === "" ? (allowEmptyCreateFields ? "" : Number.NaN) : Number(totalPriceRaw),
         settlementPrice: settlementPriceRaw === "" ? (allowEmptyCreateFields ? "" : Number.NaN) : Number(settlementPriceRaw)
       };
+      if (isMonthlySettlementCreate) {
+        item.monthlySettlement = {
+          enabled: true,
+          endDate: monthlySettlementEndDate,
+          id: "",
+          monthCount: monthlySettlementMonthCount,
+          sequence: "",
+          totalPaymentPrice: monthlySettlementTotalPaymentPrice
+        };
+      }
 
       if (isCreateMode && !allowEmptyCreateFields) {
         const requiredFields = [
@@ -2809,7 +2811,7 @@
           });
           return;
         }
-        if (!item.monthlySettlement.endDate) {
+        if (!monthlySettlementEndDate) {
           showInlineFormError({
             form: recordForm,
             hintSetter: setRecordFormHint,
@@ -2934,8 +2936,8 @@
           }
         );
 
-        if (!editingRecordId && item.monthlySettlement.enabled && item.monthlySettlement.endDate) {
-          const reminderDate = item.monthlySettlement.endDate;
+        if (!editingRecordId && isMonthlySettlementCreate && monthlySettlementEndDate) {
+          const reminderDate = monthlySettlementEndDate;
           const orderNo = String(item.orderNo || "").trim();
           const customerWechat = String(item.customer || "").trim();
           if (reminderDate && orderNo && customerWechat) {
