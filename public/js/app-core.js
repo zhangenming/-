@@ -2620,12 +2620,16 @@ function canCurrentAccountViewSettlementRatio() {
   return hasAuthenticatedAccount() && (isBossLogin() || isDispatcherLogin());
 }
 
+function canUseAccountantInvoiceUploadFeature() {
+  return hasDebugQueryFlag();
+}
+
 function canCurrentAccountUploadSettlementInvoice() {
-  return isAccountantLogin();
+  return isAccountantLogin() && canUseAccountantInvoiceUploadFeature();
 }
 
 function canCurrentAccountManageInvoiceRecipientInfo() {
-  return isAccountantLogin();
+  return isAccountantLogin() && canUseAccountantInvoiceUploadFeature();
 }
 
 function canCurrentAccountPayoutSettlementRecords() {
