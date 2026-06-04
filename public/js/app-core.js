@@ -74,6 +74,10 @@ const BUILT_IN_ACCOUNTANT_NAMES = [
 ];
 const DEFAULT_EXISTING_ACCOUNTANT_SETTLEMENT_RATIO = 50;
 const DISPATCHER_PREMIUM_PROFIT_NEW_FORMULA_START_DATE = "2026-06-01";
+const DISPATCHER_BASE_PROFIT_RATE_STANDARD = 0.08;
+const DISPATCHER_BASE_PROFIT_RATE_MONTHLY_FIRST = DISPATCHER_BASE_PROFIT_RATE_STANDARD;
+const DISPATCHER_BASE_PROFIT_RATE_MONTHLY_FOLLOWING = 0.13;
+const DISPATCHER_BASE_PROFIT_RATE_MONTHLY_RENEWAL = DISPATCHER_BASE_PROFIT_RATE_MONTHLY_FOLLOWING;
 const DISPATCHER_PREMIUM_PROFIT_LEGACY_FORMULA = "legacy";
 const DISPATCHER_PREMIUM_PROFIT_NEW_FORMULA = "new";
 const DISPATCHER_PREMIUM_PROFIT_FORMULAS = {
@@ -3074,11 +3078,13 @@ function getMonthlySettlementTableDisplay(record) {
 }
 
 function getDispatcherBaseProfitRate(record) {
-  if (!isMonthlySettlementRecord(record)) return 0.08;
+  if (!isMonthlySettlementRecord(record)) return DISPATCHER_BASE_PROFIT_RATE_STANDARD;
   const monthlySettlement = getRecordMonthlySettlement(record);
-  if (monthlySettlement.renewal) return 0.13;
+  if (monthlySettlement.renewal) return DISPATCHER_BASE_PROFIT_RATE_MONTHLY_RENEWAL;
   const sequence = parsePositiveIntegerValue(monthlySettlement.sequence);
-  return sequence === 1 ? 0.08 : 0.13;
+  return sequence === 1
+    ? DISPATCHER_BASE_PROFIT_RATE_MONTHLY_FIRST
+    : DISPATCHER_BASE_PROFIT_RATE_MONTHLY_FOLLOWING;
 }
 
 function resolveStoredAssetUrl(url) {
