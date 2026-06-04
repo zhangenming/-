@@ -775,7 +775,7 @@
     function buildStatusValueCountMap(sourceRecords) {
       const map = new Map();
       sourceRecords.forEach((item) => {
-        getStatusFilterValues(item).forEach((value) => {
+        Array.from(new Set(getStatusFilterValues(item))).forEach((value) => {
           map.set(value, (map.get(value) || 0) + 1);
         });
       });
@@ -785,7 +785,7 @@
     function buildSettlementValueCountMap(sourceRecords) {
       const map = new Map();
       sourceRecords.forEach((item) => {
-        getRecordSettlementFilterLabels(item).forEach((value) => {
+        Array.from(new Set(getRecordSettlementFilterLabels(item))).forEach((value) => {
           map.set(value, (map.get(value) || 0) + 1);
         });
       });
