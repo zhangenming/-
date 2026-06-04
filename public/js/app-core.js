@@ -3063,7 +3063,11 @@ function getMonthlySettlementDisplay(record) {
 }
 
 function getMonthlySettlementTableDisplay(record) {
-  return getMonthlySettlementDisplay(record);
+  const display = getMonthlySettlementDisplay(record);
+  if (!display) return "";
+  const rate = getDispatcherBaseProfitRate(record);
+  const rateText = Number.isFinite(rate) ? `${Number((rate * 100).toFixed(2))}%` : "";
+  return [display, rateText].filter(Boolean).join(" · ");
 }
 
 function getDispatcherBaseProfitRate(record) {
