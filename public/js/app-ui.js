@@ -6599,16 +6599,13 @@
     function syncMonthlySettlementCalculatedFields() {
       const isMonthly = Boolean(monthlySettlementCheckbox?.checked);
       const isCreateMode = !String(recordEditingIdInput?.value || "").trim();
-      const canUseMonthlySettlementToggle = hasDebugQueryFlag();
       const shouldUseCalculatedMonthlyFields = isMonthly && isCreateMode;
       const monthlyTotalControl = monthlySettlementTotalPaymentPriceInput?.closest(".monthly-settlement-control");
       const monthlyCountControl = monthlySettlementMonthCountInput?.closest(".monthly-settlement-control");
 
       if (monthlySettlementCheckbox) {
-        monthlySettlementCheckbox.disabled = !canUseMonthlySettlementToggle;
-        monthlySettlementCheckbox.title = canUseMonthlySettlementToggle
-          ? ""
-          : "月结勾选暂时关闭，调试链接可使用。";
+        monthlySettlementCheckbox.disabled = false;
+        monthlySettlementCheckbox.title = "";
       }
       if (monthlyTotalControl) monthlyTotalControl.hidden = !isCreateMode;
       if (monthlyCountControl) monthlyCountControl.hidden = !isCreateMode;
