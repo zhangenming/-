@@ -979,7 +979,8 @@ function getMonthlySettlementPayload(source, fallback = {}) {
     id: monthlySettlement.id ?? input.monthlySettlementId ?? fallbackMonthlySettlement.id ?? fallbackInput.monthlySettlementId,
     monthCount: monthlySettlement.monthCount ?? input.monthlySettlementMonthCount ?? fallbackMonthlySettlement.monthCount ?? fallbackInput.monthlySettlementMonthCount,
     sequence: monthlySettlement.sequence ?? input.monthlySettlementSequence ?? fallbackMonthlySettlement.sequence ?? fallbackInput.monthlySettlementSequence,
-    totalPaymentPrice: monthlySettlement.totalPaymentPrice ?? input.monthlySettlementTotalPaymentPrice ?? fallbackMonthlySettlement.totalPaymentPrice ?? fallbackInput.monthlySettlementTotalPaymentPrice
+    totalPaymentPrice: monthlySettlement.totalPaymentPrice ?? input.monthlySettlementTotalPaymentPrice ?? fallbackMonthlySettlement.totalPaymentPrice ?? fallbackInput.monthlySettlementTotalPaymentPrice,
+    renewal: monthlySettlement.renewal ?? input.monthlySettlementRenewal ?? fallbackMonthlySettlement.renewal ?? fallbackInput.monthlySettlementRenewal
   };
 }
 
@@ -992,7 +993,8 @@ function normalizeMonthlySettlementDetails(source, options = {}) {
     id: enabled ? (normalizeText(payload.id, 80) || generateId("mset")) : "",
     monthCount: enabled ? normalizePositiveIntegerField(payload.monthCount) : "",
     sequence: enabled ? normalizePositiveIntegerField(payload.sequence) : "",
-    totalPaymentPrice: enabled ? normalizeOptionalMoneyField(payload.totalPaymentPrice) : ""
+    totalPaymentPrice: enabled ? normalizeOptionalMoneyField(payload.totalPaymentPrice) : "",
+    renewal: enabled ? normalizeStateFlag(payload.renewal, MONTHLY_SETTLEMENT_STATE_VALUES) : false
   };
 }
 
@@ -1006,6 +1008,7 @@ function stripLegacyMonthlySettlementFields(record) {
     monthlySettlementMonthCount,
     monthlySettlementSequence,
     monthlySettlementTotalPaymentPrice,
+    monthlySettlementRenewal,
     ...rest
   } = source;
   return rest;
@@ -1973,6 +1976,7 @@ const ACCOUNTANT_RECORD_HISTORY_VISIBLE_FIELDS = new Set([
   "monthlySettlementId",
   "monthlySettlementMonthCount",
   "monthlySettlementSequence",
+  "monthlySettlementRenewal",
   "customer",
   "summary",
   "totalPrice",
@@ -2682,6 +2686,12 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
     getValue: (record) => normalizeMonthlySettlementDetails(record).totalPaymentPrice
   },
   {
+    field: "monthlySettlementRenewal",
+    label: "月结续费",
+    kind: "text",
+    getValue: (record) => normalizeMonthlySettlementDetails(record).renewal ? "是" : ""
+  },
+  {
     field: "dispatcher",
     label: "派单人",
     kind: "text",
@@ -2891,7 +2901,8 @@ function ensureRecordIds(sourceRecords) {
       "monthlySettlementId",
       "monthlySettlementMonthCount",
       "monthlySettlementSequence",
-      "monthlySettlementTotalPaymentPrice"
+      "monthlySettlementTotalPaymentPrice",
+      "monthlySettlementRenewal"
     ].some((field) => Object.prototype.hasOwnProperty.call(current, field));
     const hasNormalizedHistory = Array.isArray(current.operationHistory)
       && JSON.stringify(current.operationHistory) === JSON.stringify(normalizedHistory);
@@ -3334,6 +3345,7 @@ function isAccountantEditableRecordPayload(payload) {
     "monthlySettlementMonthCount",
     "monthlySettlementSequence",
     "monthlySettlementTotalPaymentPrice",
+    "monthlySettlementRenewal",
     "dispatcher",
     "accountant",
     "platform",

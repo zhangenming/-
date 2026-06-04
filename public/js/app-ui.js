@@ -2740,6 +2740,7 @@
       "monthlySettlementMonthCount",
       "monthlySettlementSequence",
       "monthlySettlementTotalPaymentPrice",
+      "monthlySettlementRenewal",
       "dispatcher",
       "accountant",
       "platform",
@@ -2797,6 +2798,7 @@
       monthlySettlementMonthCount: "月结月数",
       monthlySettlementSequence: "月结序号",
       monthlySettlementTotalPaymentPrice: "月结单总付款价",
+      monthlySettlementRenewal: "月结续费",
       dispatcher: "接待人",
       accountant: "会计",
       platform: "平台",
@@ -2868,6 +2870,9 @@
       }
       if (normalizedField === "monthlySettlementTotalPaymentPrice") {
         return getRecordMonthlySettlement(item).totalPaymentPrice;
+      }
+      if (normalizedField === "monthlySettlementRenewal") {
+        return getRecordMonthlySettlement(item).renewal ? "是" : "";
       }
       if (normalizedField === "isSettled") {
         if (!isRecordCompleted(item) && !isRecordSettled(item) && !isRecordInvoiceUploaded(item)) {
@@ -6653,6 +6658,9 @@
       if (monthlySettlementCheckbox) {
         monthlySettlementCheckbox.checked = false;
       }
+      if (monthlySettlementRenewalCheckbox) {
+        monthlySettlementRenewalCheckbox.checked = false;
+      }
       if (recordReminderDateField) {
         recordReminderDateField.hidden = true;
       }
@@ -7275,6 +7283,9 @@
         recordReminderDateInput.value = getMonthlySettlementEndDate(record);
       }
       const monthlySettlement = getRecordMonthlySettlement(record);
+      if (monthlySettlementRenewalCheckbox) {
+        monthlySettlementRenewalCheckbox.checked = Boolean(monthlySettlement.renewal);
+      }
       if (monthlySettlementTotalPaymentPriceInput) {
         monthlySettlementTotalPaymentPriceInput.value = Number.isFinite(Number(monthlySettlement.totalPaymentPrice))
           ? String(monthlySettlement.totalPaymentPrice)

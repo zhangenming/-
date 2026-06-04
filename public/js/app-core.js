@@ -1109,6 +1109,7 @@ const confirmModalConfirmBtn = document.getElementById(
 
 const dateInput = document.getElementById("date");
 const monthlySettlementCheckbox = document.getElementById("monthlySettlement");
+const monthlySettlementRenewalCheckbox = document.getElementById("monthlySettlementRenewal");
 const recordReminderDateField = document.getElementById("reminderDateField");
 const recordReminderDateInput = document.getElementById("reminderDate");
 const monthlySettlementTotalPaymentPriceInput = document.getElementById(
@@ -3029,7 +3030,8 @@ function getRecordMonthlySettlement(record) {
     id: enabled ? String(source.id || item.monthlySettlementId || "").trim() : "",
     monthCount: enabled ? (source.monthCount ?? item.monthlySettlementMonthCount ?? "") : "",
     sequence: enabled ? (source.sequence ?? item.monthlySettlementSequence ?? "") : "",
-    totalPaymentPrice: enabled ? (source.totalPaymentPrice ?? item.monthlySettlementTotalPaymentPrice ?? "") : ""
+    totalPaymentPrice: enabled ? (source.totalPaymentPrice ?? item.monthlySettlementTotalPaymentPrice ?? "") : "",
+    renewal: enabled ? normalizeStateFlag(source.renewal ?? item.monthlySettlementRenewal, MONTHLY_SETTLEMENT_STATE_VALUES) : false
   };
 }
 
@@ -3073,6 +3075,7 @@ function getMonthlySettlementTableDisplay(record) {
 function getDispatcherBaseProfitRate(record) {
   if (!isMonthlySettlementRecord(record)) return 0.08;
   const monthlySettlement = getRecordMonthlySettlement(record);
+  if (monthlySettlement.renewal) return 0.13;
   const sequence = parsePositiveIntegerValue(monthlySettlement.sequence);
   return sequence === 1 ? 0.05 : 0.13;
 }

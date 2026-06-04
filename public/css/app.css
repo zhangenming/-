@@ -1428,7 +1428,7 @@
 
     #recordForm .reminder-date-wrapper {
       display: grid;
-      grid-template-columns: minmax(188px, 1fr) 84px auto minmax(150px, 1fr);
+      grid-template-columns: minmax(188px, 1fr) 84px auto auto minmax(150px, 1fr);
       align-items: center;
       gap: 8px;
       flex: 1 1 560px;
@@ -1450,6 +1450,12 @@
 
     #recordForm .monthly-settlement-control[hidden] {
       display: none;
+    }
+
+    #recordForm .reminder-date-wrapper .monthly-settlement-renewal-toggle {
+      min-height: 36px;
+      padding: 0 10px;
+      border-radius: 10px;
     }
 
     #recordForm .reminder-date-label {

@@ -2726,6 +2726,7 @@
       const monthlySettlementMonthCount = monthlySettlementMonthCountRaw === ""
         ? Number.NaN
         : parsePositiveIntegerValue(monthlySettlementMonthCountRaw);
+      const monthlySettlementRenewal = Boolean(monthlySettlementRenewalCheckbox?.checked);
       const paymentPriceRaw = String(formData.get("paymentPrice") || "").trim();
       const totalPriceRaw = String(formData.get("totalPrice") || "").trim();
       const settlementPriceRaw = String(formData.get("settlementPrice") || "").trim();
@@ -2751,14 +2752,23 @@
         totalPrice: totalPriceRaw === "" ? (allowEmptyCreateFields ? "" : Number.NaN) : Number(totalPriceRaw),
         settlementPrice: settlementPriceRaw === "" ? (allowEmptyCreateFields ? "" : Number.NaN) : Number(settlementPriceRaw)
       };
-      if (isMonthlySettlementCreate) {
+      const currentEditingRecord = editingRecordId
+        ? records.find((record) => String(record?.id || "").trim() === editingRecordId)
+        : null;
+      const currentMonthlySettlement = getRecordMonthlySettlement(currentEditingRecord);
+      if (Boolean(monthlySettlementCheckbox?.checked)) {
         item.monthlySettlement = {
           enabled: true,
           endDate: monthlySettlementEndDate,
-          id: "",
-          monthCount: monthlySettlementMonthCount,
-          sequence: "",
-          totalPaymentPrice: monthlySettlementTotalPaymentPrice
+          id: isCreateMode ? "" : currentMonthlySettlement.id,
+          monthCount: Number.isInteger(monthlySettlementMonthCount)
+            ? monthlySettlementMonthCount
+            : currentMonthlySettlement.monthCount,
+          sequence: isCreateMode ? "" : currentMonthlySettlement.sequence,
+          totalPaymentPrice: Number.isFinite(monthlySettlementTotalPaymentPrice)
+            ? monthlySettlementTotalPaymentPrice
+            : currentMonthlySettlement.totalPaymentPrice,
+          renewal: monthlySettlementRenewal
         };
       }
 
@@ -3015,6 +3025,9 @@
               }
               if (monthlySettlementMonthCountInput) {
                 monthlySettlementMonthCountInput.value = "";
+              }
+              if (monthlySettlementRenewalCheckbox) {
+                monthlySettlementRenewalCheckbox.checked = false;
               }
             }
             syncMonthlySettlementCalculatedFields();

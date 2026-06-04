@@ -1245,7 +1245,7 @@ body.analysis-page-active .mobile-bottom-nav {
 
 .reminder-date-wrapper {
   display: grid;
-  grid-template-columns: minmax(176px, 1fr) 74px auto minmax(144px, 1fr);
+  grid-template-columns: minmax(176px, 1fr) 74px auto auto minmax(144px, 1fr);
   align-items: center;
   gap: 8px;
   overflow-x: auto;
@@ -1278,6 +1278,12 @@ body.analysis-page-active .mobile-bottom-nav {
 
 .monthly-settlement-control[hidden] {
   display: none;
+}
+
+.reminder-date-wrapper .monthly-settlement-renewal-toggle {
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
 }
 
 .reminder-date-wrapper input[readonly],
