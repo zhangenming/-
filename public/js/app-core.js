@@ -3063,7 +3063,10 @@ function getMonthlySettlementDisplay(record) {
 }
 
 function getDispatcherBaseProfitRate(record) {
-  return isMonthlySettlementRecord(record) ? 0.13 : 0.08;
+  if (!isMonthlySettlementRecord(record)) return 0.08;
+  const monthlySettlement = getRecordMonthlySettlement(record);
+  const sequence = parsePositiveIntegerValue(monthlySettlement.sequence);
+  return sequence === 1 ? 0.05 : 0.13;
 }
 
 function resolveStoredAssetUrl(url) {
