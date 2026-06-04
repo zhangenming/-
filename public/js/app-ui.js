@@ -106,7 +106,7 @@
       { label: "接待收益", getValue: (item) => formatProfitDisplay(item), visible: () => shouldShowProfitColumn() },
       { key: "total", label: "会计价", getValue: (item) => toMoney(item?.totalPrice) },
       { key: "settlement", label: "会计结算价", getValue: (item) => toMoney(item?.settlementPrice) },
-      { key: "monthlySettlement", label: "是否月结", getValue: (item) => getMonthlySettlementDisplay(item) },
+      { key: "monthlySettlement", label: "是否月结", getValue: (item) => getMonthlySettlementTableDisplay(item) },
       { key: "monthlySettlement", label: "月结ID", getValue: (item) => getRecordMonthlySettlement(item).id },
       { key: "monthlySettlement", label: "月结月数", getValue: (item) => String(getRecordMonthlySettlement(item).monthCount || "").trim() },
       { key: "monthlySettlement", label: "月结序号", getValue: (item) => String(getRecordMonthlySettlement(item).sequence || "").trim() },
@@ -2852,7 +2852,7 @@
         return getRecordRefundBadgeText(item);
       }
       if (normalizedField === "isMonthlySettlement") {
-        return getMonthlySettlementDisplay(item);
+        return getMonthlySettlementTableDisplay(item);
       }
       if (normalizedField === "monthlySettlementEndDate") {
         return getMonthlySettlementEndDate(item);
@@ -6968,7 +6968,7 @@
           String(item.shopName || ""),
           String(item.orderNo || ""),
           String(item.customerFeedback || ""),
-          getMonthlySettlementDisplay(item),
+          getMonthlySettlementTableDisplay(item),
           getRecordWorkflowStatusText(item)
         ];
         values.forEach((value, index) => {

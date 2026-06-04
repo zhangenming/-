@@ -3062,6 +3062,10 @@ function getMonthlySettlementDisplay(record) {
     .join(" · ");
 }
 
+function getMonthlySettlementTableDisplay(record) {
+  return getMonthlySettlementDisplay(record);
+}
+
 function getDispatcherBaseProfitRate(record) {
   if (!isMonthlySettlementRecord(record)) return 0.08;
   const monthlySettlement = getRecordMonthlySettlement(record);
