@@ -3265,6 +3265,10 @@
       transform-origin: center top;
     }
 
+    #createModal > .modal-card {
+      position: relative;
+    }
+
     .invoice-upload-modal-card {
       width: min(680px, 94vw);
       display: flex;
@@ -3551,6 +3555,44 @@
 
       body:not(.boss-view) #createModal #recordForm {
         overflow-y: visible;
+      }
+
+      body:not(.boss-view) #createModal #recordForm .form-actions {
+        position: absolute;
+        right: 20px;
+        bottom: 28px;
+        width: auto;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+      }
+
+      body:not(.boss-view) #createModal #recordForm .field-note {
+        padding-right: 184px;
+      }
+    }
+
+    @media (min-width: 641px) and (max-width: 860px) {
+      body:not(.boss-view) #createModal #recordForm .field-note {
+        padding-right: 184px;
+      }
+
+      body:not(.boss-view) #createModal #recordForm .form-actions {
+        position: absolute;
+        right: 20px;
+        bottom: 28px;
+        width: auto;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        justify-content: flex-end;
+      }
+
+      body:not(.boss-view) #createModal #recordForm .form-actions .btn-danger,
+      body:not(.boss-view) #createModal #recordForm .form-actions .btn-primary {
+        flex: 0 0 auto;
+        width: auto;
+        min-width: 160px;
       }
     }
 
