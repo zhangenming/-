@@ -1427,11 +1427,11 @@
     }
 
     #recordForm .reminder-date-wrapper {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(188px, 1fr) 84px auto minmax(150px, 1fr);
       align-items: center;
       gap: 8px;
-      flex: 1 1 360px;
-      flex-wrap: wrap;
+      flex: 1 1 560px;
       min-height: 50px;
       padding: 0 14px;
       border: 1px solid #d9e7e0;
@@ -1444,6 +1444,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      width: 100%;
       min-width: 0;
     }
 
@@ -1461,7 +1462,9 @@
 
     #recordForm .reminder-date-wrapper input[type="date"],
     #recordForm .reminder-date-wrapper input[type="number"] {
-      min-width: 130px;
+      flex: 1 1 auto;
+      width: 100%;
+      min-width: 0;
       min-height: 36px;
       padding: 0 8px;
       border: 1px solid #d9e7e0;
@@ -1472,7 +1475,17 @@
     }
 
     #recordForm .reminder-date-wrapper input[type="number"] {
-      width: 118px;
+      width: 100%;
+    }
+
+    #recordForm .monthly-settlement-control:has(#monthlySettlementMonthCount) {
+      grid-template-columns: auto 46px;
+    }
+
+    #recordForm .monthly-settlement-control:has(#monthlySettlementMonthCount) input {
+      flex: 0 0 46px;
+      width: 46px;
+      text-align: center;
     }
 
     #recordForm .reminder-date-wrapper input[readonly] {
