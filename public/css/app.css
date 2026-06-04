@@ -1664,7 +1664,7 @@
     #recordForm #platformShopPicker .accountant-picker-dropdown {
       width: min(max(100%, 560px), calc(100vw - 72px));
       max-height: min(76vh, 720px);
-      padding: 12px;
+      padding: 10px;
       grid-template-rows: minmax(0, 1fr);
     }
 
@@ -1706,9 +1706,9 @@
 
     #recordForm .platform-shop-picker-group {
       display: grid;
-      gap: 7px;
+      gap: 5px;
       min-width: 0;
-      padding: 9px;
+      padding: 8px;
       border: 1px solid var(--platform-shop-group-border, #d6e8df);
       border-left: 4px solid var(--platform-shop-group-accent, #2b947c);
       border-radius: 10px;
@@ -1766,7 +1766,7 @@
 
     #recordForm .platform-shop-picker-group-options {
       display: grid;
-      gap: 6px;
+      gap: 5px;
     }
 
     #recordForm .accountant-picker-option {
@@ -1776,7 +1776,7 @@
       background: #f8fcfa;
       color: #2a4b41;
       text-align: left;
-      padding: 8px 10px;
+      padding: 7px 10px;
       font-size: 13px;
       font-weight: 600;
       display: flex;
@@ -3531,13 +3531,26 @@
     }
 
     @media (min-width: 861px) {
+      #createModal.modal-overlay {
+        padding-block: 10px;
+      }
+
       #createModal > .modal-card {
         width: min(1180px, 98vw);
         height: auto;
-        max-height: min(820px, calc(100vh - 40px));
+        max-height: calc(100vh - 20px);
         display: flex;
         flex-direction: column;
         overflow: hidden;
+      }
+
+      body:not(.boss-view) #createModal > .modal-card {
+        min-height: min(820px, calc(100vh - 20px));
+        overflow: visible;
+      }
+
+      body:not(.boss-view) #createModal #recordForm {
+        overflow-y: visible;
       }
     }
 
