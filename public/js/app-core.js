@@ -3078,7 +3078,7 @@ function getDispatcherBaseProfitRate(record) {
   const monthlySettlement = getRecordMonthlySettlement(record);
   if (monthlySettlement.renewal) return 0.13;
   const sequence = parsePositiveIntegerValue(monthlySettlement.sequence);
-  return sequence === 1 ? 0.05 : 0.13;
+  return sequence === 1 ? 0.08 : 0.13;
 }
 
 function resolveStoredAssetUrl(url) {
