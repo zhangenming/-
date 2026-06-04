@@ -713,6 +713,23 @@
     }
   },
   {
+    "username": "18256081946",
+    "displayName": "维维",
+    "name": "维维",
+    "alias": "维维",
+    "realName": "胡维维",
+    "phone": "18256081946",
+    "loginPassword": "hww123456",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": {
+      "name": "胡维维",
+      "bankName": "中国银行",
+      "bankCardNo": "6217906300019510877",
+      "idCardNo": "342921199206155027",
+      "declarationPhone": "18256081946"
+    }
+  },
+  {
     "username": "WoXinFeiXiang",
     "displayName": "我心飞翔",
     "name": "我心飞翔",
@@ -850,7 +867,13 @@
     "phone": "15160205943",
     "loginPassword": "123456",
     "accountingSettlementRatio": 50,
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "仙游晓光年咨询服务有限公司",
+      "bankName": "兴业银行股份有限公司福州屏山支行",
+      "bankCardNo": "116020100100313188",
+      "idCardNo": "91350322MAKAE8QG7Y",
+      "declarationPhone": "15160205943"
+    }
   },
   {
     "username": "13382644414",
