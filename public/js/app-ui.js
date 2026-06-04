@@ -450,7 +450,7 @@
       XLSX.writeFile(wb, getTableExportFileName());
     }
 
-    function getSettlementPayoutExportFileName() {
+    function getSettlementPayoutExportFileName(monthKey = "") {
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -458,12 +458,15 @@
       const hours = String(now.getHours()).padStart(2, "0");
       const minutes = String(now.getMinutes()).padStart(2, "0");
       const seconds = String(now.getSeconds()).padStart(2, "0");
-      return `打款数据导出_${year}${month}${date}_${hours}${minutes}${seconds}.xlsx`;
+      const normalizedMonthKey = normalizeSettlementMonthKey(monthKey).replace("-", "");
+      const monthPart = normalizedMonthKey ? `${normalizedMonthKey}_` : "";
+      return `打款数据导出_${monthPart}${year}${month}${date}_${hours}${minutes}${seconds}.xlsx`;
     }
 
     function exportSettlementPayout() {
       if (!canCurrentAccountSettleRecords()) return;
-      const { groups } = getBossSettlementDetailSummary();
+      const activeMonthKey = resolveBossSettlementDetailMonthKey(records);
+      const { groups } = getBossSettlementDetailSummary(records, { monthKey: activeMonthKey });
       const payoutGroups = groups.filter((group) => {
         const targets = Array.isArray(group.payoutTargets) ? group.payoutTargets : group.payoutRecordIds;
         return Array.isArray(targets) && targets.length > 0;
@@ -534,7 +537,7 @@
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "打款数据");
 
-      XLSX.writeFile(wb, getSettlementPayoutExportFileName());
+      XLSX.writeFile(wb, getSettlementPayoutExportFileName(activeMonthKey));
     }
 
     function getDateCellDisplayParts(rawDateTime, fallbackDateTime = "") {
@@ -4147,6 +4150,110 @@
       };
     }
 
+    function getBossSettlementDetailMonthKeys(sourceRecords = records) {
+      const keys = new Set();
+      getBossSettlementDetailRecords(sourceRecords).forEach((record) => {
+        const accountantMonthKey = getBossSettlementTargetMonthKey(record, "accountant");
+        const dispatcherMonthKey = getBossSettlementTargetMonthKey(record, "dispatcher");
+        if (accountantMonthKey) keys.add(accountantMonthKey);
+        if (dispatcherMonthKey) keys.add(dispatcherMonthKey);
+      });
+      return Array.from(keys).sort((left, right) => String(right).localeCompare(String(left)));
+    }
+
+    function getBossSettlementDetailMonthOptions(sourceRecords = records) {
+      return getBossSettlementDetailMonthKeys(sourceRecords)
+        .map((monthKey) => {
+          const summary = getBossSettlementDetailSummary(sourceRecords, { monthKey });
+          return {
+            key: monthKey,
+            label: formatSettlementMonthLabel(monthKey),
+            shortLabel: formatSettlementMonthLabel(monthKey, { short: true }),
+            accountantCount: summary.accountantCount,
+            recordCount: summary.recordCount,
+            pendingRecordCount: summary.pendingRecordCount,
+            uploadedRecordCount: summary.uploadedRecordCount,
+            payoutRecordCount: summary.payoutRecordCount,
+            paidRecordCount: summary.paidRecordCount
+          };
+        })
+        .filter((item) => item.recordCount > 0 || item.accountantCount > 0);
+    }
+
+    function resolveBossSettlementDetailMonthKey(sourceRecords = records, options = {}) {
+      const monthOptions = getBossSettlementDetailMonthOptions(sourceRecords);
+      const currentMonthKey = getCurrentSettlementMonthKey();
+      const preferredMonthKey = normalizeSettlementMonthKey(options.preferredMonthKey);
+      const activeMonthKey = normalizeSettlementMonthKey(bossSettlementDetailMonthKey);
+      const availableKeys = new Set(monthOptions.map((item) => item.key));
+
+      if (preferredMonthKey && availableKeys.has(preferredMonthKey)) {
+        bossSettlementDetailMonthKey = preferredMonthKey;
+        return bossSettlementDetailMonthKey;
+      }
+      if (!activeMonthKey && availableKeys.has(currentMonthKey)) {
+        bossSettlementDetailMonthKey = currentMonthKey;
+        return bossSettlementDetailMonthKey;
+      }
+      if (activeMonthKey && availableKeys.has(activeMonthKey)) {
+        bossSettlementDetailMonthKey = activeMonthKey;
+        return bossSettlementDetailMonthKey;
+      }
+      bossSettlementDetailMonthKey = monthOptions[0]?.key || currentMonthKey;
+      return bossSettlementDetailMonthKey;
+    }
+
+    function initializeBossSettlementDetailMonthKey(sourceRecords = records) {
+      bossSettlementDetailMonthKey = "";
+      return resolveBossSettlementDetailMonthKey(sourceRecords, {
+        preferredMonthKey: getCurrentSettlementMonthKey()
+      });
+    }
+
+    function renderBossSettlementDetailMonthTabs(monthOptions, activeMonthKey) {
+      if (!bossSettlementDetailMonthTabs) return;
+      bossSettlementDetailMonthTabs.innerHTML = "";
+      const options = Array.isArray(monthOptions) ? monthOptions : [];
+      bossSettlementDetailMonthTabs.hidden = options.length === 0;
+      if (!options.length) return;
+
+      options.forEach((option) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "settlement-detail-month-tab-btn";
+        button.dataset.settlementDetailMonthKey = option.key;
+        button.setAttribute("aria-pressed", option.key === activeMonthKey ? "true" : "false");
+        button.title = `${option.label}，${option.recordCount}单`;
+
+        const label = document.createElement("span");
+        label.className = "settlement-detail-month-label";
+        label.textContent = option.shortLabel || option.label;
+        button.appendChild(label);
+
+        const meta = document.createElement("span");
+        meta.className = "settlement-detail-month-meta";
+        meta.textContent = `${option.accountantCount}位`;
+        button.appendChild(meta);
+
+        bossSettlementDetailMonthTabs.appendChild(button);
+      });
+    }
+
+    function setBossSettlementDetailMonthKey(monthKey) {
+      const normalizedMonthKey = normalizeSettlementMonthKey(monthKey);
+      if (!normalizedMonthKey || normalizedMonthKey === bossSettlementDetailMonthKey) return;
+      bossSettlementDetailMonthKey = normalizedMonthKey;
+      clearBossSettlementPayoutSelection();
+      renderBossSettlementDetailModalContent();
+    }
+
+    function formatBossSettlementDetailMonthMeta(summary, monthKey) {
+      const totals = getBossSettlementDetailGroupTotals(summary?.groups || []);
+      const label = formatSettlementMonthLabel(monthKey) || "当前月份";
+      const payoutGroupCount = getBossSettlementPayoutGroupCount(summary?.groups || []);
+      return `${label} · 待上传 ${summary?.pendingRecordCount || 0}单 / 待结算 ${payoutGroupCount}位 / 已结算 ${totals.paidRecordCount || 0}单`;
+    }
+
     function getSelectedBossSettlementPayoutPayableAmount(groups, selectedTargetSet) {
       const source = Array.isArray(groups) ? groups : [];
       if (!(selectedTargetSet instanceof Set) || selectedTargetSet.size === 0) return 0;
@@ -4389,7 +4496,8 @@
         || isInvoiceUploadedByLinkedDispatcher(record, accountantName);
     }
 
-    function getBossSettlementDetailSummary(sourceRecords = records) {
+    function getBossSettlementDetailSummary(sourceRecords = records, options = {}) {
+      const monthKey = normalizeSettlementMonthKey(options?.monthKey);
       const detailRecords = getBossSettlementDetailRecords(sourceRecords);
       const groupMap = new Map();
       let latestSettledAt = "";
@@ -4439,6 +4547,7 @@
       };
 
       detailRecords.forEach((record) => {
+        if (!isBossSettlementTargetInMonth(record, "accountant", monthKey)) return;
         const accountant = String(record?.accountant || "").trim() || "未分配会计";
         const settlement = Number(record?.settlementPrice);
         const settledAt = String(record?.settledAt || "").trim();
@@ -4524,7 +4633,10 @@
       });
 
       const detailDispatchers = new Set(
-        detailRecords.map((record) => normalizeDispatcherTag(record?.dispatcher)).filter(Boolean)
+        detailRecords
+          .filter((record) => isBossSettlementTargetInMonth(record, "dispatcher", monthKey))
+          .map((record) => normalizeDispatcherTag(record?.dispatcher))
+          .filter(Boolean)
       );
       Object.entries(dispatcherAccountantMappings || {}).forEach(([tag, phone]) => {
         const normalizedTag = normalizeDispatcherTag(tag);
@@ -4532,7 +4644,9 @@
         const accountant = getAccountantByPhone(phone);
         const accountantName = accountant?.displayName || accountant?.name || accountant?.username;
         if (!accountantName || groupMap.has(accountantName)) return;
-        const linkedDispatcherAmount = getLinkedDispatcherSettlementAmount(accountantName, sourceRecords);
+        const linkedDispatcherAmount = getLinkedDispatcherSettlementAmount(accountantName, sourceRecords, {
+          monthKey
+        });
         if (linkedDispatcherAmount && linkedDispatcherAmount.recordCount > 0) {
           groupMap.set(accountantName, createGroup(accountantName, { isLinkedDispatcherOnly: true }));
         }
@@ -4540,7 +4654,9 @@
 
       const buildGroups = (sourceMap) => Array.from(sourceMap.values())
         .map((group) => {
-          const linkedDispatcherAmount = getLinkedDispatcherSettlementAmount(group.accountant, sourceRecords);
+          const linkedDispatcherAmount = getLinkedDispatcherSettlementAmount(group.accountant, sourceRecords, {
+            monthKey
+          });
 
           const accountantInvoiceAmount = group.invoiceAmount;
           const accountantTaxAmount = getSettlementTaxAmount(accountantInvoiceAmount);
@@ -4555,7 +4671,8 @@
           const dispatcherPremiumSegments = linkedDispatcherAmount?.premiumBreakdown?.segments || [];
           const dispatcherCommissionTerms = linkedDispatcherAmount?.dispatcherCommissionTerms || [];
           const linkedPaidDispatcherAmount = getLinkedDispatcherSettlementAmount(group.accountant, sourceRecords, {
-            paid: true
+            paid: true,
+            monthKey
           });
           const accountantPaidInvoiceAmount = Number(group.paidInvoiceAmount) || 0;
           const accountantPaidTaxAmount = getSettlementTaxAmount(accountantPaidInvoiceAmount);
@@ -4738,6 +4855,7 @@
       const pendingAccountantCount = groups.filter((item) => item.uploadedCount <= 0).length;
       const uploadedRecordCount = groups.reduce((sum, item) => sum + item.uploadedCount, 0);
       const pendingRecordCount = groups.reduce((sum, item) => sum + item.pendingCount, 0);
+      const paidRecordCount = groups.reduce((sum, item) => sum + item.paidCount, 0);
       const payoutRecordCount = groups.reduce((sum, item) => {
         const targets = Array.isArray(item.payoutTargets) ? item.payoutTargets : item.payoutRecordIds;
         return sum + (Array.isArray(targets) ? targets.length : 0);
@@ -4745,12 +4863,19 @@
       const totalInvoiceAmount = groups.reduce((sum, item) => sum + item.invoiceAmount, 0);
       const totalTaxAmount = groups.reduce((sum, item) => sum + item.taxAmount, 0);
       const totalPayableAmount = groups.reduce((sum, item) => sum + item.payableAmount, 0);
+      const scopedDetailRecordIds = new Set(
+        groups.flatMap((item) => Array.isArray(item.recordIds) ? item.recordIds : [])
+      );
+      const scopedDetailRecords = detailRecords.filter((item) => {
+        const recordId = String(item?.id || "").trim();
+        return recordId && scopedDetailRecordIds.has(recordId);
+      });
 
       return {
-        detailRecords,
+        detailRecords: scopedDetailRecords,
         groups,
         paidGroups,
-        recordCount: detailRecords.length,
+        recordCount: scopedDetailRecordIds.size,
         accountantCount: groups.length,
         totalInvoiceAmount,
         totalTaxAmount,
@@ -4761,6 +4886,7 @@
         pendingAccountantCount,
         pendingRecordCount,
         uploadedRecordCount,
+        paidRecordCount,
         payoutRecordCount
       };
     }
@@ -4779,15 +4905,27 @@
       bossSettlementDetailMeta.textContent = "";
       bossSettlementDetailList.innerHTML = "";
 
+      const monthOptions = getBossSettlementDetailMonthOptions(records);
+      const activeMonthKey = resolveBossSettlementDetailMonthKey(records);
+      renderBossSettlementDetailMonthTabs(monthOptions, activeMonthKey);
+
       if (settlementDetailActiveTab === "dispatcher") {
-        renderDispatcherSettlementDetail();
+        const dispatcherSummary = getDispatcherSettlementSummary(records, { monthKey: activeMonthKey });
+        bossSettlementDetailTitleCount.textContent = formatSettlementMonthLabel(activeMonthKey, { short: true });
+        bossSettlementDetailTitleCount.hidden = false;
+        bossSettlementDetailMeta.textContent = `${formatSettlementMonthLabel(activeMonthKey)} · 接待 ${dispatcherSummary.dispatcherCount}位 / ${dispatcherSummary.recordCount || 0}单`;
+        renderDispatcherSettlementDetail(activeMonthKey);
         return;
       }
 
+      const summary = getBossSettlementDetailSummary(records, { monthKey: activeMonthKey });
       const {
         groups,
         payoutRecordCount: rawPayoutRecordCount
-      } = getBossSettlementDetailSummary();
+      } = summary;
+      bossSettlementDetailTitleCount.textContent = formatSettlementMonthLabel(activeMonthKey, { short: true });
+      bossSettlementDetailTitleCount.hidden = false;
+      bossSettlementDetailMeta.textContent = formatBossSettlementDetailMonthMeta(summary, activeMonthKey);
       syncBossSettlementPayoutSelection(records);
       const allDetailGroups = groups.map((group) => {
         const payoutStatusKey = getBossSettlementDetailPayoutStatusKey(group);
@@ -5140,7 +5278,7 @@
       bossSettlementDetailList.appendChild(section);
     }
 
-    function renderDispatcherSettlementDetail() {
+    function renderDispatcherSettlementDetail(monthKey = bossSettlementDetailMonthKey) {
       const {
         groups,
         recordCount,
@@ -5150,7 +5288,7 @@
         totalInvoiceAmount,
         totalTaxAmount,
         totalPayableAmount
-      } = getDispatcherSettlementSummary();
+      } = getDispatcherSettlementSummary(records, { monthKey });
 
       if (!groups.length) {
         const empty = document.createElement("div");
@@ -5495,6 +5633,7 @@
       closeAccountantPicker();
       closeSourcePicker();
       closePlatformShopPicker();
+      initializeBossSettlementDetailMonthKey(records);
       renderBossSettlementDetailModalContent();
       bossSettlementDetailModal.hidden = false;
       bossSettlementDetailModal.classList.remove("modal-enter");

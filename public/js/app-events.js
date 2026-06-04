@@ -2138,6 +2138,14 @@
       });
     }
 
+    if (bossSettlementDetailMonthTabs) {
+      bossSettlementDetailMonthTabs.addEventListener("click", (event) => {
+        const monthBtn = event.target.closest("[data-settlement-detail-month-key]");
+        if (!monthBtn || !bossSettlementDetailMonthTabs.contains(monthBtn)) return;
+        setBossSettlementDetailMonthKey(monthBtn.dataset.settlementDetailMonthKey || "");
+      });
+    }
+
     tableBody.addEventListener("click", async (event) => {
       const checkBtn = event.target.closest(".row-check-btn");
       if (checkBtn) {

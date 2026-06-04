@@ -413,6 +413,68 @@ function getAccountantDispatcherBadgeText(accountantName) {
   return tags.length ? tags[0] : "";
 }
 
+function normalizeSettlementMonthKey(value) {
+  const match = /^(\d{4})-(\d{1,2})$/.exec(String(value || "").trim());
+  if (!match) return "";
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) return "";
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+function getSettlementMonthKeyFromDate(value) {
+  const timestamp = parseDateTimeValue(value);
+  if (!Number.isFinite(timestamp)) return "";
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function getCurrentSettlementMonthKey() {
+  try {
+    const parts = new Intl.DateTimeFormat("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      year: "numeric",
+      month: "2-digit",
+    }).formatToParts(new Date());
+    const year = parts.find((part) => part.type === "year")?.value;
+    const month = parts.find((part) => part.type === "month")?.value;
+    const monthKey = normalizeSettlementMonthKey(`${year}-${month}`);
+    if (monthKey) return monthKey;
+  } catch (error) {
+    console.error(error);
+  }
+  return getSettlementMonthKeyFromDate(getTodayISODate());
+}
+
+function formatSettlementMonthLabel(monthKey, options = {}) {
+  const normalized = normalizeSettlementMonthKey(monthKey);
+  const match = /^(\d{4})-(\d{2})$/.exec(normalized);
+  if (!match) return "";
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  return options.short ? `${month}月` : `${year}年${month}月`;
+}
+
+function getBossSettlementTargetMonthKey(record, targetType = "accountant") {
+  const currentMonthKey = getCurrentSettlementMonthKey();
+  if (targetType === "dispatcher") {
+    if (isRecordDispatcherSettlementPaid(record)) {
+      return getSettlementMonthKeyFromDate(record?.dispatcherSettlementPaidAt) || currentMonthKey;
+    }
+    return currentMonthKey;
+  }
+  if (isRecordSettlementPaid(record)) {
+    return getSettlementMonthKeyFromDate(record?.settlementPaidAt) || currentMonthKey;
+  }
+  return currentMonthKey;
+}
+
+function isBossSettlementTargetInMonth(record, targetType, monthKey) {
+  const normalizedMonthKey = normalizeSettlementMonthKey(monthKey);
+  if (!normalizedMonthKey) return true;
+  return getBossSettlementTargetMonthKey(record, targetType) === normalizedMonthKey;
+}
+
 function getLinkedDispatcherSettlementAmount(
   accountantName,
   sourceRecords = records,
@@ -427,6 +489,7 @@ function getLinkedDispatcherSettlementAmount(
     Object.prototype.hasOwnProperty.call(options, "paid");
   const paidFilter = Boolean(options?.paid);
   const includeUnsettled = Boolean(options?.includeUnsettled);
+  const monthKey = normalizeSettlementMonthKey(options?.monthKey);
   const detailRecords = includeUnsettled
     ? (Array.isArray(sourceRecords) ? sourceRecords : []).filter((item) =>
         isRecordCompletionStatus(item),
@@ -460,6 +523,7 @@ function getLinkedDispatcherSettlementAmount(
     const dispatcher = normalizeDispatcherTag(record?.dispatcher);
     if (!dispatcherTags.includes(dispatcher)) return;
     if (hasPaidFilter && isRecordDispatcherSettlementPaid(record) !== paidFilter) return;
+    if (!isBossSettlementTargetInMonth(record, "dispatcher", monthKey)) return;
 
     const recordId = String(record?.id || "").trim();
     if (recordId && !recordIds.includes(recordId)) {
@@ -851,6 +915,9 @@ const bossSettlementDetailTitleCount = document.getElementById(
 );
 const bossSettlementDetailMeta = document.getElementById(
   "bossSettlementDetailMeta",
+);
+const bossSettlementDetailMonthTabs = document.getElementById(
+  "bossSettlementDetailMonthTabs",
 );
 const bossSettlementDetailList = document.getElementById(
   "bossSettlementDetailList",
@@ -1423,6 +1490,7 @@ const bossSettlementDetailSortState = {
   direction: "asc",
 };
 let bossSettlementDetailPayoutStatusFilter = "";
+let bossSettlementDetailMonthKey = "";
 let settlementDetailActiveTab = "accountant";
 const sortState = {
   key: "date",
@@ -3520,8 +3588,10 @@ function getBossSettlementDetailRecords(sourceRecords = records) {
   );
 }
 
-function getDispatcherSettlementSummary(sourceRecords = records) {
-  const detailRecords = getBossSettlementDetailRecords(sourceRecords);
+function getDispatcherSettlementSummary(sourceRecords = records, options = {}) {
+  const monthKey = normalizeSettlementMonthKey(options?.monthKey);
+  const detailRecords = getBossSettlementDetailRecords(sourceRecords)
+    .filter((item) => isBossSettlementTargetInMonth(item, "dispatcher", monthKey));
   const groupMap = new Map();
 
   detailRecords.forEach((record) => {
