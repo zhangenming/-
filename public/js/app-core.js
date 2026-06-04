@@ -3051,15 +3051,13 @@ function getMonthlySettlementEndDate(record) {
 function getMonthlySettlementDisplay(record) {
   if (!isMonthlySettlementRecord(record)) return "";
   const monthlySettlement = getRecordMonthlySettlement(record);
-  const groupId = monthlySettlement.id;
-  const groupSuffix = groupId ? groupId.slice(-6) : "";
   const monthCount = parsePositiveIntegerValue(monthlySettlement.monthCount);
   const sequence = parsePositiveIntegerValue(monthlySettlement.sequence);
   const sequenceText = Number.isInteger(sequence) && Number.isInteger(monthCount)
     ? `${sequence}/${monthCount}`
     : "";
   const endDateText = monthlySettlement.endDate || getMonthlySettlementEndDate(record) || "缺少日期";
-  return [groupSuffix ? `ID ${groupSuffix}` : "", sequenceText, endDateText]
+  return [sequenceText, endDateText]
     .filter(Boolean)
     .join(" · ");
 }
