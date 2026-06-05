@@ -1405,17 +1405,17 @@ body.analysis-page-active .mobile-bottom-nav {
 }
 
 #platformShopPicker .accountant-picker-list {
-  gap: 10px;
+  gap: 8px;
 }
 
 .platform-shop-picker-group {
   display: grid;
-  gap: 8px;
-  padding: 10px;
+  gap: 6px;
+  padding: 8px;
   border: 1px solid var(--platform-shop-group-border, var(--m-line));
-  border-left: 4px solid var(--platform-shop-group-accent, var(--m-accent));
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--platform-shop-group-bg, var(--m-panel));
+  box-shadow: inset 0 2px 0 var(--platform-shop-group-accent, var(--m-accent));
 }
 
 .platform-shop-picker-group-title {
@@ -1469,7 +1469,7 @@ body.analysis-page-active .mobile-bottom-nav {
 
 .platform-shop-picker-group-options {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .filter-option-btn.filter-option-special-accountant {
