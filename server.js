@@ -45,8 +45,9 @@ const SERVER_LOG_FILE = path.join(ROOT_DIR, "server.log");
 const DEV_LIVE_RELOAD_PATHNAME = "/__dev/events";
 const FORCE_REFRESH_EVENTS_PATHNAME = "/api/events/force-refresh";
 const FORCE_REFRESH_TRIGGER_PATHNAME = "/api/force-refresh";
-const DISPATCHER_ACCOUNT_LIST = ["1", "a", "c", "d", "e", "k", "开心财税", "开心财税1旧", "开心财税k旧"];
+const DISPATCHER_ACCOUNT_LIST = ["开心财税", "a", "c", "d", "e", "k", "1", "开心财税k旧", "开心财税1旧"];
 const DISPATCHER_ACCOUNTS = new Set(DISPATCHER_ACCOUNT_LIST);
+const DISPATCHER_TAG_ORDER = ["开心财税", "A", "C", "D", "E", "K", "1", "K旧", "1旧"];
 const DISPATCHER_LOGIN_PASSWORD = "11";
 const BOSS_LOGIN_ACCOUNT = "开心";
 const BOSS_LOGIN_LEGACY_ACCOUNT = "boss";
@@ -1648,6 +1649,21 @@ function getDispatcherDisplayNameByTag(dispatcherTagRaw) {
   return dispatcherTag ? `开心财税${dispatcherTag.toLowerCase()}` : "";
 }
 
+function getDispatcherSortRank(dispatcherTagRaw) {
+  const dispatcherTag = normalizeDispatcherTag(dispatcherTagRaw);
+  const index = DISPATCHER_TAG_ORDER.indexOf(dispatcherTag);
+  return index >= 0 ? index : DISPATCHER_TAG_ORDER.length;
+}
+
+function compareDispatcherTags(left, right) {
+  const rankDiff = getDispatcherSortRank(left) - getDispatcherSortRank(right);
+  if (rankDiff !== 0) return rankDiff;
+  return String(left || "").localeCompare(String(right || ""), "zh-CN", {
+    numeric: true,
+    sensitivity: "base"
+  });
+}
+
 function buildDispatcherManagementRows(records, dispatcherPasswords) {
   const orderCountByTag = Array.isArray(records)
     ? records.reduce((map, item) => {
@@ -1657,8 +1673,7 @@ function buildDispatcherManagementRows(records, dispatcherPasswords) {
       return map;
     }, new Map())
     : new Map();
-  const tagOrder = ["开心财税", "1", "A", "C", "D", "E", "K", "1旧", "K旧"];
-  const rows = tagOrder.map((dispatcherTag) => {
+  const rows = DISPATCHER_TAG_ORDER.map((dispatcherTag) => {
     const accounts = DISPATCHER_ACCOUNT_LIST.filter((account) => getDispatcherTagForAccount(account) === dispatcherTag);
     const accountPasswordPairs = accounts.map((account) => ({
       account,
@@ -1681,7 +1696,7 @@ function buildDispatcherManagementRows(records, dispatcherPasswords) {
   return rows.sort((left, right) => {
     const countDiff = Number(right.orderCount || 0) - Number(left.orderCount || 0);
     if (countDiff !== 0) return countDiff;
-    return tagOrder.indexOf(left.dispatcherTag) - tagOrder.indexOf(right.dispatcherTag);
+    return compareDispatcherTags(left.dispatcherTag, right.dispatcherTag);
   });
 }
 

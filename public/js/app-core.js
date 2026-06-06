@@ -231,7 +231,8 @@ function normalizeStateFlag(value, extraTruthyValues = null) {
   );
 }
 
-const DISPATCHER_TAGS = ["1", "A", "C", "D", "E", "K", "1旧", "K旧"];
+const DISPATCHER_TAGS = ["A", "C", "D", "E", "K", "1", "K旧", "1旧"];
+const DISPATCHER_TAG_ORDER = ["开心财税", ...DISPATCHER_TAGS];
 const ACCOUNT_TO_DISPATCHER_TAG = {
   1: "1",
   a: "A",
@@ -293,6 +294,21 @@ function getDispatcherDisplayNameByTag(dispatcherTagRaw) {
   const dispatcherTag = normalizeDispatcherTag(dispatcherTagRaw);
   if (dispatcherTag === "开心财税") return "开心财税";
   return dispatcherTag ? dispatcherTag.toUpperCase() : "";
+}
+
+function getDispatcherSortRank(dispatcherTagRaw) {
+  const dispatcherTag = normalizeDispatcherTag(dispatcherTagRaw);
+  const index = DISPATCHER_TAG_ORDER.indexOf(dispatcherTag);
+  return index >= 0 ? index : DISPATCHER_TAG_ORDER.length;
+}
+
+function compareDispatcherTags(left, right) {
+  const rankDiff = getDispatcherSortRank(left) - getDispatcherSortRank(right);
+  if (rankDiff !== 0) return rankDiff;
+  return String(left || "").localeCompare(String(right || ""), "zh-CN", {
+    numeric: true,
+    sensitivity: "base",
+  });
 }
 
 function getDispatcherAccountByTag(dispatcherTag) {
@@ -410,13 +426,7 @@ function getDispatcherTagsLinkedToAccountant(accountantName) {
 function getAccountantDispatcherBadgeTags(accountantName) {
   const tags = getDispatcherTagsLinkedToAccountant(accountantName);
   if (!tags.length) return [];
-  const orderMap = new Map(DISPATCHER_TAGS.map((tag, index) => [tag, index]));
-  return Array.from(new Set(tags)).sort((left, right) => {
-    const leftOrder = orderMap.has(left) ? orderMap.get(left) : Number.POSITIVE_INFINITY;
-    const rightOrder = orderMap.has(right) ? orderMap.get(right) : Number.POSITIVE_INFINITY;
-    if (leftOrder !== rightOrder) return leftOrder - rightOrder;
-    return String(left).localeCompare(String(right), "zh-Hans-CN");
-  });
+  return Array.from(new Set(tags)).sort(compareDispatcherTags);
 }
 
 function getAccountantDispatcherBadgeText(accountantName) {
@@ -3722,14 +3732,7 @@ function getDispatcherSettlementSummary(sourceRecords = records, options = {}) {
       };
     })
     .sort((left, right) => {
-      const nameCompare = String(left.dispatcher || "").localeCompare(
-        String(right.dispatcher || ""),
-        "zh-CN",
-        {
-          numeric: true,
-          sensitivity: "base",
-        },
-      );
+      const nameCompare = compareDispatcherTags(left.dispatcher, right.dispatcher);
       if (nameCompare !== 0) return nameCompare;
       return right.recordCount - left.recordCount;
     });

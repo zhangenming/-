@@ -1767,7 +1767,7 @@
         counts.set(key, (counts.get(key) || 0) + 1);
       });
       const dispatcherKeys = Array.from(counts.keys()).sort((left, right) => {
-        return getReminderDispatcherLabel(left).localeCompare(getReminderDispatcherLabel(right), "zh-Hans-CN");
+        return compareDispatcherTags(left, right);
       });
       if (activeReminderDispatcherFilter && !counts.has(activeReminderDispatcherFilter)) {
         activeReminderDispatcherFilter = "";

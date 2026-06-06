@@ -912,7 +912,7 @@
     }
 
     function compareDispatcherSortValues(leftValue, rightValue) {
-      return compareAccountantSortValues(leftValue, rightValue);
+      return compareDispatcherTags(leftValue, rightValue);
     }
 
     function renderDispatcherSortHeaderUI() {
@@ -938,7 +938,7 @@
         dispatcherSortState.direction = dispatcherSortState.direction === "asc" ? "desc" : "asc";
       } else {
         dispatcherSortState.key = normalizedKey;
-        dispatcherSortState.direction = "desc";
+        dispatcherSortState.direction = normalizedKey === "displayName" ? "asc" : "desc";
       }
       renderDispatcherList();
     }
@@ -1056,10 +1056,12 @@
       const directionFactor = dispatcherSortState.direction === "asc" ? 1 : -1;
       dispatcherRows
         .sort((left, right) => {
-          const key = dispatcherSortState.key === "accountantOrderCount"
-            ? "accountantOrderCount"
+          const key = ["displayName", "accountantOrderCount"].includes(dispatcherSortState.key)
+            ? dispatcherSortState.key
             : "dispatchCount";
-          const primaryCompare = compareDispatcherSortValues(left[key], right[key]);
+          const primaryCompare = key === "displayName"
+            ? compareDispatcherSortValues(left.displayName, right.displayName)
+            : compareAccountantSortValues(left[key], right[key]);
           if (primaryCompare !== 0) return primaryCompare * directionFactor;
           const nameCompare = compareDispatcherSortValues(left.displayName, right.displayName);
           if (nameCompare !== 0) return nameCompare;

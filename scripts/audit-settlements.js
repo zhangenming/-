@@ -8,7 +8,8 @@ const DEFAULT_DATA_DIR = "data";
 const CURRENT_RATIO_RULE_START_DATE = "2026-05-27";
 const PREMIUM_NEW_FORMULA_START_DATE = "2026-06-01";
 
-const DISPATCHER_ACCOUNT_LIST = ["1", "a", "c", "d", "e", "k", "开心财税", "开心财税1旧", "开心财税k旧"];
+const DISPATCHER_ACCOUNT_LIST = ["开心财税", "a", "c", "d", "e", "k", "1", "开心财税k旧", "开心财税1旧"];
+const DISPATCHER_TAG_ORDER = ["开心财税", "A", "C", "D", "E", "K", "1", "K旧", "1旧"];
 const SETTLED_WORKFLOW_STATE_VALUES = new Set(["已核对客户确认/待上传", "已上传", "已上传/待结算", "已结算"]);
 const MONTHLY_SETTLEMENT_STATE_VALUES = new Set(["on", "是", "月结"]);
 const PAID_WORKFLOW_STATE_VALUES = new Set(["已结算"]);
@@ -176,6 +177,21 @@ function getDispatcherTagForAccount(accountName) {
 function getDispatcherAccountByTag(tag) {
   const normalizedTag = normalizeDispatcherTag(tag);
   return DISPATCHER_ACCOUNT_LIST.find((account) => getDispatcherTagForAccount(account) === normalizedTag) || "";
+}
+
+function getDispatcherSortRank(tag) {
+  const normalizedTag = normalizeDispatcherTag(tag);
+  const index = DISPATCHER_TAG_ORDER.indexOf(normalizedTag);
+  return index >= 0 ? index : DISPATCHER_TAG_ORDER.length;
+}
+
+function compareDispatcherTags(left, right) {
+  const rankDiff = getDispatcherSortRank(left) - getDispatcherSortRank(right);
+  if (rankDiff !== 0) return rankDiff;
+  return normalizeText(left).localeCompare(normalizeText(right), "zh-CN", {
+    numeric: true,
+    sensitivity: "base"
+  });
 }
 
 function getPremiumValue(record) {
@@ -472,7 +488,7 @@ function summarizeDispatcher(records, dispatcherMappings, options = {}) {
   });
   return Array.from(groupMap.values())
     .map(finalizeMoneyBucket)
-    .sort((left, right) => left.dispatcher.localeCompare(right.dispatcher, "zh-CN", { numeric: true, sensitivity: "base" }));
+    .sort((left, right) => compareDispatcherTags(left.dispatcher, right.dispatcher));
 }
 
 function getLinkedDispatcherSettlementAmount(accountantName, records, dispatcherMappings, options = {}) {

@@ -486,10 +486,7 @@
       if (countGap !== 0) return countGap;
       const settlementGap = right.settlement - left.settlement;
       if (settlementGap !== 0) return settlementGap;
-      const dispatcherGap = String(left.dispatcher || "").localeCompare(String(right.dispatcher || ""), "zh-CN", {
-        numeric: true,
-        sensitivity: "base"
-      });
+      const dispatcherGap = compareDispatcherTags(left.dispatcher, right.dispatcher);
       if (dispatcherGap !== 0) return dispatcherGap;
       return String(left.accountant || "").localeCompare(String(right.accountant || ""), "zh-CN", {
         numeric: true,
@@ -3009,10 +3006,7 @@
     }
 
     function getAnalysisDispatcherOrderValue(dispatcher) {
-      const tag = normalizeDispatcherTag(dispatcher);
-      if (tag === "开心财税") return -1;
-      const index = DISPATCHER_TAGS.indexOf(tag);
-      return index >= 0 ? index : DISPATCHER_TAGS.length + 1;
+      return getDispatcherSortRank(dispatcher);
     }
 
     function buildAccountantDispatcherColumns(coopRows) {
