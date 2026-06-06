@@ -5,7 +5,8 @@
   "scripts": {
     "audit:settlement": "node scripts/audit-settlements.js",
     "build": "node scripts/build.js",
-    "dev": "PORT=2999 APP_ENV=development node --watch-path=server.js server.js",
-    "start": "PORT=3000 APP_ENV=production node server.js"
+    "dev": "PORT=2999 APP_ENV=development ASSET_ENV=source DATA_ENV=development node --watch-path=server.js server.js",
+    "local:prod-data": "PORT=3000 APP_ENV=production ASSET_ENV=source DATA_ENV=production node server.js",
+    "start": "PORT=3000 APP_ENV=production ASSET_ENV=dist DATA_ENV=production node server.js"
   }
 }

@@ -10,8 +10,16 @@ const APP_ENV = String(process.env.APP_ENV || "production").trim().toLowerCase()
   ? "development"
   : "production";
 const IS_DEVELOPMENT = APP_ENV === "development";
+const ASSET_ENV = String(process.env.ASSET_ENV || (IS_DEVELOPMENT ? "source" : "dist")).trim().toLowerCase() === "source"
+  ? "source"
+  : "dist";
+const DATA_ENV = String(process.env.DATA_ENV || (IS_DEVELOPMENT ? "development" : "production")).trim().toLowerCase() === "development"
+  ? "development"
+  : "production";
+const IS_SOURCE_ASSET_ENV = ASSET_ENV === "source";
+const IS_DEVELOPMENT_DATA_ENV = DATA_ENV === "development";
 const IS_DEV_LIVE_RELOAD_ENABLED = IS_DEVELOPMENT && String(process.env.ENABLE_DEV_LIVE_RELOAD || "").trim() === "1";
-const DATA_NAMESPACE = IS_DEVELOPMENT ? "development" : "production";
+const DATA_NAMESPACE = DATA_ENV;
 
 const ROOT_DIR = __dirname;
 const SOURCE_HTML_FILE = path.join(ROOT_DIR, "派单结算录入.html");
@@ -21,13 +29,13 @@ const SOURCE_PUBLIC_DIR = path.join(ROOT_DIR, "public");
 const SOURCE_BUILD_INFO_FILE = path.join(ROOT_DIR, "build-info.json");
 const SOURCE_CHANGE_LOG_FILE = path.join(ROOT_DIR, "CHANGELOG.json");
 const DIST_DIR = path.join(ROOT_DIR, "dist");
-const HTML_DIR = IS_DEVELOPMENT ? ROOT_DIR : DIST_DIR;
-const DESKTOP_HTML_FILE = IS_DEVELOPMENT ? SOURCE_DESKTOP_HTML_FILE : path.join(DIST_DIR, "派单结算录入电脑版.html");
-const MOBILE_HTML_FILE = IS_DEVELOPMENT ? SOURCE_MOBILE_HTML_FILE : path.join(DIST_DIR, "派单结算录入手机版.html");
-const PUBLIC_DIR = IS_DEVELOPMENT ? SOURCE_PUBLIC_DIR : path.join(DIST_DIR, "public");
-const BUILD_INFO_FILE = IS_DEVELOPMENT ? SOURCE_BUILD_INFO_FILE : path.join(DIST_DIR, "build-info.json");
-const CHANGE_LOG_FILE = IS_DEVELOPMENT ? SOURCE_CHANGE_LOG_FILE : path.join(DIST_DIR, "CHANGELOG.json");
-const DATA_DIR = path.join(ROOT_DIR, IS_DEVELOPMENT ? "data-dev" : "data");
+const HTML_DIR = IS_SOURCE_ASSET_ENV ? ROOT_DIR : DIST_DIR;
+const DESKTOP_HTML_FILE = IS_SOURCE_ASSET_ENV ? SOURCE_DESKTOP_HTML_FILE : path.join(DIST_DIR, "派单结算录入电脑版.html");
+const MOBILE_HTML_FILE = IS_SOURCE_ASSET_ENV ? SOURCE_MOBILE_HTML_FILE : path.join(DIST_DIR, "派单结算录入手机版.html");
+const PUBLIC_DIR = IS_SOURCE_ASSET_ENV ? SOURCE_PUBLIC_DIR : path.join(DIST_DIR, "public");
+const BUILD_INFO_FILE = IS_SOURCE_ASSET_ENV ? SOURCE_BUILD_INFO_FILE : path.join(DIST_DIR, "build-info.json");
+const CHANGE_LOG_FILE = IS_SOURCE_ASSET_ENV ? SOURCE_CHANGE_LOG_FILE : path.join(DIST_DIR, "CHANGELOG.json");
+const DATA_DIR = path.join(ROOT_DIR, IS_DEVELOPMENT_DATA_ENV ? "data-dev" : "data");
 const DATA_FILE = path.join(DATA_DIR, "records.json");
 const RECYCLE_BIN_FILE = path.join(DATA_DIR, "recycle-bin.json");
 const ACCOUNTANTS_FILE = path.join(DATA_DIR, "accountants.json");
@@ -227,7 +235,7 @@ function getStaticAssetVersion() {
 }
 
 async function loadStaticAssetVersion() {
-  if (IS_DEVELOPMENT) {
+  if (IS_SOURCE_ASSET_ENV) {
     staticAssetVersion = normalizeStaticAssetVersion(`${APP_PACKAGE?.version || "1.0.0"}-dev`);
     return;
   }
@@ -273,7 +281,7 @@ function withStaticAssetVersion(html, assetVersion) {
 }
 
 function getPublicAssetCacheControl() {
-  return IS_DEVELOPMENT ? "no-store" : "public, max-age=31536000, immutable";
+  return IS_SOURCE_ASSET_ENV ? "no-store" : "public, max-age=31536000, immutable";
 }
 
 function withRuntimeConfig(html) {
@@ -282,7 +290,7 @@ function withRuntimeConfig(html) {
   const content = [
     `<link rel="icon" type="image/svg+xml" href="${iconHref}" />`,
     `<link rel="shortcut icon" type="image/svg+xml" href="${iconHref}" />`,
-    `<script>window.__APP_ENV__ = ${toInlineJson(APP_ENV)};window.__STATIC_ASSET_VERSION__ = ${toInlineJson(assetVersion)};</script>`
+    `<script>window.__APP_ENV__ = ${toInlineJson(APP_ENV)};window.__ASSET_ENV__ = ${toInlineJson(ASSET_ENV)};window.__DATA_ENV__ = ${toInlineJson(DATA_ENV)};window.__STATIC_ASSET_VERSION__ = ${toInlineJson(assetVersion)};</script>`
   ].join("\n  ");
   if (html.includes("</head>")) {
     return html.replace("</head>", `  ${content}\n</head>`);
@@ -3457,6 +3465,8 @@ function getDefaultBuildInfo() {
     buildNumber,
     builtAt: "",
     appEnv: APP_ENV,
+    assetEnv: ASSET_ENV,
+    dataEnv: DATA_ENV,
     html: path.basename(SOURCE_HTML_FILE),
     desktopHtml: path.basename(SOURCE_DESKTOP_HTML_FILE),
     mobileHtml: path.basename(SOURCE_MOBILE_HTML_FILE),
@@ -3470,7 +3480,9 @@ async function serveBuildInfo(res, options = {}) {
     const content = await fs.readFile(BUILD_INFO_FILE, "utf8");
     const payload = {
       ...(JSON.parse(content) || {}),
-      appEnv: APP_ENV
+      appEnv: APP_ENV,
+      assetEnv: ASSET_ENV,
+      dataEnv: DATA_ENV
     };
     setApiCorsHeaders(res);
     if (headOnly) {
@@ -5964,9 +5976,11 @@ async function bootstrapServer() {
     const bootLines = [
       `Server running at http://${HOST}:${PORT}`,
       `App environment: ${APP_ENV}`,
+      `Asset environment: ${ASSET_ENV}`,
+      `Data environment: ${DATA_ENV}`,
       `Dev live reload: ${IS_DEV_LIVE_RELOAD_ENABLED ? "enabled" : "disabled"}`,
       `Data namespace: ${DATA_NAMESPACE}`,
-      `Static root: ${IS_DEVELOPMENT ? ROOT_DIR : DIST_DIR}`,
+      `Static root: ${HTML_DIR}`,
       `Data root: ${DATA_DIR}`,
       `Data file: ${DATA_FILE}`,
       `Recycle bin file: ${RECYCLE_BIN_FILE}`,
