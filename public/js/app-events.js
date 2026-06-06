@@ -1507,6 +1507,68 @@
       closeCompleteModal();
     });
 
+    if (recordReturnBtn) {
+      recordReturnBtn.addEventListener("click", () => {
+        if (!requireAccount()) return;
+        const recordId = String(recordEditingIdInput?.value || recordReturnBtn.dataset.recordId || "").trim();
+        if (!recordId) return;
+        const targetRecord = records.find((item) => String(item.id || "").trim() === recordId) || null;
+        if (!targetRecord) return;
+        openReturnOrderModal(targetRecord);
+      });
+    }
+
+    if (returnOrderForm) {
+      returnOrderForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!requireAccount()) return;
+        const recordId = String(returnOrderRecordIdInput?.value || recordEditingIdInput?.value || "").trim();
+        if (!recordId) return;
+        const reason = normalizeText(returnOrderReasonInput?.value, 500);
+        if (Array.from(reason).length < RETURN_ORDER_REASON_MIN_LENGTH) {
+          showInlineFormError({
+            form: returnOrderForm,
+            hintSetter: setReturnOrderHint,
+            target: returnOrderReasonInput,
+            message: `退单原因至少输入${RETURN_ORDER_REASON_MIN_LENGTH}个字。`
+          });
+          return;
+        }
+
+        try {
+          setReturnOrderHint("退单提交中...", "pending");
+          await withLoading(
+            {
+              button: returnOrderSubmitBtn,
+              form: returnOrderForm,
+              buttonText: "提交中..."
+            },
+            () => updateRecordById(recordId, {
+              status: "returned",
+              paymentPrice: 0,
+              totalPrice: 0,
+              premiumPrice: 0,
+              settlementPrice: 0,
+              returnReason: reason
+            })
+          );
+        } catch (error) {
+          console.error(error);
+          const message = error.message || "退单失败，请稍后重试。";
+          showInlineFormError({
+            form: returnOrderForm,
+            hintSetter: setReturnOrderHint,
+            target: returnOrderReasonInput,
+            message
+          });
+          return;
+        }
+
+        closeReturnOrderModal();
+        closeCreateModal();
+      });
+    }
+
     function getRefundMoneyInputValue(input) {
       const raw = String(input?.value || "").trim();
       return raw === "" ? Number.NaN : Number(raw);
@@ -2248,6 +2310,20 @@
       }
     });
 
+    if (returnOrderModal) {
+      returnOrderModal.addEventListener("click", (event) => {
+        if (event.target === returnOrderModal) {
+          closeReturnOrderModal();
+        }
+      });
+    }
+
+    if (returnOrderCancelBtn) {
+      returnOrderCancelBtn.addEventListener("click", () => {
+        closeReturnOrderModal();
+      });
+    }
+
     checkModal.addEventListener("click", (event) => {
       if (event.target === checkModal) {
         closeCheckModal();
@@ -2678,6 +2754,10 @@
         closeInvoiceRecipientInfoModal();
         return;
       }
+      if (returnOrderModal && event.key === "Escape" && !returnOrderModal.hidden) {
+        closeReturnOrderModal();
+        return;
+      }
       if (event.key === "Escape" && !refundModal.hidden) {
         closeRefundModal();
         return;
@@ -3010,6 +3090,7 @@
         bindInlineValidation(loginForm || loginPage, setLoginRequestHint);
         bindInlineValidation(recordForm, setRecordFormHint);
         bindInlineValidation(checkForm, setCheckFormHint);
+        bindInlineValidation(returnOrderForm, setReturnOrderHint);
 
         if (monthlySettlementCheckbox && recordReminderDateField) {
           monthlySettlementCheckbox.addEventListener("change", () => {

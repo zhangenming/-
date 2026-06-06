@@ -964,7 +964,38 @@
           />
         </div>
         <div class="field field-wide row form-actions">
+          <button id="recordReturnBtn" class="btn-danger record-return-btn" type="button" hidden>退单</button>
           <button id="recordSubmitBtn" class="btn-primary" type="submit">指派订单</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div id="returnOrderModal" class="modal-overlay modal-stacked" hidden>
+    <section class="card modal-card return-order-modal-card" role="dialog" aria-modal="true" aria-labelledby="returnOrderTitle">
+      <div class="return-order-modal-top">
+        <h2 id="returnOrderTitle" class="return-order-title">退单</h2>
+      </div>
+      <p id="returnOrderHint" class="login-request-hint form-request-hint idle" aria-live="polite" hidden></p>
+      <form id="returnOrderForm" class="return-order-form" autocomplete="off" novalidate>
+        <input id="returnOrderRecordId" type="hidden" />
+        <div class="field">
+          <label for="returnOrderReason">退单原因</label>
+          <textarea
+            id="returnOrderReason"
+            name="returnReason"
+            minlength="8"
+            required
+            autocomplete="off"
+            data-no-suggest="true"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+          ></textarea>
+        </div>
+        <div class="return-order-actions">
+          <button id="returnOrderCancelBtn" class="btn-secondary" type="button">取消</button>
+          <button id="returnOrderSubmitBtn" class="btn-danger" type="submit">确定退单</button>
         </div>
       </form>
     </section>

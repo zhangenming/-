@@ -2753,7 +2753,8 @@
       "summary",
       "remark",
       "completedAt",
-      "customerFeedback"
+      "customerFeedback",
+      "returnReason"
     ];
 
     const ACCOUNTANT_RECORD_HISTORY_FIELD_ORDER = [
@@ -2769,7 +2770,8 @@
       "checkStatus",
       "isSettled",
       "completedAt",
-      "customerFeedback"
+      "customerFeedback",
+      "returnReason"
     ];
     const ACCOUNTANT_RECORD_HISTORY_FIELD_SET = new Set(ACCOUNTANT_RECORD_HISTORY_FIELD_ORDER);
     const ALWAYS_VISIBLE_RECORD_HISTORY_FIELDS = new Set([
@@ -2811,7 +2813,8 @@
       summary: "任务简介",
       remark: "备注",
       completedAt: "完工时间",
-      customerFeedback: "客户反馈"
+      customerFeedback: "客户反馈",
+      returnReason: "退单原因"
     };
 
     function getRecordHistoryFieldSortWeight(field) {
@@ -6700,6 +6703,10 @@
       resetInlineFormState(recordForm, setRecordFormHint);
       recordModalTitle.textContent = "新建数据";
       recordSubmitBtn.textContent = "保存数据";
+      if (recordReturnBtn) {
+        recordReturnBtn.hidden = true;
+        recordReturnBtn.dataset.recordId = "";
+      }
       if (monthlySettlementCheckbox) {
         monthlySettlementCheckbox.checked = false;
       }
@@ -7315,6 +7322,11 @@
       setRecordCreateRequiredState(false);
       recordModalTitle.textContent = "修改数据";
       recordSubmitBtn.textContent = "保存修改";
+      if (recordReturnBtn) {
+        const canReturn = canCurrentAccountReturnRecord(record);
+        recordReturnBtn.hidden = !canReturn;
+        recordReturnBtn.dataset.recordId = canReturn ? String(record.id || "").trim() : "";
+      }
       setDispatcherTag(normalizeDispatcherTag(record.dispatcher) || getDefaultDispatcherTag());
       setAccountantPickerValue(String(record.accountant || "").trim());
       renderAccountantPickerList("");
@@ -7359,10 +7371,42 @@
       showRecordModal(orderNoInput);
     }
 
+    function openReturnOrderModal(record) {
+      if (!record || typeof record !== "object") return;
+      if (!canCurrentAccountReturnRecord(record)) {
+        showAppStatus("当前账号无权退单。", "error");
+        return;
+      }
+      if (!returnOrderModal || !returnOrderModalCard || !returnOrderForm) return;
+      resetInlineFormState(returnOrderForm, setReturnOrderHint);
+      returnOrderRecordIdInput.value = String(record.id || "").trim();
+      returnOrderReasonInput.value = "";
+      returnOrderModal.hidden = false;
+      returnOrderModal.classList.remove("modal-enter");
+      returnOrderModalCard.classList.remove("modal-enter");
+      void returnOrderModal.offsetWidth;
+      returnOrderModal.classList.add("modal-enter");
+      returnOrderModalCard.classList.add("modal-enter");
+      syncModalOpenState();
+      returnOrderReasonInput.focus();
+    }
+
+    function closeReturnOrderModal() {
+      if (!returnOrderModal || !returnOrderModalCard || !returnOrderForm) return;
+      returnOrderModal.classList.remove("modal-enter");
+      returnOrderModalCard.classList.remove("modal-enter");
+      returnOrderModal.hidden = true;
+      returnOrderRecordIdInput.value = "";
+      returnOrderReasonInput.value = "";
+      resetInlineFormState(returnOrderForm, setReturnOrderHint);
+      syncModalOpenState();
+    }
+
     function closeCreateModal() {
       closeAccountantPicker();
       closeSourcePicker();
       closePlatformShopPicker();
+      closeReturnOrderModal();
       resetRecordFormMode();
       createModal.classList.remove("modal-enter");
       createModalCard.classList.remove("modal-enter");

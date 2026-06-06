@@ -26,6 +26,7 @@ const STATIC_ASSET_VERSION = String(
 const ECHARTS_ASSET_URL = "./public/vendor/echarts.min.js";
 const RECORDS_REQUEST_WAITING_MS = 8000;
 const CUSTOMER_FEEDBACK_MIN_LENGTH = 12;
+const RETURN_ORDER_REASON_MIN_LENGTH = 8;
 const STORAGE_KEY_ACCOUNT = "dispatch_current_account_v1";
 const STORAGE_KEY_ACCOUNT_ROLE = "dispatch_current_account_role_v1";
 const STORAGE_KEY_ACCOUNT_DISPLAY_NAME =
@@ -840,6 +841,7 @@ const createModal = document.getElementById("createModal");
 const createModalCard = createModal.querySelector(".modal-card");
 const recordModalTitle = document.getElementById("recordModalTitle");
 const recordFormHint = document.getElementById("recordFormHint");
+const recordReturnBtn = document.getElementById("recordReturnBtn");
 const checkModal = document.getElementById("checkModal");
 const checkModalCard = checkModal.querySelector(".check-modal-card");
 const checkFormHint = document.getElementById("checkFormHint");
@@ -877,6 +879,16 @@ const refundSettlementPriceInput = document.getElementById(
   "refundSettlementPrice",
 );
 const refundPremiumHint = document.getElementById("refundPremiumHint");
+const returnOrderModal = document.getElementById("returnOrderModal");
+const returnOrderModalCard = returnOrderModal
+  ? returnOrderModal.querySelector(".return-order-modal-card")
+  : null;
+const returnOrderHint = document.getElementById("returnOrderHint");
+const returnOrderForm = document.getElementById("returnOrderForm");
+const returnOrderRecordIdInput = document.getElementById("returnOrderRecordId");
+const returnOrderReasonInput = document.getElementById("returnOrderReason");
+const returnOrderCancelBtn = document.getElementById("returnOrderCancelBtn");
+const returnOrderSubmitBtn = document.getElementById("returnOrderSubmitBtn");
 const recordHistoryModal = document.getElementById("recordHistoryModal");
 const recordHistoryModalCard = recordHistoryModal.querySelector(
   ".record-history-modal-card",
@@ -2755,6 +2767,12 @@ function canCurrentAccountEditRecord(record) {
     return DISPATCHER_EDITABLE_WORKFLOW_STATUS_KEYS.has(getRecordWorkflowStatusKey(record));
   }
   return false;
+}
+
+function canCurrentAccountReturnRecord(record) {
+  if (!record || typeof record !== "object") return false;
+  if (getRecordWorkflowStatusKey(record) === "returned") return false;
+  return canCurrentAccountEditRecord(record);
 }
 
 function shouldShowProfitColumn(accountName = currentAccount) {
@@ -5163,6 +5181,15 @@ function setCompleteFormHint(text, state = "idle") {
 function setRefundFormHint(text, state = "idle") {
   setHintState(
     refundFormHint,
+    "login-request-hint form-request-hint",
+    text,
+    state,
+  );
+}
+
+function setReturnOrderHint(text, state = "idle") {
+  setHintState(
+    returnOrderHint,
     "login-request-hint form-request-hint",
     text,
     state,

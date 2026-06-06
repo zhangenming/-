@@ -357,6 +357,7 @@ textarea {
 .form-actions,
 .accountant-register-actions,
 .refund-actions,
+.return-order-actions,
 .invoice-upload-actions,
 .confirm-modal-actions,
 .settlement-summary-actions,
@@ -1199,9 +1200,38 @@ body.analysis-page-active .mobile-bottom-nav {
   box-shadow: 0 -10px 22px oklch(31% 0.024 76 / 0.1);
 }
 
+#recordForm .form-actions .btn-danger,
 #recordForm .form-actions .btn-primary {
-  width: 100%;
+  flex: 1 1 0;
+  width: auto;
   min-height: 48px;
+}
+
+.return-order-modal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.return-order-title {
+  margin: 0;
+  color: var(--m-text);
+  font-size: 20px;
+}
+
+.return-order-form {
+  display: grid;
+  gap: 12px;
+}
+
+.return-order-form textarea {
+  min-height: 120px;
+}
+
+.return-order-actions .btn-secondary,
+.return-order-actions .btn-danger {
+  flex: 1 1 0;
+  min-height: 44px;
 }
 
 .analysis-modal-card,

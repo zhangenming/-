@@ -45,6 +45,7 @@ const REMINDERS_FILE = path.join(DATA_DIR, "reminders.json");
 const FEEDBACK_IMAGE_DIR = path.join(DATA_DIR, "feedback-images");
 const FEEDBACK_IMAGE_URL_PREFIX = "/feedback-images/";
 const CUSTOMER_FEEDBACK_MIN_LENGTH = 12;
+const RETURN_ORDER_REASON_MIN_LENGTH = 8;
 const INVOICE_IMAGE_DIR = path.join(DATA_DIR, "invoice-images");
 const INVOICE_IMAGE_URL_PREFIX = "/invoice-images/";
 const SERVER_LOG_FILE = path.join(ROOT_DIR, "server.log");
@@ -1993,7 +1994,8 @@ const ACCOUNTANT_RECORD_HISTORY_VISIBLE_FIELDS = new Set([
   "isSettled",
   "isSettlementPaid",
   "completedAt",
-  "customerFeedback"
+  "customerFeedback",
+  "returnReason"
 ]);
 
 function sanitizeRecordHistoryEntryForAccountant(rawEntry) {
@@ -2061,6 +2063,7 @@ function sanitizeRecordForAccountant(record) {
     refundedBy: normalizeText(source.refundedBy, 48),
     completedAt: normalizeDateTimeValue(source.completedAt),
     customerFeedback: normalizeText(source.customerFeedback, 1000),
+    returnReason: normalizeText(source.returnReason, 500),
     serviceFeedbackImages: normalizeStoredFeedbackImages(source.serviceFeedbackImages),
     returnedAt: normalizeDateTimeValue(source.returnedAt),
     isSettled: settlementFields.isSettled,
@@ -2597,6 +2600,7 @@ function normalizeAccountantOperationLogEntry(rawEntry) {
     summary: normalizeText(rawEntry.summary, 500),
     remark: normalizeText(rawEntry.remark, 500),
     customerFeedback: normalizeText(rawEntry.customerFeedback, 1000),
+    returnReason: normalizeText(rawEntry.returnReason, 500),
     completedAt: normalizeDateTimeValue(rawEntry.completedAt)
   };
 }
@@ -2720,7 +2724,8 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
   { field: "shopName", label: "店铺", kind: "text" },
   { field: "orderNo", label: "订单号", kind: "text" },
   { field: "completedAt", label: "完工时间", kind: "datetime" },
-  { field: "customerFeedback", label: "客户反馈", kind: "text" }
+  { field: "customerFeedback", label: "客户反馈", kind: "text" },
+  { field: "returnReason", label: "退单原因", kind: "text" }
 ];
 
 function getRecordHistoryFieldDefinition(field) {
@@ -3084,6 +3089,10 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
   const currentSettlementPaymentFields = getNormalizedRecordSettlementPaymentFields(current);
   const targetStatus = normalizeText(source.status, 24).toLowerCase();
   const shouldReturn = targetStatus === "returned";
+  const returnReason = shouldReturn ? normalizeText(source.returnReason, 500) : normalizeText(current.returnReason, 500);
+  if (shouldReturn && Array.from(returnReason).length < RETURN_ORDER_REASON_MIN_LENGTH) {
+    throw new Error(`退单原因至少输入${RETURN_ORDER_REASON_MIN_LENGTH}个字。`);
+  }
   const returnedPriceSnapshot = shouldReturn ? buildReturnedPriceSnapshot(current, source.returnedPriceSnapshot) : null;
   const nextDate = normalizeText(
     Object.prototype.hasOwnProperty.call(source, "date") ? source.date : current.date,
@@ -3154,6 +3163,7 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
     customer: nextCustomer,
     summary: nextSummary,
     remark: nextRemark,
+    returnReason,
     paymentPrice: nextPaymentPrice,
     totalPrice: nextTotalPrice,
     settlementPrice: nextSettlementPrice,
@@ -3165,6 +3175,7 @@ function buildEditableRecordUpdate(currentRecord, payload, session) {
       ...nextRecord,
       paymentPrice: 0,
       totalPrice: 0,
+      premiumPrice: 0,
       settlementPrice: 0,
       checkStatus: "returned",
       checkedAt: "",
@@ -4689,14 +4700,20 @@ async function serveRecordById(req, res, recordIdRaw) {
             const remark = Object.prototype.hasOwnProperty.call(body, "remark")
               ? normalizeText(body.remark, 500)
               : normalizeText(current.remark, 500);
+            const returnReason = normalizeText(body.returnReason, 500);
+            if (Array.from(returnReason).length < RETURN_ORDER_REASON_MIN_LENGTH) {
+              throw new Error(`退单原因至少输入${RETURN_ORDER_REASON_MIN_LENGTH}个字。`);
+            }
             const returnedPriceSnapshot = buildReturnedPriceSnapshot(current, body.returnedPriceSnapshot);
             updatedRecord = {
               ...current,
               customer,
               summary,
               remark,
+              returnReason,
               paymentPrice: 0,
               totalPrice: 0,
+              premiumPrice: 0,
               settlementPrice: 0,
               checkStatus: "returned",
               checkedAt: "",
@@ -4785,6 +4802,7 @@ async function serveRecordById(req, res, recordIdRaw) {
               summary: normalizeText(updatedRecord.summary, 500),
               remark: normalizeText(updatedRecord.remark, 500),
               customerFeedback: normalizeText(updatedRecord.customerFeedback, 1000),
+              returnReason: normalizeText(updatedRecord.returnReason, 500),
               completedAt: normalizeDateTimeValue(updatedRecord.completedAt)
             });
             await writeAccountantOperationLogs(logs);

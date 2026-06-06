@@ -1986,6 +1986,48 @@
       padding: 12px 20px;
     }
 
+    .return-order-modal-card {
+      width: min(480px, 92vw);
+      display: grid;
+      gap: 14px;
+    }
+
+    .return-order-modal-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .return-order-title {
+      margin: 0;
+      font-size: 22px;
+      color: #28463d;
+    }
+
+    .return-order-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .return-order-form textarea {
+      min-height: 116px;
+      resize: vertical;
+    }
+
+    .return-order-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .return-order-actions .btn-secondary,
+    .return-order-actions .btn-danger {
+      min-width: 120px;
+      border-radius: 14px;
+      padding: 11px 18px;
+    }
+
     .field-wide {
       grid-column: 1 / -1;
     }
@@ -3581,11 +3623,19 @@
       body:not(.boss-view) #createModal #recordForm .field-note {
         padding-right: 184px;
       }
+
+      body:not(.boss-view) #createModal #recordForm:has(#recordReturnBtn:not([hidden])) .field-note {
+        padding-right: 356px;
+      }
     }
 
     @media (min-width: 641px) and (max-width: 860px) {
       body:not(.boss-view) #createModal #recordForm .field-note {
         padding-right: 184px;
+      }
+
+      body:not(.boss-view) #createModal #recordForm:has(#recordReturnBtn:not([hidden])) .field-note {
+        padding-right: 356px;
       }
 
       body:not(.boss-view) #createModal #recordForm .form-actions {
