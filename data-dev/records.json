@@ -186,27 +186,18 @@
     "id": "rec_mpz75b2ae99kpv",
     "createdAt": "2026-06-04 15:51:29",
     "date": "2026-06-04",
-    "monthlySettlement": {
-      "enabled": true,
-      "endDate": "2027-01-04",
-      "id": "mset_mpz75ao96pij82",
-      "monthCount": 7,
-      "sequence": 4,
-      "totalPaymentPrice": 0,
-      "renewal": true
-    },
     "dispatcher": "A",
-    "accountant": "",
+    "accountant": "草莓味的风",
     "platform": "",
     "shopName": "",
     "orderNo": "",
     "source": "",
-    "customer": "",
+    "customer": "3",
     "summary": "",
     "remark": "",
     "paymentPrice": 1111,
-    "totalPrice": "",
-    "settlementPrice": "",
+    "totalPrice": 3,
+    "settlementPrice": 1.5,
     "isSettled": false,
     "settledAt": "",
     "settlementInvoiceImage": null,
@@ -241,7 +232,58 @@
     "completedBy": "",
     "customerFeedback": "",
     "serviceFeedbackImages": [],
-    "operationHistory": []
+    "operationHistory": [
+      {
+        "historyId": "rhis_mq2ggiatlc35e5",
+        "operatedAt": "2026-06-06 22:35:27",
+        "operatedBy": "开心",
+        "operatedRole": "boss",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "totalPrice",
+            "label": "会计价",
+            "before": "",
+            "after": 3
+          },
+          {
+            "field": "premiumPrice",
+            "label": "溢价",
+            "before": "",
+            "after": 1108
+          },
+          {
+            "field": "settlementPrice",
+            "label": "会计结算价",
+            "before": "",
+            "after": 1.5
+          },
+          {
+            "field": "accountant",
+            "label": "会计",
+            "before": "",
+            "after": "草莓味的风"
+          },
+          {
+            "field": "customer",
+            "label": "客户",
+            "before": "",
+            "after": "3"
+          }
+        ]
+      }
+    ],
+    "monthlySettlement": {
+      "enabled": true,
+      "endDate": "2027-01-04",
+      "id": "mset_mpz75ao96pij82",
+      "monthCount": 7,
+      "sequence": 4,
+      "totalPaymentPrice": 0,
+      "renewal": true
+    },
+    "returnReason": ""
   },
   {
     "id": "rec_mpz75axm3srpjs",
@@ -5609,9 +5651,9 @@
     "customer": "Me",
     "summary": "开发票",
     "remark": "",
-    "paymentPrice": 50,
-    "totalPrice": 50,
-    "settlementPrice": 25,
+    "paymentPrice": 0,
+    "totalPrice": 0,
+    "settlementPrice": 0,
     "isSettled": false,
     "settledAt": "",
     "settlementInvoiceImage": null,
@@ -5640,14 +5682,65 @@
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
-    "checkStatus": "pending",
+    "checkStatus": "returned",
     "checkedAt": "",
     "completedAt": "",
     "completedBy": "",
     "customerFeedback": "",
     "serviceFeedbackImages": [],
-    "operationHistory": [],
-    "returnedAt": ""
+    "operationHistory": [
+      {
+        "historyId": "rhis_mq2gdkyhyk2r4s",
+        "operatedAt": "2026-06-06 22:33:10",
+        "operatedBy": "开心",
+        "operatedRole": "boss",
+        "actionKey": "returned",
+        "actionLabel": "退单",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "pending",
+            "after": "returned"
+          },
+          {
+            "field": "paymentPrice",
+            "label": "付款价",
+            "before": 50,
+            "after": 0
+          },
+          {
+            "field": "totalPrice",
+            "label": "会计价",
+            "before": 50,
+            "after": 0
+          },
+          {
+            "field": "settlementPrice",
+            "label": "会计结算价",
+            "before": 25,
+            "after": 0
+          },
+          {
+            "field": "returnReason",
+            "label": "退单原因",
+            "before": "",
+            "after": "1233333333"
+          }
+        ]
+      }
+    ],
+    "returnedAt": "2026-06-06 22:33:10",
+    "returnReason": "1233333333",
+    "premiumPrice": 0,
+    "checkedBy": "",
+    "returnedPriceSnapshot": {
+      "paymentPrice": 50,
+      "totalPrice": 50,
+      "premiumPrice": 0,
+      "settlementPrice": 25
+    },
+    "returnedBy": "开心"
   },
   {
     "id": "rec_mpw9n4n1yvnx83",
