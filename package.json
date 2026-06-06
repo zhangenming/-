@@ -3,6 +3,7 @@
   "private": true,
   "description": "本地 Node.js 服务 + JSON 持久化",
   "scripts": {
+    "audit:settlement": "node scripts/audit-settlements.js",
     "build": "node scripts/build.js",
     "dev": "PORT=2999 APP_ENV=development node --watch-path=server.js server.js",
     "start": "PORT=3000 APP_ENV=production node server.js"
