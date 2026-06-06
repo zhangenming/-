@@ -2534,6 +2534,7 @@ const RECORD_HISTORY_ACTION_LABELS = {
   refunded: "退款",
   returned: "退单",
   settled: "结算",
+  settled_revoked: "撤销核对",
   invoice_uploaded: "上传发票",
   invoice_reuploaded: "修改发票",
   settlement_paid: "打款"
@@ -3850,6 +3851,125 @@ async function serveRecordSettlement(req, res) {
     });
   } catch (error) {
     sendJson(res, 400, { error: error.message || "结算失败" });
+  }
+}
+
+async function serveRecordSettlementRevoke(req, res) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const session = await requireAuthSession(req, res, ["boss"]);
+  if (!session) return;
+
+  if (req.method !== "PATCH") {
+    sendJson(res, 405, { error: "方法不支持" });
+    return;
+  }
+
+  try {
+    const body = await parseBody(req);
+    const recordIds = Array.from(
+      new Set(
+        (Array.isArray(body?.recordIds) ? body.recordIds : [])
+          .map((item) => normalizeText(item, 120))
+          .filter(Boolean)
+      )
+    );
+    if (!recordIds.length) {
+      sendJson(res, 400, { error: "请选择要撤销核对的数据。" });
+      return;
+    }
+
+    const recordIdSet = new Set(recordIds);
+    const operatedAt = getCurrentBeijingDateTime();
+    const operatedBy = normalizeText(session.account, 48) || BOSS_LOGIN_ACCOUNT;
+
+    const result = await withWriteLock(async () => {
+      const all = await readRecords();
+      const migration = ensureRecordIds(all);
+      const foundRecordIds = new Set();
+      const revokedRecordIds = [];
+      const skippedRecordIds = [];
+
+      const nextRecords = migration.records.map((item) => {
+        const current = item && typeof item === "object" ? item : {};
+        const recordId = normalizeText(current.id, 120);
+        if (!recordId || !recordIdSet.has(recordId)) {
+          return current;
+        }
+
+        foundRecordIds.add(recordId);
+        const settlementFields = getNormalizedRecordSettlementFields(current);
+        const invoiceFields = getNormalizedRecordInvoiceFields(current);
+        const dispatcherInvoiceFields = getNormalizedRecordDispatcherInvoiceFields(current);
+        const paymentFields = getNormalizedRecordSettlementPaymentFields(current);
+        const dispatcherPaymentFields = getNormalizedRecordDispatcherSettlementPaymentFields(current);
+        const normalizedRecord = {
+          ...current,
+          ...settlementFields,
+          ...invoiceFields,
+          ...dispatcherInvoiceFields,
+          ...paymentFields,
+          ...dispatcherPaymentFields
+        };
+
+        const canRevoke = canAccessRecord(session, current)
+          && settlementFields.isSettled
+          && !invoiceFields.settlementInvoiceImage
+          && !dispatcherInvoiceFields.dispatcherSettlementInvoiceImage
+          && !paymentFields.isSettlementPaid
+          && !dispatcherPaymentFields.isDispatcherSettlementPaid;
+        if (!canRevoke) {
+          skippedRecordIds.push(recordId);
+          return normalizedRecord;
+        }
+
+        const nextRecord = {
+          ...normalizedRecord,
+          isSettled: false,
+          settledAt: ""
+        };
+        revokedRecordIds.push(recordId);
+        return appendRecordHistory(nextRecord, buildRecordHistoryEntry({
+          beforeRecord: normalizedRecord,
+          afterRecord: nextRecord,
+          session,
+          actionKey: "settled_revoked",
+          actionLabel: RECORD_HISTORY_ACTION_LABELS.settled_revoked,
+          operatedAt,
+          operatedBy
+        }));
+      });
+
+      recordIds.forEach((recordId) => {
+        if (!foundRecordIds.has(recordId)) {
+          skippedRecordIds.push(recordId);
+        }
+      });
+
+      if (migration.changed || revokedRecordIds.length > 0) {
+        await writeRecords(nextRecords);
+      }
+
+      return {
+        records: scopeRecordsBySession(session, nextRecords),
+        revokedRecordIds,
+        skippedRecordIds
+      };
+    });
+
+    sendJson(res, 200, {
+      ok: true,
+      records: result.records,
+      revokedRecordIds: result.revokedRecordIds,
+      skippedRecordIds: result.skippedRecordIds
+    });
+  } catch (error) {
+    sendJson(res, 400, { error: error.message || "撤销核对失败" });
   }
 }
 
@@ -5672,6 +5792,11 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === "/api/records/settle") {
       await serveRecordSettlement(req, res);
+      return;
+    }
+
+    if (pathname === "/api/records/settle/revoke") {
+      await serveRecordSettlementRevoke(req, res);
       return;
     }
 

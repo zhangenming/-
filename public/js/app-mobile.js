@@ -245,6 +245,7 @@
       { text: "历史", className: "mobile-row-btn", button: getRowButton(recordId, ".row-history-btn") },
       { text: "修改", className: "mobile-row-btn", button: getRowButton(recordId, ".row-edit-btn") },
       { text: "退款", className: "mobile-row-btn", button: getRowButton(recordId, ".row-refund-btn") },
+      { text: "撤销核对", className: "mobile-row-btn warning", button: getRowButton(recordId, ".row-settlement-revoke-btn") },
       { text: "删除", className: "mobile-row-btn danger", button: getRowButton(recordId, ".row-delete-btn") },
       { text: "确认", className: "mobile-row-btn primary", button: getRowButton(recordId, ".row-check-btn") },
     ].filter((item) => item.button));

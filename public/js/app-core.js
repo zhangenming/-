@@ -3,6 +3,7 @@ const API_BASE =
   window.location.protocol === "file:" ? "http://127.0.0.1:3000" : "";
 const API_ENDPOINT_RECORDS = `${API_BASE}/api/records`;
 const API_ENDPOINT_RECORDS_SETTLE = `${API_ENDPOINT_RECORDS}/settle`;
+const API_ENDPOINT_RECORDS_SETTLE_REVOKE = `${API_ENDPOINT_RECORDS}/settle/revoke`;
 const API_ENDPOINT_RECORDS_INVOICE = `${API_ENDPOINT_RECORDS}/invoice`;
 const API_ENDPOINT_RECORDS_PAYOUT = `${API_ENDPOINT_RECORDS}/payout`;
 const API_ENDPOINT_RECORDS_PAYOUT_REVOKE = `${API_ENDPOINT_RECORDS}/payout/revoke`;
@@ -2683,6 +2684,18 @@ function canCurrentAccountSettleRecords() {
   return isBossLogin();
 }
 
+function canCurrentAccountRevokeSettlement(record) {
+  return (
+    isBossLogin() &&
+    isRecordSettled(record) &&
+    getRecordCombinedSettlementStatusKey(record) === "settled" &&
+    !isRecordInvoiceUploaded(record) &&
+    !isRecordDispatcherInvoiceUploaded(record) &&
+    !isRecordSettlementPaid(record) &&
+    !isRecordDispatcherSettlementPaid(record)
+  );
+}
+
 function canCurrentAccountUseReminders() {
   return isBossLogin() || isDispatcherLogin();
 }
@@ -4181,6 +4194,7 @@ function getUpdatedRecordIndicatorLabel(record) {
   if (actionKey === "refunded") return "已退款";
   if (actionKey === "returned") return "已退单";
   if (actionKey === "settled") return "已核对客户确认";
+  if (actionKey === "settled_revoked") return "已撤销核对";
   if (actionKey === "invoice_uploaded") return "发票已上传";
   if (actionKey === "updated") return "信息更新";
   return normalizeText(latestEntry?.actionLabel, 32) || "信息更新";

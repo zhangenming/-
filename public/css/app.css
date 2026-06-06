@@ -8752,6 +8752,7 @@
       grid-template-columns:
         minmax(0, var(--table-action-history-width))
         minmax(0, var(--table-action-edit-width))
+        minmax(0, var(--table-action-revoke-settlement-width))
         minmax(0, var(--table-action-delete-width))
         minmax(0, var(--table-action-check-width));
       align-items: center;
@@ -8925,6 +8926,7 @@
 
     .row-edit-btn,
     .row-refund-btn,
+    .row-settlement-revoke-btn,
     .row-delete-btn,
     .row-check-btn,
     .row-history-btn {
@@ -8962,7 +8964,7 @@
     }
 
     .row-check-btn {
-      grid-column: 4;
+      grid-column: 5;
       border-color: #a9b6be;
       background: #e7edf0;
       color: #43525b;
@@ -8996,7 +8998,14 @@
     }
 
     .row-delete-btn {
+      grid-column: 4;
+    }
+
+    .row-settlement-revoke-btn {
       grid-column: 3;
+      border-color: #c7b56e;
+      background: #fff8db;
+      color: #765f0f;
     }
 
     #appPage.accountant-view #tableBody .row-check-btn {
@@ -9028,6 +9037,11 @@
     .row-delete-btn:hover {
       background: #ffe8e8;
       border-color: #d89f9f;
+    }
+
+    .row-settlement-revoke-btn:hover {
+      background: #fff0b8;
+      border-color: #b99c3e;
     }
 
     .row-check-btn:hover {

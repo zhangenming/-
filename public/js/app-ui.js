@@ -255,14 +255,15 @@
       const historyWidth = getMeasuredButtonWidth(".row-history-btn", { minWidth: 0 });
       const editWidth = getMeasuredButtonWidth(".row-edit-btn", { minWidth: 0 });
       const refundWidth = getMeasuredButtonWidth(".row-refund-btn", { minWidth: 0 });
+      const revokeSettlementWidth = getMeasuredButtonWidth(".row-settlement-revoke-btn", { minWidth: 0 });
       const deleteWidth = getMeasuredButtonWidth(".row-delete-btn", { minWidth: 0 });
       const checkWidth = getMeasuredButtonWidth(".row-check-btn", { minWidth: 0 });
       const isAccountantView = Boolean(appPage?.classList.contains("accountant-view"));
       const actionGap = isAccountantView ? 4 : 6;
       const actionTrackWidths = isAccountantView
         ? [historyWidth, refundWidth, checkWidth]
-        : [historyWidth, Math.max(editWidth, refundWidth), deleteWidth, checkWidth];
-      const visibleTrackWidths = actionTrackWidths.filter((width) => width > 0);
+        : [historyWidth, Math.max(editWidth, refundWidth), revokeSettlementWidth, deleteWidth, checkWidth];
+      const actionGapCount = Math.max(0, actionTrackWidths.length - 1);
       const actionPadding = getHorizontalPadding(actionCells[0] || actionHeader);
       const statusWidth = measureStickyColumnWidth(
         [
@@ -276,12 +277,12 @@
         { minWidth: 112, maxWidth: 360, extraWidth: 10 }
       );
       const actionWidth = Math.min(
-        360,
+        440,
         Math.max(
           88,
           Math.ceil(
-            visibleTrackWidths.reduce((sum, width) => sum + width, 0)
-            + Math.max(0, visibleTrackWidths.length - 1) * actionGap
+            actionTrackWidths.reduce((sum, width) => sum + width, 0)
+            + actionGapCount * actionGap
             + actionPadding
           )
         )
@@ -291,6 +292,7 @@
       appPage.style.setProperty("--table-sticky-action-width", `${actionWidth}px`);
       appPage.style.setProperty("--table-action-history-width", `${historyWidth}px`);
       appPage.style.setProperty("--table-action-edit-width", `${Math.max(editWidth, refundWidth)}px`);
+      appPage.style.setProperty("--table-action-revoke-settlement-width", `${revokeSettlementWidth}px`);
       appPage.style.setProperty("--table-action-delete-width", `${deleteWidth}px`);
       appPage.style.setProperty("--table-action-check-width", `${checkWidth}px`);
       if (statusCol) statusCol.style.width = `${statusWidth}px`;
@@ -5743,6 +5745,52 @@
       }
     }
 
+    async function submitBossSettlementRevoke(recordId, button = null) {
+      if (!isBossLogin()) return;
+      const normalizedRecordId = String(recordId || "").trim();
+      if (!normalizedRecordId) {
+        showAppStatus("请选择要撤销核对的数据。");
+        return;
+      }
+      const targetRecord = records.find((item) => String(item.id || "").trim() === normalizedRecordId) || null;
+      if (!targetRecord || !canCurrentAccountRevokeSettlement(targetRecord)) {
+        showAppStatus("当前数据状态已刷新，请重新核对。", "error");
+        return;
+      }
+
+      const customer = String(targetRecord.customer || "").trim() || "未填";
+      const date = formatDateDisplay(targetRecord.date) || "未知日期";
+      const confirmed = await openConfirmDialog({
+        title: "撤销核对",
+        message: `确认撤销这条数据的客户确认核对？\n日期：${date}\n客户：${customer}`,
+        confirmText: "确认撤销",
+        cancelText: "取消",
+        tone: "danger"
+      });
+      if (!confirmed) return;
+
+      try {
+        const { revokedRecordIds, skippedRecordIds } = await withLoading(
+          {
+            button,
+            buttonText: "撤销中"
+          },
+          () => revokeSettlementByIds([normalizedRecordId])
+        );
+        const messageParts = [];
+        if (revokedRecordIds.length) {
+          messageParts.push(`已撤销核对 ${revokedRecordIds.length} 条`);
+        }
+        if (skippedRecordIds.length) {
+          messageParts.push(`跳过 ${skippedRecordIds.length} 条`);
+        }
+        showAppStatus(messageParts.length ? `${messageParts.join("，")}。` : "未处理任何数据。", revokedRecordIds.length ? "ok" : "error");
+      } catch (error) {
+        console.error(error);
+        showAppStatus(error.message || "撤销核对失败，请稍后重试。");
+      }
+    }
+
     async function submitBossSettlementPayout(recordIds) {
       if (!isBossLogin()) return;
       if (isBossSettlementPayoutSubmitting) return;
@@ -7165,6 +7213,16 @@
             editBtn.dataset.recordId = recordId;
             editBtn.textContent = "修改";
             actionWrap.appendChild(editBtn);
+          }
+          if (canCurrentAccountRevokeSettlement(item)) {
+            const revokeSettlementBtn = document.createElement("button");
+            revokeSettlementBtn.type = "button";
+            revokeSettlementBtn.className = "row-settlement-revoke-btn";
+            revokeSettlementBtn.dataset.recordId = recordId;
+            revokeSettlementBtn.dataset.customer = String(item.customer || "");
+            revokeSettlementBtn.dataset.date = formatDateDisplay(item.date);
+            revokeSettlementBtn.textContent = "撤销核对";
+            actionWrap.appendChild(revokeSettlementBtn);
           }
         }
         if (recordId && canCurrentAccountDeleteRecord(item)) {

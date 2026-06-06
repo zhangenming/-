@@ -84,6 +84,7 @@ select:focus-visible {
 .row-delete-btn,
 .row-check-btn,
 .row-refund-btn,
+.row-settlement-revoke-btn,
 .row-history-btn,
 .accountant-action-btn,
 .recycle-restore-btn,
@@ -124,6 +125,12 @@ select:focus-visible {
   border-color: oklch(44% 0.15 28);
   background: var(--m-danger);
   color: oklch(98% 0.006 28);
+}
+
+.row-settlement-revoke-btn {
+  border-color: oklch(72% 0.11 82);
+  background: oklch(95% 0.055 86);
+  color: oklch(34% 0.075 76);
 }
 
 button:disabled {
@@ -865,6 +872,12 @@ body.mobile-ready .table-wrap {
   background: var(--m-accent);
   border-color: var(--m-accent-strong);
   color: oklch(98% 0.006 154);
+}
+
+.mobile-row-btn.warning {
+  background: oklch(95% 0.055 86);
+  border-color: oklch(72% 0.11 82);
+  color: oklch(34% 0.075 76);
 }
 
 .mobile-row-btn.danger {

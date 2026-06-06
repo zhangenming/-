@@ -2202,6 +2202,15 @@
         return;
       }
 
+      const revokeSettlementBtn = event.target.closest(".row-settlement-revoke-btn");
+      if (revokeSettlementBtn) {
+        if (!requireAccount()) return;
+        const recordId = String(revokeSettlementBtn.dataset.recordId || "").trim();
+        if (!recordId) return;
+        await submitBossSettlementRevoke(recordId, revokeSettlementBtn);
+        return;
+      }
+
       const deleteBtn = event.target.closest(".row-delete-btn");
       if (!deleteBtn) return;
       if (!requireAccount()) return;

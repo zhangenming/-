@@ -2064,6 +2064,58 @@
       };
     }
 
+    async function revokeSettlementByIds(recordIds) {
+      const normalizedRecordIds = Array.from(
+        new Set(
+          (Array.isArray(recordIds) ? recordIds : [])
+            .map((item) => String(item || "").trim())
+            .filter(Boolean)
+        )
+      );
+      if (!normalizedRecordIds.length) {
+        throw new Error("请选择要撤销核对的数据。");
+      }
+
+      const response = await fetchWithClientLog(API_ENDPOINT_RECORDS_SETTLE_REVOKE, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recordIds: normalizedRecordIds })
+      }, {
+        successMessage: "撤销核对",
+        errorMessage: "撤销核对"
+      });
+
+      if (!response.ok) {
+        let message = `撤销核对失败（${response.status}）`;
+        try {
+          const body = await response.json();
+          if (body.error) message = body.error;
+        } catch (error) {
+          console.error(error);
+        }
+        throw new Error(message);
+      }
+
+      const body = await response.json();
+      const nextRecords = Array.isArray(body.records) ? body.records : records;
+      syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: true });
+      records = nextRecords;
+      clearBossRecordSelection();
+      clearBossSettlementPayoutSelection();
+      renderTable();
+      if (!analysisModal.hidden) {
+        renderAnalysisPanel();
+      }
+      if (!accountantModal.hidden) {
+        renderAccountantList();
+      }
+
+      return {
+        revokedRecordIds: Array.isArray(body.revokedRecordIds) ? body.revokedRecordIds : [],
+        skippedRecordIds: Array.isArray(body.skippedRecordIds) ? body.skippedRecordIds : []
+      };
+    }
+
     async function uploadSettlementInvoice(payload) {
       const source = payload && typeof payload === "object" ? payload : {};
       const response = await fetchWithClientLog(API_ENDPOINT_RECORDS_INVOICE, {
