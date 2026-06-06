@@ -10,13 +10,7 @@ const APP_ENV = String(process.env.APP_ENV || "production").trim().toLowerCase()
   ? "development"
   : "production";
 const IS_DEVELOPMENT = APP_ENV === "development";
-const ASSET_ENV = String(process.env.ASSET_ENV || (IS_DEVELOPMENT ? "source" : "dist")).trim().toLowerCase() === "source"
-  ? "source"
-  : "dist";
-const DATA_ENV = String(process.env.DATA_ENV || (IS_DEVELOPMENT ? "development" : "production")).trim().toLowerCase() === "development"
-  ? "development"
-  : "production";
-const IS_SOURCE_ASSET_ENV = ASSET_ENV === "source";
+const DATA_ENV = IS_DEVELOPMENT ? "development" : "production";
 const IS_DEVELOPMENT_DATA_ENV = DATA_ENV === "development";
 const IS_DEV_LIVE_RELOAD_ENABLED = IS_DEVELOPMENT && String(process.env.ENABLE_DEV_LIVE_RELOAD || "").trim() === "1";
 const DATA_NAMESPACE = DATA_ENV;
@@ -29,12 +23,11 @@ const SOURCE_PUBLIC_DIR = path.join(ROOT_DIR, "public");
 const SOURCE_BUILD_INFO_FILE = path.join(ROOT_DIR, "build-info.json");
 const SOURCE_CHANGE_LOG_FILE = path.join(ROOT_DIR, "CHANGELOG.json");
 const DIST_DIR = path.join(ROOT_DIR, "dist");
-const HTML_DIR = IS_SOURCE_ASSET_ENV ? ROOT_DIR : DIST_DIR;
-const DESKTOP_HTML_FILE = IS_SOURCE_ASSET_ENV ? SOURCE_DESKTOP_HTML_FILE : path.join(DIST_DIR, "派单结算录入电脑版.html");
-const MOBILE_HTML_FILE = IS_SOURCE_ASSET_ENV ? SOURCE_MOBILE_HTML_FILE : path.join(DIST_DIR, "派单结算录入手机版.html");
-const PUBLIC_DIR = IS_SOURCE_ASSET_ENV ? SOURCE_PUBLIC_DIR : path.join(DIST_DIR, "public");
-const BUILD_INFO_FILE = IS_SOURCE_ASSET_ENV ? SOURCE_BUILD_INFO_FILE : path.join(DIST_DIR, "build-info.json");
-const CHANGE_LOG_FILE = IS_SOURCE_ASSET_ENV ? SOURCE_CHANGE_LOG_FILE : path.join(DIST_DIR, "CHANGELOG.json");
+const DIST_DESKTOP_HTML_FILE = path.join(DIST_DIR, "派单结算录入电脑版.html");
+const DIST_MOBILE_HTML_FILE = path.join(DIST_DIR, "派单结算录入手机版.html");
+const DIST_PUBLIC_DIR = path.join(DIST_DIR, "public");
+const DIST_BUILD_INFO_FILE = path.join(DIST_DIR, "build-info.json");
+const DIST_CHANGE_LOG_FILE = path.join(DIST_DIR, "CHANGELOG.json");
 const DATA_DIR = path.join(ROOT_DIR, IS_DEVELOPMENT_DATA_ENV ? "data-dev" : "data");
 const DATA_FILE = path.join(DATA_DIR, "records.json");
 const RECYCLE_BIN_FILE = path.join(DATA_DIR, "recycle-bin.json");
@@ -110,7 +103,7 @@ let devLiveReloadHeartbeat = null;
 let forceRefreshHeartbeat = null;
 let devLiveReloadDebounceTimer = null;
 let devWatchersStarted = false;
-let staticAssetVersion = "";
+const staticAssetVersionCache = new Map();
 
 const STATIC_MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -231,24 +224,73 @@ function normalizeStaticAssetVersion(value) {
     .slice(0, 96);
 }
 
-function getStaticAssetVersion() {
-  return staticAssetVersion || normalizeStaticAssetVersion(APP_PACKAGE?.version || "1.0.0");
+function normalizeRequestHostname(hostHeader) {
+  const rawHost = String(hostHeader || "").trim().split(",")[0].trim();
+  if (!rawHost) return "";
+  const bracketMatch = rawHost.match(/^\[([^\]]+)\](?::(\d+))?$/);
+  if (bracketMatch) {
+    return bracketMatch[1].toLowerCase();
+  }
+  return rawHost.split(":")[0].toLowerCase();
 }
 
-async function loadStaticAssetVersion() {
-  if (IS_SOURCE_ASSET_ENV) {
-    staticAssetVersion = normalizeStaticAssetVersion(`${APP_PACKAGE?.version || "1.0.0"}-dev`);
-    return;
+function normalizeRequestPort(hostHeader) {
+  const rawHost = String(hostHeader || "").trim().split(",")[0].trim();
+  const bracketMatch = rawHost.match(/^\[[^\]]+\]:(\d+)$/);
+  if (bracketMatch) return Number(bracketMatch[1]);
+  const portMatch = rawHost.match(/:(\d+)$/);
+  return portMatch ? Number(portMatch[1]) : PORT;
+}
+
+function isLocalRequestHost(hostname) {
+  return ["localhost", "127.0.0.1", "::1", "0.0.0.0"].includes(String(hostname || "").toLowerCase());
+}
+
+function getRequestAssetEnv(req) {
+  if (IS_DEVELOPMENT) return "source";
+  const hostHeader = req?.headers?.host || `127.0.0.1:${PORT}`;
+  const hostname = normalizeRequestHostname(hostHeader);
+  const requestPort = normalizeRequestPort(hostHeader);
+  return isLocalRequestHost(hostname) && requestPort === 3000 ? "source" : "dist";
+}
+
+function buildAssetContext(req) {
+  const assetEnv = getRequestAssetEnv(req);
+  const isSource = assetEnv === "source";
+  return {
+    assetEnv,
+    htmlDir: isSource ? ROOT_DIR : DIST_DIR,
+    desktopHtmlFile: isSource ? SOURCE_DESKTOP_HTML_FILE : DIST_DESKTOP_HTML_FILE,
+    mobileHtmlFile: isSource ? SOURCE_MOBILE_HTML_FILE : DIST_MOBILE_HTML_FILE,
+    publicDir: isSource ? SOURCE_PUBLIC_DIR : DIST_PUBLIC_DIR,
+    buildInfoFile: isSource ? SOURCE_BUILD_INFO_FILE : DIST_BUILD_INFO_FILE,
+    changeLogFile: isSource ? SOURCE_CHANGE_LOG_FILE : DIST_CHANGE_LOG_FILE
+  };
+}
+
+async function getStaticAssetVersion(assetContext) {
+  const assetEnv = assetContext?.assetEnv === "source" ? "source" : "dist";
+  const cachedVersion = staticAssetVersionCache.get(assetEnv);
+  if (cachedVersion) return cachedVersion;
+
+  if (assetEnv === "source") {
+    const version = normalizeStaticAssetVersion(`${APP_PACKAGE?.version || "1.0.0"}-dev`);
+    staticAssetVersionCache.set(assetEnv, version);
+    return version;
   }
 
   try {
-    const content = await fs.readFile(BUILD_INFO_FILE, "utf8");
+    const content = await fs.readFile(assetContext.buildInfoFile, "utf8");
     const payload = JSON.parse(content);
-    staticAssetVersion = normalizeStaticAssetVersion(
+    const version = normalizeStaticAssetVersion(
       payload?.version || payload?.builtAt || APP_PACKAGE?.version || "1.0.0"
     );
+    staticAssetVersionCache.set(assetEnv, version);
+    return version;
   } catch {
-    staticAssetVersion = normalizeStaticAssetVersion(APP_PACKAGE?.version || "1.0.0");
+    const version = normalizeStaticAssetVersion(APP_PACKAGE?.version || "1.0.0");
+    staticAssetVersionCache.set(assetEnv, version);
+    return version;
   }
 }
 
@@ -281,17 +323,16 @@ function withStaticAssetVersion(html, assetVersion) {
   ));
 }
 
-function getPublicAssetCacheControl() {
-  return IS_SOURCE_ASSET_ENV ? "no-store" : "public, max-age=31536000, immutable";
+function getPublicAssetCacheControl(assetContext) {
+  return assetContext?.assetEnv === "source" ? "no-store" : "public, max-age=31536000, immutable";
 }
 
-function withRuntimeConfig(html) {
+function withRuntimeConfig(html, assetContext, assetVersion) {
   const iconHref = getEnvironmentIconHref();
-  const assetVersion = getStaticAssetVersion();
   const content = [
     `<link rel="icon" type="image/svg+xml" href="${iconHref}" />`,
     `<link rel="shortcut icon" type="image/svg+xml" href="${iconHref}" />`,
-    `<script>window.__APP_ENV__ = ${toInlineJson(APP_ENV)};window.__ASSET_ENV__ = ${toInlineJson(ASSET_ENV)};window.__DATA_ENV__ = ${toInlineJson(DATA_ENV)};window.__STATIC_ASSET_VERSION__ = ${toInlineJson(assetVersion)};</script>`
+    `<script>window.__APP_ENV__ = ${toInlineJson(APP_ENV)};window.__ASSET_ENV__ = ${toInlineJson(assetContext.assetEnv)};window.__DATA_ENV__ = ${toInlineJson(DATA_ENV)};window.__STATIC_ASSET_VERSION__ = ${toInlineJson(assetVersion)};</script>`
   ].join("\n  ");
   if (html.includes("</head>")) {
     return html.replace("</head>", `  ${content}\n</head>`);
@@ -3380,11 +3421,14 @@ function isAccountantEditableRecordPayload(payload) {
 }
 
 async function serveHtmlFile(res, filePath, options = {}) {
-  const { headOnly = false, missingMessage = "" } = options;
+  const { assetContext, headOnly = false, missingMessage = "" } = options;
   try {
     const html = await fs.readFile(filePath, "utf8");
+    const assetVersion = await getStaticAssetVersion(assetContext);
     const htmlWithRuntime = withDevLiveReload(withRuntimeConfig(
-      withStaticAssetVersion(html, getStaticAssetVersion())
+      withStaticAssetVersion(html, assetVersion),
+      assetContext,
+      assetVersion
     ));
     res.writeHead(200, {
       "Content-Type": "text/html; charset=utf-8",
@@ -3418,19 +3462,22 @@ function isMobileHtmlRequest(req) {
   return /Android|iPhone|iPod|Windows Phone|IEMobile|Opera Mini|Mobile/i.test(userAgent);
 }
 
-function getAdaptiveHtmlFile(req) {
-  return isMobileHtmlRequest(req) ? MOBILE_HTML_FILE : DESKTOP_HTML_FILE;
+function getAdaptiveHtmlFile(req, assetContext) {
+  return isMobileHtmlRequest(req) ? assetContext.mobileHtmlFile : assetContext.desktopHtmlFile;
 }
 
 async function serveHtml(req, res, options = {}) {
-  await serveHtmlFile(res, getAdaptiveHtmlFile(req), {
+  const assetContext = buildAssetContext(req);
+  await serveHtmlFile(res, getAdaptiveHtmlFile(req, assetContext), {
     ...options,
+    assetContext,
     missingMessage: "生产静态资源还未生成，请先执行 npm run build。"
   });
 }
 
-async function serveRootHtmlAsset(res, pathname, options = {}) {
+async function serveRootHtmlAsset(req, res, pathname, options = {}) {
   const { headOnly = false } = options;
+  const assetContext = buildAssetContext(req);
   const normalizedPathname = String(pathname || "").trim();
   if (!normalizedPathname.startsWith("/") || !normalizedPathname.toLowerCase().endsWith(".html")) {
     sendText(res, 404, "Not Found");
@@ -3443,8 +3490,8 @@ async function serveRootHtmlAsset(res, pathname, options = {}) {
     return;
   }
 
-  const filePath = path.resolve(HTML_DIR, relativePath);
-  if (!isPathInDirectory(filePath, HTML_DIR)) {
+  const filePath = path.resolve(assetContext.htmlDir, relativePath);
+  if (!isPathInDirectory(filePath, assetContext.htmlDir)) {
     sendText(res, 403, "Forbidden");
     return;
   }
@@ -3463,10 +3510,10 @@ async function serveRootHtmlAsset(res, pathname, options = {}) {
     throw error;
   }
 
-  await serveHtmlFile(res, filePath, { headOnly });
+  await serveHtmlFile(res, filePath, { assetContext, headOnly });
 }
 
-function getDefaultBuildInfo() {
+function getDefaultBuildInfo(assetContext) {
   const baseVersion = String(APP_PACKAGE?.version || "1.0.0").trim() || "1.0.0";
   const betaBaseVersion = baseVersion.replace(/\.0$/, "");
   const buildNumber = 0;
@@ -3476,7 +3523,7 @@ function getDefaultBuildInfo() {
     buildNumber,
     builtAt: "",
     appEnv: APP_ENV,
-    assetEnv: ASSET_ENV,
+    assetEnv: assetContext.assetEnv,
     dataEnv: DATA_ENV,
     html: path.basename(SOURCE_HTML_FILE),
     desktopHtml: path.basename(SOURCE_DESKTOP_HTML_FILE),
@@ -3485,14 +3532,15 @@ function getDefaultBuildInfo() {
   };
 }
 
-async function serveBuildInfo(res, options = {}) {
+async function serveBuildInfo(req, res, options = {}) {
   const { headOnly = false } = options;
+  const assetContext = buildAssetContext(req);
   try {
-    const content = await fs.readFile(BUILD_INFO_FILE, "utf8");
+    const content = await fs.readFile(assetContext.buildInfoFile, "utf8");
     const payload = {
       ...(JSON.parse(content) || {}),
       appEnv: APP_ENV,
-      assetEnv: ASSET_ENV,
+      assetEnv: assetContext.assetEnv,
       dataEnv: DATA_ENV
     };
     setApiCorsHeaders(res);
@@ -3520,17 +3568,18 @@ async function serveBuildInfo(res, options = {}) {
         res.end();
         return;
       }
-      sendJson(res, 200, getDefaultBuildInfo());
+      sendJson(res, 200, getDefaultBuildInfo(assetContext));
       return;
     }
     throw error;
   }
 }
 
-async function serveChangeLog(res, options = {}) {
+async function serveChangeLog(req, res, options = {}) {
   const { headOnly = false } = options;
+  const assetContext = buildAssetContext(req);
   try {
-    const content = await fs.readFile(CHANGE_LOG_FILE, "utf8");
+    const content = await fs.readFile(assetContext.changeLogFile, "utf8");
     setApiCorsHeaders(res);
     res.writeHead(200, {
       "Content-Type": "application/json; charset=utf-8",
@@ -3562,8 +3611,9 @@ function isPathInDirectory(targetPath, rootPath) {
   return normalizedTarget.startsWith(normalizedRoot);
 }
 
-async function servePublicAsset(res, pathname, options = {}) {
+async function servePublicAsset(req, res, pathname, options = {}) {
   const { headOnly = false } = options;
+  const assetContext = buildAssetContext(req);
   const normalizedPathname = String(pathname || "").trim();
   if (!normalizedPathname.startsWith("/public/")) {
     sendText(res, 404, "Not Found");
@@ -3576,8 +3626,8 @@ async function servePublicAsset(res, pathname, options = {}) {
     return;
   }
 
-  const filePath = path.resolve(PUBLIC_DIR, relativePath);
-  if (!isPathInDirectory(filePath, PUBLIC_DIR)) {
+  const filePath = path.resolve(assetContext.publicDir, relativePath);
+  if (!isPathInDirectory(filePath, assetContext.publicDir)) {
     sendText(res, 403, "Forbidden");
     return;
   }
@@ -3591,7 +3641,7 @@ async function servePublicAsset(res, pathname, options = {}) {
     const content = await fs.readFile(filePath);
     res.writeHead(200, {
       "Content-Type": toStaticMimeType(filePath),
-      "Cache-Control": getPublicAssetCacheControl(),
+      "Cache-Control": getPublicAssetCacheControl(assetContext),
       "Content-Length": stat.size,
       "Last-Modified": stat.mtime.toUTCString()
     });
@@ -5951,17 +6001,17 @@ const server = http.createServer(async (req, res) => {
     }
 
     if ((req.method === "GET" || req.method === "HEAD") && pathname.startsWith("/public/")) {
-      await servePublicAsset(res, pathname, { headOnly: req.method === "HEAD" });
+      await servePublicAsset(req, res, pathname, { headOnly: req.method === "HEAD" });
       return;
     }
 
     if ((req.method === "GET" || req.method === "HEAD") && pathname === "/build-info.json") {
-      await serveBuildInfo(res, { headOnly: req.method === "HEAD" });
+      await serveBuildInfo(req, res, { headOnly: req.method === "HEAD" });
       return;
     }
 
     if ((req.method === "GET" || req.method === "HEAD") && pathname === "/CHANGELOG.json") {
-      await serveChangeLog(res, { headOnly: req.method === "HEAD" });
+      await serveChangeLog(req, res, { headOnly: req.method === "HEAD" });
       return;
     }
 
@@ -5971,7 +6021,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if ((req.method === "GET" || req.method === "HEAD") && pathname.toLowerCase().endsWith(".html")) {
-      await serveRootHtmlAsset(res, pathname, { headOnly: req.method === "HEAD" });
+      await serveRootHtmlAsset(req, res, pathname, { headOnly: req.method === "HEAD" });
       return;
     }
 
@@ -5984,7 +6034,6 @@ const server = http.createServer(async (req, res) => {
 
 async function bootstrapServer() {
   await ensureStorage();
-  await loadStaticAssetVersion();
 
   if (IS_DEV_LIVE_RELOAD_ENABLED) {
     startDevWatchers();
@@ -5994,11 +6043,10 @@ async function bootstrapServer() {
     const bootLines = [
       `Server running at http://${HOST}:${PORT}`,
       `App environment: ${APP_ENV}`,
-      `Asset environment: ${ASSET_ENV}`,
+      `Asset routing: localhost:3000 => source, production hosts => dist`,
       `Data environment: ${DATA_ENV}`,
       `Dev live reload: ${IS_DEV_LIVE_RELOAD_ENABLED ? "enabled" : "disabled"}`,
       `Data namespace: ${DATA_NAMESPACE}`,
-      `Static root: ${HTML_DIR}`,
       `Data root: ${DATA_DIR}`,
       `Data file: ${DATA_FILE}`,
       `Recycle bin file: ${RECYCLE_BIN_FILE}`,

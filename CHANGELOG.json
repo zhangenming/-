@@ -1,5 +1,11 @@
 [
   {
+    "type": "fix",
+    "version": "50.125.693",
+    "time": "2026-06-06 22:53:51",
+    "content": "修正 3000 端口入口分流规则：localhost:3000 按本地源码读取静态资源并使用生产数据，kaixincaishui.cloud 按生产构建资源并使用生产数据；package.json 恢复为原有 dev/start 启动脚本。"
+  },
+  {
     "type": "feature",
     "version": "50.124.693",
     "time": "2026-06-06 22:24:07",
