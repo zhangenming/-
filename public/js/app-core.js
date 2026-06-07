@@ -2734,7 +2734,7 @@ function canCurrentAccountViewSettlementRatio() {
 }
 
 function canUseAccountantInvoiceUploadFeature() {
-  return hasDebugQueryFlag();
+  return true;
 }
 
 function canCurrentAccountUploadSettlementInvoice() {
