@@ -84,6 +84,23 @@
     }
   },
   {
+    "username": "陈兆春",
+    "displayName": "陈兆春",
+    "name": "陈兆春",
+    "alias": "陈兆春",
+    "realName": "",
+    "phone": "陈兆春",
+    "loginPassword": "Cxp981125cxp",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": {
+      "name": "陈兆春",
+      "bankName": "建设银行",
+      "bankCardNo": "6227004530305863008",
+      "idCardNo": "650103197104064728",
+      "declarationPhone": "13999284083"
+    }
+  },
+  {
     "username": "18642091201",
     "displayName": "初一",
     "name": "初一",
@@ -127,6 +144,17 @@
       "idCardNo": "532329198910100547",
       "declarationPhone": "15287840918"
     }
+  },
+  {
+    "username": "15923149700",
+    "displayName": "邓大艳",
+    "name": "邓大艳",
+    "alias": "邓大艳",
+    "realName": "",
+    "phone": "15923149700",
+    "loginPassword": "ddy193125",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": null
   },
   {
     "username": "DouEr",
@@ -476,6 +504,23 @@
     }
   },
   {
+    "username": "15205209787",
+    "displayName": "萍水相逢",
+    "name": "萍水相逢",
+    "alias": "萍水相逢",
+    "realName": "卓萍",
+    "phone": "15205209787",
+    "loginPassword": "zp159753",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": {
+      "name": "卓萍",
+      "bankName": "建设银行",
+      "bankCardNo": "6217001250003969031",
+      "idCardNo": "320303197011171625",
+      "declarationPhone": "15205209787"
+    }
+  },
+  {
     "username": "liQiQi",
     "displayName": "琪琪",
     "name": "琪琪",
@@ -752,12 +797,12 @@
     "invoiceRecipientInfo": null
   },
   {
-    "username": "15690433379",
-    "displayName": "无言",
-    "name": "无言",
-    "alias": "无言",
-    "realName": "支凤梅",
-    "phone": "15690433379",
+    "username": "18092773114",
+    "displayName": "吴倩",
+    "name": "吴倩",
+    "alias": "吴倩",
+    "realName": "",
+    "phone": "18092773114",
     "loginPassword": "123456",
     "accountingSettlementRatio": 50,
     "invoiceRecipientInfo": null
@@ -1139,6 +1184,23 @@
     "invoiceRecipientInfo": null
   },
   {
+    "username": "15690433379",
+    "displayName": "支会计",
+    "name": "支会计",
+    "alias": "支会计",
+    "realName": "",
+    "phone": "15690433379",
+    "loginPassword": "123456",
+    "accountingSettlementRatio": 50,
+    "invoiceRecipientInfo": {
+      "name": "支凤梅",
+      "bankName": "中国建设银行定州支行",
+      "bankCardNo": "'6217000140030340994",
+      "idCardNo": "130682198806156921",
+      "declarationPhone": "15690433379"
+    }
+  },
+  {
     "username": "ChunShuYiWaizoey",
     "displayName": "朱会计",
     "name": "朱会计",
@@ -1213,17 +1275,6 @@
     "realName": "",
     "phone": "13580337922",
     "loginPassword": "123456",
-    "accountingSettlementRatio": 50,
-    "invoiceRecipientInfo": null
-  },
-  {
-    "username": "15923149700",
-    "displayName": "ddy123456",
-    "name": "ddy123456",
-    "alias": "ddy123456",
-    "realName": "",
-    "phone": "15923149700",
-    "loginPassword": "ddy193125",
     "accountingSettlementRatio": 50,
     "invoiceRecipientInfo": null
   },
