@@ -3405,6 +3405,7 @@
     }
 
     function createSettlementInvoiceRevokeButton(recordIds = []) {
+      if (!isQuickLoginDebugEnabled) return null;
       const normalizedIds = Array.from(
         new Set(
           (Array.isArray(recordIds) ? recordIds : [])
@@ -5289,8 +5290,9 @@
           )
         );
         const hasInvoiceRevokeTargets = canPayoutSettlementRecords && invoiceRevokeTargets.length > 0;
+        const hasPayoutRevokeTargets = isQuickLoginDebugEnabled && groupRevokeTargets.length > 0;
 
-        if (canPayoutSettlementRecords && (groupPayoutRecordIds.length > 0 || groupRevokeTargets.length > 0 || hasInvoiceRevokeTargets)) {
+        if (canPayoutSettlementRecords && (groupPayoutRecordIds.length > 0 || hasPayoutRevokeTargets || hasInvoiceRevokeTargets)) {
           const actionWrap = document.createElement("div");
           actionWrap.className = "settlement-detail-payout-actions";
 
@@ -5327,7 +5329,7 @@
             actionWrap.appendChild(payoutBtn);
           }
 
-          if (groupRevokeTargets.length > 0) {
+          if (hasPayoutRevokeTargets) {
             const revokeBtn = document.createElement("button");
             revokeBtn.type = "button";
             revokeBtn.className = "settlement-detail-payout-revoke-btn";
