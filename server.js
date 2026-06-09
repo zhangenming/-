@@ -2613,7 +2613,6 @@ const RECORD_HISTORY_ACTION_LABELS = {
   settled_revoked: "撤销核对",
   invoice_uploaded: "上传发票",
   invoice_reuploaded: "修改发票",
-  invoice_revoked: "撤销发票",
   settlement_paid: "打款"
 };
 
@@ -4326,8 +4325,6 @@ async function serveRecordInvoiceRevoke(req, res) {
       map.set(target.recordId, list);
       return map;
     }, new Map());
-    const operatedAt = getCurrentBeijingDateTime();
-    const operatedBy = normalizeText(session.account, 48) || BOSS_LOGIN_ACCOUNT;
 
     const result = await withWriteLock(async () => {
       const all = await readRecords();
@@ -4464,18 +4461,10 @@ async function serveRecordInvoiceRevoke(req, res) {
           })
           .filter(Boolean);
 
-        return appendRecordHistory({
+        return {
           ...nextRecord,
           operationHistory
-        }, buildRecordHistoryEntry({
-          beforeRecord: normalizedRecord,
-          afterRecord: nextRecord,
-          session,
-          actionKey: "invoice_revoked",
-          actionLabel: RECORD_HISTORY_ACTION_LABELS.invoice_revoked,
-          operatedAt,
-          operatedBy
-        }));
+        };
       });
 
       invoiceTargets.forEach((target) => {
