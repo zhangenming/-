@@ -277,7 +277,13 @@
     "phone": "15157028009",
     "loginPassword": "123456",
     "accountingSettlementRatio": 50,
-    "invoiceRecipientInfo": null
+    "invoiceRecipientInfo": {
+      "name": "杨琦",
+      "bankName": "中信银行浙江省衢州市龙游县支行",
+      "bankCardNo": "6217680820871817",
+      "idCardNo": "330825199101293745",
+      "declarationPhone": "15157028009"
+    }
   },
   {
     "username": "15823026932",
