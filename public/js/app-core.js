@@ -3479,11 +3479,16 @@ function canCurrentAccountUploadInvoiceToRecord(record) {
   if (isAccountantLogin()) {
     const currentAccountant = getCurrentAccountantDisplayName();
     if (!currentAccountant) return false;
-    if (isLinkedDispatcherRecordForCurrentAccount(record)) {
-      return !getDispatcherSettlementInvoiceImage(record);
+    const isDirectAccountantRecord =
+      String(record?.accountant || "").trim() === currentAccountant;
+    const isLinkedDispatcherRecord =
+      isLinkedDispatcherRecordForCurrentAccount(record);
+    if (isDirectAccountantRecord && !getSettlementInvoiceImage(record)) {
+      return true;
     }
-    if (String(record?.accountant || "").trim() === currentAccountant)
-      return !getSettlementInvoiceImage(record);
+    if (isLinkedDispatcherRecord && !getDispatcherSettlementInvoiceImage(record)) {
+      return true;
+    }
     return false;
   }
   if (isDispatcherLogin()) {
@@ -3500,15 +3505,52 @@ function canCurrentAccountUploadInvoiceToRecord(record) {
   return false;
 }
 
-function getAccountantInvoiceUploadTargetRecords(sourceRecords = records) {
+function getUniqueInvoiceUploadTargetRecords(sourceRecords) {
+  const source = Array.isArray(sourceRecords) ? sourceRecords : [];
+  const seenIds = new Set();
+  const uniqueRecords = [];
+  source.forEach((record) => {
+    const recordId = String(record?.id || "").trim();
+    if (recordId) {
+      if (seenIds.has(recordId)) return;
+      seenIds.add(recordId);
+    }
+    uniqueRecords.push(record);
+  });
+  return uniqueRecords;
+}
+
+function getAccountantInvoiceUploadAccountingTargetRecords(sourceRecords = records) {
+  if (!canCurrentAccountUploadSettlementInvoice()) return [];
+  if (!isAccountantLogin()) return [];
+  const currentAccountant = getCurrentAccountantDisplayName();
+  if (!currentAccountant) return [];
+  const uploadSourceRecords = getInvoiceUploadSourceRecords(sourceRecords);
+  return (Array.isArray(uploadSourceRecords) ? uploadSourceRecords : []).filter((item) => (
+    isRecordCompletionStatus(item) &&
+    isRecordSettled(item) &&
+    String(item?.accountant || "").trim() === currentAccountant &&
+    !getSettlementInvoiceImage(item)
+  ));
+}
+
+function getAccountantInvoiceUploadDispatcherTargetRecords(sourceRecords = records) {
   if (!canCurrentAccountUploadSettlementInvoice()) return [];
   const uploadSourceRecords = getInvoiceUploadSourceRecords(sourceRecords);
-  return (Array.isArray(uploadSourceRecords) ? uploadSourceRecords : []).filter((item) => {
-    return (
-      isRecordCompletionStatus(item) &&
-      canCurrentAccountUploadInvoiceToRecord(item)
-    );
-  });
+  return (Array.isArray(uploadSourceRecords) ? uploadSourceRecords : []).filter((item) => (
+    isRecordCompletionStatus(item) &&
+    isRecordSettled(item) &&
+    isLinkedDispatcherRecordForCurrentAccount(item) &&
+    !getDispatcherSettlementInvoiceImage(item)
+  ));
+}
+
+function getAccountantInvoiceUploadTargetRecords(sourceRecords = records) {
+  if (!canCurrentAccountUploadSettlementInvoice()) return [];
+  return getUniqueInvoiceUploadTargetRecords([
+    ...getAccountantInvoiceUploadAccountingTargetRecords(sourceRecords),
+    ...getAccountantInvoiceUploadDispatcherTargetRecords(sourceRecords),
+  ]);
 }
 
 function getCurrentInvoiceUploadAccountantName() {
@@ -3536,48 +3578,22 @@ function getCurrentInvoiceUploadSettlementGroup(sourceRecords = records) {
 
 function getAccountantInvoiceUploadSummary(sourceRecords = records) {
   const uploadSourceRecords = getInvoiceUploadSourceRecords(sourceRecords);
-  const targetRecords = getAccountantInvoiceUploadTargetRecords(uploadSourceRecords);
-  const settlementGroup = getCurrentInvoiceUploadSettlementGroup(targetRecords);
-  if (settlementGroup) {
-    const invoiceAmount = Number(settlementGroup.invoiceAmount) || 0;
-    const taxAmount =
-      Number(settlementGroup.taxAmount) ||
-      getSettlementTaxAmount(invoiceAmount);
-    const payableAmount =
-      Number(settlementGroup.payableAmount) || invoiceAmount - taxAmount;
-    return {
-      targetRecords,
-      count: targetRecords.length,
-      uploadableCount: targetRecords.length,
-      invoiceAmount,
-      taxAmount,
-      payableAmount,
-      accountantInvoiceAmount:
-        Number(settlementGroup.accountantInvoiceAmount) || 0,
-      dispatcherInvoiceAmount:
-        Number(settlementGroup.dispatcherInvoiceAmount) || 0,
-      dispatcherPremiumSegments: Array.isArray(
-        settlementGroup.dispatcherPremiumSegments,
-      )
-        ? settlementGroup.dispatcherPremiumSegments
-        : [],
-      dispatcherCommissionTerms: Array.isArray(
-        settlementGroup.dispatcherCommissionTerms,
-      )
-        ? settlementGroup.dispatcherCommissionTerms
-        : [],
-      dispatcherPremiumAmount:
-        Number(settlementGroup.dispatcherPremiumAmount) || 0,
-      dispatcherCommissionAmount:
-        Number(settlementGroup.dispatcherCommissionAmount) || 0,
-      hasIncomeBreakdown: true,
-      hasLinkedDispatcher: Boolean(settlementGroup.hasLinkedDispatcher),
-    };
-  }
+  const accountingTargetRecords =
+    getAccountantInvoiceUploadAccountingTargetRecords(uploadSourceRecords);
+  const dispatcherTargetRecords =
+    getAccountantInvoiceUploadDispatcherTargetRecords(uploadSourceRecords);
+  const targetRecords = getUniqueInvoiceUploadTargetRecords([
+    ...accountingTargetRecords,
+    ...dispatcherTargetRecords,
+  ]);
 
   let invoiceAmount = 0;
   let accountantInvoiceAmount = 0;
   let dispatcherInvoiceAmount = 0;
+  let dispatcherPremiumSegments = [];
+  let dispatcherCommissionTerms = [];
+  let dispatcherPremiumAmount = 0;
+  let dispatcherCommissionAmount = 0;
 
   if (isDispatcherLogin()) {
     const currentDispatcherTag = getCurrentDispatcherTag();
@@ -3609,36 +3625,49 @@ function getAccountantInvoiceUploadSummary(sourceRecords = records) {
     invoiceAmount = accountantInvoiceAmount + dispatcherInvoiceAmount;
   } else if (isAccountantLogin()) {
     const currentAccountant = getCurrentAccountantDisplayName();
-    accountantInvoiceAmount = targetRecords.reduce((sum, item) => {
-      if (String(item?.accountant || "").trim() !== currentAccountant)
-        return sum;
+    accountantInvoiceAmount = accountingTargetRecords.reduce((sum, item) => {
       const settlement = Number(item?.settlementPrice);
       return Number.isFinite(settlement) ? sum + settlement : sum;
     }, 0);
     const linkedDispatcherAmount = getLinkedDispatcherSettlementAmount(
       currentAccountant,
-      targetRecords,
+      dispatcherTargetRecords,
       {
         paid: false,
       },
     );
     dispatcherInvoiceAmount =
       Number(linkedDispatcherAmount?.invoiceAmount) || 0;
+    dispatcherPremiumSegments =
+      linkedDispatcherAmount?.premiumBreakdown?.segments || [];
+    dispatcherCommissionTerms =
+      linkedDispatcherAmount?.dispatcherCommissionTerms || [];
+    dispatcherPremiumAmount = Number(linkedDispatcherAmount?.premium) || 0;
+    dispatcherCommissionAmount =
+      Number(linkedDispatcherAmount?.dispatcherPrice) || 0;
     invoiceAmount = accountantInvoiceAmount + dispatcherInvoiceAmount;
   }
 
   const taxAmount = getSettlementTaxAmount(invoiceAmount);
   return {
     targetRecords,
-    count: targetRecords.length,
-    uploadableCount: targetRecords.length,
+    accountingTargetRecords,
+    dispatcherTargetRecords,
+    count: accountingTargetRecords.length + dispatcherTargetRecords.length,
+    uploadableCount:
+      accountingTargetRecords.length + dispatcherTargetRecords.length,
     invoiceAmount,
     taxAmount,
     payableAmount: invoiceAmount - taxAmount,
     accountantInvoiceAmount,
     dispatcherInvoiceAmount,
+    dispatcherPremiumSegments,
+    dispatcherCommissionTerms,
+    dispatcherPremiumAmount,
+    dispatcherCommissionAmount,
     hasIncomeBreakdown: true,
-    hasLinkedDispatcher: dispatcherInvoiceAmount > 0,
+    hasLinkedDispatcher:
+      dispatcherTargetRecords.length > 0 || dispatcherInvoiceAmount > 0,
   };
 }
 
@@ -3849,6 +3878,7 @@ function getRecordComparisonSignature(record) {
         .join("\u0003")
     : "";
   const invoiceImage = getSettlementInvoiceImage(item);
+  const dispatcherInvoiceImage = getDispatcherSettlementInvoiceImage(item);
   const monthlySettlement = getRecordMonthlySettlement(item);
   const operationHistory = Array.isArray(item.operationHistory)
     ? item.operationHistory
@@ -3917,6 +3947,16 @@ function getRecordComparisonSignature(record) {
     String(item.invoiceUploadedAt || ""),
     String(item.invoiceUploadedBy || ""),
     String(item.invoiceUploadedByUsername || ""),
+    dispatcherInvoiceImage
+      ? [
+          String(dispatcherInvoiceImage.id || ""),
+          String(dispatcherInvoiceImage.url || ""),
+          String(dispatcherInvoiceImage.fileName || ""),
+        ].join("\u0004")
+      : "",
+    String(item.dispatcherInvoiceUploadedAt || ""),
+    String(item.dispatcherInvoiceUploadedBy || ""),
+    String(item.dispatcherInvoiceUploadedByUsername || ""),
     Number.isFinite(payment) ? payment : "",
     Number.isFinite(total) ? total : "",
     Number.isFinite(settlement) ? settlement : "",

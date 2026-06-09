@@ -2001,25 +2001,26 @@ function canUploadInvoiceToRecord(session, record, options = {}) {
   return false;
 }
 
-function getInvoiceUploadFieldScopeForRecord(session, record, options = {}) {
-  if (!session || !record || typeof record !== "object") return "";
+function getInvoiceUploadFieldScopesForRecord(session, record, options = {}) {
+  if (!session || !record || typeof record !== "object") return [];
   if (session.role === "accountant") {
+    const scopes = [];
+    if (normalizeAccountantDisplayName(record.accountant) === getSessionAccountantDisplayName(session)) {
+      scopes.push("accountant");
+    }
     const linkedTags = getDispatcherTagsLinkedToSessionAccountant(
       session,
       options.dispatcherAccountantMappings || {}
     );
     const recordTag = normalizeDispatcherTag(record.dispatcher);
     if (recordTag && linkedTags.includes(recordTag)) {
-      return "dispatcher";
+      scopes.push("dispatcher");
     }
-    if (normalizeAccountantDisplayName(record.accountant) === getSessionAccountantDisplayName(session)) {
-      return "accountant";
-    }
-    return "";
+    return scopes;
   }
   if (session.role === "dispatcher") {
     const accountTag = getDispatcherTagForAccount(session.account);
-    if (!accountTag) return "";
+    if (!accountTag) return [];
     const linkedAccountantName = getLinkedAccountantDisplayNameByDispatcherTag(
       accountTag,
       options.dispatcherAccountantMappings || {},
@@ -2028,10 +2029,14 @@ function getInvoiceUploadFieldScopeForRecord(session, record, options = {}) {
     const recordTag = normalizeDispatcherTag(record.dispatcher);
     return linkedAccountantName &&
       recordTag === accountTag
-      ? "dispatcher"
-      : "";
+      ? ["dispatcher"]
+      : [];
   }
-  return "";
+  return [];
+}
+
+function getInvoiceUploadFieldScopeForRecord(session, record, options = {}) {
+  return getInvoiceUploadFieldScopesForRecord(session, record, options)[0] || "";
 }
 
 const ACCOUNTANT_RECORD_HISTORY_VISIBLE_FIELDS = new Set([
@@ -4127,7 +4132,7 @@ async function serveRecordInvoiceUpload(req, res) {
         dispatcherAccountantMappings,
         accountants
       };
-      const targetIndexes = [];
+      const targetScopeMap = new Map();
 
       migration.records.forEach((item, index) => {
         const current = item && typeof item === "object" ? item : {};
@@ -4135,21 +4140,25 @@ async function serveRecordInvoiceUpload(req, res) {
         const settlementFields = getNormalizedRecordSettlementFields(current);
         const invoiceFields = getNormalizedRecordInvoiceFields(current);
         const dispatcherInvoiceFields = getNormalizedRecordDispatcherInvoiceFields(current);
-        const uploadFieldScope = getInvoiceUploadFieldScopeForRecord(session, current, accessOptions);
-        if (uploadFieldScope !== "dispatcher" && !settlementFields.isSettled) return;
+        const uploadFieldScopes = getInvoiceUploadFieldScopesForRecord(session, current, accessOptions);
+        if (!settlementFields.isSettled) return;
         const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
         const recordId = normalizeText(current.id, 120);
         if (isReplaceMode && (!recordId || !replaceRecordIdSet.has(recordId))) return;
-        const hasTargetInvoice = uploadFieldScope === "dispatcher"
-          ? dispatcherInvoiceFields.dispatcherSettlementInvoiceImage
-          : invoiceFields.settlementInvoiceImage;
-        if (!uploadFieldScope
-          || (isReplaceMode ? !hasTargetInvoice : hasTargetInvoice)
-          || !isCompletedCheckStatus(checkStatus)) return;
-        targetIndexes.push(index);
+        let targetScopes = uploadFieldScopes.filter((scope) => {
+          const hasTargetInvoice = scope === "dispatcher"
+            ? dispatcherInvoiceFields.dispatcherSettlementInvoiceImage
+            : invoiceFields.settlementInvoiceImage;
+          return isReplaceMode ? hasTargetInvoice : !hasTargetInvoice;
+        });
+        if (isReplaceMode && targetScopes.length > 1) {
+          targetScopes = targetScopes.slice(0, 1);
+        }
+        if (!targetScopes.length || !isCompletedCheckStatus(checkStatus)) return;
+        targetScopeMap.set(index, targetScopes);
       });
 
-      if (!targetIndexes.length) {
+      if (!targetScopeMap.size) {
         if (shouldUpdateAccountants) {
           await writeAccountants(accountants);
         }
@@ -4161,13 +4170,13 @@ async function serveRecordInvoiceUpload(req, res) {
 
       const invoiceImage = await saveSettlementInvoiceImage(rawImage, uploadedByUsername || uploadedBy);
       const uploadedRecordIds = [];
-      const targetIndexSet = new Set(targetIndexes);
       const nextRecords = migration.records.map((item, index) => {
         const current = item && typeof item === "object" ? item : {};
         const settlementFields = getNormalizedRecordSettlementFields(current);
         const invoiceFields = getNormalizedRecordInvoiceFields(current);
         const dispatcherInvoiceFields = getNormalizedRecordDispatcherInvoiceFields(current);
-        if (!targetIndexSet.has(index)) {
+        const uploadFieldScopes = targetScopeMap.get(index) || [];
+        if (!uploadFieldScopes.length) {
           return {
             ...current,
             ...settlementFields,
@@ -4182,34 +4191,37 @@ async function serveRecordInvoiceUpload(req, res) {
           ...invoiceFields,
           ...dispatcherInvoiceFields
         };
-        const uploadFieldScope = getInvoiceUploadFieldScopeForRecord(session, current, accessOptions);
-        const nextRecord = uploadFieldScope === "dispatcher"
-          ? {
-              ...beforeRecord,
-              dispatcherSettlementInvoiceImage: invoiceImage,
-              dispatcherInvoiceUploadedAt: uploadedAt,
-              dispatcherInvoiceUploadedBy: uploadedBy,
-              dispatcherInvoiceUploadedByUsername: uploadedByUsername,
-              dispatcherInvoiceRecipientInfo: invoiceRecipientInfo,
-              dispatcherInvoiceRecipientName: invoiceRecipientInfo.name,
-              dispatcherInvoiceRecipientBankName: invoiceRecipientInfo.bankName,
-              dispatcherInvoiceRecipientBankCardNo: invoiceRecipientInfo.bankCardNo,
-              dispatcherInvoiceRecipientIdCardNo: invoiceRecipientInfo.idCardNo,
-              dispatcherInvoiceRecipientDeclarationPhone: invoiceRecipientInfo.declarationPhone
-            }
-          : {
-              ...beforeRecord,
-              settlementInvoiceImage: invoiceImage,
-              invoiceUploadedAt: uploadedAt,
-              invoiceUploadedBy: uploadedBy,
-              invoiceUploadedByUsername: uploadedByUsername,
-              invoiceRecipientInfo,
-              invoiceRecipientName: invoiceRecipientInfo.name,
-              invoiceRecipientBankName: invoiceRecipientInfo.bankName,
-              invoiceRecipientBankCardNo: invoiceRecipientInfo.bankCardNo,
-              invoiceRecipientIdCardNo: invoiceRecipientInfo.idCardNo,
-              invoiceRecipientDeclarationPhone: invoiceRecipientInfo.declarationPhone
-            };
+        let nextRecord = beforeRecord;
+        if (uploadFieldScopes.includes("accountant")) {
+          nextRecord = {
+            ...nextRecord,
+            settlementInvoiceImage: invoiceImage,
+            invoiceUploadedAt: uploadedAt,
+            invoiceUploadedBy: uploadedBy,
+            invoiceUploadedByUsername: uploadedByUsername,
+            invoiceRecipientInfo,
+            invoiceRecipientName: invoiceRecipientInfo.name,
+            invoiceRecipientBankName: invoiceRecipientInfo.bankName,
+            invoiceRecipientBankCardNo: invoiceRecipientInfo.bankCardNo,
+            invoiceRecipientIdCardNo: invoiceRecipientInfo.idCardNo,
+            invoiceRecipientDeclarationPhone: invoiceRecipientInfo.declarationPhone
+          };
+        }
+        if (uploadFieldScopes.includes("dispatcher")) {
+          nextRecord = {
+            ...nextRecord,
+            dispatcherSettlementInvoiceImage: invoiceImage,
+            dispatcherInvoiceUploadedAt: uploadedAt,
+            dispatcherInvoiceUploadedBy: uploadedBy,
+            dispatcherInvoiceUploadedByUsername: uploadedByUsername,
+            dispatcherInvoiceRecipientInfo: invoiceRecipientInfo,
+            dispatcherInvoiceRecipientName: invoiceRecipientInfo.name,
+            dispatcherInvoiceRecipientBankName: invoiceRecipientInfo.bankName,
+            dispatcherInvoiceRecipientBankCardNo: invoiceRecipientInfo.bankCardNo,
+            dispatcherInvoiceRecipientIdCardNo: invoiceRecipientInfo.idCardNo,
+            dispatcherInvoiceRecipientDeclarationPhone: invoiceRecipientInfo.declarationPhone
+          };
+        }
         const recordId = normalizeText(nextRecord.id, 120);
         if (recordId) {
           uploadedRecordIds.push(recordId);

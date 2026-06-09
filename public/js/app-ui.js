@@ -4102,9 +4102,12 @@
     }
 
     function getBossSettlementDetailOrderParts(group) {
-      const total = Number(group?.recordCount) || 0;
+      const rawTotal = Number(group?.recordCount) || 0;
       const dispatcher = Math.max(0, Number(group?.dispatcherRecordCount) || 0);
-      const own = Math.max(0, total - dispatcher);
+      const own = Object.prototype.hasOwnProperty.call(group || {}, "accountantRecordCount")
+        ? Math.max(0, Number(group?.accountantRecordCount) || 0)
+        : Math.max(0, rawTotal - dispatcher);
+      const total = Math.max(rawTotal, own + dispatcher);
       return { own, dispatcher, total };
     }
 
@@ -4705,7 +4708,7 @@
             ...group.recordIds,
             ...(linkedDispatcherAmount?.recordIds || [])
           ]));
-          const combinedRecordCount = combinedRecordIds.length;
+          const combinedRecordCount = group.recordCount + dispatcherRecordCount;
           const combinedPendingCount = group.pendingCount + (Number(linkedDispatcherAmount?.pendingCount) || 0);
           const combinedPendingInvoiceCount = group.pendingInvoiceCount + (Number(linkedDispatcherAmount?.pendingInvoiceCount) || 0);
           const combinedUploadedCount = group.uploadedCount + (Number(linkedDispatcherAmount?.uploadedCount) || 0);
@@ -4771,6 +4774,7 @@
           return {
             accountant: group.accountant,
             recordIds: combinedRecordIds,
+            accountantRecordCount: group.recordCount,
             recordCount: combinedRecordCount,
             pendingCount: combinedPendingCount,
             pendingInvoiceCount: combinedPendingInvoiceCount,
@@ -4838,6 +4842,7 @@
           return {
             ...item,
             recordCount: paidRecordCount,
+            accountantRecordCount: Number(item.accountantPaidRecordCount) || 0,
             pendingCount: 0,
             pendingInvoiceCount: 0,
             uploadedCount: paidRecordCount,
@@ -4880,12 +4885,15 @@
         const recordId = String(item?.id || "").trim();
         return recordId && scopedDetailRecordIds.has(recordId);
       });
+      const scopedDetailRecordCount = groups.reduce((sum, item) => (
+        sum + (Number(item.recordCount) || 0)
+      ), 0);
 
       return {
         detailRecords: scopedDetailRecords,
         groups,
         paidGroups,
-        recordCount: scopedDetailRecordIds.size,
+        recordCount: scopedDetailRecordCount,
         accountantCount: groups.length,
         totalInvoiceAmount,
         totalTaxAmount,
