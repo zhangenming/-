@@ -5,6 +5,7 @@ const API_ENDPOINT_RECORDS = `${API_BASE}/api/records`;
 const API_ENDPOINT_RECORDS_SETTLE = `${API_ENDPOINT_RECORDS}/settle`;
 const API_ENDPOINT_RECORDS_SETTLE_REVOKE = `${API_ENDPOINT_RECORDS}/settle/revoke`;
 const API_ENDPOINT_RECORDS_INVOICE = `${API_ENDPOINT_RECORDS}/invoice`;
+const API_ENDPOINT_RECORDS_INVOICE_REVOKE = `${API_ENDPOINT_RECORDS}/invoice/revoke`;
 const API_ENDPOINT_RECORDS_PAYOUT = `${API_ENDPOINT_RECORDS}/payout`;
 const API_ENDPOINT_RECORDS_PAYOUT_REVOKE = `${API_ENDPOINT_RECORDS}/payout/revoke`;
 const API_ENDPOINT_ACCOUNTANTS = `${API_BASE}/api/accountants`;
@@ -607,12 +608,16 @@ function getLinkedDispatcherSettlementAmount(
           image: invoiceImage,
           firstRecord: record,
           recordIds: [],
+          revokeTargets: [],
           totalSettlement: 0,
           uploadedAt,
           uploadedBy,
         };
         if (recordId) {
           invoiceItem.recordIds.push(recordId);
+          if (!isPaid) {
+            invoiceItem.revokeTargets.push(`dispatcher:${recordId}`);
+          }
         }
         invoiceMap.set(invoiceKey, invoiceItem);
       }
@@ -1513,6 +1518,7 @@ let selectedBossRecordIds = new Set();
 let selectedBossSettlementPayoutRecordIds = new Set();
 let isBossSettlementSubmitting = false;
 let isBossSettlementPayoutSubmitting = false;
+let isBossSettlementInvoiceRevoking = false;
 let isInvoiceUploadSubmitting = false;
 let hasUploadedSettlementInvoiceThisSession = false;
 let invoiceUploadReplaceRecordIds = [];

@@ -2161,6 +2161,59 @@
       };
     }
 
+    async function revokeSettlementInvoicesByIds(recordIds) {
+      const normalizedInvoiceTargets = Array.from(
+        new Set(
+          (Array.isArray(recordIds) ? recordIds : [])
+            .map((item) => String(item || "").trim())
+            .filter(Boolean)
+        )
+      );
+      if (!normalizedInvoiceTargets.length) {
+        throw new Error("请选择要撤销发票的数据。");
+      }
+
+      const response = await fetchWithClientLog(API_ENDPOINT_RECORDS_INVOICE_REVOKE, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recordIds: normalizedInvoiceTargets, invoiceTargets: normalizedInvoiceTargets })
+      }, {
+        successMessage: "撤销发票",
+        errorMessage: "撤销发票"
+      });
+
+      if (!response.ok) {
+        let message = `撤销发票失败（${response.status}）`;
+        try {
+          const body = await response.json();
+          if (body.error) message = body.error;
+        } catch (error) {
+          console.error(error);
+        }
+        throw new Error(message);
+      }
+
+      const body = await response.json();
+      const nextRecords = Array.isArray(body.records) ? body.records : records;
+      syncUpdatedRowHighlightState(records, nextRecords, { trackChanges: true });
+      records = nextRecords;
+      syncBossSettlementPayoutSelection(records);
+      renderTable();
+      if (bossSettlementDetailModal && !bossSettlementDetailModal.hidden) {
+        renderBossSettlementDetailModalContent();
+      }
+      if (!analysisModal.hidden) {
+        renderAnalysisPanel();
+      }
+      if (!accountantModal.hidden) {
+        renderAccountantList();
+      }
+      return {
+        revokedRecordIds: Array.isArray(body.revokedRecordIds) ? body.revokedRecordIds : [],
+        skippedRecordIds: Array.isArray(body.skippedRecordIds) ? body.skippedRecordIds : []
+      };
+    }
+
     async function payoutSettlementRecordsByIds(recordIds) {
       const normalizedPayoutTargets = Array.from(
         new Set(

@@ -5451,7 +5451,8 @@
     .settlement-detail-payout-batch-btn,
     .settlement-detail-payout-btn,
     .settlement-detail-payout-revoke-btn,
-    .settlement-detail-invoice-replace-btn {
+    .settlement-detail-invoice-replace-btn,
+    .settlement-detail-invoice-revoke-btn {
       min-height: 32px;
       border: 1px solid #bbd7cb;
       border-radius: 999px;
@@ -5475,7 +5476,8 @@
       padding: 0 12px;
     }
 
-    .settlement-detail-payout-revoke-btn {
+    .settlement-detail-payout-revoke-btn,
+    .settlement-detail-invoice-revoke-btn {
       padding: 0 12px;
       border-color: #e2c7bd;
       background: #fff3ef;
@@ -5487,11 +5489,13 @@
     .settlement-detail-payout-btn:hover,
     .settlement-detail-payout-revoke-btn:hover,
     .settlement-detail-invoice-replace-btn:hover,
+    .settlement-detail-invoice-revoke-btn:hover,
     .settlement-detail-payout-select-all-btn:focus-visible,
     .settlement-detail-payout-batch-btn:focus-visible,
     .settlement-detail-payout-btn:focus-visible,
     .settlement-detail-payout-revoke-btn:focus-visible,
-    .settlement-detail-invoice-replace-btn:focus-visible {
+    .settlement-detail-invoice-replace-btn:focus-visible,
+    .settlement-detail-invoice-revoke-btn:focus-visible {
       border-color: #238565;
       background: #dcf0e8;
       color: #174d40;
@@ -5503,7 +5507,8 @@
     .settlement-detail-payout-batch-btn:disabled,
     .settlement-detail-payout-btn:disabled,
     .settlement-detail-payout-revoke-btn:disabled,
-    .settlement-detail-invoice-replace-btn:disabled {
+    .settlement-detail-invoice-replace-btn:disabled,
+    .settlement-detail-invoice-revoke-btn:disabled {
       opacity: 0.52;
       cursor: not-allowed;
       transform: none;
@@ -5516,7 +5521,9 @@
     }
 
     .settlement-detail-payout-revoke-btn:hover,
-    .settlement-detail-payout-revoke-btn:focus-visible {
+    .settlement-detail-payout-revoke-btn:focus-visible,
+    .settlement-detail-invoice-revoke-btn:hover,
+    .settlement-detail-invoice-revoke-btn:focus-visible {
       border-color: #b65f45;
       background: #ffe7df;
       color: #71301f;

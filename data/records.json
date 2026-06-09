@@ -9122,9 +9122,9 @@
     "customer": "谢雷",
     "summary": "5月",
     "remark": "",
-    "paymentPrice": 500,
-    "totalPrice": 500,
-    "settlementPrice": 300,
+    "paymentPrice": 620,
+    "totalPrice": 620,
+    "settlementPrice": 372,
     "isSettled": false,
     "settledAt": "",
     "settlementInvoiceImage": null,
@@ -9160,6 +9160,34 @@
     "customerFeedback": "",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq6u9trpt3ge2u",
+        "operatedAt": "2026-06-10 00:13:14",
+        "operatedBy": "开心",
+        "operatedRole": "boss",
+        "actionKey": "updated",
+        "actionLabel": "修改",
+        "changes": [
+          {
+            "field": "paymentPrice",
+            "label": "付款价",
+            "before": 500,
+            "after": 620
+          },
+          {
+            "field": "totalPrice",
+            "label": "会计价",
+            "before": 500,
+            "after": 620
+          },
+          {
+            "field": "settlementPrice",
+            "label": "会计结算价",
+            "before": 300,
+            "after": 372
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpz3zm9depcbd6",
         "operatedAt": "2026-06-04 14:23:05",
@@ -9203,7 +9231,8 @@
       "sequence": "",
       "totalPaymentPrice": "",
       "renewal": false
-    }
+    },
+    "returnReason": ""
   },
   {
     "id": "rec_mpxlr6da6bcnm7",
@@ -17945,16 +17974,27 @@
     "settlementPrice": 36,
     "isSettled": true,
     "settledAt": "2026-06-03 16:11:08",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq6v88au8p7ok4",
+      "name": "个人发票_01.png",
+      "fileName": "invoice_18983971878_mq6v88au_blye9w.png",
+      "url": "/invoice-images/invoice_18983971878_mq6v88au_blye9w.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 00:39:59",
+    "invoiceUploadedBy": "刘佳",
+    "invoiceUploadedByUsername": "18983971878",
+    "invoiceRecipientInfo": {
+      "name": "刘佳",
+      "bankName": "重庆招商银行沙坪坝支行",
+      "bankCardNo": "6214830238667488",
+      "idCardNo": "500221198610090064",
+      "declarationPhone": "18983971878"
+    },
+    "invoiceRecipientName": "刘佳",
+    "invoiceRecipientBankName": "重庆招商银行沙坪坝支行",
+    "invoiceRecipientBankCardNo": "6214830238667488",
+    "invoiceRecipientIdCardNo": "500221198610090064",
+    "invoiceRecipientDeclarationPhone": "18983971878",
     "dispatcherSettlementInvoiceImage": null,
     "dispatcherInvoiceUploadedAt": "",
     "dispatcherInvoiceUploadedBy": "",
@@ -17978,6 +18018,70 @@
     "customerFeedback": "1",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq6v88av9uamx0",
+        "operatedAt": "2026-06-10 00:39:59",
+        "operatedBy": "刘佳",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "个人发票_01.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 00:39:59"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "刘佳"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "刘佳"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "重庆招商银行沙坪坝支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6214830238667488"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "500221198610090064"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "18983971878"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpxseqdjsv401p",
         "operatedAt": "2026-06-03 16:11:08",
@@ -25954,16 +26058,27 @@
     "settlementPrice": 25,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq6v88au8p7ok4",
+      "name": "个人发票_01.png",
+      "fileName": "invoice_18983971878_mq6v88au_blye9w.png",
+      "url": "/invoice-images/invoice_18983971878_mq6v88au_blye9w.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 00:39:59",
+    "invoiceUploadedBy": "刘佳",
+    "invoiceUploadedByUsername": "18983971878",
+    "invoiceRecipientInfo": {
+      "name": "刘佳",
+      "bankName": "重庆招商银行沙坪坝支行",
+      "bankCardNo": "6214830238667488",
+      "idCardNo": "500221198610090064",
+      "declarationPhone": "18983971878"
+    },
+    "invoiceRecipientName": "刘佳",
+    "invoiceRecipientBankName": "重庆招商银行沙坪坝支行",
+    "invoiceRecipientBankCardNo": "6214830238667488",
+    "invoiceRecipientIdCardNo": "500221198610090064",
+    "invoiceRecipientDeclarationPhone": "18983971878",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq4q6cpwdlp0g1",
       "name": "51a459128ee812c341f4174bf37e4d89.png",
@@ -25998,6 +26113,70 @@
     "customerFeedback": "1",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq6v88awwsv67v",
+        "operatedAt": "2026-06-10 00:39:59",
+        "operatedBy": "刘佳",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "个人发票_01.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 00:39:59"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "刘佳"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "刘佳"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "重庆招商银行沙坪坝支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6214830238667488"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "500221198610090064"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "18983971878"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq4q6cpza7fvk5",
         "operatedAt": "2026-06-08 12:43:01",
@@ -79625,16 +79804,27 @@
     "settlementPrice": 25,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq6v88au8p7ok4",
+      "name": "个人发票_01.png",
+      "fileName": "invoice_18983971878_mq6v88au_blye9w.png",
+      "url": "/invoice-images/invoice_18983971878_mq6v88au_blye9w.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 00:39:59",
+    "invoiceUploadedBy": "刘佳",
+    "invoiceUploadedByUsername": "18983971878",
+    "invoiceRecipientInfo": {
+      "name": "刘佳",
+      "bankName": "重庆招商银行沙坪坝支行",
+      "bankCardNo": "6214830238667488",
+      "idCardNo": "500221198610090064",
+      "declarationPhone": "18983971878"
+    },
+    "invoiceRecipientName": "刘佳",
+    "invoiceRecipientBankName": "重庆招商银行沙坪坝支行",
+    "invoiceRecipientBankCardNo": "6214830238667488",
+    "invoiceRecipientIdCardNo": "500221198610090064",
+    "invoiceRecipientDeclarationPhone": "18983971878",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq4q6cpwdlp0g1",
       "name": "51a459128ee812c341f4174bf37e4d89.png",
@@ -79669,6 +79859,70 @@
     "customerFeedback": "1",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq6v88aya32x3x",
+        "operatedAt": "2026-06-10 00:39:59",
+        "operatedBy": "刘佳",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "个人发票_01.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 00:39:59"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "刘佳"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "刘佳"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "重庆招商银行沙坪坝支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6214830238667488"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "500221198610090064"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "18983971878"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq4q6cq69np75p",
         "operatedAt": "2026-06-08 12:43:01",
@@ -90545,10 +90799,15 @@
     "settlementPrice": 260,
     "isSettled": true,
     "settledAt": "2026-06-03 16:03:24",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq6v88au8p7ok4",
+      "name": "个人发票_01.png",
+      "fileName": "invoice_18983971878_mq6v88au_blye9w.png",
+      "url": "/invoice-images/invoice_18983971878_mq6v88au_blye9w.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 00:39:59",
+    "invoiceUploadedBy": "刘佳",
+    "invoiceUploadedByUsername": "18983971878",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -90559,6 +90818,70 @@
     "customerFeedback": "1",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq6v88azux9762",
+        "operatedAt": "2026-06-10 00:39:59",
+        "operatedBy": "刘佳",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "个人发票_01.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 00:39:59"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "刘佳"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "刘佳"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "重庆招商银行沙坪坝支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6214830238667488"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "500221198610090064"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "18983971878"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpxs4ry5ju9qiv",
         "operatedAt": "2026-06-03 16:03:24",
@@ -90633,12 +90956,18 @@
       }
     ],
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "刘佳",
+      "bankName": "重庆招商银行沙坪坝支行",
+      "bankCardNo": "6214830238667488",
+      "idCardNo": "500221198610090064",
+      "declarationPhone": "18983971878"
+    },
+    "invoiceRecipientName": "刘佳",
+    "invoiceRecipientBankName": "重庆招商银行沙坪坝支行",
+    "invoiceRecipientBankCardNo": "6214830238667488",
+    "invoiceRecipientIdCardNo": "500221198610090064",
+    "invoiceRecipientDeclarationPhone": "18983971878",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -90672,10 +91001,15 @@
     "settlementPrice": 1560,
     "isSettled": true,
     "settledAt": "2026-06-03 16:03:24",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq6v88au8p7ok4",
+      "name": "个人发票_01.png",
+      "fileName": "invoice_18983971878_mq6v88au_blye9w.png",
+      "url": "/invoice-images/invoice_18983971878_mq6v88au_blye9w.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 00:39:59",
+    "invoiceUploadedBy": "刘佳",
+    "invoiceUploadedByUsername": "18983971878",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -90686,6 +91020,70 @@
     "customerFeedback": "1",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq6v88azjf9prd",
+        "operatedAt": "2026-06-10 00:39:59",
+        "operatedBy": "刘佳",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "个人发票_01.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 00:39:59"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "刘佳"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "刘佳"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "重庆招商银行沙坪坝支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6214830238667488"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "500221198610090064"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "18983971878"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpxs4ry5be8enq",
         "operatedAt": "2026-06-03 16:03:24",
@@ -90760,12 +91158,18 @@
       }
     ],
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "刘佳",
+      "bankName": "重庆招商银行沙坪坝支行",
+      "bankCardNo": "6214830238667488",
+      "idCardNo": "500221198610090064",
+      "declarationPhone": "18983971878"
+    },
+    "invoiceRecipientName": "刘佳",
+    "invoiceRecipientBankName": "重庆招商银行沙坪坝支行",
+    "invoiceRecipientBankCardNo": "6214830238667488",
+    "invoiceRecipientIdCardNo": "500221198610090064",
+    "invoiceRecipientDeclarationPhone": "18983971878",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -117804,10 +118208,15 @@
     "settlementPrice": 300,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq6v88au8p7ok4",
+      "name": "个人发票_01.png",
+      "fileName": "invoice_18983971878_mq6v88au_blye9w.png",
+      "url": "/invoice-images/invoice_18983971878_mq6v88au_blye9w.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 00:39:59",
+    "invoiceUploadedBy": "刘佳",
+    "invoiceUploadedByUsername": "18983971878",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -117818,6 +118227,70 @@
     "customerFeedback": "1",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq6v88b090do63",
+        "operatedAt": "2026-06-10 00:39:59",
+        "operatedBy": "刘佳",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "个人发票_01.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 00:39:59"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "刘佳"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "刘佳"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "重庆招商银行沙坪坝支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6214830238667488"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "500221198610090064"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "18983971878"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq4thtdrhodpk2",
         "operatedAt": "2026-06-08 14:15:55",
@@ -117917,12 +118390,18 @@
       }
     ],
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "刘佳",
+      "bankName": "重庆招商银行沙坪坝支行",
+      "bankCardNo": "6214830238667488",
+      "idCardNo": "500221198610090064",
+      "declarationPhone": "18983971878"
+    },
+    "invoiceRecipientName": "刘佳",
+    "invoiceRecipientBankName": "重庆招商银行沙坪坝支行",
+    "invoiceRecipientBankCardNo": "6214830238667488",
+    "invoiceRecipientIdCardNo": "500221198610090064",
+    "invoiceRecipientDeclarationPhone": "18983971878",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",

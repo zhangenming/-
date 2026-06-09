@@ -3404,6 +3404,28 @@
       return button;
     }
 
+    function createSettlementInvoiceRevokeButton(recordIds = []) {
+      const normalizedIds = Array.from(
+        new Set(
+          (Array.isArray(recordIds) ? recordIds : [])
+            .map((item) => String(item || "").trim())
+            .filter(Boolean)
+        )
+      );
+      if (!normalizedIds.length || !canCurrentAccountPayoutSettlementRecords()) return null;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "settlement-detail-invoice-revoke-btn";
+      button.dataset.invoiceRevokeRecordIds = normalizedIds.join(",");
+      button.dataset.tableTooltip = `撤销 ${normalizedIds.length} 条发票上传数据`;
+      button.dataset.tableTooltipMode = "always";
+      button.dataset.tableTooltipVariant = "compact";
+      button.disabled = isBossSettlementInvoiceRevoking;
+      button.textContent = isBossSettlementInvoiceRevoking ? "处理中" : "撤销";
+      button.setAttribute("aria-label", button.dataset.tableTooltip || "撤销发票");
+      return button;
+    }
+
     function normalizeInvoicePreviewImage(rawImage) {
       if (!rawImage || typeof rawImage !== "object") return null;
       const rawUrl = String(rawImage.url || "").trim();
@@ -4603,12 +4625,16 @@
               image: invoiceImage,
               firstRecord: record,
               recordIds: [],
+              revokeTargets: [],
               totalSettlement: 0,
               uploadedAt,
               uploadedBy
             };
             if (recordId) {
               invoiceItem.recordIds.push(recordId);
+              if (!isPaid) {
+                invoiceItem.revokeTargets.push(recordId);
+              }
             }
             if (Number.isFinite(settlement)) {
               invoiceItem.totalSettlement += settlement;
@@ -4728,7 +4754,23 @@
           const combinedInvoiceMap = new Map(group.invoiceMap);
           if (linkedDispatcherAmount?.invoiceMap) {
             linkedDispatcherAmount.invoiceMap.forEach((item, key) => {
-              combinedInvoiceMap.set(key, item);
+              const currentItem = combinedInvoiceMap.get(key);
+              if (!currentItem) {
+                combinedInvoiceMap.set(key, item);
+                return;
+              }
+              combinedInvoiceMap.set(key, {
+                ...currentItem,
+                recordIds: Array.from(new Set([
+                  ...(currentItem.recordIds || []),
+                  ...(item.recordIds || [])
+                ])),
+                revokeTargets: Array.from(new Set([
+                  ...(currentItem.revokeTargets || []),
+                  ...(item.revokeTargets || [])
+                ])),
+                totalSettlement: (Number(currentItem.totalSettlement) || 0) + (Number(item.totalSettlement) || 0)
+              });
             });
           }
           const combinedUploadedInvoices = Array.from(combinedInvoiceMap.values()).sort((left, right) => {
@@ -5238,10 +5280,26 @@
 
         const actionTd = document.createElement("td");
         actionTd.className = "settlement-detail-action-cell settlement-detail-col-action";
+        const invoiceRevokeTargets = Array.from(
+          new Set(
+            (Array.isArray(group.uploadedInvoices) ? group.uploadedInvoices : [])
+              .flatMap((item) => item?.revokeTargets || [])
+              .map((item) => String(item || "").trim())
+              .filter(Boolean)
+          )
+        );
+        const hasInvoiceRevokeTargets = canPayoutSettlementRecords && invoiceRevokeTargets.length > 0;
 
-        if (canPayoutSettlementRecords && (groupPayoutRecordIds.length > 0 || groupRevokeTargets.length > 0)) {
+        if (canPayoutSettlementRecords && (groupPayoutRecordIds.length > 0 || groupRevokeTargets.length > 0 || hasInvoiceRevokeTargets)) {
           const actionWrap = document.createElement("div");
           actionWrap.className = "settlement-detail-payout-actions";
+
+          if (hasInvoiceRevokeTargets) {
+            const invoiceRevokeBtn = createSettlementInvoiceRevokeButton(invoiceRevokeTargets);
+            if (invoiceRevokeBtn) {
+              actionWrap.appendChild(invoiceRevokeBtn);
+            }
+          }
 
           if (groupPayoutRecordIds.length > 0) {
             const payoutSelectLabel = document.createElement("label");
@@ -5903,6 +5961,60 @@
         showAppStatus(error.message || "撤销打款失败，请稍后重试。");
       } finally {
         isBossSettlementPayoutSubmitting = false;
+        renderBossSettlementDetailModalContent();
+      }
+    }
+
+    async function submitBossSettlementInvoiceRevoke(recordIds) {
+      if (!isBossLogin()) return;
+      if (isBossSettlementInvoiceRevoking) return;
+      const normalizedRecordIds = Array.from(
+        new Set(
+          (Array.isArray(recordIds) ? recordIds : [])
+            .map((item) => String(item || "").trim())
+            .filter(Boolean)
+        )
+      );
+      if (!normalizedRecordIds.length) {
+        showAppStatus("请先选择要撤销发票的数据。");
+        return;
+      }
+
+      if (!isQuickLoginDebugEnabled) {
+        const confirmed = await openConfirmDialog({
+          title: "撤销发票",
+          message: `确认撤销 ${normalizedRecordIds.length} 条数据的发票图片和上传记录？`,
+          confirmText: "确认撤销",
+          cancelText: "取消",
+          tone: "danger",
+          requireMathChallenge: true
+        });
+        if (!confirmed) return;
+      }
+
+      isBossSettlementInvoiceRevoking = true;
+      try {
+        renderBossSettlementDetailModalContent();
+        const { revokedRecordIds, skippedRecordIds } = await withLoading(
+          {
+            region: bossSettlementDetailList,
+            regionText: "正在撤销发票..."
+          },
+          () => revokeSettlementInvoicesByIds(normalizedRecordIds)
+        );
+        const messageParts = [];
+        if (revokedRecordIds.length) {
+          messageParts.push(`已撤销发票 ${revokedRecordIds.length} 条`);
+        }
+        if (skippedRecordIds.length) {
+          messageParts.push(`跳过 ${skippedRecordIds.length} 条`);
+        }
+        showAppStatus(messageParts.length ? `${messageParts.join("，")}。` : "未处理任何数据。", revokedRecordIds.length ? "ok" : "error");
+      } catch (error) {
+        console.error(error);
+        showAppStatus(error.message || "撤销发票失败，请稍后重试。");
+      } finally {
+        isBossSettlementInvoiceRevoking = false;
         renderBossSettlementDetailModalContent();
       }
     }

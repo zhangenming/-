@@ -2571,6 +2571,10 @@ function normalizePayoutTargets(rawTargets, fallbackRecordIds = []) {
   return Array.from(targetMap.values());
 }
 
+function normalizeInvoiceTargets(rawTargets, fallbackRecordIds = []) {
+  return normalizePayoutTargets(rawTargets, fallbackRecordIds);
+}
+
 function isDispatcherPayoutTargetLinkedToAccountant(record, options = {}) {
   const accountants = Array.isArray(options.accountants) ? options.accountants : [];
   const dispatcherAccountantMappings = options.dispatcherAccountantMappings || {};
@@ -2609,6 +2613,7 @@ const RECORD_HISTORY_ACTION_LABELS = {
   settled_revoked: "撤销核对",
   invoice_uploaded: "上传发票",
   invoice_reuploaded: "修改发票",
+  invoice_revoked: "撤销发票",
   settlement_paid: "打款"
 };
 
@@ -2701,6 +2706,22 @@ const RECORD_HISTORY_FIELD_DEFINITIONS = [
   { field: "invoiceRecipientBankCardNo", label: "银行卡号", kind: "text" },
   { field: "invoiceRecipientIdCardNo", label: "身份证号", kind: "text" },
   { field: "invoiceRecipientDeclarationPhone", label: "申报手机号", kind: "text" },
+  {
+    field: "dispatcherSettlementInvoiceImage",
+    label: "接待发票",
+    kind: "text",
+    getValue: (record) => {
+      const image = normalizeStoredInvoiceImage(record?.dispatcherSettlementInvoiceImage || record?.dispatcherInvoiceImage);
+      return image ? (image.name || image.url || image.fileName) : "";
+    }
+  },
+  { field: "dispatcherInvoiceUploadedAt", label: "接待发票上传时间", kind: "datetime" },
+  { field: "dispatcherInvoiceUploadedBy", label: "接待发票上传人", kind: "text" },
+  { field: "dispatcherInvoiceRecipientName", label: "接待发票姓名", kind: "text" },
+  { field: "dispatcherInvoiceRecipientBankName", label: "接待发票开户行", kind: "text" },
+  { field: "dispatcherInvoiceRecipientBankCardNo", label: "接待发票银行卡号", kind: "text" },
+  { field: "dispatcherInvoiceRecipientIdCardNo", label: "接待发票身份证号", kind: "text" },
+  { field: "dispatcherInvoiceRecipientDeclarationPhone", label: "接待发票申报手机号", kind: "text" },
   {
     field: "isSettlementPaid",
     label: "打款",
@@ -4272,6 +4293,216 @@ async function serveRecordInvoiceUpload(req, res) {
     });
   } catch (error) {
     sendJson(res, 400, { error: error.message || "发票上传失败" });
+  }
+}
+
+async function serveRecordInvoiceRevoke(req, res) {
+  if (req.method === "OPTIONS") {
+    setApiCorsHeaders(res);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const session = await requireAuthSession(req, res, ["boss"]);
+  if (!session) return;
+
+  if (req.method !== "PATCH") {
+    sendJson(res, 405, { error: "方法不支持" });
+    return;
+  }
+
+  try {
+    const body = await parseBody(req);
+    const invoiceTargets = normalizeInvoiceTargets(body?.invoiceTargets, body?.recordIds);
+    if (!invoiceTargets.length) {
+      sendJson(res, 400, { error: "请选择要撤销发票的数据。" });
+      return;
+    }
+
+    const targetMapByRecordId = invoiceTargets.reduce((map, target) => {
+      const list = map.get(target.recordId) || [];
+      list.push(target);
+      map.set(target.recordId, list);
+      return map;
+    }, new Map());
+    const operatedAt = getCurrentBeijingDateTime();
+    const operatedBy = normalizeText(session.account, 48) || BOSS_LOGIN_ACCOUNT;
+
+    const result = await withWriteLock(async () => {
+      const all = await readRecords();
+      const migration = ensureRecordIds(all);
+      const foundRecordIds = new Set();
+      const revokedRecordIds = [];
+      const skippedRecordIds = [];
+
+      const nextRecords = migration.records.map((item) => {
+        const current = item && typeof item === "object" ? item : {};
+        const recordId = normalizeText(current.id, 120);
+        const recordTargets = recordId ? (targetMapByRecordId.get(recordId) || []) : [];
+        const settlementFields = getNormalizedRecordSettlementFields(current);
+        const invoiceFields = getNormalizedRecordInvoiceFields(current);
+        const dispatcherInvoiceFields = getNormalizedRecordDispatcherInvoiceFields(current);
+        const paymentFields = getNormalizedRecordSettlementPaymentFields(current);
+        const dispatcherPaymentFields = getNormalizedRecordDispatcherSettlementPaymentFields(current);
+        const normalizedRecord = {
+          ...current,
+          ...settlementFields,
+          ...invoiceFields,
+          ...dispatcherInvoiceFields,
+          ...paymentFields,
+          ...dispatcherPaymentFields
+        };
+        if (!recordId || !recordTargets.length) {
+          return normalizedRecord;
+        }
+
+        foundRecordIds.add(recordId);
+        if (!canAccessRecord(session, current)) {
+          recordTargets.forEach((target) => skippedRecordIds.push(target.key));
+          return normalizedRecord;
+        }
+
+        const checkStatus = normalizeText(current.checkStatus, 24).toLowerCase();
+        const canRevokeBaseRecord = settlementFields.isSettled && isCompletedCheckStatus(checkStatus);
+        const fieldsToRemoveFromHistory = new Set();
+        const nextRecord = {
+          ...normalizedRecord
+        };
+
+        const shouldRevokeAccountantTarget = recordTargets.some((target) => target.type === "accountant");
+        const canRevokeAccountantTarget = canRevokeBaseRecord
+          && Boolean(invoiceFields.settlementInvoiceImage)
+          && !paymentFields.isSettlementPaid;
+        if (shouldRevokeAccountantTarget && canRevokeAccountantTarget) {
+          nextRecord.settlementInvoiceImage = null;
+          nextRecord.invoiceImage = null;
+          nextRecord.invoiceUploadedAt = "";
+          nextRecord.settlementInvoiceUploadedAt = "";
+          nextRecord.invoiceUploadedBy = "";
+          nextRecord.settlementInvoiceUploadedBy = "";
+          nextRecord.invoiceUploadedByUsername = "";
+          nextRecord.settlementInvoiceUploadedByUsername = "";
+          nextRecord.invoiceRecipientInfo = null;
+          nextRecord.invoiceRecipientName = "";
+          nextRecord.invoiceRecipientBankName = "";
+          nextRecord.invoiceRecipientBankCardNo = "";
+          nextRecord.invoiceRecipientIdCardNo = "";
+          nextRecord.invoiceRecipientDeclarationPhone = "";
+          revokedRecordIds.push(recordId);
+          [
+            "settlementInvoiceImage",
+            "invoiceImage",
+            "invoiceUploadedAt",
+            "settlementInvoiceUploadedAt",
+            "invoiceUploadedBy",
+            "settlementInvoiceUploadedBy",
+            "invoiceUploadedByUsername",
+            "settlementInvoiceUploadedByUsername",
+            "invoiceRecipientInfo",
+            "invoiceRecipientName",
+            "invoiceRecipientBankName",
+            "invoiceRecipientBankCardNo",
+            "invoiceRecipientIdCardNo",
+            "invoiceRecipientDeclarationPhone"
+          ].forEach((field) => fieldsToRemoveFromHistory.add(field));
+        } else if (shouldRevokeAccountantTarget) {
+          skippedRecordIds.push(recordId);
+        }
+
+        const shouldRevokeDispatcherTarget = recordTargets.some((target) => target.type === "dispatcher");
+        const canRevokeDispatcherTarget = canRevokeBaseRecord
+          && Boolean(dispatcherInvoiceFields.dispatcherSettlementInvoiceImage)
+          && !dispatcherPaymentFields.isDispatcherSettlementPaid;
+        if (shouldRevokeDispatcherTarget && canRevokeDispatcherTarget) {
+          nextRecord.dispatcherSettlementInvoiceImage = null;
+          nextRecord.dispatcherInvoiceImage = null;
+          nextRecord.dispatcherInvoiceUploadedAt = "";
+          nextRecord.dispatcherSettlementInvoiceUploadedAt = "";
+          nextRecord.dispatcherInvoiceUploadedBy = "";
+          nextRecord.dispatcherSettlementInvoiceUploadedBy = "";
+          nextRecord.dispatcherInvoiceUploadedByUsername = "";
+          nextRecord.dispatcherSettlementInvoiceUploadedByUsername = "";
+          nextRecord.dispatcherInvoiceRecipientInfo = null;
+          nextRecord.dispatcherInvoiceRecipientName = "";
+          nextRecord.dispatcherInvoiceRecipientBankName = "";
+          nextRecord.dispatcherInvoiceRecipientBankCardNo = "";
+          nextRecord.dispatcherInvoiceRecipientIdCardNo = "";
+          nextRecord.dispatcherInvoiceRecipientDeclarationPhone = "";
+          revokedRecordIds.push(`dispatcher:${recordId}`);
+          [
+            "dispatcherSettlementInvoiceImage",
+            "dispatcherInvoiceImage",
+            "dispatcherInvoiceUploadedAt",
+            "dispatcherSettlementInvoiceUploadedAt",
+            "dispatcherInvoiceUploadedBy",
+            "dispatcherSettlementInvoiceUploadedBy",
+            "dispatcherInvoiceUploadedByUsername",
+            "dispatcherSettlementInvoiceUploadedByUsername",
+            "dispatcherInvoiceRecipientInfo",
+            "dispatcherInvoiceRecipientName",
+            "dispatcherInvoiceRecipientBankName",
+            "dispatcherInvoiceRecipientBankCardNo",
+            "dispatcherInvoiceRecipientIdCardNo",
+            "dispatcherInvoiceRecipientDeclarationPhone"
+          ].forEach((field) => fieldsToRemoveFromHistory.add(field));
+        } else if (shouldRevokeDispatcherTarget) {
+          skippedRecordIds.push(`dispatcher:${recordId}`);
+        }
+
+        if (!fieldsToRemoveFromHistory.size) {
+          return normalizedRecord;
+        }
+
+        const operationHistory = normalizeOperationHistory(current.operationHistory)
+          .map((entry) => {
+            const actionKey = normalizeText(entry?.actionKey, 32).toLowerCase();
+            if (actionKey !== "invoice_uploaded" && actionKey !== "invoice_reuploaded") return entry;
+            const changes = (Array.isArray(entry.changes) ? entry.changes : [])
+              .filter((change) => !fieldsToRemoveFromHistory.has(normalizeText(change?.field, 64)));
+            return changes.length ? { ...entry, changes } : null;
+          })
+          .filter(Boolean);
+
+        return appendRecordHistory({
+          ...nextRecord,
+          operationHistory
+        }, buildRecordHistoryEntry({
+          beforeRecord: normalizedRecord,
+          afterRecord: nextRecord,
+          session,
+          actionKey: "invoice_revoked",
+          actionLabel: RECORD_HISTORY_ACTION_LABELS.invoice_revoked,
+          operatedAt,
+          operatedBy
+        }));
+      });
+
+      invoiceTargets.forEach((target) => {
+        if (!foundRecordIds.has(target.recordId)) {
+          skippedRecordIds.push(target.key);
+        }
+      });
+
+      if (migration.changed || revokedRecordIds.length > 0) {
+        await writeRecords(nextRecords);
+      }
+
+      return {
+        records: scopeRecordsBySession(session, nextRecords),
+        revokedRecordIds,
+        skippedRecordIds
+      };
+    });
+
+    sendJson(res, 200, {
+      ok: true,
+      records: result.records,
+      revokedRecordIds: result.revokedRecordIds,
+      skippedRecordIds: result.skippedRecordIds
+    });
+  } catch (error) {
+    sendJson(res, 400, { error: error.message || "撤销发票失败" });
   }
 }
 
@@ -5909,6 +6140,11 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === "/api/records/invoice") {
       await serveRecordInvoiceUpload(req, res);
+      return;
+    }
+
+    if (pathname === "/api/records/invoice/revoke") {
+      await serveRecordInvoiceRevoke(req, res);
       return;
     }
 

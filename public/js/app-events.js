@@ -2140,6 +2140,19 @@
           return;
         }
 
+        const invoiceRevokeBtn = event.target.closest("[data-invoice-revoke-record-ids]");
+        if (invoiceRevokeBtn) {
+          if (!requireAccount()) return;
+          if (invoiceRevokeBtn.disabled) return;
+          hideTableHoverTooltip();
+          const recordIds = String(invoiceRevokeBtn.dataset.invoiceRevokeRecordIds || "")
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean);
+          await submitBossSettlementInvoiceRevoke(recordIds);
+          return;
+        }
+
         const revokeBtn = event.target.closest(".settlement-detail-payout-revoke-btn");
         if (revokeBtn) {
           if (!requireAccount()) return;
