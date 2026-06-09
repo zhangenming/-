@@ -4451,12 +4451,20 @@ async function serveRecordInvoiceRevoke(req, res) {
           return normalizedRecord;
         }
 
+        const shouldRemoveInvoiceUploadHistoryChange = (change) => {
+          const field = normalizeText(change?.field, 64);
+          if (fieldsToRemoveFromHistory.has(field)) return true;
+          if (!shouldRevokeAccountantTarget || field !== "isSettled") return false;
+          return normalizeText(change?.before, 1000) === getRecordWorkflowStatusLabelByKey("settled")
+            && normalizeText(change?.after, 1000) === getRecordWorkflowStatusLabelByKey("uploaded");
+        };
+
         const operationHistory = normalizeOperationHistory(current.operationHistory)
           .map((entry) => {
             const actionKey = normalizeText(entry?.actionKey, 32).toLowerCase();
             if (actionKey !== "invoice_uploaded" && actionKey !== "invoice_reuploaded") return entry;
             const changes = (Array.isArray(entry.changes) ? entry.changes : [])
-              .filter((change) => !fieldsToRemoveFromHistory.has(normalizeText(change?.field, 64)));
+              .filter((change) => !shouldRemoveInvoiceUploadHistoryChange(change));
             return changes.length ? { ...entry, changes } : null;
           })
           .filter(Boolean);
