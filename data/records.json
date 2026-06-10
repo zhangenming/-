@@ -6063,13 +6063,41 @@
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
-    "checkStatus": "checked",
+    "checkStatus": "completed",
     "checkedAt": "2026-06-06 12:27:17",
-    "completedAt": "",
-    "completedBy": "",
-    "customerFeedback": "",
+    "completedAt": "2026-06-10 16:03:06",
+    "completedBy": "维维",
+    "customerFeedback": "已完成   已发送  客户已查看",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7s87pszlst5f",
+        "operatedAt": "2026-06-10 16:03:46",
+        "operatedBy": "维维",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-06-10 16:03:06"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "已完成   已发送  客户已查看"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq1uqee0s7yd1w",
         "operatedAt": "2026-06-06 12:27:17",
@@ -9153,13 +9181,41 @@
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
-    "checkStatus": "checked",
+    "checkStatus": "completed",
     "checkedAt": "2026-06-04 14:23:05",
-    "completedAt": "",
-    "completedBy": "",
-    "customerFeedback": "",
+    "completedAt": "2026-06-10 11:08:51",
+    "completedBy": "Shine 会计师",
+    "customerFeedback": "月结，应该是满意，未提出异议",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7hpo3wk7pzoe",
+        "operatedAt": "2026-06-10 11:09:25",
+        "operatedBy": "Shine 会计师",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-06-10 11:08:51"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "月结，应该是满意，未提出异议"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6u9trpt3ge2u",
         "operatedAt": "2026-06-10 00:13:14",
@@ -19265,13 +19321,41 @@
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
-    "checkStatus": "checked",
+    "checkStatus": "completed",
     "checkedAt": "2026-05-30 14:50:37",
-    "completedAt": "",
-    "completedBy": "",
-    "customerFeedback": "",
+    "completedAt": "2026-06-10 09:21:42",
+    "completedBy": "初一",
+    "customerFeedback": "拼多多一个店铺5月利润分析表（按日统计单量、销售额退款额、、快递费、推广费）及单链接销售各项费用，快递核对，模版里产品成本及工资未提供",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7e15bd7g2g2b",
+        "operatedAt": "2026-06-10 09:26:22",
+        "operatedBy": "初一",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-06-10 09:21:42"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "拼多多一个店铺5月利润分析表（按日统计单量、销售额退款额、、快递费、推广费）及单链接销售各项费用，快递核对，模版里产品成本及工资未提供"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mps0s61v3u22x6",
         "operatedAt": "2026-05-30 15:18:55",
@@ -20102,16 +20186,27 @@
     "settlementPrice": 150,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wiw2b1b0d3y",
       "name": "c98d7fab-f775-4df8-982b-e88c4e8712fb.png",
@@ -20146,6 +20241,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqfakunk1",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw2dy7oqqe",
         "operatedAt": "2026-06-10 01:16:16",
@@ -23513,26 +23672,48 @@
     "settlementPrice": 108,
     "isSettled": true,
     "settledAt": "2026-06-03 16:08:01",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
-    "dispatcherSettlementInvoiceImage": null,
-    "dispatcherInvoiceUploadedAt": "",
-    "dispatcherInvoiceUploadedBy": "",
-    "dispatcherInvoiceUploadedByUsername": "",
-    "dispatcherInvoiceRecipientInfo": null,
-    "dispatcherInvoiceRecipientName": "",
-    "dispatcherInvoiceRecipientBankName": "",
-    "dispatcherInvoiceRecipientBankCardNo": "",
-    "dispatcherInvoiceRecipientIdCardNo": "",
-    "dispatcherInvoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
+    "dispatcherSettlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "dispatcherInvoiceUploadedAt": "2026-06-10 10:33:39",
+    "dispatcherInvoiceUploadedBy": "美文嘻嘻",
+    "dispatcherInvoiceUploadedByUsername": "MeiWenXiXi",
+    "dispatcherInvoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "dispatcherInvoiceRecipientName": "张敏",
+    "dispatcherInvoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "dispatcherInvoiceRecipientBankCardNo": "6217711129212658",
+    "dispatcherInvoiceRecipientIdCardNo": "410511199604100023",
+    "dispatcherInvoiceRecipientDeclarationPhone": "17839174191",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -23546,6 +23727,118 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqfai19cg",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          },
+          {
+            "field": "dispatcherSettlementInvoiceImage",
+            "label": "接待发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "dispatcherInvoiceUploadedAt",
+            "label": "接待发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "dispatcherInvoiceUploadedBy",
+            "label": "接待发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientName",
+            "label": "接待发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientBankName",
+            "label": "接待发票开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientBankCardNo",
+            "label": "接待发票银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientIdCardNo",
+            "label": "接待发票身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientDeclarationPhone",
+            "label": "接待发票申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpxsapzrx52eag",
         "operatedAt": "2026-06-03 16:08:01",
@@ -36778,16 +37071,27 @@
     "settlementPrice": 30,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7eb088bckuob",
+      "name": "11.png",
+      "fileName": "invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png",
+      "url": "/invoice-images/invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 09:34:02",
+    "invoiceUploadedBy": "Hello,现在",
+    "invoiceUploadedByUsername": "45558e79b3945112b447f3f791ce0fa5",
+    "invoiceRecipientInfo": {
+      "name": "河南詹森信息技术有限公司",
+      "bankName": "交通银行郑州淮河路支行",
+      "bankCardNo": "411625999011001425747",
+      "idCardNo": "1",
+      "declarationPhone": "1"
+    },
+    "invoiceRecipientName": "河南詹森信息技术有限公司",
+    "invoiceRecipientBankName": "交通银行郑州淮河路支行",
+    "invoiceRecipientBankCardNo": "411625999011001425747",
+    "invoiceRecipientIdCardNo": "1",
+    "invoiceRecipientDeclarationPhone": "1",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wmywelkq2v9",
       "name": "92d42e3c-4a7a-483d-84b1-a0b6f3d60944.png",
@@ -36822,6 +37126,70 @@
     "customerFeedback": "个人账单",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7eb08ab0h0l3",
+        "operatedAt": "2026-06-10 09:34:02",
+        "operatedBy": "Hello,现在",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "11.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 09:34:02"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "Hello,现在"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "河南詹森信息技术有限公司"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "交通银行郑州淮河路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "411625999011001425747"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "1"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wmywglv25ty",
         "operatedAt": "2026-06-10 01:19:27",
@@ -43786,16 +44154,27 @@
     "settlementPrice": 360,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wm1nh24glr8",
       "name": "764f1423-92ab-42f0-a537-1539c1c98fd9.png",
@@ -43830,6 +44209,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqgy8wfr7",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1njl7hxjy",
         "operatedAt": "2026-06-10 01:18:44",
@@ -43990,16 +44433,27 @@
     "settlementPrice": 180,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7eb088bckuob",
+      "name": "11.png",
+      "fileName": "invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png",
+      "url": "/invoice-images/invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 09:34:02",
+    "invoiceUploadedBy": "Hello,现在",
+    "invoiceUploadedByUsername": "45558e79b3945112b447f3f791ce0fa5",
+    "invoiceRecipientInfo": {
+      "name": "河南詹森信息技术有限公司",
+      "bankName": "交通银行郑州淮河路支行",
+      "bankCardNo": "411625999011001425747",
+      "idCardNo": "1",
+      "declarationPhone": "1"
+    },
+    "invoiceRecipientName": "河南詹森信息技术有限公司",
+    "invoiceRecipientBankName": "交通银行郑州淮河路支行",
+    "invoiceRecipientBankCardNo": "411625999011001425747",
+    "invoiceRecipientIdCardNo": "1",
+    "invoiceRecipientDeclarationPhone": "1",
     "dispatcherSettlementInvoiceImage": null,
     "dispatcherInvoiceUploadedAt": "",
     "dispatcherInvoiceUploadedBy": "",
@@ -44023,6 +44477,70 @@
     "customerFeedback": "对账",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7eb08a6x6sa7",
+        "operatedAt": "2026-06-10 09:34:02",
+        "operatedBy": "Hello,现在",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "11.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 09:34:02"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "Hello,现在"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "河南詹森信息技术有限公司"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "交通银行郑州淮河路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "411625999011001425747"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "1"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpxq58j6hcd8h1",
         "operatedAt": "2026-06-03 15:07:46",
@@ -44661,16 +45179,27 @@
     "settlementPrice": 132,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7eb088bckuob",
+      "name": "11.png",
+      "fileName": "invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png",
+      "url": "/invoice-images/invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 09:34:02",
+    "invoiceUploadedBy": "Hello,现在",
+    "invoiceUploadedByUsername": "45558e79b3945112b447f3f791ce0fa5",
+    "invoiceRecipientInfo": {
+      "name": "河南詹森信息技术有限公司",
+      "bankName": "交通银行郑州淮河路支行",
+      "bankCardNo": "411625999011001425747",
+      "idCardNo": "1",
+      "declarationPhone": "1"
+    },
+    "invoiceRecipientName": "河南詹森信息技术有限公司",
+    "invoiceRecipientBankName": "交通银行郑州淮河路支行",
+    "invoiceRecipientBankCardNo": "411625999011001425747",
+    "invoiceRecipientIdCardNo": "1",
+    "invoiceRecipientDeclarationPhone": "1",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wmywelkq2v9",
       "name": "92d42e3c-4a7a-483d-84b1-a0b6f3d60944.png",
@@ -44705,6 +45234,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7eb08aeyv63b",
+        "operatedAt": "2026-06-10 09:34:02",
+        "operatedBy": "Hello,现在",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "11.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 09:34:02"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "Hello,现在"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "河南詹森信息技术有限公司"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "交通银行郑州淮河路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "411625999011001425747"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "1"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wmywgw2qzyd",
         "operatedAt": "2026-06-10 01:19:27",
@@ -46295,16 +46888,27 @@
     "settlementPrice": 120,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7eb088bckuob",
+      "name": "11.png",
+      "fileName": "invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png",
+      "url": "/invoice-images/invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 09:34:02",
+    "invoiceUploadedBy": "Hello,现在",
+    "invoiceUploadedByUsername": "45558e79b3945112b447f3f791ce0fa5",
+    "invoiceRecipientInfo": {
+      "name": "河南詹森信息技术有限公司",
+      "bankName": "交通银行郑州淮河路支行",
+      "bankCardNo": "411625999011001425747",
+      "idCardNo": "1",
+      "declarationPhone": "1"
+    },
+    "invoiceRecipientName": "河南詹森信息技术有限公司",
+    "invoiceRecipientBankName": "交通银行郑州淮河路支行",
+    "invoiceRecipientBankCardNo": "411625999011001425747",
+    "invoiceRecipientIdCardNo": "1",
+    "invoiceRecipientDeclarationPhone": "1",
     "dispatcherSettlementInvoiceImage": null,
     "dispatcherInvoiceUploadedAt": "",
     "dispatcherInvoiceUploadedBy": "",
@@ -46328,6 +46932,70 @@
     "customerFeedback": "个人账单",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7eb08bj2kmcs",
+        "operatedAt": "2026-06-10 09:34:02",
+        "operatedBy": "Hello,现在",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "11.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 09:34:02"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "Hello,现在"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "河南詹森信息技术有限公司"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "交通银行郑州淮河路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "411625999011001425747"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "1"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpxq58j6v94mx5",
         "operatedAt": "2026-06-03 15:07:46",
@@ -47487,16 +48155,27 @@
     "settlementPrice": 720,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wm1nh24glr8",
       "name": "764f1423-92ab-42f0-a537-1539c1c98fd9.png",
@@ -47531,6 +48210,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqgjgl1pd",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1njt84y5t",
         "operatedAt": "2026-06-10 01:18:44",
@@ -50743,16 +51486,27 @@
     "settlementPrice": 300,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wm1nh24glr8",
       "name": "764f1423-92ab-42f0-a537-1539c1c98fd9.png",
@@ -50787,6 +51541,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqgqu8tqr",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nkkgbwsu",
         "operatedAt": "2026-06-10 01:18:44",
@@ -50947,16 +51765,27 @@
     "settlementPrice": 120,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wm1nh24glr8",
       "name": "764f1423-92ab-42f0-a537-1539c1c98fd9.png",
@@ -50991,6 +51820,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqg01uj54",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nkrfmotm",
         "operatedAt": "2026-06-10 01:18:44",
@@ -51151,16 +52044,27 @@
     "settlementPrice": 60,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wm1nh24glr8",
       "name": "764f1423-92ab-42f0-a537-1539c1c98fd9.png",
@@ -51195,6 +52099,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqgtuhn3g",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nlwve3jk",
         "operatedAt": "2026-06-10 01:18:44",
@@ -51355,16 +52323,27 @@
     "settlementPrice": 120,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7eb088bckuob",
+      "name": "11.png",
+      "fileName": "invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png",
+      "url": "/invoice-images/invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 09:34:02",
+    "invoiceUploadedBy": "Hello,现在",
+    "invoiceUploadedByUsername": "45558e79b3945112b447f3f791ce0fa5",
+    "invoiceRecipientInfo": {
+      "name": "河南詹森信息技术有限公司",
+      "bankName": "交通银行郑州淮河路支行",
+      "bankCardNo": "411625999011001425747",
+      "idCardNo": "1",
+      "declarationPhone": "1"
+    },
+    "invoiceRecipientName": "河南詹森信息技术有限公司",
+    "invoiceRecipientBankName": "交通银行郑州淮河路支行",
+    "invoiceRecipientBankCardNo": "411625999011001425747",
+    "invoiceRecipientIdCardNo": "1",
+    "invoiceRecipientDeclarationPhone": "1",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wm1nh24glr8",
       "name": "764f1423-92ab-42f0-a537-1539c1c98fd9.png",
@@ -51399,6 +52378,70 @@
     "customerFeedback": "个人账单",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7eb08bv9qeyg",
+        "operatedAt": "2026-06-10 09:34:02",
+        "operatedBy": "Hello,现在",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "11.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 09:34:02"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "Hello,现在"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "河南詹森信息技术有限公司"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "交通银行郑州淮河路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "411625999011001425747"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "1"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nlr5okw2",
         "operatedAt": "2026-06-10 01:18:44",
@@ -51755,16 +52798,27 @@
     "settlementPrice": 240,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7eb088bckuob",
+      "name": "11.png",
+      "fileName": "invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png",
+      "url": "/invoice-images/invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 09:34:02",
+    "invoiceUploadedBy": "Hello,现在",
+    "invoiceUploadedByUsername": "45558e79b3945112b447f3f791ce0fa5",
+    "invoiceRecipientInfo": {
+      "name": "河南詹森信息技术有限公司",
+      "bankName": "交通银行郑州淮河路支行",
+      "bankCardNo": "411625999011001425747",
+      "idCardNo": "1",
+      "declarationPhone": "1"
+    },
+    "invoiceRecipientName": "河南詹森信息技术有限公司",
+    "invoiceRecipientBankName": "交通银行郑州淮河路支行",
+    "invoiceRecipientBankCardNo": "411625999011001425747",
+    "invoiceRecipientIdCardNo": "1",
+    "invoiceRecipientDeclarationPhone": "1",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wm1nh24glr8",
       "name": "764f1423-92ab-42f0-a537-1539c1c98fd9.png",
@@ -51799,6 +52853,70 @@
     "customerFeedback": "完工",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7eb08bjxjrfe",
+        "operatedAt": "2026-06-10 09:34:02",
+        "operatedBy": "Hello,现在",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "11.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 09:34:02"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "Hello,现在"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "河南詹森信息技术有限公司"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "交通银行郑州淮河路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "411625999011001425747"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "1"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nlxb7wxb",
         "operatedAt": "2026-06-10 01:18:44",
@@ -55953,16 +57071,27 @@
     "settlementPrice": 90,
     "isSettled": true,
     "settledAt": "2026-06-03 16:03:24",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7eb088bckuob",
+      "name": "11.png",
+      "fileName": "invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png",
+      "url": "/invoice-images/invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 09:34:02",
+    "invoiceUploadedBy": "Hello,现在",
+    "invoiceUploadedByUsername": "45558e79b3945112b447f3f791ce0fa5",
+    "invoiceRecipientInfo": {
+      "name": "河南詹森信息技术有限公司",
+      "bankName": "交通银行郑州淮河路支行",
+      "bankCardNo": "411625999011001425747",
+      "idCardNo": "1",
+      "declarationPhone": "1"
+    },
+    "invoiceRecipientName": "河南詹森信息技术有限公司",
+    "invoiceRecipientBankName": "交通银行郑州淮河路支行",
+    "invoiceRecipientBankCardNo": "411625999011001425747",
+    "invoiceRecipientIdCardNo": "1",
+    "invoiceRecipientDeclarationPhone": "1",
     "dispatcherSettlementInvoiceImage": null,
     "dispatcherInvoiceUploadedAt": "",
     "dispatcherInvoiceUploadedBy": "",
@@ -55986,6 +57115,70 @@
     "customerFeedback": "理账",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7eb08b1ijgzr",
+        "operatedAt": "2026-06-10 09:34:02",
+        "operatedBy": "Hello,现在",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "11.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 09:34:02"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "Hello,现在"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "河南詹森信息技术有限公司"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "交通银行郑州淮河路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "411625999011001425747"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "1"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpxs4ry4z33u0a",
         "operatedAt": "2026-06-03 16:03:24",
@@ -56080,16 +57273,27 @@
     "settlementPrice": 78,
     "isSettled": true,
     "settledAt": "2026-06-03 16:03:24",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": null,
     "dispatcherInvoiceUploadedAt": "",
     "dispatcherInvoiceUploadedBy": "",
@@ -56113,6 +57317,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqh173s6h",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpxs4ry5nqpj8z",
         "operatedAt": "2026-06-03 16:03:24",
@@ -56864,16 +58132,27 @@
     "settlementPrice": 12,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wiw2b1b0d3y",
       "name": "c98d7fab-f775-4df8-982b-e88c4e8712fb.png",
@@ -56908,6 +58187,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqh9fupp4",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw2hll7lvs",
         "operatedAt": "2026-06-10 01:16:16",
@@ -57071,16 +58414,27 @@
     "settlementPrice": 90,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wiw2b1b0d3y",
       "name": "c98d7fab-f775-4df8-982b-e88c4e8712fb.png",
@@ -57115,6 +58469,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqh3mow3l",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw2hn36t32",
         "operatedAt": "2026-06-10 01:16:16",
@@ -58328,16 +59746,27 @@
     "settlementPrice": 240,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7eb088bckuob",
+      "name": "11.png",
+      "fileName": "invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png",
+      "url": "/invoice-images/invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 09:34:02",
+    "invoiceUploadedBy": "Hello,现在",
+    "invoiceUploadedByUsername": "45558e79b3945112b447f3f791ce0fa5",
+    "invoiceRecipientInfo": {
+      "name": "河南詹森信息技术有限公司",
+      "bankName": "交通银行郑州淮河路支行",
+      "bankCardNo": "411625999011001425747",
+      "idCardNo": "1",
+      "declarationPhone": "1"
+    },
+    "invoiceRecipientName": "河南詹森信息技术有限公司",
+    "invoiceRecipientBankName": "交通银行郑州淮河路支行",
+    "invoiceRecipientBankCardNo": "411625999011001425747",
+    "invoiceRecipientIdCardNo": "1",
+    "invoiceRecipientDeclarationPhone": "1",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wm1nh24glr8",
       "name": "764f1423-92ab-42f0-a537-1539c1c98fd9.png",
@@ -58372,6 +59801,70 @@
     "customerFeedback": "数据核对",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7eb08b7454jw",
+        "operatedAt": "2026-06-10 09:34:02",
+        "operatedBy": "Hello,现在",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "11.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 09:34:02"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "Hello,现在"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "河南詹森信息技术有限公司"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "交通银行郑州淮河路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "411625999011001425747"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "1"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nlcnllsp",
         "operatedAt": "2026-06-10 01:18:44",
@@ -62580,16 +64073,27 @@
     "settlementPrice": 60,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wm1nh24glr8",
       "name": "764f1423-92ab-42f0-a537-1539c1c98fd9.png",
@@ -62624,6 +64128,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqhu1toug",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nmyq5p2t",
         "operatedAt": "2026-06-10 01:18:44",
@@ -62784,16 +64352,27 @@
     "settlementPrice": 120,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wm1nh24glr8",
       "name": "764f1423-92ab-42f0-a537-1539c1c98fd9.png",
@@ -62828,6 +64407,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqhcybtyi",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nmg8dhf6",
         "operatedAt": "2026-06-10 01:18:44",
@@ -62988,16 +64631,27 @@
     "settlementPrice": 90,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wm1nh24glr8",
       "name": "764f1423-92ab-42f0-a537-1539c1c98fd9.png",
@@ -63032,6 +64686,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqhkacpeb",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nmoquk7n",
         "operatedAt": "2026-06-10 01:18:44",
@@ -63192,16 +64910,27 @@
     "settlementPrice": 180,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wm1nh24glr8",
       "name": "764f1423-92ab-42f0-a537-1539c1c98fd9.png",
@@ -63236,6 +64965,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqhpylfm6",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nmwtbg7h",
         "operatedAt": "2026-06-10 01:18:44",
@@ -63396,16 +65189,27 @@
     "settlementPrice": 78,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wm1nh24glr8",
       "name": "764f1423-92ab-42f0-a537-1539c1c98fd9.png",
@@ -63440,6 +65244,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqhkysngd",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nm4zmb8g",
         "operatedAt": "2026-06-10 01:18:44",
@@ -69510,16 +71378,27 @@
     "settlementPrice": 228,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wiw2b1b0d3y",
       "name": "c98d7fab-f775-4df8-982b-e88c4e8712fb.png",
@@ -69554,6 +71433,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqi6qlwfg",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw2nwwb1yf",
         "operatedAt": "2026-06-10 01:16:16",
@@ -70031,16 +71974,27 @@
     "settlementPrice": 180,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wiw2b1b0d3y",
       "name": "c98d7fab-f775-4df8-982b-e88c4e8712fb.png",
@@ -70075,6 +72029,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqi01gv3b",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw2n4h3oxp",
         "operatedAt": "2026-06-10 01:16:16",
@@ -76899,16 +78917,27 @@
     "settlementPrice": 60,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7eb088bckuob",
+      "name": "11.png",
+      "fileName": "invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png",
+      "url": "/invoice-images/invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 09:34:02",
+    "invoiceUploadedBy": "Hello,现在",
+    "invoiceUploadedByUsername": "45558e79b3945112b447f3f791ce0fa5",
+    "invoiceRecipientInfo": {
+      "name": "河南詹森信息技术有限公司",
+      "bankName": "交通银行郑州淮河路支行",
+      "bankCardNo": "411625999011001425747",
+      "idCardNo": "1",
+      "declarationPhone": "1"
+    },
+    "invoiceRecipientName": "河南詹森信息技术有限公司",
+    "invoiceRecipientBankName": "交通银行郑州淮河路支行",
+    "invoiceRecipientBankCardNo": "411625999011001425747",
+    "invoiceRecipientIdCardNo": "1",
+    "invoiceRecipientDeclarationPhone": "1",
     "dispatcherSettlementInvoiceImage": {
       "id": "inv_mq6wiw2b1b0d3y",
       "name": "c98d7fab-f775-4df8-982b-e88c4e8712fb.png",
@@ -76943,6 +78972,70 @@
     "customerFeedback": "汇算",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7eb08cfl56ph",
+        "operatedAt": "2026-06-10 09:34:02",
+        "operatedBy": "Hello,现在",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "11.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 09:34:02"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "Hello,现在"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "河南詹森信息技术有限公司"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "交通银行郑州淮河路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "411625999011001425747"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "1"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw2p5ucj84",
         "operatedAt": "2026-06-10 01:16:16",
@@ -92734,16 +94827,27 @@
     "settlementPrice": 650,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -92754,6 +94858,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqj8l9agr",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpxq58jhg05bsd",
         "operatedAt": "2026-06-03 15:07:46",
@@ -92875,16 +95043,27 @@
     "settlementPrice": 48,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -92895,6 +95074,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqjmhnqtv",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpxq58jh66zsro",
         "operatedAt": "2026-06-03 15:07:46",
@@ -106459,10 +108702,15 @@
     "settlementPrice": 120,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -106473,6 +108721,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqkaq1s33",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nqj2x78g",
         "operatedAt": "2026-06-10 01:18:44",
@@ -106660,12 +108972,18 @@
     ],
     "checkedBy": "美文嘻嘻",
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -107051,10 +109369,15 @@
     "settlementPrice": 48,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -107065,6 +109388,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqk3hyegz",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw2xzleblr",
         "operatedAt": "2026-06-10 01:16:16",
@@ -107208,12 +109595,18 @@
     ],
     "checkedBy": "美文嘻嘻",
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -107284,6 +109677,64 @@
     "customerFeedback": "完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqkidggmy",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "dispatcherSettlementInvoiceImage",
+            "label": "接待发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "dispatcherInvoiceUploadedAt",
+            "label": "接待发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "dispatcherInvoiceUploadedBy",
+            "label": "接待发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientName",
+            "label": "接待发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientBankName",
+            "label": "接待发票开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientBankCardNo",
+            "label": "接待发票银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientIdCardNo",
+            "label": "接待发票身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientDeclarationPhone",
+            "label": "接待发票申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq5arah07rr21z",
         "operatedAt": "2026-06-08 22:19:11",
@@ -107438,16 +109889,27 @@
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
-    "dispatcherSettlementInvoiceImage": null,
-    "dispatcherInvoiceUploadedAt": "",
-    "dispatcherInvoiceUploadedBy": "",
-    "dispatcherInvoiceUploadedByUsername": "",
-    "dispatcherInvoiceRecipientInfo": null,
-    "dispatcherInvoiceRecipientName": "",
-    "dispatcherInvoiceRecipientBankName": "",
-    "dispatcherInvoiceRecipientBankCardNo": "",
-    "dispatcherInvoiceRecipientIdCardNo": "",
-    "dispatcherInvoiceRecipientDeclarationPhone": "",
+    "dispatcherSettlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "dispatcherInvoiceUploadedAt": "2026-06-10 10:33:39",
+    "dispatcherInvoiceUploadedBy": "美文嘻嘻",
+    "dispatcherInvoiceUploadedByUsername": "MeiWenXiXi",
+    "dispatcherInvoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "dispatcherInvoiceRecipientName": "张敏",
+    "dispatcherInvoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "dispatcherInvoiceRecipientBankCardNo": "6217711129212658",
+    "dispatcherInvoiceRecipientIdCardNo": "410511199604100023",
+    "dispatcherInvoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherInvoiceImage": null,
     "dispatcherSettlementInvoiceUploadedAt": "",
     "dispatcherSettlementInvoiceUploadedBy": "",
@@ -107490,6 +109952,64 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqkhu0j89",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "dispatcherSettlementInvoiceImage",
+            "label": "接待发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "dispatcherInvoiceUploadedAt",
+            "label": "接待发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "dispatcherInvoiceUploadedBy",
+            "label": "接待发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientName",
+            "label": "接待发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientBankName",
+            "label": "接待发票开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientBankCardNo",
+            "label": "接待发票银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientIdCardNo",
+            "label": "接待发票身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientDeclarationPhone",
+            "label": "接待发票申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq3q8clyb9t6fv",
         "operatedAt": "2026-06-07 19:56:48",
@@ -107654,16 +110174,27 @@
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
-    "dispatcherSettlementInvoiceImage": null,
-    "dispatcherInvoiceUploadedAt": "",
-    "dispatcherInvoiceUploadedBy": "",
-    "dispatcherInvoiceUploadedByUsername": "",
-    "dispatcherInvoiceRecipientInfo": null,
-    "dispatcherInvoiceRecipientName": "",
-    "dispatcherInvoiceRecipientBankName": "",
-    "dispatcherInvoiceRecipientBankCardNo": "",
-    "dispatcherInvoiceRecipientIdCardNo": "",
-    "dispatcherInvoiceRecipientDeclarationPhone": "",
+    "dispatcherSettlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "dispatcherInvoiceUploadedAt": "2026-06-10 10:33:39",
+    "dispatcherInvoiceUploadedBy": "美文嘻嘻",
+    "dispatcherInvoiceUploadedByUsername": "MeiWenXiXi",
+    "dispatcherInvoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "dispatcherInvoiceRecipientName": "张敏",
+    "dispatcherInvoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "dispatcherInvoiceRecipientBankCardNo": "6217711129212658",
+    "dispatcherInvoiceRecipientIdCardNo": "410511199604100023",
+    "dispatcherInvoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherInvoiceImage": null,
     "dispatcherSettlementInvoiceUploadedAt": "",
     "dispatcherSettlementInvoiceUploadedBy": "",
@@ -107706,6 +110237,64 @@
     "customerFeedback": "资料不全，退一半",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqks8sjps",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "dispatcherSettlementInvoiceImage",
+            "label": "接待发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "dispatcherInvoiceUploadedAt",
+            "label": "接待发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "dispatcherInvoiceUploadedBy",
+            "label": "接待发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientName",
+            "label": "接待发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientBankName",
+            "label": "接待发票开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientBankCardNo",
+            "label": "接待发票银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientIdCardNo",
+            "label": "接待发票身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "dispatcherInvoiceRecipientDeclarationPhone",
+            "label": "接待发票申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq3q8clyd25uts",
         "operatedAt": "2026-06-07 19:56:48",
@@ -107870,16 +110459,27 @@
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
-    "dispatcherSettlementInvoiceImage": null,
-    "dispatcherInvoiceUploadedAt": "",
-    "dispatcherInvoiceUploadedBy": "",
-    "dispatcherInvoiceUploadedByUsername": "",
-    "dispatcherInvoiceRecipientInfo": null,
-    "dispatcherInvoiceRecipientName": "",
-    "dispatcherInvoiceRecipientBankName": "",
-    "dispatcherInvoiceRecipientBankCardNo": "",
-    "dispatcherInvoiceRecipientIdCardNo": "",
-    "dispatcherInvoiceRecipientDeclarationPhone": "",
+    "dispatcherSettlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "dispatcherInvoiceUploadedAt": "2026-06-10 10:33:39",
+    "dispatcherInvoiceUploadedBy": "美文嘻嘻",
+    "dispatcherInvoiceUploadedByUsername": "MeiWenXiXi",
+    "dispatcherInvoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "dispatcherInvoiceRecipientName": "张敏",
+    "dispatcherInvoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "dispatcherInvoiceRecipientBankCardNo": "6217711129212658",
+    "dispatcherInvoiceRecipientIdCardNo": "410511199604100023",
+    "dispatcherInvoiceRecipientDeclarationPhone": "17839174191",
     "dispatcherInvoiceImage": null,
     "dispatcherSettlementInvoiceUploadedAt": "",
     "dispatcherSettlementInvoiceUploadedBy": "",
@@ -111861,10 +114461,15 @@
     "settlementPrice": 48,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -111875,6 +114480,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqk8t8bm1",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wmywnmqwitq",
         "operatedAt": "2026-06-10 01:19:27",
@@ -112024,12 +114693,18 @@
     ],
     "checkedBy": "美文嘻嘻",
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -112507,10 +115182,15 @@
     "settlementPrice": 480,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -112521,6 +115201,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqkjpoxvg",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wmywnxv824v",
         "operatedAt": "2026-06-10 01:19:27",
@@ -112664,12 +115408,18 @@
     ],
     "checkedBy": "美文嘻嘻",
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -113455,13 +116205,41 @@
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
-    "checkStatus": "checked",
+    "checkStatus": "completed",
     "checkedAt": "2026-05-03 22:43:40",
-    "completedAt": "",
-    "completedBy": "",
-    "customerFeedback": "",
+    "completedAt": "2026-06-10 13:04:59",
+    "completedBy": "宋会计师",
+    "customerFeedback": "5月流水日记账已完成。。。。",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7lv2ef5tctwe",
+        "operatedAt": "2026-06-10 13:05:35",
+        "operatedBy": "宋会计师",
+        "operatedRole": "accountant",
+        "actionKey": "completed",
+        "actionLabel": "完成",
+        "changes": [
+          {
+            "field": "checkStatus",
+            "label": "状态",
+            "before": "checked",
+            "after": "completed"
+          },
+          {
+            "field": "completedAt",
+            "label": "完工时间",
+            "before": "",
+            "after": "2026-06-10 13:04:59"
+          },
+          {
+            "field": "customerFeedback",
+            "label": "客户反馈",
+            "before": "",
+            "after": "5月流水日记账已完成。。。。"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpp65hjxlqmfn5",
         "operatedAt": "2026-05-28 15:25:56",
@@ -114579,10 +117357,15 @@
     "settlementPrice": 70.8,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -114593,6 +117376,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqk3xod84",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw2xk6iagq",
         "operatedAt": "2026-06-10 01:16:16",
@@ -114735,12 +117582,18 @@
       }
     ],
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -114793,10 +117646,15 @@
     "settlementPrice": 49.2,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -114807,6 +117665,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqlzi4mre",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw2yuqolhp",
         "operatedAt": "2026-06-10 01:16:16",
@@ -114949,12 +117871,18 @@
       }
     ],
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -126415,10 +129343,15 @@
     "settlementPrice": 325,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -126429,6 +129362,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqlvwot2q",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1ns9k8695",
         "operatedAt": "2026-06-10 01:18:44",
@@ -126578,12 +129575,18 @@
     ],
     "checkedBy": "美文嘻嘻",
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -126635,10 +129638,15 @@
     "settlementPrice": 325,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -126649,6 +129657,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoql6vj49c",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nsx3smoi",
         "operatedAt": "2026-06-10 01:18:44",
@@ -126798,12 +129870,18 @@
     ],
     "checkedBy": "美文嘻嘻",
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -132189,10 +135267,15 @@
     "settlementPrice": 360,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -132203,6 +135286,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqlr7jvnk",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1ntouverd",
         "operatedAt": "2026-06-10 01:18:44",
@@ -132361,12 +135508,18 @@
     ],
     "checkedBy": "美文嘻嘻",
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -136088,10 +139241,15 @@
     "settlementPrice": 240,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7eb088bckuob",
+      "name": "11.png",
+      "fileName": "invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png",
+      "url": "/invoice-images/invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 09:34:02",
+    "invoiceUploadedBy": "Hello,现在",
+    "invoiceUploadedByUsername": "45558e79b3945112b447f3f791ce0fa5",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -136102,6 +139260,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7eb08equ6l2n",
+        "operatedAt": "2026-06-10 09:34:02",
+        "operatedBy": "Hello,现在",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "11.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 09:34:02"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "Hello,现在"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "河南詹森信息技术有限公司"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "交通银行郑州淮河路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "411625999011001425747"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "1"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nusg2z6n",
         "operatedAt": "2026-06-10 01:18:44",
@@ -136235,12 +139457,18 @@
     ],
     "checkedBy": "Hello,现在",
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "河南詹森信息技术有限公司",
+      "bankName": "交通银行郑州淮河路支行",
+      "bankCardNo": "411625999011001425747",
+      "idCardNo": "1",
+      "declarationPhone": "1"
+    },
+    "invoiceRecipientName": "河南詹森信息技术有限公司",
+    "invoiceRecipientBankName": "交通银行郑州淮河路支行",
+    "invoiceRecipientBankCardNo": "411625999011001425747",
+    "invoiceRecipientIdCardNo": "1",
+    "invoiceRecipientDeclarationPhone": "1",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -136288,10 +139516,15 @@
     "settlementPrice": 120,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7eb088bckuob",
+      "name": "11.png",
+      "fileName": "invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png",
+      "url": "/invoice-images/invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 09:34:02",
+    "invoiceUploadedBy": "Hello,现在",
+    "invoiceUploadedByUsername": "45558e79b3945112b447f3f791ce0fa5",
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
@@ -136302,6 +139535,70 @@
     "customerFeedback": "已完成",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7eb08fo9ajew",
+        "operatedAt": "2026-06-10 09:34:02",
+        "operatedBy": "Hello,现在",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "11.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 09:34:02"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "Hello,现在"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "河南詹森信息技术有限公司"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "交通银行郑州淮河路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "411625999011001425747"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "1"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wm1nuau6hgo",
         "operatedAt": "2026-06-10 01:18:44",
@@ -136451,12 +139748,18 @@
     ],
     "checkedBy": "Hello,现在",
     "returnedAt": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "河南詹森信息技术有限公司",
+      "bankName": "交通银行郑州淮河路支行",
+      "bankCardNo": "411625999011001425747",
+      "idCardNo": "1",
+      "declarationPhone": "1"
+    },
+    "invoiceRecipientName": "河南詹森信息技术有限公司",
+    "invoiceRecipientBankName": "交通银行郑州淮河路支行",
+    "invoiceRecipientBankCardNo": "411625999011001425747",
+    "invoiceRecipientIdCardNo": "1",
+    "invoiceRecipientDeclarationPhone": "1",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -142250,14 +145553,83 @@
     "settlementPrice": 210,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
     "checkStatus": "completed",
     "checkedAt": "2026-04-27 17:01:59",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqmbuv538",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpxq58jozi9xld",
         "operatedAt": "2026-06-03 15:07:46",
@@ -142349,12 +145721,18 @@
     "settlementPaidBy": "",
     "completedBy": "美文嘻嘻",
     "customerFeedback": "已完成",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -142390,14 +145768,83 @@
     "settlementPrice": 60,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
     "checkStatus": "completed",
     "checkedAt": "2026-04-27 17:02:19",
     "serviceFeedbackImages": [],
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqm997r1b",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mpxq58joli3i2t",
         "operatedAt": "2026-06-03 15:07:46",
@@ -142489,12 +145936,18 @@
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -145802,15 +149255,84 @@
     "settlementPrice": 120,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7eb088bckuob",
+      "name": "11.png",
+      "fileName": "invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png",
+      "url": "/invoice-images/invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 09:34:02",
+    "invoiceUploadedBy": "Hello,现在",
+    "invoiceUploadedByUsername": "45558e79b3945112b447f3f791ce0fa5",
     "checkStatus": "completed",
     "checkedAt": "2026-05-06 13:24:07",
     "serviceFeedbackImages": [],
     "customerFeedback": "已完成",
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7eb08fyj0h4m",
+        "operatedAt": "2026-06-10 09:34:02",
+        "operatedBy": "Hello,现在",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "11.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 09:34:02"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "Hello,现在"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "河南詹森信息技术有限公司"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "交通银行郑州淮河路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "411625999011001425747"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "1"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw310a0ms3",
         "operatedAt": "2026-06-10 01:16:16",
@@ -145952,12 +149474,18 @@
     "settlementPaidBy": "",
     "checkedBy": "Hello,现在",
     "completedBy": "Hello,现在",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "河南詹森信息技术有限公司",
+      "bankName": "交通银行郑州淮河路支行",
+      "bankCardNo": "411625999011001425747",
+      "idCardNo": "1",
+      "declarationPhone": "1"
+    },
+    "invoiceRecipientName": "河南詹森信息技术有限公司",
+    "invoiceRecipientBankName": "交通银行郑州淮河路支行",
+    "invoiceRecipientBankCardNo": "411625999011001425747",
+    "invoiceRecipientIdCardNo": "1",
+    "invoiceRecipientDeclarationPhone": "1",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -146015,15 +149543,84 @@
     "settlementPrice": 90,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7ltrrazbu683",
+      "name": "dzfp_26372000002766733966_20260610130213_01.png",
+      "fileName": "invoice_song_mq7ltrr9_u1ljr6.png",
+      "url": "/invoice-images/invoice_song_mq7ltrr9_u1ljr6.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 13:04:34",
+    "invoiceUploadedBy": "宋会计师",
+    "invoiceUploadedByUsername": "song",
     "checkStatus": "completed",
     "checkedAt": "2026-04-27 14:44:26",
     "serviceFeedbackImages": [],
     "customerFeedback": "已完成",
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7ltrrgonzqi7",
+        "operatedAt": "2026-06-10 13:04:34",
+        "operatedBy": "宋会计师",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "dzfp_26372000002766733966_20260610130213_01.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 13:04:34"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "宋会计师"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "宋楠楠"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217682601458046"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "370682199605221124"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "13280908662"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw31bm3771",
         "operatedAt": "2026-06-10 01:16:16",
@@ -146165,12 +149762,18 @@
     "settlementPaidAt": "",
     "settlementPaidBy": "",
     "completedBy": "宋会计师",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "宋楠楠",
+      "bankName": "中信银行",
+      "bankCardNo": "6217682601458046",
+      "idCardNo": "370682199605221124",
+      "declarationPhone": "13280908662"
+    },
+    "invoiceRecipientName": "宋楠楠",
+    "invoiceRecipientBankName": "中信银行",
+    "invoiceRecipientBankCardNo": "6217682601458046",
+    "invoiceRecipientIdCardNo": "370682199605221124",
+    "invoiceRecipientDeclarationPhone": "13280908662",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -148460,15 +152063,84 @@
     "settlementPrice": 408,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7eb088bckuob",
+      "name": "11.png",
+      "fileName": "invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png",
+      "url": "/invoice-images/invoice_45558e79b3945112b447f3f791ce0fa5_mq7eb087_da54sb.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 09:34:02",
+    "invoiceUploadedBy": "Hello,现在",
+    "invoiceUploadedByUsername": "45558e79b3945112b447f3f791ce0fa5",
     "checkStatus": "completed",
     "checkedAt": "2026-05-06 13:24:53",
     "serviceFeedbackImages": [],
     "customerFeedback": "已完成",
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7eb08gd73kvb",
+        "operatedAt": "2026-06-10 09:34:02",
+        "operatedBy": "Hello,现在",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "11.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 09:34:02"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "Hello,现在"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "河南詹森信息技术有限公司"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "交通银行郑州淮河路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "411625999011001425747"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "1"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "1"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw32rgwe9g",
         "operatedAt": "2026-06-10 01:16:16",
@@ -148607,12 +152279,18 @@
     "settlementPaidBy": "",
     "checkedBy": "Hello,现在",
     "completedBy": "Hello,现在",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "河南詹森信息技术有限公司",
+      "bankName": "交通银行郑州淮河路支行",
+      "bankCardNo": "411625999011001425747",
+      "idCardNo": "1",
+      "declarationPhone": "1"
+    },
+    "invoiceRecipientName": "河南詹森信息技术有限公司",
+    "invoiceRecipientBankName": "交通银行郑州淮河路支行",
+    "invoiceRecipientBankCardNo": "411625999011001425747",
+    "invoiceRecipientIdCardNo": "1",
+    "invoiceRecipientDeclarationPhone": "1",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -149659,15 +153337,84 @@
     "settlementPrice": 300,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7ltrrazbu683",
+      "name": "dzfp_26372000002766733966_20260610130213_01.png",
+      "fileName": "invoice_song_mq7ltrr9_u1ljr6.png",
+      "url": "/invoice-images/invoice_song_mq7ltrr9_u1ljr6.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 13:04:34",
+    "invoiceUploadedBy": "宋会计师",
+    "invoiceUploadedByUsername": "song",
     "checkStatus": "completed",
     "checkedAt": "2026-04-27 14:44:31",
     "serviceFeedbackImages": [],
     "customerFeedback": "已完成",
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7ltrrgwa6hxi",
+        "operatedAt": "2026-06-10 13:04:34",
+        "operatedBy": "宋会计师",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "dzfp_26372000002766733966_20260610130213_01.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 13:04:34"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "宋会计师"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "宋楠楠"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217682601458046"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "370682199605221124"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "13280908662"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw32bavotd",
         "operatedAt": "2026-06-10 01:16:16",
@@ -149800,12 +153547,18 @@
     "settlementPaidAt": "",
     "settlementPaidBy": "",
     "completedBy": "宋会计师",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "宋楠楠",
+      "bankName": "中信银行",
+      "bankCardNo": "6217682601458046",
+      "idCardNo": "370682199605221124",
+      "declarationPhone": "13280908662"
+    },
+    "invoiceRecipientName": "宋楠楠",
+    "invoiceRecipientBankName": "中信银行",
+    "invoiceRecipientBankCardNo": "6217682601458046",
+    "invoiceRecipientIdCardNo": "370682199605221124",
+    "invoiceRecipientDeclarationPhone": "13280908662",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
@@ -153728,15 +157481,84 @@
     "settlementPrice": 78,
     "isSettled": true,
     "settledAt": "2026-06-03 15:07:46",
-    "settlementInvoiceImage": null,
-    "invoiceUploadedAt": "",
-    "invoiceUploadedBy": "",
-    "invoiceUploadedByUsername": "",
+    "settlementInvoiceImage": {
+      "id": "inv_mq7gfoqet4s63k",
+      "name": "53debd0319c639aa68907f2cea582458.png",
+      "fileName": "invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png",
+      "url": "/invoice-images/invoice_MeiWenXiXi_mq7gfoqd_rfqdha.png"
+    },
+    "invoiceUploadedAt": "2026-06-10 10:33:39",
+    "invoiceUploadedBy": "美文嘻嘻",
+    "invoiceUploadedByUsername": "MeiWenXiXi",
     "checkStatus": "completed",
     "checkedAt": "2026-04-27 17:03:46",
     "serviceFeedbackImages": [],
     "customerFeedback": "",
     "operationHistory": [
+      {
+        "historyId": "rhis_mq7gfoqngi53qz",
+        "operatedAt": "2026-06-10 10:33:39",
+        "operatedBy": "美文嘻嘻",
+        "operatedRole": "accountant",
+        "actionKey": "invoice_uploaded",
+        "actionLabel": "上传发票",
+        "changes": [
+          {
+            "field": "isSettled",
+            "label": "结算",
+            "before": "已核对客户确认/待上传",
+            "after": "已上传/待结算"
+          },
+          {
+            "field": "settlementInvoiceImage",
+            "label": "发票",
+            "before": "",
+            "after": "53debd0319c639aa68907f2cea582458.png"
+          },
+          {
+            "field": "invoiceUploadedAt",
+            "label": "发票上传时间",
+            "before": "",
+            "after": "2026-06-10 10:33:39"
+          },
+          {
+            "field": "invoiceUploadedBy",
+            "label": "发票上传人",
+            "before": "",
+            "after": "美文嘻嘻"
+          },
+          {
+            "field": "invoiceRecipientName",
+            "label": "发票姓名",
+            "before": "",
+            "after": "张敏"
+          },
+          {
+            "field": "invoiceRecipientBankName",
+            "label": "开户行",
+            "before": "",
+            "after": "中信银行河南省安阳市永明路支行"
+          },
+          {
+            "field": "invoiceRecipientBankCardNo",
+            "label": "银行卡号",
+            "before": "",
+            "after": "6217711129212658"
+          },
+          {
+            "field": "invoiceRecipientIdCardNo",
+            "label": "身份证号",
+            "before": "",
+            "after": "410511199604100023"
+          },
+          {
+            "field": "invoiceRecipientDeclarationPhone",
+            "label": "申报手机号",
+            "before": "",
+            "after": "17839174191"
+          }
+        ]
+      },
       {
         "historyId": "rhis_mq6wiw33wm6w8h",
         "operatedAt": "2026-06-10 01:16:16",
@@ -153895,12 +157717,18 @@
     "isSettlementPaid": false,
     "settlementPaidAt": "",
     "settlementPaidBy": "",
-    "invoiceRecipientInfo": null,
-    "invoiceRecipientName": "",
-    "invoiceRecipientBankName": "",
-    "invoiceRecipientBankCardNo": "",
-    "invoiceRecipientIdCardNo": "",
-    "invoiceRecipientDeclarationPhone": "",
+    "invoiceRecipientInfo": {
+      "name": "张敏",
+      "bankName": "中信银行河南省安阳市永明路支行",
+      "bankCardNo": "6217711129212658",
+      "idCardNo": "410511199604100023",
+      "declarationPhone": "17839174191"
+    },
+    "invoiceRecipientName": "张敏",
+    "invoiceRecipientBankName": "中信银行河南省安阳市永明路支行",
+    "invoiceRecipientBankCardNo": "6217711129212658",
+    "invoiceRecipientIdCardNo": "410511199604100023",
+    "invoiceRecipientDeclarationPhone": "17839174191",
     "isDispatcherSettlementPaid": false,
     "dispatcherSettlementPaidAt": "",
     "dispatcherSettlementPaidBy": "",
